@@ -476,6 +476,8 @@ Estas métricas son **gates de calidad en CI/CD** — un build que no las cumple
 - **Compresión:** gzip o brotli habilitado en el servidor de assets (nginx)
 - **Cache de assets:** nombres de archivos con hash para cache busting determinista
 
+> Para técnicas de optimización específicas de Angular — incluyendo optimización nativa del LCP (`preload`, `preconnect`, SSR) y estabilidad del CLS con bloques deferibles (`@defer`) — ver **LIN-FE-ANG-001 §15.2**.
+
 ### DOM real y DOM virtual
 
 Comprender la diferencia entre DOM real y DOM virtual es obligatorio para cualquier desarrollador frontend en ONP. De este conocimiento se derivan la mayoría de las reglas de anti-patrones de **LIN-FE-ANG-001**.
@@ -526,7 +528,7 @@ Los anti-patrones JavaScript prohibidos completos (incluyendo `setTimeout(fn, 0)
 
 ## 5. Estrategia de Datos
 
-La base de datos relacional Oracle es el **estándar por defecto** de ONP para todo sistema transaccional. Una BD no relacional no reemplaza a Oracle — es una capa complementaria que resuelve un caso de uso específico que el modelo relacional no cubre eficientemente.
+La base de datos relacional Oracle es el **estándar por defecto** de ONP para todo sistema transaccional. Una BD no relacional no reemplaza a Oracle, es una capa complementaria que resuelve un caso de uso específico que el modelo relacional no cubre eficientemente.
 
 > ONP ya opera una BD no relacional en producción: **Elasticsearch**, utilizada por el stack de observabilidad (logs estructurados y trazas — ver LIN-OBS-001). No es un caso hipotético.
 
@@ -576,7 +578,7 @@ El análisis de adopción se inicia cuando **al menos uno** de los siguientes de
 La adopción de cualquier BD no relacional en ONP requiere:
 
 1. **ADR aprobado por Arquitectura OTI** con el detonador verificado, el tipo de BD seleccionado y la justificación técnica.
-2. **Nuevo lineamiento LIN-BD-XXX** específico para esa tecnología — equivalente a LIN-BD-ORA-001 para Oracle — que cubra diseño de datos, operación, seguridad y observabilidad.
+2. **Nuevo lineamiento LIN-BD-XXX** específico para esa tecnología, equivalente a LIN-BD-ORA-001 para Oracle, que cubra diseño de datos, operación, seguridad y observabilidad.
 3. **Validación de Plataforma** sobre viabilidad operativa en K8s (backups, monitoreo, alta disponibilidad).
 4. **Piloto controlado** antes de uso productivo, con criterios de éxito documentados y fecha de evaluación.
 
@@ -584,7 +586,7 @@ Mientras el lineamiento específico de la tecnología no exista, su uso producti
 
 ### CQRS — elección del read model
 
-CQRS separa el modelo de escritura del de lectura. El **write model siempre es Oracle** (ACID). La elección del read model no es única — depende del patrón de consulta que debe servir.
+CQRS separa el modelo de escritura del de lectura. El **write model siempre es Oracle** (ACID). La elección del read model no es única, depende del patrón de consulta que debe servir.
 
 | Patrón de consulta del read model | Store adecuado | Razón |
 |---|---|---|
@@ -593,9 +595,9 @@ CQRS separa el modelo de escritura del de lectura. El **write model siempre es O
 | Consultas que requieren joins moderados y el modelo relacional es el correcto | Read replica relacional | Cuando la complejidad relacional no desaparece al proyectar |
 | Agregaciones analíticas, reportes, tendencias históricas | Capa Gold del Medallion | Ver dominio BI más abajo |
 
-**El read model se elige por el patrón de consulta, no por preferencia tecnológica.** Un mismo sistema puede tener más de un read model si sirve casos de uso con patrones distintos.
+**El read model se elige por el patrón de consulta, no por preferencia tecnológica.** Un mismo sistema puede tener más de un read model si sirve en casos de uso con patrones distintos.
 
-**Condición obligatoria:** todo read model debe tener su mecanismo de sincronización con Oracle explícitamente documentado — evento de dominio + Transactional Outbox, CDC, o ELT programado según el caso. Sin ese mecanismo, el read model es un dato desconectado que producirá inconsistencias silenciosas.
+**Condición obligatoria:** Todo read model debe tener su mecanismo de sincronización con Oracle explícitamente documentado, evento de dominio + Transactional Outbox, CDC, o ELT programado según el caso. Sin ese mecanismo, el read model es un dato desconectado que producirá inconsistencias silenciosas.
 
 ### Dominio complementario — Business Intelligence
 

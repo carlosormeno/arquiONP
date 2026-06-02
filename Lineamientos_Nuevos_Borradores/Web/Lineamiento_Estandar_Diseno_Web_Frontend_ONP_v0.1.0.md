@@ -967,6 +967,55 @@ ONP adopta Core Web Vitals como framework de medición de performance frontend. 
 - **Compresión:** gzip o brotli habilitado en el servidor nginx que sirve los assets estáticos.
 - **Cache de assets:** los nombres de archivo generados por `ng build` incluyen hash — no configurar `max-age=0` en el servidor.
 
+#### Optimización nativa del LCP
+
+LCP es la métrica más exigente en Angular porque el framework renderiza en el cliente por defecto: el navegador descarga, parsea y ejecuta JavaScript antes de mostrar contenido. Las técnicas base reducen el bundle, pero no eliminan ese tiempo de arranque. Para atacar el LCP directamente:
+
+| Técnica | Qué hace | Cuándo aplicar en ONP |
+|---|---|---|
+| `<link rel="preload">` | Le indica al navegador que descargue un recurso crítico (imagen hero, fuente) antes de que el parser lo encuentre | Siempre que el elemento LCP sea una imagen o fuente externa |
+| `<link rel="preconnect">` | Establece conexión TCP anticipada con dominios externos | Cuando se consumen APIs o recursos de dominios distintos al propio |
+| `loading="eager"` en imagen LCP | Evita que la imagen principal quede en lazy load accidentalmente | El elemento LCP **nunca** debe tener `loading="lazy"` |
+| SSR con Angular Universal | Entrega HTML prerenderizado desde el servidor — el navegador muestra contenido sin esperar JavaScript | Solo para portales públicos ONP. No aplica a sistemas internos: agrega un servidor Node que mantener y requiere madurez en el equipo |
+
+#### Estabilidad del CLS con bloques deferibles (`@defer`)
+
+Angular 17+ introduce `@defer`, que permite diferir la carga de bloques de template hasta que se cumpla una condición (`on viewport`, `on interaction`, `on idle`). Usado correctamente mejora el CLS y el TBT; usado incorrectamente los empeora.
+
+**El riesgo directo con CLS — uso incorrecto:**
+
+```html
+@defer {
+  <componente-pesado />    <!-- tamaño real: 400px de alto -->
+}
+@placeholder {
+  <div>Cargando...</div>   <!-- tamaño: 20px de alto -->
+}
+```
+
+Cuando el componente real reemplaza al placeholder, el layout salta 380px → CLS alto. El `@defer` sin reserva de espacio explícita genera exactamente el problema que se quiere evitar.
+
+**Uso correcto — reservar el espacio del contenido real:**
+
+```html
+@defer (on viewport) {
+  <componente-pesado />
+} @placeholder (minimum 300ms) {
+  <div style="height: 400px; width: 100%;">
+    <app-skeleton-loader />
+  </div>
+}
+```
+
+**Reglas obligatorias para usar `@defer` sin romper el CLS:**
+
+| Regla | Razón |
+|---|---|
+| El `@placeholder` debe reservar exactamente el mismo espacio que el componente real | Si el tamaño difiere, el reemplazo causa layout shift |
+| Usar `skeleton loaders` con dimensiones fijas en el placeholder | Son visualmente consistentes y mantienen el espacio reservado |
+| No usar `@defer` en elementos above-the-fold sin SSR | El contenido visible al cargar nunca debe deferirse — es el candidato LCP |
+| Preferir `on viewport` sobre `on idle` para contenido visible | `on idle` puede cargar cuando el usuario ya está viendo el área, causando shift inesperado |
+
 #### Configuración de Lighthouse CI
 
 El archivo `lighthouserc.js` en la raíz del proyecto define los thresholds como gate de calidad:
