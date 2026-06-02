@@ -1,0 +1,106 @@
+# ── PersistentVolumeClaim ────────────────────────────────────────────
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: elasticsearch-data
+  namespace: elastic-dev
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+---
+# ── Deployment ───────────────────────────────────────────────────────
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: elasticsearch
+  namespace: elastic-dev
+  labels:
+    app: elasticsearch
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: elasticsearch
+  template:
+    metadata:
+      labels:
+        app: elasticsearch
+    spec:
+      initContainers:
+        # ES requiere vm.max_map_count >= 262144 en el nodo host
+        - name: increase-vm-max-map
+          image: busybox
+          command: ["sysctl", "-w", "vm.max_map_count=262144"]
+          securityContext:
+            privileged: true
+      containers:
+        - name: elasticsearch
+          image: docker.elastic.co/elasticsearch/elasticsearch:8.19.15
+          ports:
+            - name: http
+              containerPort: 9200
+            - name: transport
+              containerPort: 9300
+          env:
+            - name: discovery.type
+              value: single-node
+            - name: ES_JAVA_OPTS
+              value: "-Xms1g -Xmx1g"
+            - name: ELASTIC_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: elasticsearch-credentials
+                  key: ELASTIC_PASSWORD
+            # Seguridad habilitada (autenticación activa)
+            - name: xpack.security.enabled
+              value: "true"
+            # TLS HTTP desactivado para simplificar pruebas internas
+            - name: xpack.security.http.ssl.enabled
+              value: "false"
+            # TLS transport desactivado (solo hay un nodo, no hay riesgo)
+            - name: xpack.security.transport.ssl.enabled
+              value: "false"
+          volumeMounts:
+            - name: data
+              mountPath: /usr/share/elasticsearch/data
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "2Gi"
+            limits:
+              cpu: "1000m"
+              memory: "2Gi"
+          readinessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - "curl -sf -u elastic:${ELASTIC_PASSWORD} http://localhost:9200/_cluster/health"
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            failureThreshold: 10
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: elasticsearch-data
+---
+# ── Service ──────────────────────────────────────────────────────────
+apiVersion: v1
+kind: Service
+metadata:
+  name: elasticsearch
+  namespace: elastic-dev
+  labels:
+    app: elasticsearch
+spec:
+  selector:
+    app: elasticsearch
+  ports:
+    - name: http
+      port: 9200
+      targetPort: 9200

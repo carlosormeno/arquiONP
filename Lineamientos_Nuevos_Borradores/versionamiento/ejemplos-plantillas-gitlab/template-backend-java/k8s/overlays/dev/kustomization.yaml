@@ -1,0 +1,23 @@
+# EJEMPLO DE REFERENCIA — LIN-VER-001 Anexo F / LIN-K8S-001 Anexo A
+# Overlay para ambiente de desarrollo (rama ONP_DESA)
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../base
+
+# Imagen promovida desde CI/CD — no reconstruir (LIN-K8S-001 §6.4)
+images:
+  - name: api-nombre-sistema
+    newName: registry.gitlab.onp.gob.pe/aplicaciones/nombre-sistema/api-nombre-sistema
+    newTag: dev-latest   # CI actualiza este tag en cada despliegue a ONP_DESA
+
+# Réplicas para desarrollo
+replicas:
+  - name: api-nombre-sistema
+    count: 1
+
+# Patches específicos de desarrollo
+patchesStrategicMerge:
+  - patch-resources-dev.yaml   # límites de recursos reducidos para DEV

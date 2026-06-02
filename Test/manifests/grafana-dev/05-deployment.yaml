@@ -1,0 +1,93 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grafana
+  namespace: grafana-dev
+  labels:
+    app: grafana
+    environment: dev
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: grafana
+  template:
+    metadata:
+      labels:
+        app: grafana
+        environment: dev
+    spec:
+      containers:
+        - name: grafana
+          image: grafana/grafana:11.1.0
+          ports:
+            - name: http
+              containerPort: 3000
+          env:
+            - name: GF_SECURITY_ADMIN_USER
+              valueFrom:
+                secretKeyRef:
+                  name: grafana-admin-credentials
+                  key: GF_SECURITY_ADMIN_USER
+            - name: GF_SECURITY_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: grafana-admin-credentials
+                  key: GF_SECURITY_ADMIN_PASSWORD
+            - name: GF_ES_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: grafana-es-credentials
+                  key: GF_ES_USERNAME
+            - name: GF_ES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: grafana-es-credentials
+                  key: GF_ES_PASSWORD
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/grafana
+            - name: datasources
+              mountPath: /etc/grafana/provisioning/datasources
+            - name: dashboard-provider
+              mountPath: /etc/grafana/provisioning/dashboards
+            - name: dashboards
+              mountPath: /var/lib/grafana/dashboards
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "158Mi"
+            limits:
+              cpu: "300m"
+              memory: "256Mi"
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: 3000
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: 3000
+            initialDelaySeconds: 30
+            periodSeconds: 20
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: grafana-data
+        - name: datasources
+          configMap:
+            name: grafana-datasources
+        - name: dashboard-provider
+          configMap:
+            name: grafana-dashboards
+            items:
+              - key: provider.yaml
+                path: provider.yaml
+        - name: dashboards
+          configMap:
+            name: grafana-dashboards
+            items:
+              - key: onp-prometheus-targets.json
+                path: onp-prometheus-targets.json

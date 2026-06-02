@@ -1,0 +1,21 @@
+# Documentos locales de referencia — se mantienen locales, no suben al repo
+Lineamientos_Aprobados/
+Lineamientos_Borrador/
+Otros/
+
+# Archivos comprimidos
+*.zip
+
+# Artefactos de build Maven
+target/
+*.class
+
+# Archivos temporales de Office
+~$*
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.claude/

@@ -1,0 +1,50 @@
+stages:
+  - validate
+  - test
+  - package
+  - image
+
+variables:
+  MAVEN_CLI_OPTS: "-B -ntp"
+  MAVEN_OPTS: "-Dmaven.repo.local=.m2/repository"
+
+cache:
+  paths:
+    - .m2/repository
+
+validate:
+  stage: validate
+  image: maven:3.9-eclipse-temurin-21
+  script:
+    - mvn ${MAVEN_CLI_OPTS} validate
+    - mvn ${MAVEN_CLI_OPTS} checkstyle:check
+
+test:
+  stage: test
+  image: maven:3.9-eclipse-temurin-21
+  script:
+    - mvn ${MAVEN_CLI_OPTS} test
+  artifacts:
+    when: always
+    paths:
+      - target/surefire-reports/
+      - target/site/jacoco/
+
+package:
+  stage: package
+  image: maven:3.9-eclipse-temurin-21
+  script:
+    - mvn ${MAVEN_CLI_OPTS} verify
+  artifacts:
+    paths:
+      - target/*.jar
+
+image:
+  stage: image
+  image: docker:27
+  services:
+    - docker:27-dind
+  rules:
+    - if: '$CI_COMMIT_BRANCH'
+  script:
+    - docker build -t ${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHORT_SHA} .

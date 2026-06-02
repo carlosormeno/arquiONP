@@ -1,0 +1,47 @@
+spring:
+  application:
+    name: onp-template-backend
+
+info:
+  app:
+    version: "@project.version@"
+
+app:
+  description: Plantilla institucional ONP para backend Spring Boot
+
+onp:
+  security:
+    saa:
+      enabled: false
+
+management:
+  info:
+    env:
+      enabled: true
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: when-authorized
+    prometheus:
+      enabled: true
+  health:
+    livenessState:
+      enabled: true
+    readinessState:
+      enabled: true
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  otlp:
+    tracing:
+      export:
+        protocol: http/protobuf
+
+springdoc:
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui.html
+  api-docs:
+    enabled: true

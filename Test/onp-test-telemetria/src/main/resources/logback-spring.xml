@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <springProperty scope="context" name="APP_NAME"
+        source="spring.application.name"/>
+    <springProperty scope="context" name="APP_VERSION"
+        source="info.app.version" defaultValue="unknown"/>
+    <springProperty scope="context" name="APP_ENV"
+        source="app.environment" defaultValue="development"/>
+    <appender name="OpenTelemetry"
+        class="io.opentelemetry.instrumentation.logback.appender.v1_0.OpenTelemetryAppender">
+        <captureExperimentalAttributes>true</captureExperimentalAttributes>
+    </appender>
+
+    <appender name="JSON_STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+            <customFields>
+            {
+                "service.name": "${APP_NAME}",
+                "service.version": "${APP_VERSION}",
+                "service.environment": "${APP_ENV}"
+            }
+            </customFields>
+            <fieldNames>
+                <timestamp>@timestamp</timestamp>
+                <level>log.level</level>
+                <logger>log.logger</logger>
+                <thread>process.thread.name</thread>
+                <stackTrace>error.stack_trace</stackTrace>
+            </fieldNames>
+            <includeMdcKeyName>traceId</includeMdcKeyName>
+            <includeMdcKeyName>spanId</includeMdcKeyName>
+        </encoder>
+    </appender>
+    <springProfile name="dev">
+        <root level="INFO">
+            <appender-ref ref="JSON_STDOUT"/>
+            <appender-ref ref="OpenTelemetry"/>
+        </root>
+        <logger name="pe.gob.onp" level="DEBUG"/>
+    </springProfile>
+    <springProfile name="qa,prod">
+        <root level="INFO">
+            <appender-ref ref="JSON_STDOUT"/>
+            <appender-ref ref="OpenTelemetry"/>
+        </root>
+    </springProfile>
+</configuration>

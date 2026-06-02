@@ -1,0 +1,17 @@
+# EJEMPLO DE REFERENCIA — LIN-VER-001 Anexo F / LIN-K8S-001 Anexo A
+# Overlay para producción (rama master)
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../base
+
+images:
+  - name: frontend-nombre-sistema
+    newName: registry.gitlab.onp.gob.pe/aplicaciones/nombre-sistema/frontend-nombre-sistema
+    newTag: "1.0.0"
+
+replicas:
+  - name: frontend-nombre-sistema
+    count: 2

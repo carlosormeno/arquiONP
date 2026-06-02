@@ -1,0 +1,18 @@
+# EJEMPLO DE REFERENCIA — LIN-VER-001 Anexo F / LIN-K8S-001 Anexo A
+# Overlay para producción (rama master)
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../base
+
+# Imagen certificada en QA — misma imagen, misma versión (LIN-K8S-001 §6.4)
+images:
+  - name: api-nombre-sistema
+    newName: registry.gitlab.onp.gob.pe/aplicaciones/nombre-sistema/api-nombre-sistema
+    newTag: "1.0.0"   # debe coincidir con el tag certificado en QA
+
+replicas:
+  - name: api-nombre-sistema
+    count: 3

@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>3.5.14</version>
+        <relativePath/>
+    </parent>
+
+    <groupId>pe.gob.onp</groupId>
+    <artifactId>onp-test-telemetria</artifactId>
+    <version>1.0.0</version>
+    <name>onp-test-telemetria</name>
+    <description>Servicio de prueba para el stack de observabilidad ONP</description>
+
+    <properties>
+        <java.version>21</java.version>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- ═══════════════════════════════════════════════════════════ -->
+        <!-- OBSERVABILIDAD - OpenTelemetry + Micrometer Tracing -->
+        <!-- ═══════════════════════════════════════════════════════════ -->
+        <!-- Bridge entre Spring Boot y OTEL -->
+        <dependency>
+        <groupId>io.micrometer</groupId>
+        <artifactId>micrometer-tracing-bridge-otel</artifactId>
+        </dependency>
+        <!-- Exportador OTLP: envía trazas al OTEL Collector -->
+        <dependency>
+        <groupId>io.opentelemetry</groupId>
+        <artifactId>opentelemetry-exporter-otlp</artifactId>
+        </dependency>
+        <!-- AOP: requerido para que @WithSpan funcione en runtime -->
+        <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-aop</artifactId>
+        </dependency>
+        <!-- Actuator: endpoints de salud y métricas -->
+        <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+
+        <!-- Logstash Encoder: formato JSON para Logback compatible con ECS -->
+        <dependency>
+            <groupId>net.logstash.logback</groupId>
+            <artifactId>logstash-logback-encoder</artifactId>
+            <version>7.4</version>
+        </dependency>
+
+        <!-- Puente Logback → OTEL SDK: requerido para management.otlp.logging.endpoint -->
+        <dependency>
+            <groupId>io.opentelemetry.instrumentation</groupId>
+            <artifactId>opentelemetry-logback-appender-1.0</artifactId>
+            <version>2.14.0-alpha</version>
+        </dependency>
+
+        <!-- SpringDoc: genera OpenAPI 3.0 y Swagger UI para Spring Boot 3.x -->
+<dependency>
+    <groupId>org.springdoc</groupId>
+    <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+    <version>2.5.0</version>
+</dependency>
+
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>

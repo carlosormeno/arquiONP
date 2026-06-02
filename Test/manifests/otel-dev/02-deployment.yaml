@@ -1,0 +1,68 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: otel-collector
+  namespace: otel-dev
+  labels:
+    app: otel-collector
+    environment: dev
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: otel-collector
+  template:
+    metadata:
+      labels:
+        app: otel-collector
+        environment: dev
+    spec:
+      containers:
+        - name: otel-collector
+          image: otel/opentelemetry-collector-contrib:0.120.0
+          args:
+            - "--config=/etc/otel/config.yaml"
+          ports:
+            - name: otlp-grpc
+              containerPort: 4317
+            - name: otlp-http
+              containerPort: 4318
+            - name: prometheus
+              containerPort: 8889
+          env:
+            - name: OTEL_ES_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: otel-es-credentials
+                  key: OTEL_ES_USERNAME
+            - name: OTEL_ES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: otel-es-credentials
+                  key: OTEL_ES_PASSWORD
+          volumeMounts:
+            - name: config
+              mountPath: /etc/otel
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "300m"
+              memory: "256Mi"
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 13133
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 13133
+            initialDelaySeconds: 5
+            periodSeconds: 10
+      volumes:
+        - name: config
+          configMap:
+            name: otel-collector-config

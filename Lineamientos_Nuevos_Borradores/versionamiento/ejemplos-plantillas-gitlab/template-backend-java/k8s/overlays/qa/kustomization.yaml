@@ -1,0 +1,18 @@
+# EJEMPLO DE REFERENCIA — LIN-VER-001 Anexo F / LIN-K8S-001 Anexo A
+# Overlay para ambiente QA (rama ONP_QA)
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../base
+
+# Imagen promovida sin reconstrucción (LIN-K8S-001 §6.4)
+images:
+  - name: api-nombre-sistema
+    newName: registry.gitlab.onp.gob.pe/aplicaciones/nombre-sistema/api-nombre-sistema
+    newTag: "1.0.0"   # tag semántico aprobado desde ONP_PQA
+
+replicas:
+  - name: api-nombre-sistema
+    count: 2

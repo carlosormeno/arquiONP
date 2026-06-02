@@ -1,0 +1,25 @@
+# EJEMPLO DE REFERENCIA — LIN-VER-001 Anexo F
+# Ajustar los grupos con los nombres reales existentes en GitLab.
+# ADVERTENCIA: Los grupos referenciados deben existir en GitLab.
+# Si un grupo no existe, la regla se aplica silenciosamente sin efecto.
+
+# Propietario por defecto
+* @APLICACIONES/arquitectura-oti
+
+# Código fuente Angular — revisión de desarrollo frontend
+/src/ @APLICACIONES/desarrollo
+
+# Manifiestos Kubernetes — revisión de Plataforma
+/k8s/ @APLICACIONES/plataforma
+
+# Configuración nginx — revisión de Plataforma (SPA routing crítico)
+nginx.conf @APLICACIONES/plataforma @APLICACIONES/desarrollo
+
+# Dockerfile — revisión conjunta
+Dockerfile @APLICACIONES/desarrollo @APLICACIONES/plataforma
+
+# Pruebas E2E — revisión de QA
+/e2e/ @APLICACIONES/qa
+
+# Architecture Decision Records
+/docs/adr/ @APLICACIONES/arquitectura-oti

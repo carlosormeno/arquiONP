@@ -1,0 +1,22 @@
+springdoc:
+  swagger-ui:
+    enabled: ${SWAGGER_ENABLED:false}
+  api-docs:
+    enabled: ${SWAGGER_ENABLED:false}
+
+management:
+  otlp:
+    tracing:
+      endpoint: http://otel-collector.otel.svc.cluster.local:4318/v1/traces
+    logging:
+      endpoint: http://otel-collector.otel.svc.cluster.local:4318/v1/logs
+  tracing:
+    sampling:
+      probability: 0.1
+
+otel:
+  resource:
+    attributes: deployment.environment=production
+
+app:
+  environment: production
