@@ -15,22 +15,22 @@
 
 ## Tabla de contenidos
 
-- [§1 Alcance y vigencia](#1-alcance-y-vigencia)
-  - [§1.3 Configuración inicial de un proyecto nuevo — orden recomendado](#13-configuración-inicial-de-un-proyecto-nuevo--orden-recomendado)
-- [§2 Stack tecnológico mandatorio](#2-stack-tecnológico-mandatorio)
-- [§3 Organización del código fuente](#3-organización-del-código-fuente)
-- [§4 Convenciones de nomenclatura](#4-convenciones-de-nomenclatura)
-- [§5 Estructura interna de clases](#5-estructura-interna-de-clases)
-- [§6 Convenciones de codificación](#6-convenciones-de-codificación)
-- [§7 Documentación del código](#7-documentación-del-código)
-- [§8 Logging estructurado](#8-logging-estructurado)
-- [§9 Manejo de excepciones en la capa REST](#9-manejo-de-excepciones-en-la-capa-rest)
-- [§10 Calidad de código](#10-calidad-de-código)
-- [§11 Convenciones Spring Boot](#11-convenciones-spring-boot)
-- [§12 Estructura de proyecto y gestión de dependencias Maven](#12-estructura-de-proyecto-y-gestión-de-dependencias-maven)
-- [§13 Pruebas](#13-pruebas)
-- [§14 Revisión de código](#14-revisión-de-código)
-- [§15 Proceso de excepción a este estándar](#15-proceso-de-excepción-a-este-estándar)
+- [sección 1 Alcance y vigencia](#1-alcance-y-vigencia)
+  - [sección 1.3 Configuración inicial de un proyecto nuevo — orden recomendado](#13-configuración-inicial-de-un-proyecto-nuevo--orden-recomendado)
+- [sección 2 Stack tecnológico mandatorio](#2-stack-tecnológico-mandatorio)
+- [sección 3 Organización del código fuente](#3-organización-del-código-fuente)
+- [sección 4 Convenciones de nomenclatura](#4-convenciones-de-nomenclatura)
+- [sección 5 Estructura interna de clases](#5-estructura-interna-de-clases)
+- [sección 6 Convenciones de codificación](#6-convenciones-de-codificación)
+- [sección 7 Documentación del código](#7-documentación-del-código)
+- [sección 8 Logging estructurado](#8-logging-estructurado)
+- [sección 9 Manejo de excepciones en la capa REST](#9-manejo-de-excepciones-en-la-capa-rest)
+- [sección 10 Calidad de código](#10-calidad-de-código)
+- [sección 11 Convenciones Spring Boot](#11-convenciones-spring-boot)
+- [sección 12 Estructura de proyecto y gestión de dependencias Maven](#12-estructura-de-proyecto-y-gestión-de-dependencias-maven)
+- [sección 13 Pruebas](#13-pruebas)
+- [sección 14 Revisión de código](#14-revisión-de-código)
+- [sección 15 Proceso de excepción a este estándar](#15-proceso-de-excepción-a-este-estándar)
 - [Anexo A: Plantilla Javadoc estándar ONP](#anexo-a-plantilla-javadoc-estándar-onp)
 - [Anexo B: Configuración Checkstyle recomendada](#anexo-b-configuración-checkstyle-recomendada)
 - [Anexo C: Tabla completa de sufijos de clase](#anexo-c-tabla-completa-de-sufijos-de-clase)
@@ -38,7 +38,7 @@
 
 ---
 
-## §1 Alcance y vigencia
+## sección 1 Alcance y vigencia
 
 ### 1.1 Propósito
 
@@ -65,13 +65,13 @@ Al iniciar un proyecto Spring Boot en ONP, configurar los siguientes componentes
 
 | Paso | Qué configurar | Sección | Descripción |
 |---|---|---|---|
-| 1 | Dependencias OTEL en `pom.xml` | LIN-OBS-001 §4 | Habilita trazas distribuidas, logs estructurados y métricas |
-| 2 | `RequestIdFilter` `@Order(1)` | §11.4.5 | Genera o propaga `X-Request-ID` y lo pone en el MDC para correlacionar todas las líneas de log de una petición |
-| 3 | `SaaTokenValidationFilter` `@Order(2)` | LIN-SEC-APP-001 §8.3 | Valida el token SAA llamando al endpoint institucional y pone `user.id` en el MDC |
-| 4 | `CanonicalRequestLogFilter` `@Order(3)` | LIN-OBS-001 §7 | Emite el log canónico al finalizar cada petición leyendo `user.id` del MDC |
-| 5 | `ApiResponseWrapper` + `GlobalExceptionHandler` | §11.4.4, §9 | Contrato estándar de respuesta para todos los endpoints |
-| 6 | `OpenApiConfig` + anotaciones Swagger | LIN-API-REST-001 §6, §11.4.1–11.4.3 | Contrato OpenAPI publicado desde el arranque del servicio |
-| 7 | `AuditoriaBase` extendida en entidades JPA | Anexo D | Pobla automáticamente los 6 campos de auditoría obligatorios (LIN-BD-ORA-001 §5) |
+| 1 | Dependencias OTEL en `pom.xml` | LIN-OBS-001 sección 4 | Habilita trazas distribuidas, logs estructurados y métricas |
+| 2 | `RequestIdFilter` `@Order(1)` | [sección 11.4.5](#1145-filtro-de-correlacion-requestidfilter) | Genera o propaga `X-Request-ID` y lo pone en el MDC para correlacionar todas las líneas de log de una petición |
+| 3 | `SaaTokenValidationFilter` `@Order(2)` | LIN-SEC-APP-001 sección 8.3 | Valida el token SAA llamando al endpoint institucional y pone `user.id` en el MDC |
+| 4 | `CanonicalRequestLogFilter` `@Order(3)` | LIN-OBS-001 sección 7 | Emite el log canónico al finalizar cada petición leyendo `user.id` del MDC |
+| 5 | `ApiResponseWrapper` + `GlobalExceptionHandler` | [sección 11.4.4](#1144-estructura-de-respuesta-estandar-apiresponsewrapper), sección 9 | Contrato estándar de respuesta para todos los endpoints |
+| 6 | `OpenApiConfig` + anotaciones Swagger | LIN-API-REST-001 sección 6, [sección 11.4.1](#1141-dependencia-maven)–11.4.3 | Contrato OpenAPI publicado desde el arranque del servicio |
+| 7 | `AuditoriaBase` extendida en entidades JPA | Anexo D | Pobla automáticamente los 6 campos de auditoría obligatorios (LIN-BD-ORA-001 sección 5) |
 
 > Los pasos 2, 3 y 4 forman la cadena de filtros obligatoria. El orden `@Order` es crítico: si se altera, `user.id` puede no estar disponible en el MDC cuando el log canónico lo necesita.
 
@@ -80,13 +80,13 @@ Al iniciar un proyecto Spring Boot en ONP, configurar los siguientes componentes
 | Documento | Relación |
 |-----------|----------|
 | LIN-ARQ-000 — Marco Rector de Diseño y Arquitectura de Software | Marco arquitectónico que este estándar implementa |
-| LIN-API-REST-001 — Estándar de APIs REST | Complementa §11.4: convenciones REST detalladas |
-| LIN-BD-ORA-001 — Estándar de Base de Datos Oracle | Complementa §11.3: convenciones de persistencia |
-| LIN-OBS-001 — Log, Trazabilidad y Observabilidad | Complementa §8: logging estructurado avanzado |
+| LIN-API-REST-001 — Estándar de APIs REST | Complementa [sección 11.4](#114-api-rest-y-documentacion-openapi): convenciones REST detalladas |
+| LIN-BD-ORA-001 — Estándar de Base de Datos Oracle | Complementa [sección 11.3](#113-transacciones): convenciones de persistencia |
+| LIN-OBS-001 — Log, Trazabilidad y Observabilidad | Complementa sección 8: logging estructurado avanzado |
 
 ---
 
-## §2 Stack tecnológico mandatorio
+## sección 2 Stack tecnológico mandatorio
 
 El stack siguiente es la base sobre la que aplica este estándar. Cualquier desviación requiere justificación en un ADR (Architecture Decision Record) y aprobación de la OTI.
 
@@ -109,7 +109,7 @@ El stack siguiente es la base sobre la que aplica este estándar. Cualquier desv
 
 ---
 
-## §3 Organización del código fuente
+## sección 3 Organización del código fuente
 
 ### 3.1 Estructura de paquetes
 
@@ -124,7 +124,7 @@ Donde:
 - `<módulo>` — funcionalidad de negocio (ej: `aportaciones`, `expedientes`, `pagos`)
 - `<capa>` — depende del estilo arquitectónico (ver tablas abajo)
 
-La estructura de paquetes **no es libre**: se deriva directamente del estilo arquitectónico declarado en el ADR del proyecto. La descripción detallada de estructuras Maven se encuentra en **§12.1**; aquí se muestra la vista de paquetes Java para cada estilo.
+La estructura de paquetes **no es libre**: se deriva directamente del estilo arquitectónico declarado en el ADR del proyecto. La descripción detallada de estructuras Maven se encuentra en **[sección 12.1](#121-estructura-de-proyecto-por-estilo-arquitectonico)**; aquí se muestra la vista de paquetes Java para cada estilo.
 
 | Estilo | Cuándo aplica | Estructura de paquetes |
 |---|---|---|
@@ -166,7 +166,7 @@ pe.gob.onp.{sistema}.config
 
 #### Estilo 2 — Monolito Modular (multi-módulo Maven)
 
-Cinco módulos Maven con fronteras explícitas. Es el destino por defecto para todo sistema nuevo. Ver estructura Maven completa en **§12.1**.
+Cinco módulos Maven con fronteras explícitas. Es el destino por defecto para todo sistema nuevo. Ver estructura Maven completa en **[sección 12.1](#121-estructura-de-proyecto-por-estilo-arquitectonico)**.
 
 | Módulo Maven | Paquetes internos | Dependencias del módulo |
 |---|---|---|
@@ -251,7 +251,7 @@ import pe.gob.onp.pensiones.expedientes.domain.Expediente;
 
 ---
 
-## §4 Convenciones de nomenclatura
+## sección 4 Convenciones de nomenclatura
 
 ### 4.1 Reglas generales
 
@@ -391,7 +391,7 @@ if (expediente.getEstado() == EstadoExpediente.ACTIVO) { ... }
 
 ---
 
-## §5 Estructura interna de clases
+## sección 5 Estructura interna de clases
 
 ### 5.1 Orden de declaración
 
@@ -517,7 +517,7 @@ public class Expediente {
 
 ---
 
-## §6 Convenciones de codificación
+## sección 6 Convenciones de codificación
 
 ### 6.1 Formato
 
@@ -906,7 +906,7 @@ List<String> resumen = expedientes.stream()
 
 ---
 
-## §7 Documentación del código
+## sección 7 Documentación del código
 
 ### 7.1 Cuándo escribir Javadoc
 
@@ -988,9 +988,9 @@ BigDecimal montoReajustado = monto.multiply(new BigDecimal("1.03"));
 
 ---
 
-## §8 Logging estructurado
+## sección 8 Logging estructurado
 
-> **Fuente autoritativa:** Las normas de logging, trazabilidad y observabilidad están definidas en **LIN-OBS-001** (Lineamiento de Log Centralizado, Trazabilidad y Observabilidad). Este §8 es un resumen orientado a la implementación Java; ante cualquier conflicto, prevalece LIN-OBS-001. La configuración completa de `logback-spring.xml`, `Mask.java`, `CanonicalRequestLogFilter.java`, `RequestIdFilter.java`, política No PII y campos ECS se encuentran en LIN-OBS-001 §§4.6–4.10 y §6.
+> **Fuente autoritativa:** Las normas de logging, trazabilidad y observabilidad están definidas en **LIN-OBS-001** (Lineamiento de Log Centralizado, Trazabilidad y Observabilidad). Este sección 8 es un resumen orientado a la implementación Java; ante cualquier conflicto, prevalece LIN-OBS-001. La configuración completa de `logback-spring.xml`, `Mask.java`, `CanonicalRequestLogFilter.java`, `RequestIdFilter.java`, política No PII y campos ECS se encuentran en LIN-OBS-001 secciones 4.6–4.10 y sección 6.
 
 ### 8.1 Framework mandatorio
 
@@ -1040,7 +1040,7 @@ public class ExpedienteServiceImpl {
 
 | Paquete | Nivel |
 |---|---|
-| `pe.gob.onp.*` | `INFO` — permite registrar eventos de negocio significativos exigidos por LIN-ARQ-000 §9.5 |
+| `pe.gob.onp.*` | `INFO` — permite registrar eventos de negocio significativos exigidos por LIN-ARQ-000 sección 9.5 |
 | `org.springframework.*`, `org.hibernate.*`, librerías de terceros | `WARN` — reduce ruido de frameworks |
 
 Subir `pe.gob.onp.*` a `DEBUG` solo para diagnóstico puntual y de forma temporal; revertir al terminar.
@@ -1078,7 +1078,7 @@ try {
 
 ### 8.4 Qué NO registrar (Política No PII)
 
-> **Ver LIN-OBS-001 §6.2** para la tabla completa y los métodos de enmascaramiento. El incumplimiento viola la **Ley N.° 29733** de Protección de Datos Personales.
+> **Ver LIN-OBS-001 sección 6.2** para la tabla completa y los métodos de enmascaramiento. El incumplimiento viola la **Ley N.° 29733** de Protección de Datos Personales.
 
 Nunca incluir en logs:
 - Contraseñas, PINs, tokens de sesión o autenticación
@@ -1086,7 +1086,7 @@ Nunca incluir en logs:
 - Números de cuenta bancaria, datos de tarjeta
 - Datos de salud o situación previsional detallada
 
-Usar `Mask.*` (definida en LIN-OBS-001 §4.8) para enmascarar datos antes de loggearlos:
+Usar `Mask.*` (definida en LIN-OBS-001 sección 4.8) para enmascarar datos antes de loggearlos:
 
 ```java
 // PROHIBIDO — datos en claro (Ley N.° 29733)
@@ -1095,12 +1095,12 @@ log.info("Consulta para DNI: {}", dni);
 
 // BIEN — identificador enmascarado o interno
 log.info("Usuario autenticado: {}", usuario.getId());
-log.info("Consulta para DNI: {}", Mask.dni(dni));   // Mask de LIN-OBS-001 §4.8
+log.info("Consulta para DNI: {}", Mask.dni(dni));   // Mask de LIN-OBS-001 sección 4.8
 ```
 
 ---
 
-## §9 Manejo de excepciones en la capa REST
+## sección 9 Manejo de excepciones en la capa REST
 
 ### 9.1 Handler global centralizado
 
@@ -1150,7 +1150,7 @@ public class GlobalExceptionHandler {
 }
 ```
 
-> Se utiliza `ApiResponseWrapper` (definido en §11.4.4) como envoltorio estándar de todas las respuestas de error en cumplimiento con **LIN-API-REST-001**. Esto garantiza homogeneidad en el formato devuelto por las APIs de la institución.
+> Se utiliza `ApiResponseWrapper` (definido en [sección 11.4.4](#1144-estructura-de-respuesta-estandar-apiresponsewrapper)) como envoltorio estándar de todas las respuestas de error en cumplimiento con **LIN-API-REST-001**. Esto garantiza homogeneidad en el formato devuelto por las APIs de la institución.
 
 ### 9.2 Tabla de HTTP status codes
 
@@ -1172,7 +1172,7 @@ public class GlobalExceptionHandler {
 
 ---
 
-## §10 Calidad de código
+## sección 10 Calidad de código
 
 ### 10.1 Métricas mínimas obligatorias
 
@@ -1281,11 +1281,11 @@ El archivo `onp-pmd-ruleset.xml` debe estar en la raíz de cada repositorio. Con
 
     <!-- 4. Reglas de Seguridad (LIN-SEC-APP-001) -->
     <rule ref="category/java/security.xml"/>
-    <rule ref="category/java/security.xml/HardCodedCredential" message="ONP-STD: Se detecto una credencial o clave secreta fija en codigo. Mueva a variables de entorno o Kubernetes Secrets (LIN-K8S-001 §8) o variables de pipeline GitLab (LIN-CICD-001 §13.4)."/>
+    <rule ref="category/java/security.xml/HardCodedCredential" message="ONP-STD: Se detecto una credencial o clave secreta fija en codigo. Mueva a variables de entorno o Kubernetes Secrets (LIN-K8S-001 sección 8) o variables de pipeline GitLab (LIN-CICD-001 sección 13.4)."/>
 
     <!-- 5. Reglas Personalizadas ONP (Validacion de Estandares) -->
     
-    <!-- Regla 5.1: Prohibir inyección en campos con @Autowired (LIN-DEV-JAVA-001 §10.2) -->
+    <!-- Regla 5.1: Prohibir inyección en campos con @Autowired (LIN-DEV-JAVA-001 sección 10.2) -->
     <rule name="EvitarInyeccionPorCampo"
           language="java"
           message="ONP-STD: La inyeccion en campos mediante @Autowired esta prohibida. Debe usar inyeccion por constructor."
@@ -1353,7 +1353,7 @@ El archivo `onp-pmd-ruleset.xml` debe estar en la raíz de cada repositorio. Con
 
 ---
 
-## §11 Convenciones Spring Boot
+## sección 11 Convenciones Spring Boot
 
 ### 11.1 Configuración
 
@@ -1377,7 +1377,7 @@ onp:
     factor-reajuste-anual: 1.03
 ```
 
-**Secretos y credenciales:** nunca en archivos de configuración del repositorio. En runtime de aplicación usar Kubernetes Secrets (ver **LIN-K8S-001 §8**); en el contexto de pipeline CI/CD usar variables protegidas de GitLab (ver **LIN-CICD-001 §13.4**). La política de secretos se rige por **LIN-SEC-APP-001 §12**.
+**Secretos y credenciales:** nunca en archivos de configuración del repositorio. En runtime de aplicación usar Kubernetes Secrets (ver **LIN-K8S-001 sección 8**); en el contexto de pipeline CI/CD usar variables protegidas de GitLab (ver **LIN-CICD-001 sección 13.4**). La política de secretos se rige por **LIN-SEC-APP-001 sección 12**.
 
 ### 11.2 Validación de datos de entrada
 
@@ -1400,7 +1400,7 @@ public record CrearExpedienteRequest(
 ) {}
 ```
 
-El `GlobalExceptionHandler` (§9.1) captura `MethodArgumentNotValidException` automáticamente.
+El `GlobalExceptionHandler` ([sección 9.1](#91-handler-global-centralizado)) captura `MethodArgumentNotValidException` automáticamente.
 
 ### 11.3 Transacciones
 
@@ -1432,7 +1432,7 @@ public class ExpedienteServiceImpl implements ExpedienteService {
 }
 ```
 
-> Ver §3.4 del Lineamiento de Arquitectura (doc. interno) para la discusión ACID/CAP y el rol de `@Transactional` en la estrategia de consistencia.
+> Ver sección 3.4 del Lineamiento de Arquitectura (doc. interno) para la discusión ACID/CAP y el rol de `@Transactional` en la estrategia de consistencia.
 
 ### 11.4 API REST y documentación OpenAPI
 
@@ -1442,7 +1442,7 @@ Todo servicio que exponga endpoints HTTP debe seguir las convenciones de esta se
 - URLs en `kebab-case`: `/expedientes-pension`, `/periodos-aportacion`
 - Un controlador por recurso de dominio
 - Métodos del controlador delegados íntegramente al servicio; sin lógica de negocio
-- Respuestas tipadas con `ApiResponseWrapper` (§11.4.4); nunca retornar `Object` o `Map<String, Object>` sin tipado
+- Respuestas tipadas con `ApiResponseWrapper` ([sección 11.4.4](#1144-estructura-de-respuesta-estandar-apiresponsewrapper)); nunca retornar `Object` o `Map<String, Object>` sin tipado
 - Las anotaciones Swagger se colocan **únicamente** en los `@RestController`; no en Service ni Repository
 
 #### 11.4.1 Dependencia Maven
@@ -1641,7 +1641,7 @@ public ResponseEntity<ApiResponseWrapper<ExpedienteResponse>> obtener(@PathVaria
 | `meta.requestId` | String | ID de correlación X-Request-ID leído del MDC | Sí |
 | `meta.version` | String | Versión del servicio que respondió | Sí |
 
-**Tabla de códigos `codDetRespuesta`:** la tabla completa y autoritativa de códigos está en **LIN-API-REST-001 §4.1**. No se duplica aquí para evitar desincronización. Ante cualquier duda sobre qué código usar en una situación específica, consultar ese documento.
+**Tabla de códigos `codDetRespuesta`:** la tabla completa y autoritativa de códigos está en **LIN-API-REST-001 sección 4.1**. No se duplica aquí para evitar desincronización. Ante cualquier duda sobre qué código usar en una situación específica, consultar ese documento.
 
 #### 11.4.5 Filtro de correlación — RequestIdFilter
 
@@ -1900,9 +1900,9 @@ public class AsyncMdcConfig {
 
 ---
 
-## §12 Estructura de proyecto y gestión de dependencias Maven
+## sección 12 Estructura de proyecto y gestión de dependencias Maven
 
-> Este §12 es la referencia de implementación para las estructuras definidas conceptualmente en el **Lineamiento de Arquitectura §7**.
+> Este sección 12 es la referencia de implementación para las estructuras definidas conceptualmente en el **Lineamiento de Arquitectura sección 7**.
 
 ### 12.1 Estructura de proyecto por estilo arquitectónico
 
@@ -2010,7 +2010,7 @@ boot            ← depende de api e infrastructure (ensamblador)
 
 #### Hexagonal / Clean (candidato a microservicio)
 
-Obligatorio para todo módulo que cumpla los seis criterios de microservicio (Lineamiento de Arquitectura §3.4). Puede vivir dentro del Monolito Modular como un módulo más, o desplegado de forma independiente — la estructura interna es la misma en ambos casos.
+Obligatorio para todo módulo que cumpla los seis criterios de microservicio (Lineamiento de Arquitectura sección 3.4). Puede vivir dentro del Monolito Modular como un módulo más, o desplegado de forma independiente — la estructura interna es la misma en ambos casos.
 
 ```
 onp-{modulo}/                        ← puede ser un submódulo del Monolito Modular
@@ -2328,9 +2328,9 @@ La separación en hexagonal es de **paquetes Java** (`domain`, `infrastructure`)
 
 ---
 
-## §13 Pruebas
+## sección 13 Pruebas
 
-> Para la estrategia completa de pruebas (pirámide por estilo arquitectónico, proporción unitaria/integración/e2e) ver **§8 del Lineamiento de Arquitectura** (doc. interno).
+> Para la estrategia completa de pruebas (pirámide por estilo arquitectónico, proporción unitaria/integración/e2e) ver **sección 8 del Lineamiento de Arquitectura** (doc. interno).
 
 ### 13.1 Nomenclatura de tests
 
@@ -2429,7 +2429,7 @@ class ExpedienteRepositoryTest {
 
 ---
 
-## §14 Revisión de código
+## sección 14 Revisión de código
 
 ### 14.1 Pull Request como gate obligatorio
 
@@ -2442,16 +2442,16 @@ Un PR no puede aprobarse si alguna de las siguientes condiciones no se cumple:
 | Condición | Verificación |
 |---|---|
 | Pipeline de CI verde | Build, tests y Checkstyle pasados sin errores |
-| Cobertura de pruebas dentro del umbral | JaCoCo no reporta degradación por debajo del mínimo del §13.3 |
-| Sin antipatrones del §10.2 | El revisor verifica la tabla de antipatrones prohibidos |
+| Cobertura de pruebas dentro del umbral | JaCoCo no reporta degradación por debajo del mínimo del [sección 13.3](#133-cobertura-minima-por-capa) |
+| Sin antipatrones del [sección 10.2](#102-tabla-de-antipatrones-prohibidos) | El revisor verifica la tabla de antipatrones prohibidos |
 | Sin credenciales ni secretos en el código | Búsqueda manual o con herramienta de detección de secretos |
-| Sin código comentado | Ver §7.3 — el código comentado no llega a rama principal |
+| Sin código comentado | Ver [sección 7.3](#73-comentarios-internos-no-javadoc) — el código comentado no llega a rama principal |
 | Descripción del PR completa | Contexto del cambio, qué se modificó y cómo probarlo |
 
 ### 14.3 Responsabilidades del revisor
 
 - Verificar que la lógica de negocio implementada coincide con el requerimiento
-- Verificar que la estructura de paquetes sigue el estilo arquitectónico declarado (§3)
+- Verificar que la estructura de paquetes sigue el estilo arquitectónico declarado (sección 3)
 - Verificar que los tests cubren los casos de borde relevantes
 - No aprobar un PR que no entienda completamente — preguntar es parte del proceso
 
@@ -2461,11 +2461,11 @@ Un PR que modifica más de **400 líneas** de código productivo (excluidos test
 
 ### 14.5 Proceso de excepción
 
-Cualquier desviación de este estándar — incluyendo omitir la revisión por urgencia — requiere **ADR aprobado por Arquitectura** con: contexto, decisión, consecuencias, vigencia de la excepción y fecha de revisión. Ver §15.
+Cualquier desviación de este estándar — incluyendo omitir la revisión por urgencia — requiere **ADR aprobado por Arquitectura** con: contexto, decisión, consecuencias, vigencia de la excepción y fecha de revisión. Ver sección 15.
 
 ---
 
-## §15 Proceso de excepción a este estándar
+## sección 15 Proceso de excepción a este estándar
 
 Toda desviación de las reglas establecidas en este documento requiere un ADR (Architecture Decision Record) aprobado formalmente por el equipo de Arquitectura de la OTI antes de implementarse.
 
@@ -2636,7 +2636,7 @@ Archivo `checkstyle-onp.xml` a colocar en la raíz del proyecto o en un módulo 
 
 ## Anexo D: Auditoría JPA — campos obligatorios LIN-BD-ORA-001
 
-**LIN-BD-ORA-001 §5** exige seis columnas de auditoría en toda tabla permanente:
+**LIN-BD-ORA-001 sección 5** exige seis columnas de auditoría en toda tabla permanente:
 
 | Columna Oracle | Tipo | Nulabilidad | Contenido |
 |---|---|---|---|
@@ -2694,7 +2694,7 @@ public abstract class AuditoriaBase {
         this.idUsuaCrea = usuario;
         this.feUsuaCrea = Instant.now();
         this.deTermCrea = terminal;
-        // Los campos _MODI quedan NULL en la creación, conforme a LIN-BD-ORA-001 §5.3
+        // Los campos _MODI quedan NULL en la creación, conforme a LIN-BD-ORA-001 sección 5.3
         this.idUsuaModi = null;
         this.feUsuaModi = null;
         this.deTermModi = null;
@@ -2773,7 +2773,7 @@ public class NotificacionEntity extends AuditoriaBase {
 | Petición HTTP autenticada con SAA | `id_usua_crea` = usuario del MDC; `de_term_crea` = IP real del cliente |
 | Job batch o scheduled task (sin HTTP) | `id_usua_crea` = `"sistema"`; `de_term_crea` = `"N/A"` |
 | `X-Forwarded-For` presente (gateway WSO2 / proxy) | Se usa la primera IP de la lista |
-| Tabla GTT o staging batch | No aplica `AuditoriaBase` — ver LIN-BD-ORA-001 §5.2 |
+| Tabla GTT o staging batch | No aplica `AuditoriaBase` — ver LIN-BD-ORA-001 sección 5.2 |
 | Campo `updatable = false` en `_CREA` | JPA garantiza que no se sobreescriben en UPDATE |
 
 ---

@@ -60,10 +60,10 @@ Aplica a todo recurso de infraestructura aprovisionado o gestionado por el equip
 | Bases de datos de infraestructura | Sí | Instancias, parámetros, acceso de red |
 | Almacenamiento | Sí | Volúmenes persistentes, datastores, buckets |
 | Registro de contenedores y artefactos | Sí, progresivo | Según madurez |
-| Configuración de SO y nodos | Fuera de alcance | Ver sección 1.3 |
+| Configuración de SO y nodos | Fuera de alcance | Ver [sección 1.3](#13-fuera-de-alcance) |
 | Despliegue de aplicaciones | Fuera de alcance | Responsabilidad de `LIN-CICD-001` |
 
-> **Entornos on-premise VMware:** este lineamiento aplica íntegramente a infraestructura gestionada sobre VMware vSphere/vCenter. El provider `hashicorp/vsphere` es el mecanismo Terraform aprobado para aprovisionar VMs, redes y almacenamiento en el entorno on-premise de la OTI. Ver sección 8.6 para consideraciones específicas.
+> **Entornos on-premise VMware:** este lineamiento aplica íntegramente a infraestructura gestionada sobre VMware vSphere/vCenter. El provider `hashicorp/vsphere` es el mecanismo Terraform aprobado para aprovisionar VMs, redes y almacenamiento en el entorno on-premise de la OTI. Ver [sección 8.6](#86-consideraciones-para-entornos-vmware-vsphere-on-premise) para consideraciones específicas.
 
 ### 1.3 Fuera de alcance
 
@@ -131,7 +131,7 @@ Incluye:
 - inventario documentado en diagramas o expediente técnico;
 - control mediante checklist manual.
 
-**Criterio de graduación:** el equipo documenta el inventario completo de recursos de al menos un ambiente en un repositorio Git (aunque sea en Markdown o diagrama), y se crea el repositorio dedicado `oti-plataforma/infrastructure-iac` con la estructura de directorios base definida en la sección 5.
+**Criterio de graduación:** el equipo documenta el inventario completo de recursos de al menos un ambiente en un repositorio Git (aunque sea en Markdown o diagrama), y se crea el repositorio dedicado `oti-plataforma/infrastructure-iac` con la estructura de directorios base definida en la [sección 5](#5-repositorio-dedicado-de-iac).
 
 ### 4.2 Fase 1 — Adopción local y aprendizaje
 
@@ -159,7 +159,7 @@ Incluye:
 - ejecución obligatoria de `terraform fmt -check`, `terraform validate` y `terraform plan`;
 - publicación del plan como artefacto del pipeline para revisión;
 - `terraform apply` todavía ejecutado manualmente por el equipo de Plataforma desde terminal autorizada;
-- activación de la detección de drift semanal (ver sección 10).
+- activación de la detección de drift semanal (ver [sección 10](#10-deteccion-de-drift)).
 
 **Criterio de graduación:** pipeline activo durante al menos 30 días sin falsos positivos; al menos un caso de drift detectado y corregido mediante MR documentado.
 
@@ -433,7 +433,7 @@ Esta sección complementa las buenas prácticas generales para el contexto espec
 
 #### 8.6.1 Autenticación con vCenter
 
-Las credenciales de vCenter son secretos de infraestructura y se rigen por la regla general de la sección 7. El provider `vsphere` se configura mediante variables de entorno o variables Terraform sensibles — **nunca con valores en texto plano en el código**.
+Las credenciales de vCenter son secretos de infraestructura y se rigen por la regla general de la [sección 7](#7-gestion-de-secretos-y-variables). El provider `vsphere` se configura mediante variables de entorno o variables Terraform sensibles — **nunca con valores en texto plano en el código**.
 
 ```hcl
 # variables.tf
@@ -461,7 +461,7 @@ provider "vsphere" {
   vsphere_server       = var.vcenter_server
   user                 = var.vcenter_user
   password             = var.vcenter_password
-  allow_unverified_ssl = false   # Ver sección 13 — anti-patrón
+  allow_unverified_ssl = false   # Ver [sección 13](#13-anti-patrones) — anti-patrón
 }
 ```
 
@@ -475,7 +475,7 @@ TF_VAR_vcenter_password = <variable protegida y enmascarada en GitLab>
 
 #### 8.6.2 Etiquetado de recursos en vSphere
 
-En VMware, las etiquetas no son simples metadatos: requieren crear primero una **categoría de etiqueta** y luego la etiqueta como recursos Terraform separados. Las etiquetas obligatorias definidas en la sección 8.2 se implementan así:
+En VMware, las etiquetas no son simples metadatos: requieren crear primero una **categoría de etiqueta** y luego la etiqueta como recursos Terraform separados. Las etiquetas obligatorias definidas en la [sección 8.2](#82-etiquetado-obligatorio-de-recursos) se implementan así:
 
 ```hcl
 # modules/vsphere-tagging/main.tf — módulo reutilizable de etiquetado

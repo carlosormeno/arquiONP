@@ -1,4 +1,4 @@
-# EJEMPLO DE REFERENCIA — LIN-VER-001 Anexo F / LIN-K8S-001 §5.2
+# EJEMPLO DE REFERENCIA — LIN-VER-001 Anexo F / LIN-K8S-001 sección 5.2
 # Dockerfile multi-stage para Spring Boot — imagen institucional ONP
 # Plataforma/Infraestructura es responsable de mantener este archivo en el proyecto GitLab real.
 

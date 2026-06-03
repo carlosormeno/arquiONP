@@ -38,7 +38,7 @@ public abstract class AuditoriaBase {
         this.idUsuaCrea = usuario;
         this.feUsuaCrea = Instant.now();
         this.deTermCrea = terminal;
-        // Los campos _MODI quedan NULL en la creación, conforme a LIN-BD-ORA-001 §5.3
+        // Los campos _MODI quedan NULL en la creación, conforme a LIN-BD-ORA-001 sección 5.3
         this.idUsuaModi = null;
         this.feUsuaModi = null;
         this.deTermModi = null;

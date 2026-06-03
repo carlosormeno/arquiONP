@@ -1160,8 +1160,8 @@ APLICACIONES/
 | `Dockerfile` | Multi-stage build (build + runtime JRE distroless) |
 | `.gitignore` | Exclusiones estándar Maven/Java |
 | `.gitlab/CODEOWNERS` | Grupos revisores por área (Arquitectura, QA, Seguridad) |
-| `.gitlab/merge_request_templates/default.md` | Plantilla MR completa (§9.3) |
-| `.gitlab/merge_request_templates/minor.md` | Plantilla MR simplificada (§9.4) |
+| `.gitlab/merge_request_templates/default.md` | Plantilla MR completa (sección 9.3) |
+| `.gitlab/merge_request_templates/minor.md` | Plantilla MR simplificada (sección 9.4) |
 | `k8s/base/kustomization.yaml` | Base Kustomize vacía |
 | `k8s/overlays/dev/kustomization.yaml` | Overlay para ONP_DESA |
 | `k8s/overlays/qa/kustomization.yaml` | Overlay para ONP_QA |
@@ -1195,7 +1195,7 @@ APLICACIONES/
 1. **Equipo de desarrollo** solicita a Plataforma la creación del repositorio indicando: nombre del sistema, tipo (backend/frontend/worker), responsable técnico.
 2. **Plataforma** crea el proyecto en GitLab usando la plantilla institucional correspondiente, configura ramas protegidas (`ONP_DESA`, `ONP_PQA`, `ONP_QA`, `master`) y asigna el grupo CODEOWNERS inicial.
 3. **Equipo de desarrollo** personaliza el `README.md`, ajusta el `CODEOWNERS` con los grupos reales del sistema y elimina las carpetas `.gitkeep` al agregar contenido real.
-4. **Primer MR** al repositorio activa el flujo de revisión establecido en §9 de este lineamiento.
+4. **Primer MR** al repositorio activa el flujo de revisión establecido en sección 9 de este lineamiento.
 
 #### F.5 Referencia a archivos de ejemplo
 

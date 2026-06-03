@@ -76,18 +76,18 @@ Este principio aplica especialmente a sistemas legacy: el objetivo de una prueba
 
 | Componente | Cubierto por |
 |---|---|
-| Backend Java / Spring Boot | §11 |
-| Frontend Angular | §12 |
-| PL/SQL procedures, packages, functions legacy | §13 |
-| APIs REST (contrato) | §6 y §11.4 |
-| Integración Java → Oracle | §11.3 y §13 |
+| Backend Java / Spring Boot | [sección 11](#11-capitulo-backend-java) |
+| Frontend Angular | [sección 12](#12-capitulo-frontend-angular) |
+| PL/SQL procedures, packages, functions legacy | [sección 13](#13-capitulo-plsql-legacy) |
+| APIs REST (contrato) | [sección 6](#6-pruebas-de-contrato) y [sección 11.4](#114-pruebas-de-contrato-java) |
+| Integración Java → Oracle | [sección 11.3](#113-pruebas-de-integracion) y [sección 13](#13-capitulo-plsql-legacy) |
 
 ### 1.4 Fuera de alcance
 
 | Tema | Responsable |
 |---|---|
 | Ejecución automática en pipeline (cuándo y cómo) | LIN-CICD-001 |
-| Pruebas de penetración (Ethical Hacking), DAST y retest de vulnerabilidades | UFSD / Seguridad Digital — este lineamiento no define la técnica; sí reconoce el resultado como evidencia complementaria y criterio de aceptación cuando aplique (ver §8.5 y §9.2) |
+| Pruebas de penetración (Ethical Hacking), DAST y retest de vulnerabilidades | UFSD / Seguridad Digital — este lineamiento no define la técnica; sí reconoce el resultado como evidencia complementaria y criterio de aceptación cuando aplique (ver [sección 8.5](#85-pruebas-de-seguridad-gestionadas-por-ufsd) y [sección 9.2](#92-criterios-de-paso-a-produccion-merge-a-rama-master)) |
 | Pruebas de carga y rendimiento | `LIN-PERF-001` — dueño de herramienta (JMeter preferente, k6 y Gatling como alternativas), tipos de prueba, escenarios, umbrales y criterios de aceptación de performance |
 | Pruebas de usabilidad formal | Diseño UX |
 
@@ -115,7 +115,7 @@ Este principio aplica especialmente a sistemas legacy: el objetivo de una prueba
 | **Unitaria** | UT | Lógica de una unidad aislada (clase, función, pipe) | Ninguna — todo mockeado |
 | **Integración** | IT | Colaboración entre componentes reales (BD, HTTP, filesystem) | Base de datos, servidor embebido |
 | **Caracterización** | CT | Comportamiento actual observable de código legacy | BD real (OracleContainer o QA) |
-| **Contrato** | CONT | Acuerdo entre proveedor y consumidor de una API | Depende del enfoque (ver §6) |
+| **Contrato** | CONT | Acuerdo entre proveedor y consumidor de una API | Depende del enfoque (ver [sección 6](#6-pruebas-de-contrato)) |
 | **E2E** (Extremo a Extremo) | E2E | Flujo de negocio completo desde UI hasta BD | Stack completo levantado |
 | **Accesibilidad** | ACC | Cumplimiento básico de estándares WCAG (frontend) | Navegador |
 
@@ -143,7 +143,7 @@ Maven Surefire ejecuta `*Test.java`. Maven Failsafe ejecuta `*IT.java` y `*CT.ja
 | **Frontend Angular** | E2E — flujos de usuario en navegador | **Playwright** (preferente); Cypress solo si ya existe en el proyecto |
 | **Frontend Angular** | Accesibilidad | axe-core / playwright-axe / cypress-axe |
 | **PL/SQL Legacy** | Caracterización | JUnit 5 + Testcontainers/OracleContainer + JdbcTemplate (desde Java) |
-| **APIs REST** | Contrato | OpenAPI validator (mínimo siempre), Pact o Spring Cloud Contract (si aplica §6.2) |
+| **APIs REST** | Contrato | OpenAPI validator (mínimo siempre), Pact o Spring Cloud Contract (si aplica [sección 6.2](#62-obligatoriedad)) |
 
 > **Regla de herramientas E2E:** Las pruebas E2E con Playwright o Cypress son para flujos de usuario en navegador. No se usan para probar APIs backend — esa responsabilidad pertenece a las pruebas de integración (MockMvc, RestAssured) y las pruebas de contrato.
 
@@ -151,10 +151,10 @@ Maven Surefire ejecuta `*Test.java`. Maven Failsafe ejecuta `*IT.java` y `*CT.ja
 
 Este lineamiento diferencia entre **tipos de prueba** y **enfoques de diseño de pruebas**.
 
-- Los **tipos** definen qué evidencia técnica debe existir: unitarias, integración, contrato, E2E, caracterización. Son verificables y obligatorios según los criterios de §9.
+- Los **tipos** definen qué evidencia técnica debe existir: unitarias, integración, contrato, E2E, caracterización. Son verificables y obligatorios según los criterios de [sección 9](#9-criterios-minimos-de-aceptacion-para-paso-a-qa-y-produccion).
 - Los **enfoques** definen cómo el equipo incorpora esas pruebas al proceso de desarrollo. ONP no impone un único enfoque, pero establece recomendaciones por situación.
 
-> **Lo que se audita es el tipo y la cobertura, no el enfoque.** Un equipo puede aplicar TDD o escribir las pruebas al final — lo que se exige es que las pruebas existan, pasen y alcancen los umbrales de §5.
+> **Lo que se audita es el tipo y la cobertura, no el enfoque.** Un equipo puede aplicar TDD o escribir las pruebas al final — lo que se exige es que las pruebas existan, pasen y alcancen los umbrales de [sección 5](#5-si-alguna-falla-y-el-cambio-era-intencional-actualizar-la-ct-y-documentar-en-pr).
 
 #### Enfoques reconocidos
 
@@ -418,7 +418,7 @@ El equipo de desarrollo debe entregar a la UFSD los insumos necesarios para ejec
 | Acta de reunión de cierre | Firmada por UFSD, desarrollo y plataforma — registra las vulnerabilidades subsanadas y el resultado del retest |
 | Opinión favorable de UFSD | Habilitación formal para el pase a Producción cuando el proyecto lo requiere |
 
-Estas evidencias se adjuntan al expediente del proyecto y son requisito para el pase a Producción en los casos donde el Ethical Hacking es obligatorio (ver §9.2).
+Estas evidencias se adjuntan al expediente del proyecto y son requisito para el pase a Producción en los casos donde el Ethical Hacking es obligatorio (ver [sección 9.2](#92-criterios-de-paso-a-produccion-merge-a-rama-master)).
 
 ---
 
@@ -467,8 +467,8 @@ Toda excepción a los criterios de aceptación requiere ADR firmado por Arquitec
 | Responsabilidad | Detalle |
 |---|---|
 | Escribir pruebas junto con el código | No como tarea separada al final |
-| Mantener los umbrales de cobertura en el pom.xml | Ver §11.5 |
-| Escribir pruebas de caracterización antes de modificar legacy | Mínimo 3 casos — ver §13 |
+| Mantener los umbrales de cobertura en el pom.xml | Ver [sección 11.5](#115-configuracion-jacoco-en-pomxml) |
+| Escribir pruebas de caracterización antes de modificar legacy | Mínimo 3 casos — ver [sección 13](#13-capitulo-plsql-legacy) |
 | Generar y conservar evidencias de prueba | Reportes en el build, no capturas de pantalla manuales |
 | Corregir pruebas antes de hacer merge | Una prueba fallida no es deuda técnica aceptable |
 
@@ -493,7 +493,7 @@ Toda excepción a los criterios de aceptación requiere ADR firmado por Arquitec
 
 ## 11. Capítulo: Backend Java
 
-> **Alcance de cobertura backend:** Los servicios backend Java deben cubrirse mediante pruebas unitarias, pruebas de integración, pruebas de endpoints REST y pruebas de contrato cuando aplique (ver §6.2), con medición de cobertura usando JaCoCo. Las herramientas E2E (Playwright, Cypress) no reemplazan estas pruebas y no deben usarse para probar APIs REST del backend.
+> **Alcance de cobertura backend:** Los servicios backend Java deben cubrirse mediante pruebas unitarias, pruebas de integración, pruebas de endpoints REST y pruebas de contrato cuando aplique (ver [sección 6.2](#62-obligatoriedad)), con medición de cobertura usando JaCoCo. Las herramientas E2E (Playwright, Cypress) no reemplazan estas pruebas y no deben usarse para probar APIs REST del backend.
 
 ### 11.1 Herramientas aprobadas
 
@@ -981,7 +981,7 @@ Los procedures, packages y functions PL/SQL de la ONP contienen lógica de negoc
 
 > **Principio:** Antes de modificar un procedure, package o function con lógica de negocio crítica, el equipo debe demostrar que entiende su comportamiento actual mediante pruebas de caracterización. No como ejercicio de calidad de código, sino como red de seguridad del refactor.
 
-La observabilidad de PL/SQL desde Java se logra a través del adapter Java que lo invoca (ver LIN-DEV-JAVA-001 §8 y LIN-BD-ORA-001 §6.0). Las pruebas de caracterización se escriben en Java, invocando el procedure real sobre OracleContainer.
+La observabilidad de PL/SQL desde Java se logra a través del adapter Java que lo invoca (ver LIN-DEV-JAVA-001 sección 8 y LIN-BD-ORA-001 sección 6.0). Las pruebas de caracterización se escriben en Java, invocando el procedure real sobre OracleContainer.
 
 ### 13.2 Pruebas de caracterización — definición y técnica
 
@@ -993,7 +993,7 @@ Una prueba de caracterización captura el comportamiento observable actual de un
 
 - Antes de cualquier modificación funcional a un procedure, package o function con lógica de negocio crítica
 - Cuando el equipo no puede responder con certeza: "¿qué devuelve este procedure con estos parámetros?"
-- Cuando LIN-BD-ORA-001 §6.0 lo exige explícitamente
+- Cuando LIN-BD-ORA-001 sección 6.0 lo exige explícitamente
 
 **Cuándo se escribe:**
 
@@ -1163,7 +1163,7 @@ INTEGRACIÓN
 
 CONTRATO
 [ ] Validación OpenAPI schema implementada (toda API REST)
-[ ] Prueba de contrato formal (Pact o Spring Cloud Contract) si aplica según tabla §6.2
+[ ] Prueba de contrato formal (Pact o Spring Cloud Contract) si aplica según tabla [sección 6.2](#62-obligatoriedad)
 
 E2E
 [ ] Al menos 1 prueba E2E por flujo de negocio principal

@@ -9,7 +9,7 @@
 **Propietario documental:** OTI / Arquitectura
 **Clasificación:** Uso Interno (Técnico)
 **Dirigido a:** Equipo de Desarrollo, Plataforma/Infraestructura
-**Reemplaza:** Guía v0.1.2 §§1 y 2 (Telemetría y Trazas / Logging)
+**Reemplaza:** Guía v0.1.2 [secciones 1](#1-objetivo-y-alcance) y 2 (Telemetría y Trazas / Logging)
 **Estado:** Borrador
 
 ---
@@ -18,7 +18,7 @@
 
 | Versión | Fecha       | Autor       | Descripción                              |
 |---------|-------------|-------------|------------------------------------------|
-| 0.1.0   | 2026-05-25  | Arquitectura OTI | Versión inicial; absorbe Guía v0.1.2 §§1–2 |
+| 0.1.0   | 2026-05-25  | Arquitectura OTI | Versión inicial; absorbe Guía v0.1.2 [secciones 1](#1-objetivo-y-alcance)–2 |
 | 0.1.1   | 2026-05-28  | Arquitectura OTI | Declara YAML como formato oficial de configuración, alinea el modelo OTEL con overrides operativos en K8s y documenta el comportamiento de la cadena de filtros ante fallos |
 
 ---
@@ -70,9 +70,9 @@ Este lineamiento establece las normas obligatorias para la implementación de ob
 
 | Tema | Dónde se cubre |
 |---|---|
-| Configuración del OTEL Collector, Jaeger, Elasticsearch, Kibana, Prometheus, Grafana | Responsabilidad de Plataforma — ver §10.2 de este documento |
-| **Observabilidad de frontend Angular** — browser performance, Core Web Vitals, error tracking en el cliente | **LIN-FE-ANG-001 §15** — Observabilidad Frontend (sección existente): métricas de LCP, INP, CLS; errores de red; correlación del `X-Request-ID` propagado desde el backend hacia los logs del browser |
-| **Observabilidad de PL/SQL legacy** — trazabilidad de procedures críticos | **LIN-BD-ORA-001 §6.0**: la trazabilidad de PL/SQL se obtiene indirectamente a través del adapter Java; el span `@NewSpan` del adapter captura la duración y el resultado del procedure, y el log estructurado del adapter incluye `trace.id`. No hay instrumentación directa dentro del procedure |
+| Configuración del OTEL Collector, Jaeger, Elasticsearch, Kibana, Prometheus, Grafana | Responsabilidad de Plataforma — ver [sección 10.2](#102-plataforma-infraestructura) de este documento |
+| **Observabilidad de frontend Angular** — browser performance, Core Web Vitals, error tracking en el cliente | **LIN-FE-ANG-001 sección 15** — Observabilidad Frontend (sección existente): métricas de LCP, INP, CLS; errores de red; correlación del `X-Request-ID` propagado desde el backend hacia los logs del browser |
+| **Observabilidad de PL/SQL legacy** — trazabilidad de procedures críticos | **LIN-BD-ORA-001 sección 6.0**: la trazabilidad de PL/SQL se obtiene indirectamente a través del adapter Java; el span `@NewSpan` del adapter captura la duración y el resultado del procedure, y el log estructurado del adapter incluye `trace.id`. No hay instrumentación directa dentro del procedure |
 
 ---
 
@@ -82,7 +82,7 @@ Este lineamiento establece las normas obligatorias para la implementación de ob
 |---|-----------|-------------|
 | P1 | **Observabilidad por defecto** | Un servicio no instrumentado es invisible para operaciones. No existe aprobación para desplegar sin telemetría desde el primer pase a DEV. |
 | P2 | **Correlación completa** | Cada evento (log, traza, métrica) debe incluir los campos de correlación mínimos: `trace.id`, `span.id`, `http.request.id`, `service.name`. Sin ellos el diagnóstico en producción es imposible. |
-| P3 | **No PII en logs ni trazas** | Datos personales sensibles (DNI, nombre completo, tokens, cuentas) están prohibidos en logs y atributos de span. El incumplimiento viola la Ley N.° 29733. Ver §6.2. |
+| P3 | **No PII en logs ni trazas** | Datos personales sensibles (DNI, nombre completo, tokens, cuentas) están prohibidos en logs y atributos de span. El incumplimiento viola la Ley N.° 29733. Ver [sección 6.2](#62-politica-no-pii-datos-sensibles). |
 | P4 | **Un evento, una línea** | Cada evento de log es una línea JSON completa e independiente. No se usan saltos de línea dentro del mensaje. Los stacktraces se serializa como campo único `error.stack_trace`. |
 | P5 | **Responsabilidad diferenciada** | El desarrollador implementa la instrumentación; Plataforma opera el stack de observabilidad. Ningún rol sustituye al otro. |
 | P6 | **Propiedad documental** | Este lineamiento es propietario de: campos de correlación, política No PII, logback-spring.xml, convenciones de span. LIN-DEV-JAVA-001 implementa pero no redefine. |
@@ -287,7 +287,7 @@ app:
 
 > **ADVERTENCIA — sampling.probability:** DEV y QA usan `1.0` (100% de peticiones trazadas). PROD usa `0.1` (10%) para evitar saturar Elasticsearch con alto volumen de tráfico. Ajustar según el volumen real del servicio; un valor de `1.0` en PROD puede causar problemas de almacenamiento.
 
-> **NOTA — SPRING_PROFILES_ACTIVE:** Plataforma es responsable de inyectar `SPRING_PROFILES_ACTIVE=dev|qa|prod` como variable de entorno en el `Deployment` de Kubernetes. Sin esta variable el servicio usa únicamente `application.yml` base y no emite telemetría. Ver §10.2.
+> **NOTA — SPRING_PROFILES_ACTIVE:** Plataforma es responsable de inyectar `SPRING_PROFILES_ACTIVE=dev|qa|prod` como variable de entorno en el `Deployment` de Kubernetes. Sin esta variable el servicio usa únicamente `application.yml` base y no emite telemetría. Ver [sección 10.2](#102-plataforma-infraestructura).
 
 > **NOTA — overrides OTEL en Kubernetes:** Variables como `OTEL_EXPORTER_OTLP_ENDPOINT` o `OTEL_SERVICE_NAME` se consideran mecanismos de override operativo administrados por Plataforma en `LIN-K8S-001`. No sustituyen la configuración base versionada del proyecto.
 
@@ -391,7 +391,7 @@ public class OpenTelemetryLogbackConfig {
 
 ### 4.8 Mask.java — utilidad No PII
 
-**Dónde:** `src/main/java/<paquete-base>/util/Mask.java`. Sin dependencias de Spring — no lleva `@Component`. Implementa la política No PII (§6.2).
+**Dónde:** `src/main/java/<paquete-base>/util/Mask.java`. Sin dependencias de Spring — no lleva `@Component`. Implementa la política No PII ([sección 6.2](#62-politica-no-pii-datos-sensibles)).
 
 ```java
 public final class Mask {
@@ -432,13 +432,13 @@ public final class Mask {
 
 | Orden | Filtro | Qué establece en MDC |
 |---|---|---|
-| `@Order(1)` | `RequestIdFilter` (§4.10) | `http.request.id` |
-| `@Order(2)` | `SaaTokenValidationFilter` (LIN-SEC-APP-001 §8.3) | `user.id` |
+| `@Order(1)` | `RequestIdFilter` ([sección 4.10](#410-requestidfilterjava)) | `http.request.id` |
+| `@Order(2)` | `SaaTokenValidationFilter` (LIN-SEC-APP-001 sección 8.3) | `user.id` |
 | `@Order(3)` | `CanonicalRequestLogFilter` | Lee `user.id` ya disponible en MDC; emite log canónico |
 
 `CanonicalRequestLogFilter` debe correr **después** de `SaaTokenValidationFilter` para que `user.id` esté en MDC cuando se emita el log. Si corre antes, el campo registra `"anonymous"` aunque el usuario esté autenticado.
 
-**Requiere:** `RequestIdFilter` (§4.10) para que `http.request.id` esté accesible. En servicios con autenticación SAA, requiere también `SaaTokenValidationFilter` (LIN-SEC-APP-001 §8.3) para que `user.id` esté en MDC. En servicios sin autenticación (públicos), `user.id` registra `"anonymous"`.
+**Requiere:** `RequestIdFilter` ([sección 4.10](#410-requestidfilterjava)) para que `http.request.id` esté accesible. En servicios con autenticación SAA, requiere también `SaaTokenValidationFilter` (LIN-SEC-APP-001 sección 8.3) para que `user.id` esté en MDC. En servicios sin autenticación (públicos), `user.id` registra `"anonymous"`.
 
 ```java
 import jakarta.servlet.FilterChain;
@@ -589,7 +589,7 @@ La cadena obligatoria es:
 
 ### 5.1 Instrumentación automática
 
-Spring Boot con las dependencias de §4.1 instrumenta automáticamente los siguientes puntos sin código adicional:
+Spring Boot con las dependencias de [sección 4.1](#41-dependencias-maven) instrumenta automáticamente los siguientes puntos sin código adicional:
 
 | Punto de instrumentación | Span generado | Atributos clave |
 |---|---|---|
@@ -804,7 +804,7 @@ Ver tabla completa en **Apéndice C**.
 | Nivel | Cuándo usarlo | Configuración |
 |---|---|---|
 | `INFO` | Eventos relevantes del flujo normal del negocio: operaciones completadas, decisiones tomadas | Activo en todos los entornos |
-| `DEBUG` | Detalle técnico para diagnóstico: valores intermedios, respuestas de sistemas externos | Solo en DEV (ver §4.6) |
+| `DEBUG` | Detalle técnico para diagnóstico: valores intermedios, respuestas de sistemas externos | Solo en DEV (ver [sección 4.6](#46-logback-springxml)) |
 | `WARN` | Situaciones inesperadas pero recuperables: timeouts con reintento, datos incompletos, fallbacks | Activo en todos los entornos |
 | `ERROR` | Errores que impiden completar la operación. **Siempre incluir la excepción como segundo argumento** | Activo en todos los entornos |
 
@@ -869,7 +869,7 @@ public void ejecutar() {
 
 > **OBLIGATORIO.** Está estrictamente prohibido registrar datos personales o sensibles en los logs o como atributos de span. El incumplimiento constituye una vulneración a la **Ley de Protección de Datos Personales (Ley N.° 29733)** y puede derivar en responsabilidad institucional y personal.
 
-Usar la clase `Mask` (§4.8) para enmascarar datos antes de incluirlos en cualquier log o atributo.
+Usar la clase `Mask` ([sección 4.8](#48-maskjava-utilidad-no-pii)) para enmascarar datos antes de incluirlos en cualquier log o atributo.
 
 | Dato sensible | Acción requerida | Método `Mask` | Ejemplo resultado |
 |---|---|---|---|
@@ -951,7 +951,7 @@ Los logs aparecen bajo el Data View `onp-logs-*`:
 | ¿Qué hizo un usuario durante un incidente? | `user.id: "mgarcia" AND @timestamp > "2026-05-21T10:00:00"` |
 | Queries SQL lentas en DEV | `log.logger: "p6spy"` (ordenar por `message` desc) |
 
-> **ADVERTENCIA:** Si el Data View `onp-logs-*` no existe en Kibana, debe crearlo el equipo de Plataforma (ver §10.2).
+> **ADVERTENCIA:** Si el Data View `onp-logs-*` no existe en Kibana, debe crearlo el equipo de Plataforma (ver [sección 10.2](#102-plataforma-infraestructura)).
 
 ---
 
@@ -963,8 +963,8 @@ Los logs aparecen bajo el Data View `onp-logs-*`:
 |---|---|---|---|
 | `trace.id` | `traceId` | ID único de la traza OTEL | OTEL automático → MDC |
 | `span.id` | `spanId` | ID del span activo | OTEL automático → MDC |
-| `http.request.id` | `http.request.id` | X-Request-ID de la petición HTTP | `RequestIdFilter` (§4.10) — @Order(1) |
-| `user.id` | `user.id` | Usuario autenticado | `SaaTokenValidationFilter` (LIN-SEC-APP-001 §8.3) — @Order(2); `CanonicalRequestLogFilter` (§4.9) lo lee de MDC |
+| `http.request.id` | `http.request.id` | X-Request-ID de la petición HTTP | `RequestIdFilter` ([sección 4.10](#410-requestidfilterjava)) — @Order(1) |
+| `user.id` | `user.id` | Usuario autenticado | `SaaTokenValidationFilter` (LIN-SEC-APP-001 sección 8.3) — @Order(2); `CanonicalRequestLogFilter` ([sección 4.9](#49-canonicalrequestlogfilterjava)) lo lee de MDC |
 | `service.name` | `service.name` | Nombre del servicio (`onp-<s>-<m>`) | `application.yml` |
 
 ### 7.2 Pasar de un log a su traza en Jaeger
@@ -981,7 +981,7 @@ Micrometer Tracing propaga automáticamente el contexto de traza en el header `t
 
 ### 8.1 Endpoints Actuator obligatorios
 
-Con la configuración de §4.2 (`management.endpoints.web.exposure.include=health,info,metrics,prometheus`), los siguientes endpoints deben estar activos en todos los entornos:
+Con la configuración de [sección 4.2](#42-applicationyml-configuracion-base) (`management.endpoints.web.exposure.include=health,info,metrics,prometheus`), los siguientes endpoints deben estar activos en todos los entornos:
 
 | Endpoint | Propósito | Consumido por |
 |---|---|---|
@@ -1061,7 +1061,7 @@ readinessProbe:
 
 ### 9.1 OTEL Collector — responsabilidad de Plataforma
 
-El OTEL Collector es un componente operado exclusivamente por Plataforma (OTI). El desarrollador configura los endpoints en `application-{env}.yml` (§4.3–4.5); no administra el Collector directamente.
+El OTEL Collector es un componente operado exclusivamente por Plataforma (OTI). El desarrollador configura los endpoints en `application-{env}.yml` ([sección 4.3](#43-application-devyml)–4.5); no administra el Collector directamente.
 
 **URLs fijas por entorno (no modificar sin comunicación de Plataforma):**
 
@@ -1160,7 +1160,7 @@ La configuración de dashboards es responsabilidad de Plataforma con insumos del
 | Responsabilidad |
 |---|
 | Mantener este lineamiento actualizado ante cambios del stack de observabilidad |
-| Aprobar ADRs de excepción (§13) |
+| Aprobar ADRs de excepción ([sección 13](#13-proceso-de-excepcion-adr)) |
 | Revisar el cumplimiento en los code reviews de nuevos servicios |
 | Actualizar las URLs de los Collectors en este documento cuando Plataforma las comunique |
 
@@ -1171,33 +1171,33 @@ La configuración de dashboards es responsabilidad de Plataforma con insumos del
 El siguiente checklist debe completarse antes del pase a DEV de cualquier servicio nuevo.
 
 **Configuración (una vez por proyecto):**
-- [ ] Dependencias de trazas y logging presentes en `pom.xml` (§4.1)
-- [ ] `application.yml` base con `spring.application.name=onp-<sistema>-<modulo>` (§4.2)
-- [ ] `application-dev.yml`, `application-qa.yml`, `application-prod.yml` con URLs del Collector (§4.3–4.5)
-- [ ] `logback-spring.xml` creado con appenders `JSON_STDOUT` y `OpenTelemetry` (§4.6)
-- [ ] `OpenTelemetryLogbackConfig.java` creado (§4.7)
-- [ ] `Mask.java` creado en paquete `util/` (§4.8)
-- [ ] `CanonicalRequestLogFilter.java` creado en paquete `filter/` (§4.9)
-- [ ] `RequestIdFilter.java` creado en paquete `filter/` (§4.10)
+- [ ] Dependencias de trazas y logging presentes en `pom.xml` ([sección 4.1](#41-dependencias-maven))
+- [ ] `application.yml` base con `spring.application.name=onp-<sistema>-<modulo>` ([sección 4.2](#42-applicationyml-configuracion-base))
+- [ ] `application-dev.yml`, `application-qa.yml`, `application-prod.yml` con URLs del Collector ([sección 4.3](#43-application-devyml)–4.5)
+- [ ] `logback-spring.xml` creado con appenders `JSON_STDOUT` y `OpenTelemetry` ([sección 4.6](#46-logback-springxml))
+- [ ] `OpenTelemetryLogbackConfig.java` creado ([sección 4.7](#47-opentelemetrylogbackconfigjava))
+- [ ] `Mask.java` creado en paquete `util/` ([sección 4.8](#48-maskjava-utilidad-no-pii))
+- [ ] `CanonicalRequestLogFilter.java` creado en paquete `filter/` ([sección 4.9](#49-canonicalrequestlogfilterjava))
+- [ ] `RequestIdFilter.java` creado en paquete `filter/` ([sección 4.10](#410-requestidfilterjava))
 
 **Instrumentación:**
-- [ ] Operaciones de negocio críticas instrumentadas con `@NewSpan` siguiendo convención `<s>.<m>.<op>` (§5.3, §5.6)
-- [ ] Bloques `catch` que capturan errores de negocio llaman `Span.current().setStatus()` (§5.2)
-- [ ] Jobs `@Scheduled` instrumentados con `Tracer` y `span.end()` en `finally` (§5.5)
-- [ ] Política No PII aplicada en todos los logs — uso de `Mask.*` donde corresponde (§6.2)
-- [ ] No se usa `System.out.println()` ni `System.err.println()` (§12)
-- [ ] No se logea la excepción más de una vez por fallo (§12)
-- [ ] Datos sensibles ausentes de atributos de span (§5.3)
+- [ ] Operaciones de negocio críticas instrumentadas con `@NewSpan` siguiendo convención `<s>.<m>.<op>` ([sección 5.3](#53-operaciones-de-negocio-newspan), [sección 5.6](#56-convenciones-de-nomenclatura-de-spans))
+- [ ] Bloques `catch` que capturan errores de negocio llaman `Span.current().setStatus()` ([sección 5.2](#52-errores-capturados-spansetstatus-manual))
+- [ ] Jobs `@Scheduled` instrumentados con `Tracer` y `span.end()` en `finally` ([sección 5.5](#55-tareas-programadas-scheduled))
+- [ ] Política No PII aplicada en todos los logs — uso de `Mask.*` donde corresponde ([sección 6.2](#62-politica-no-pii-datos-sensibles))
+- [ ] No se usa `System.out.println()` ni `System.err.println()` ([sección 12](#12-anti-patrones))
+- [ ] No se logea la excepción más de una vez por fallo ([sección 12](#12-anti-patrones))
+- [ ] Datos sensibles ausentes de atributos de span ([sección 5.3](#53-operaciones-de-negocio-newspan))
 
 **Verificación:**
-- [ ] `traceId` y `spanId` aparecen en los logs de consola tras al menos una petición (§5.7)
-- [ ] El servicio aparece en Jaeger UI con sus spans (§5.7)
-- [ ] El log canónico `message: "REQUEST"` aparece en Kibana con todos los campos (§6.4)
+- [ ] `traceId` y `spanId` aparecen en los logs de consola tras al menos una petición ([sección 5.7](#57-verificacion-en-jaeger))
+- [ ] El servicio aparece en Jaeger UI con sus spans ([sección 5.7](#57-verificacion-en-jaeger))
+- [ ] El log canónico `message: "REQUEST"` aparece en Kibana con todos los campos ([sección 6.4](#64-verificacion-en-kibana))
 
 **Métricas:**
-- [ ] `/actuator/health` responde `{"status":"UP"}` (§8.1)
-- [ ] `/actuator/prometheus` responde con métricas en formato texto Prometheus (§8.1)
-- [ ] Plataforma confirmó que Prometheus hace scrape del servicio (§10.2)
+- [ ] `/actuator/health` responde `{"status":"UP"}` ([sección 8.1](#81-endpoints-actuator-obligatorios))
+- [ ] `/actuator/prometheus` responde con métricas en formato texto Prometheus ([sección 8.1](#81-endpoints-actuator-obligatorios))
+- [ ] Plataforma confirmó que Prometheus hace scrape del servicio ([sección 10.2](#102-plataforma-infraestructura))
 
 ---
 

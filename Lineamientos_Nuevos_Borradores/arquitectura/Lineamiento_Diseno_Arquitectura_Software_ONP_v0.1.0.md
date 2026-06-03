@@ -79,11 +79,11 @@ Tradicional   ──►  (Maven Multi-módulo)    ──►  Selectivos
                     para sistemas nuevos)        se justifica)
 ```
 
-**Estadio 1 — Monolito Tradicional:** Sistemas legacy existentes. El objetivo no es reescribirlos sino migrarlos progresivamente usando Strangler Fig (ver sección 2.2).
+**Estadio 1 — Monolito Tradicional:** Sistemas legacy existentes. El objetivo no es reescribirlos sino migrarlos progresivamente usando Strangler Fig (ver [sección 2.2](#22-patron-de-migracion-strangler-fig)).
 
-**Estadio 2 — Monolito Modular:** Es el **punto de llegada por defecto para todo sistema nuevo**. Se implementa como un proyecto Maven multi-módulo (ver sección 9). Cada módulo tiene límites claros, su propio paquete raíz y puede evolucionar de forma independiente. La frontera entre módulos se respeta igual que si fueran servicios separados: sin dependencias circulares, sin acceso directo entre capas de módulos distintos.
+**Estadio 2 — Monolito Modular:** Es el **punto de llegada por defecto para todo sistema nuevo**. Se implementa como un proyecto Maven multi-módulo (ver [sección 9](#9-estructura-de-proyecto)). Cada módulo tiene límites claros, su propio paquete raíz y puede evolucionar de forma independiente. La frontera entre módulos se respeta igual que si fueran servicios separados: sin dependencias circulares, sin acceso directo entre capas de módulos distintos.
 
-**Estadio 3 — Microservicios Selectivos:** Un módulo del Estadio 2 puede extraerse como microservicio independiente cuando cumple los criterios de la tabla de la sección 3.5. No se diseña para microservicios desde el inicio.
+**Estadio 3 — Microservicios Selectivos:** Un módulo del Estadio 2 puede extraerse como microservicio independiente cuando cumple los criterios de la tabla de la [sección 3.5](#35-microservicios). No se diseña para microservicios desde el inicio.
 
 ### 2.2 Patrón de migración: Strangler Fig
 
@@ -305,7 +305,7 @@ Microservicios   → BD por servicio → red entre servicios → CAP aplica
 
 **Regla ONP — estructura previa obligatoria:** Todo módulo que cumpla los seis criterios de la tabla siguiente debe refactorizarse a **Arquitectura Hexagonal** antes de iniciar la extracción como microservicio. La refactorización a Hexagonal hace explícita la frontera de extracción: los ports definen qué es interno, los adapters definen qué es externo. Sin esa frontera clara, la extracción genera acoplamiento oculto. Ver 9.3 para la estructura Maven correspondiente.
 
-**Por qué no se pueden usar transacciones ACID entre microservicios:** cada servicio tiene su propia base de datos. Un `@Transactional` de Spring solo abarca una conexión a una BD. Coordinar dos BDs distintas requeriría Two-Phase Commit (2PC), que introduce bloqueos distribuidos, acoplamiento fuerte y puntos únicos de falla — exactamente lo opuesto de lo que se busca con microservicios. La alternativa correcta es el patrón **Saga**. Su uso productivo queda sujeto a la regla transitoria de mensajería definida en la sección 3.7.
+**Por qué no se pueden usar transacciones ACID entre microservicios:** cada servicio tiene su propia base de datos. Un `@Transactional` de Spring solo abarca una conexión a una BD. Coordinar dos BDs distintas requeriría Two-Phase Commit (2PC), que introduce bloqueos distribuidos, acoplamiento fuerte y puntos únicos de falla — exactamente lo opuesto de lo que se busca con microservicios. La alternativa correcta es el patrón **Saga**. Su uso productivo queda sujeto a la regla transitoria de mensajería definida en la [sección 3.7](#37-regla-transitoria-para-mensajeria-y-event-bus).
 
 #### Criterios para extraer un módulo como microservicio
 
@@ -476,7 +476,7 @@ Estas métricas son **gates de calidad en CI/CD** — un build que no las cumple
 - **Compresión:** gzip o brotli habilitado en el servidor de assets (nginx)
 - **Cache de assets:** nombres de archivos con hash para cache busting determinista
 
-> Para técnicas de optimización específicas de Angular — incluyendo optimización nativa del LCP (`preload`, `preconnect`, SSR) y estabilidad del CLS con bloques deferibles (`@defer`) — ver **LIN-FE-ANG-001 §15.2**.
+> Para técnicas de optimización específicas de Angular — incluyendo optimización nativa del LCP (`preload`, `preconnect`, SSR) y estabilidad del CLS con bloques deferibles (`@defer`) — ver **LIN-FE-ANG-001 sección 15.2**.
 
 ### DOM real y DOM virtual
 

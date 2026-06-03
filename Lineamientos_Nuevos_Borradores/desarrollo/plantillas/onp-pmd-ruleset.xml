@@ -32,7 +32,7 @@
 
     <!-- 5. Reglas Personalizadas ONP (Validacion de Estandares) -->
     
-    <!-- Regla 5.1: Prohibir inyección en campos con @Autowired (LIN-DEV-JAVA-001 §10.2) -->
+    <!-- Regla 5.1: Prohibir inyección en campos con @Autowired (LIN-DEV-JAVA-001 sección 10.2) -->
     <rule name="EvitarInyeccionPorCampo"
           language="java"
           message="ONP-STD: La inyeccion en campos mediante @Autowired esta prohibida. Debe usar inyeccion por constructor."

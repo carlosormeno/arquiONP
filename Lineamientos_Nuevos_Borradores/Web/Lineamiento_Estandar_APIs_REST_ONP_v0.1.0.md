@@ -107,7 +107,7 @@ Todos los servicios web nuevos de la ONP deben implementarse siguiendo el estilo
 - **Recursos identificados por URI:** cada recurso tiene una URI única e intuitiva.
 - **JSON como formato de intercambio:** salvo excepciones justificadas y aprobadas por el Arquitecto de Soluciones, el formato de datos es JSON (RFC 8259).
 
-> **Servicios SOAP:** Los servicios SOAP legados existentes se mantienen sin cambios. Para nuevos desarrollos que necesiten consumir servicios SOAP externos, ver §10.3.
+> **Servicios SOAP:** Los servicios SOAP legados existentes se mantienen sin cambios. Para nuevos desarrollos que necesiten consumir servicios SOAP externos, ver [sección 10.3](#103-gate-de-publicacion-en-wso2).
 
 ### 2.2 HTTPS obligatorio
 
@@ -157,7 +157,7 @@ El gateway es responsable de:
 #### Validación del token SAA — estado actual y objetivo futuro
 
 > **Estado actual (WSO2 en fase PoC — no operativo como gateway centralizado):**
-> Cada servicio Spring Boot implementa `SaaTokenValidationFilter` (@Order 2), que realiza una llamada síncrona al endpoint de SAA para validar el token opaco en cada petición entrante. Este filtro es **obligatorio** en todos los servicios mientras WSO2 no esté operativo como gateway. Ver §7.1 y LIN-SEC-APP-001 §8.3.
+> Cada servicio Spring Boot implementa `SaaTokenValidationFilter` (@Order 2), que realiza una llamada síncrona al endpoint de SAA para validar el token opaco en cada petición entrante. Este filtro es **obligatorio** en todos los servicios mientras WSO2 no esté operativo como gateway. Ver [sección 7.1](#71-autenticacion-saa-token) y LIN-SEC-APP-001 sección 8.3.
 >
 > **Objetivo futuro (cuando WSO2 sea el gateway centralizado operativo):**
 > WSO2 Gateway validará el token SAA en el perímetro e inyectará headers de contexto de usuario sanitizados (`X-User-Id`, `X-User-Roles`) hacia el backend. En ese escenario, `SaaTokenValidationFilter` podrá eliminarse de los servicios individuales y el backend confiará en los headers del gateway. Esta transición requerirá ADR y confirmación de Plataforma.
@@ -195,7 +195,7 @@ Consumidor → https://apis.onp.gob.pe/pensiones/v1/expedientes  (WSO2 Gateway)
                                     mi-servicio.onp.internal:8080
 ```
 
-> **Para publicar una API en WSO2:** ver **§10.3** — gate de publicación con los requisitos técnicos y de gobernanza que el equipo de desarrollo debe completar antes de que Arquitectura active el estado `PUBLISHED`.
+> **Para publicar una API en WSO2:** ver **[sección 10.3](#103-gate-de-publicacion-en-wso2)** — gate de publicación con los requisitos técnicos y de gobernanza que el equipo de desarrollo debe completar antes de que Arquitectura active el estado `PUBLISHED`.
 
 ---
 
@@ -327,7 +327,7 @@ Sunset: Sat, 22 Nov 2026 00:00:00 GMT
 
 | Header | Tipo | Descripción |
 |---|---|---|
-| `Authorization` | Request | `Bearer <token>` — token SAA de autenticación (ver §7.1) |
+| `Authorization` | Request | `Bearer <token>` — token SAA de autenticación (ver [sección 7.1](#71-autenticacion-saa-token)) |
 | `Content-Type` | Request | `application/json; charset=UTF-8` (cuando hay body) |
 | `X-Request-ID` | Request/Response | ID de correlación. El servicio lo genera si no llega en el request |
 
@@ -395,7 +395,7 @@ Todos los servicios REST de la ONP deben retornar sus respuestas usando `ApiResp
 | Campo | Tipo | Obligatorio | Descripción |
 |---|---|---|---|
 | `codHttp` | Integer | Sí | Código de estado HTTP de la respuesta |
-| `codDetRespuesta` | String | Sí | Código de resultado institucional ONP (ver §4.2) |
+| `codDetRespuesta` | String | Sí | Código de resultado institucional ONP (ver [sección 4.2](#42-tabla-de-coddetrespuesta)) |
 | `menDetRespuesta` | String | Sí | Mensaje descriptivo del resultado |
 | `data` | Object / Array / null | Sí | Resultado de la operación. `null` en caso de error |
 | `errors` | Array / null | Solo en validación | Lista de errores de validación por campo |
@@ -407,7 +407,7 @@ Todos los servicios REST de la ONP deben retornar sus respuestas usando `ApiResp
 | `meta.totalElementos` | Long | Solo paginado | Total de registros que coinciden con el filtro |
 | `meta.totalPaginas` | Integer | Solo paginado | Total de páginas |
 
-> Para la implementación Spring Boot de `ApiResponseWrapper<T>` (clase completa, factory methods, `CampoError`), ver **LIN-DEV-JAVA-001 §11.4.4**.
+> Para la implementación Spring Boot de `ApiResponseWrapper<T>` (clase completa, factory methods, `CampoError`), ver **LIN-DEV-JAVA-001 sección 11.4.4**.
 
 ### 4.2 Tabla de codDetRespuesta
 
@@ -619,7 +619,7 @@ La herramienta de documentación es **SpringDoc OpenAPI** (`springdoc-openapi-st
 | QA | Habilitado | Siempre activo |
 | PROD | Deshabilitado por defecto | Activar puntualmente vía variable de entorno `SWAGGER_ENABLED=true` y deshabilitar al terminar |
 
-> Para la configuración completa de SpringDoc (dependencia Maven, `OpenApiConfig.java`, YAML por entorno y activación temporal en PROD), ver **LIN-DEV-JAVA-001 §11.4.1–11.4.3**.
+> Para la configuración completa de SpringDoc (dependencia Maven, `OpenApiConfig.java`, YAML por entorno y activación temporal en PROD), ver **LIN-DEV-JAVA-001 sección 11.4.1–11.4.3**.
 
 ### 6.3 Anotaciones obligatorias
 
@@ -640,7 +640,7 @@ Todos los endpoints deben retornar `ApiResponseWrapper` como tipo de respuesta e
 | `@Operation summary` | Verbo en infinitivo + objeto. Máx 80 chars. Sin punto. Ej: `Obtener afiliado por ID` |
 | `@ApiResponse description` | Cuándo ocurre esa respuesta. Terminar con punto. Ej: `Afiliado no encontrado.` |
 
-> Para los ejemplos de código completos de cada método HTTP (GET, POST, PUT, DELETE) con `@Operation`, `@ApiResponses` y `@Schema`, ver **LIN-DEV-JAVA-001 §11.4**.
+> Para los ejemplos de código completos de cada método HTTP (GET, POST, PUT, DELETE) con `@Operation`, `@ApiResponses` y `@Schema`, ver **LIN-DEV-JAVA-001 sección 11.4**.
 
 ---
 
@@ -654,7 +654,7 @@ Todos los endpoints de la ONP requieren el token emitido por **SAA** (Sistema de
 Authorization: Bearer <token-saa>
 ```
 
-El token SAA es **opaco** (no es JWT — no es autocontenido ni verificable localmente). El servicio no puede decodificarlo por su cuenta; la validación la realiza el `SaaTokenValidationFilter` mediante una llamada al endpoint de validación de SAA en cada request. Ver **LIN-SEC-APP-001 §8.3** para la implementación del filtro.
+El token SAA es **opaco** (no es JWT — no es autocontenido ni verificable localmente). El servicio no puede decodificarlo por su cuenta; la validación la realiza el `SaaTokenValidationFilter` mediante una llamada al endpoint de validación de SAA en cada request. Ver **LIN-SEC-APP-001 sección 8.3** para la implementación del filtro.
 
 > **Objetivo futuro:** reemplazar SAA por OAuth2/OIDC mediante **WSO2 API Manager** (actualmente en PoC, no operacional en producción). Cuando esté operativo, el token pasará a ser JWT verificable localmente y este lineamiento se actualizará. Ver LIN-SEC-APP-001 para el modelo objetivo con WSO2.
 
@@ -744,7 +744,7 @@ public class CorsConfig {
 
 Las consultas que puedan retornar más de 500 registros **deben implementar paginación**. No existe justificación técnica para retornar colecciones sin paginar de ese tamaño.
 
-La paginación usa los parámetros `pagina` y `tamanio` (ver §3.4.3) y devuelve los campos de paginación en `meta` (ver §4.1).
+La paginación usa los parámetros `pagina` y `tamanio` (ver [sección 3.4.3](#343-query-parameters-filtrado-ordenamiento-y-paginacion)) y devuelve los campos de paginación en `meta` (ver [sección 4.1](#41-estructura-apiresponsewrapper)).
 
 El tamaño máximo de página es **200 registros**. Si el cliente solicita un `tamanio` mayor, el servicio lo limita a 200 sin error.
 
@@ -778,7 +778,7 @@ El API Gateway aplica rate limiting por cliente (IP o token). Los servicios no i
 
 ## 9. Observabilidad
 
-Los servicios REST de la ONP deben estar instrumentados con los **cuatro pilares de observabilidad** definidos en **LIN-ARQ-000 §9.5**: trazas, logs estructurados, métricas y health checks. **No hay excepciones:** un servicio sin observabilidad no está listo para producción. Este lineamiento define los requisitos de cada pilar desde la perspectiva REST; la implementación técnica completa se encuentra en **LIN-OBS-001**.
+Los servicios REST de la ONP deben estar instrumentados con los **cuatro pilares de observabilidad** definidos en **LIN-ARQ-000 sección 9.5**: trazas, logs estructurados, métricas y health checks. **No hay excepciones:** un servicio sin observabilidad no está listo para producción. Este lineamiento define los requisitos de cada pilar desde la perspectiva REST; la implementación técnica completa se encuentra en **LIN-OBS-001**.
 
 ### 9.1 Correlación de peticiones — X-Request-ID
 
@@ -788,19 +788,19 @@ Cada petición debe generar o propagar un ID de correlación:
 - **Propagación:** el `X-Request-ID` se propaga en el MDC de todos los logs de esa petición y se devuelve en el header de la respuesta.
 - **Respuesta:** el `requestId` aparece en el campo `meta.requestId` de todo `ApiResponseWrapper`.
 
-> **Implementación:** `RequestIdFilter` — ver **LIN-OBS-001 §4.10**.
+> **Implementación:** `RequestIdFilter` — ver **LIN-OBS-001 sección 4.10**.
 
 ### 9.2 Trazas distribuidas
 
 Todo servicio REST debe emitir trazas al OTEL Collector del entorno correspondiente. Las trazas permiten al equipo de operaciones seguir el recorrido de una petición a través de múltiples servicios y detectar cuellos de botella.
 
-> **Implementación completa:** ver **LIN-OBS-001 §5** (dependencias, configuración por entorno, `@NewSpan`, `@ContinueSpan`, `@Scheduled`, verificación en Jaeger).
+> **Implementación completa:** ver **LIN-OBS-001 sección 5** (dependencias, configuración por entorno, `@NewSpan`, `@ContinueSpan`, `@Scheduled`, verificación en Jaeger).
 
 ### 9.3 Logging estructurado
 
 Los logs se emiten en formato JSON (ECS — Elastic Common Schema) y se exportan al OTEL Collector para su visualización en Kibana. Cada línea de log incluye automáticamente `trace.id`, `span.id`, `http.request.id` y `user.id` para correlación cruzada.
 
-> **Implementación completa:** ver **LIN-OBS-001 §6** (`logback-spring.xml`, campos ECS, política No PII, anti-patrones, verificación en Kibana).
+> **Implementación completa:** ver **LIN-OBS-001 sección 6** (`logback-spring.xml`, campos ECS, política No PII, anti-patrones, verificación en Kibana).
 
 ### 9.4 Log canónico de request
 
@@ -812,7 +812,7 @@ Cada petición HTTP emite al finalizar una única línea de log estructurado con
 ¿Qué hizo el usuario X?           → message:"REQUEST" AND user.id:"jperez"
 ```
 
-> **Implementación:** `CanonicalRequestLogFilter` — ver **LIN-OBS-001 §4.9**.
+> **Implementación:** `CanonicalRequestLogFilter` — ver **LIN-OBS-001 sección 4.9**.
 
 ### 9.5 Métricas
 
@@ -859,7 +859,7 @@ management:
 
 El endpoint `/actuator/prometheus` queda expuesto en el puerto de gestión y es scrapeado por Prometheus según la configuración del OTEL Collector. **Este endpoint no debe quedar expuesto en el puerto público de la API** — configurar `management.server.port` distinto al puerto de la aplicación, o restringir acceso a nivel de red.
 
-> **Implementación completa** (Micrometer Tracing, `MeterRegistry`, convención de nombres `onp.<s>.<m>.<metrica>`, dashboards Grafana mínimos): ver **LIN-OBS-001 §§5 y 8**.
+> **Implementación completa** (Micrometer Tracing, `MeterRegistry`, convención de nombres `onp.<s>.<m>.<metrica>`, dashboards Grafana mínimos): ver **LIN-OBS-001 secciones 5 y 8**.
 
 ### 9.6 Health checks
 
@@ -910,7 +910,7 @@ Un servicio sin probes declaradas en el Deployment **no puede ser aprobado** par
 
 ### 9.7 Checklist mínimo de observabilidad antes de producción
 
-Equivalente del checklist de **LIN-ARQ-000 §9.5**, aplicado a servicios REST:
+Equivalente del checklist de **LIN-ARQ-000 sección 9.5**, aplicado a servicios REST:
 
 - [ ] `spring-boot-starter-actuator` incluido en `pom.xml`
 - [ ] `micrometer-registry-prometheus` incluido en `pom.xml`
@@ -947,8 +947,8 @@ Los estados de ciclo de vida se gestionan en WSO2 API Manager (Publisher). Solo 
 |---|---|---|---|
 | **Diseño** | — | Definición del contrato OpenAPI y revisión por Arquitectura. La API no está en WSO2 aún | Equipo de desarrollo |
 | **Desarrollo** | — | Implementación siguiendo este lineamiento, LIN-DEV-JAVA-001 y LIN-OBS-001 | Equipo de desarrollo |
-| **QA** | `CREATED` | API registrada en WSO2 Publisher, visible solo para administradores. Gate §10.4 completado para QA | OTI Arquitectura |
-| **Producción** | `PUBLISHED` | Visible en Dev Portal, consumidores pueden suscribirse. Gate §10.4 completado para PROD | OTI Arquitectura |
+| **QA** | `CREATED` | API registrada en WSO2 Publisher, visible solo para administradores. Gate [sección 10.4](#104-consumo-de-servicios-soap-legacy) completado para QA | OTI Arquitectura |
+| **Producción** | `PUBLISHED` | Visible en Dev Portal, consumidores pueden suscribirse. Gate [sección 10.4](#104-consumo-de-servicios-soap-legacy) completado para PROD | OTI Arquitectura |
 | **Deprecación** | `DEPRECATED` | Sigue funcionando; no acepta nuevas suscripciones. Header `Deprecation: true` en todas las respuestas. Período mínimo: 6 meses | OTI Arquitectura |
 | **Retiro** | `RETIRED` | Eliminada del gateway; consumidores bloqueados. Solo tras período mínimo en `DEPRECATED` | OTI Arquitectura |
 
@@ -961,12 +961,12 @@ Antes de que OTI Arquitectura active el estado `PUBLISHED` en WSO2, el equipo de
 #### Parte A — Requisitos técnicos (equipo de desarrollo)
 
 - [ ] Especificación OpenAPI 3.0 generada, válida y sin errores (verificable en Swagger Editor o Stoplight)
-- [ ] Todos los endpoints documentados con `@Operation`, `@ApiResponse` y `@Schema` (ver LIN-DEV-JAVA-001 §11.4)
+- [ ] Todos los endpoints documentados con `@Operation`, `@ApiResponse` y `@Schema` (ver LIN-DEV-JAVA-001 sección 11.4)
 - [ ] Backend desplegado y smoke-tested en el ambiente de destino (QA o PROD)
 - [ ] Endpoint `/actuator/health` responde `{"status":"UP"}` en el ambiente de destino
-- [ ] Instrumentación de observabilidad completa: trazas visibles en Jaeger, logs en Kibana (ver LIN-OBS-001 §11)
+- [ ] Instrumentación de observabilidad completa: trazas visibles en Jaeger, logs en Kibana (ver LIN-OBS-001 sección 11)
 - [ ] Esquema de autenticación SAA declarado en la especificación OpenAPI (`securitySchemes: bearerAuth`) — cuando WSO2/OAuth2 esté operacional, actualizar a `oauth2`
-- [ ] Swagger deshabilitado en PROD (`SWAGGER_ENABLED=false`) si el ambiente es producción (ver §6.2)
+- [ ] Swagger deshabilitado en PROD (`SWAGGER_ENABLED=false`) si el ambiente es producción (ver [sección 6.2](#62-configuracion))
 - [ ] URL base interna del backend configurada en WSO2 Publisher apuntando al servicio K8s interno
 
 #### Parte B — Requisitos de gobernanza (OTI Arquitectura verifica)
@@ -989,8 +989,8 @@ Antes de que OTI Arquitectura active el estado `PUBLISHED` en WSO2, el equipo de
 - [ ] **Clasificación de datos** declarada:
   - ¿La API expone datos personales (DNI, nombre, domicilio)? → activa política CORS estricta y auditoría de acceso
   - ¿La API expone datos previsionales (montos, periodos, beneficios)? → requiere autenticación obligatoria, sin caché en gateway
-- [ ] API registrada en el catálogo institucional (§10.1) antes de pasar a `PUBLISHED`
-- [ ] Confirmado que no duplica un servicio ya existente en el catálogo (§10.1)
+- [ ] API registrada en el catálogo institucional ([sección 10.1](#101-catalogo-de-servicios)) antes de pasar a `PUBLISHED`
+- [ ] Confirmado que no duplica un servicio ya existente en el catálogo ([sección 10.1](#101-catalogo-de-servicios))
 
 #### Entregables mínimos al solicitar publicación
 
@@ -1002,7 +1002,7 @@ El equipo de desarrollo entrega a OTI Arquitectura:
 3. Formulario de gobernanza completado (Partes A y B)
 ```
 
-> **Referencia:** los estados del ciclo de vida resultantes de este gate están documentados en **§10.2**.
+> **Referencia:** los estados del ciclo de vida resultantes de este gate están documentados en **[sección 10.2](#102-ciclo-de-vida-de-una-api)**.
 
 ### 10.4 Consumo de servicios SOAP legacy
 
@@ -1044,12 +1044,12 @@ https://<host>/api/v{N}/{recurso-plural}/{id}/{sub-recurso}?param=valor
 
 | Documento | Propósito |
 |---|---|
-| LIN-OBS-001 §5 | Implementación de trazas OTEL en Spring Boot (`@NewSpan`, Jaeger) |
-| LIN-OBS-001 §6 | Implementación de logging estructurado (`logback-spring.xml`, ECS, No PII) |
-| LIN-OBS-001 §§4.9–4.10 | `CanonicalRequestLogFilter`, `RequestIdFilter` |
-| LIN-DEV-JAVA-001 §11.4 | Implementación completa de OpenAPI/Swagger y `ApiResponseWrapper<T>` |
-| LIN-DEV-JAVA-001 §12 | Estructura de proyecto Maven y convenciones de nombrado |
-| LIN-ARQ-000 §3 | Estilos arquitectónicos (monolito, modular, hexagonal) |
+| LIN-OBS-001 sección 5 | Implementación de trazas OTEL en Spring Boot (`@NewSpan`, Jaeger) |
+| LIN-OBS-001 sección 6 | Implementación de logging estructurado (`logback-spring.xml`, ECS, No PII) |
+| LIN-OBS-001 secciones 4.9–4.10 | `CanonicalRequestLogFilter`, `RequestIdFilter` |
+| LIN-DEV-JAVA-001 sección 11.4 | Implementación completa de OpenAPI/Swagger y `ApiResponseWrapper<T>` |
+| LIN-DEV-JAVA-001 sección 12 | Estructura de proyecto Maven y convenciones de nombrado |
+| LIN-ARQ-000 sección 3 | Estilos arquitectónicos (monolito, modular, hexagonal) |
 
 ---
 

@@ -25,7 +25,7 @@ public class SaaTokenValidationFilter extends OncePerRequestFilter {
             return;
         }
 
-        // Plantilla base: reemplazar por cliente real SAA conforme a LIN-SEC-APP-001 §8.3.
+        // Plantilla base: reemplazar por cliente real SAA conforme a LIN-SEC-APP-001 sección 8.3.
         MDC.put("user.id", "usuario-demo");
         try {
             filterChain.doFilter(request, response);

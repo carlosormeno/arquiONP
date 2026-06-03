@@ -309,7 +309,7 @@ ONP define nueve tipos de vista. Todo componente de ruta debe encuadrarse en uno
 | **Error** | `/error/:code` | Pantalla de error HTTP (404, 500, 403, etc.) |
 | **Notificación** | Modal/dialog | Confirmaciones, alertas, resultados de operación |
 | **Acordeón/Tab** | Sub-secciones dentro de formulario o detalle | Contenido extenso en secciones colapsables |
-| **Reporte** | `/<dominio>/report` | Vista optimizada para impresión (ver §11) |
+| **Reporte** | `/<dominio>/report` | Vista optimizada para impresión (ver [sección 11](#11-reportes-imprimibles)) |
 
 ### 7.1 Vista de Listado
 
@@ -477,7 +477,7 @@ module.exports = {
 
 ### 9.1 Modelo de respuesta estándar
 
-Todas las APIs REST de ONP responden con `ApiResponseWrapper` (definido en LIN-DEV-JAVA-001 §11.4.4). El frontend lo tipifica así:
+Todas las APIs REST de ONP responden con `ApiResponseWrapper` (definido en LIN-DEV-JAVA-001 sección 11.4.4). El frontend lo tipifica así:
 
 ```typescript
 // shared/models/api-response.model.ts
@@ -571,7 +571,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
 
   if (token) {
     req = req.clone({
-      // Esquema Bearer requerido por LIN-API-REST-001 §7.1.
+      // Esquema Bearer requerido por LIN-API-REST-001 sección 7.1.
       // El backend valida el token contra el endpoint SAA (SaaTokenValidationFilter).
       setHeaders: { Authorization: `Bearer ${token}` },
     });
@@ -623,7 +623,7 @@ export const appConfig: ApplicationConfig = {
 };
 ```
 
-> El orden importa: `correlationInterceptor` debe ir primero para que el header `X-Request-ID` esté presente incluso en requests rechazados por `authInterceptor`. Ver §15.1 para la implementación.
+> El orden importa: `correlationInterceptor` debe ir primero para que el header `X-Request-ID` esté presente incluso en requests rechazados por `authInterceptor`. Ver [sección 15.1](#151-interceptor-de-correlacion-x-request-id) para la implementación.
 
 ### 9.6 Interpretación de codDetRespuesta
 
@@ -871,7 +871,7 @@ Cobertura mínima: **70% de líneas** en `core/` y `shared/`. Las páginas de fe
 
 ### 14.2 Pruebas e2e
 
-La herramienta institucional preferente para pruebas E2E es **Playwright** (ver `LIN-TEST-001 §4.4`). Cypress solo se permite en proyectos donde ya existe; proyectos nuevos deben usar Playwright.
+La herramienta institucional preferente para pruebas E2E es **Playwright** (ver `LIN-TEST-001 sección 4.4`). Cypress solo se permite en proyectos donde ya existe; proyectos nuevos deben usar Playwright.
 
 Estructura de carpetas con Playwright:
 
@@ -897,9 +897,9 @@ Flujos obligatorios a cubrir por cada feature:
 
 ## 15. Observabilidad y performance
 
-El **LIN-ARQ-000 §9.5** establece que todo sistema que llega a producción en ONP debe implementar los cuatro pilares de observabilidad sin excepción. Para una SPA Angular, estos pilares se traducen de la siguiente manera:
+El **LIN-ARQ-000 sección 9.5** establece que todo sistema que llega a producción en ONP debe implementar los cuatro pilares de observabilidad sin excepción. Para una SPA Angular, estos pilares se traducen de la siguiente manera:
 
-| Pilar (Architecture §9.5) | Aplicabilidad en SPA Angular |
+| Pilar (Architecture [sección 9.5](#95-registro-de-interceptores)) | Aplicabilidad en SPA Angular |
 |---|---|
 | **Trazas distribuidas** | El SPA no genera spans propios, pero **debe propagar `X-Request-ID`** en cada request HTTP para que los traces del backend sean correlacionables |
 | **Logs estructurados** | No aplica al browser directamente; los errores JS se capturan y envían al backend via API |
@@ -1088,7 +1088,7 @@ Registro en `app.config.ts`:
 
 ### 15.4 Checklist mínimo antes de pasar a producción
 
-Equivalente del checklist de Architecture §9.5, aplicado al SPA Angular:
+Equivalente del checklist de Architecture [sección 9.5](#95-registro-de-interceptores), aplicado al SPA Angular:
 
 - [ ] `correlationInterceptor` registrado como primer interceptor en `app.config.ts`
 - [ ] `GlobalErrorHandler` registrado en `app.config.ts`

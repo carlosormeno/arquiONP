@@ -19,8 +19,8 @@
 | v0.1.1 | 2026-05-27 | Arquitectura OTI | Incorpora modelo de transición: modelo vigente basado en ramas por promoción y modelo objetivo GitLab Flow simplificado (disciplinado con principios TBD) para proyectos nuevos |
 | v0.1.2 | 2026-05-28 | Arquitectura OTI | Agrega guía operativa para elegir el modelo de branching y sustituye el concepto genérico de rollback BD por estrategia de reversa según el tipo de cambio |
 | v0.1.3 | 2026-05-28 | Arquitectura OTI | Alinea el lenguaje de Merge Requests y evidencias al concepto de reversa/compensación para cambios de base de datos |
-| v0.1.4 | 2026-05-28 | Arquitectura OTI | Completa alineación terminológica: reemplaza las tres ocurrencias restantes de "rollback" por "plan de reversa" en §15.2, §18 y checklist §22.4 |
-| v0.1.5 | 2026-05-28 | Arquitectura OTI | Precisa encabezado de tabla comparativa §4.3: "GitLab Flow" → "GitLab Flow — ramas por ambiente" para eliminar ambigüedad con el modelo objetivo |
+| v0.1.4 | 2026-05-28 | Arquitectura OTI | Completa alineación terminológica: reemplaza las tres ocurrencias restantes de "rollback" por "plan de reversa" en [sección 15.2](#152-release-notes-minimas), [sección 18](#18-cambios-en-contenedores-y-manifiestos-kubernetes) y checklist [sección 22.4](#224-release) |
+| v0.1.5 | 2026-05-28 | Arquitectura OTI | Precisa encabezado de tabla comparativa [sección 4.3](#43-comparacion-visual-de-modelos): "GitLab Flow" → "GitLab Flow — ramas por ambiente" para eliminar ambigüedad con el modelo objetivo |
 
 ---
 
@@ -934,10 +934,10 @@ ONP opera con dos modelos de scripts según el tipo de sistema. Ambos son válid
 | **Cuándo aplica** | Sistemas legacy con PL/SQL complejo, packages o procedures críticos | Sistemas nuevos con DDL simple (tablas, índices, vistas) y Spring Boot |
 | **Nomenclatura** | `PP_<ORIGEN>_<NUMERO>_<ESQUEMA>_<TIPO>_<NN>.SQL` | `V<VERSION>_<NNN>__<descripcion>.sql` (esta sección) |
 | **Ejecución** | Manual — DBA ejecuta en SQL*Plus con revisión previa y aplica la estrategia de reversa definida para el cambio | Manual por ahora; preparado para Flyway/Liquibase en el marco de LIN-CICD-001 |
-| **Referencia** | **LIN-BD-ORA-001 §8** — proceso completo con PROMPT, SPOOL y validación | Esta sección |
+| **Referencia** | **LIN-BD-ORA-001 sección 8** — proceso completo con PROMPT, SPOOL y validación | Esta sección |
 | **PL/SQL, packages, procedures** | Obligatorio modelo manual | No aplica |
 
-> Si un sistema nuevo incorpora PL/SQL legacy, los scripts de PL/SQL siguen el modelo manual (LIN-BD-ORA-001 §8) y los scripts DDL de tablas nuevas siguen el modelo versionado de esta sección. En caso de duda, documentar la decisión en ADR.
+> Si un sistema nuevo incorpora PL/SQL legacy, los scripts de PL/SQL siguen el modelo manual (LIN-BD-ORA-001 sección 8) y los scripts DDL de tablas nuevas siguen el modelo versionado de esta sección. En caso de duda, documentar la decisión en ADR.
 
 ### 16.2 Estructura sugerida
 
@@ -1086,16 +1086,16 @@ Este lineamiento prepara el camino para que, posteriormente, `LIN-CICD-001` auto
 
 GitLab Flow simplificado funciona de forma óptima con CI/CD. Sin embargo, la ONP adoptará inicialmente un enfoque preparatorio y progresivo, sustentado en Merge Requests, revisión técnica y evidencias manuales.
 
-El modelo de madurez completo — fases, gates, herramientas, pipelines por tipo de componente y criterios de bloqueo — está definido en `LIN-CICD-001 §4`.
+El modelo de madurez completo — fases, gates, herramientas, pipelines por tipo de componente y criterios de bloqueo — está definido en `LIN-CICD-001 sección 4`.
 
 Resumen orientativo:
 
 | Fase | Enfoque |
 |---:|---|
 | 0 | Control manual documentado — cubierto por este lineamiento |
-| 1–2 | CI básico + calidad y seguridad — ver `LIN-CICD-001` §4.2–4.3 |
-| 3–4 | Artefactos, imágenes y entrega controlada — ver `LIN-CICD-001` §4.4–4.5 |
-| 5–7 | Seguridad dinámica, performance, CD maduro y operación avanzada — ver `LIN-CICD-001` §4.6–4.8 |
+| 1–2 | CI básico + calidad y seguridad — ver `LIN-CICD-001` [sección 4.2](#42-importante-sobre-cicd)–4.3 |
+| 3–4 | Artefactos, imágenes y entrega controlada — ver `LIN-CICD-001` sección 4.4–4.5 |
+| 5–7 | Seguridad dinámica, performance, CD maduro y operación avanzada — ver `LIN-CICD-001` sección 4.6–4.8 |
 
 ---
 

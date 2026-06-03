@@ -11,30 +11,30 @@
 | 0.1.0 | 2026-05-22 | OTI | Versión inicial |
 | 0.1.1 | 2026-05-28 | OTI | Formaliza la estrategia de reversa Oracle, agrega evidencia mínima para pase y define el modelo mínimo del catálogo PL/SQL legacy |
 | 0.1.2 | 2026-05-28 | OTI | Define el modelo operativo de cambios de BD por tipo de sistema y lo alinea con `LIN-VER-001` y la plantilla backend institucional |
-| 0.1.3 | 2026-05-29 | OTI | Agrega condiciones de uso de DBLinks en §4.9.1: justificación arquitectónica, restricciones técnicas, gobernanza y condiciones de exclusión |
-| 0.1.4 | 2026-05-29 | OTI | Corrige prefijos de columnas (FE_, ID_, DE_), unifica separador en constraints, agrega sinónimos (§4.11), jobs DBMS_SCHEDULER (§4.12), vistas materializadas (§4.3), parámetros de secuencias, particionamiento INTERVAL, TDE con granularidad, monitoreo con AWR/ASH, checklist DBLinks (Anexo D §D.6) |
+| 0.1.3 | 2026-05-29 | OTI | Agrega condiciones de uso de DBLinks en [sección 4.9.1](#491-condiciones-para-el-uso-de-dblinks): justificación arquitectónica, restricciones técnicas, gobernanza y condiciones de exclusión |
+| 0.1.4 | 2026-05-29 | OTI | Corrige prefijos de columnas (FE_, ID_, DE_), unifica separador en constraints, agrega sinónimos ([sección 4.11](#411-sinonimos)), jobs DBMS_SCHEDULER ([sección 4.12](#412-jobs-de-dbms_scheduler)), vistas materializadas ([sección 4.3](#43-vistas-y-vistas-materializadas)), parámetros de secuencias, particionamiento INTERVAL, TDE con granularidad, monitoreo con AWR/ASH, checklist DBLinks (Anexo D sección D.6) |
 | 0.1.5 | 2026-05-29 | OTI | Incorpora mejoras técnicas: control de longitud de constraints, CLIENT_IDENTIFIER para pools, restricciones TDE en columnas, indexación de FKs, optimización de búsquedas y soporte EBR |
 | 0.1.6 | 2026-05-29 | OTI | Refuerza consistencia para desarrollo de software: tipado canónico de claves e indicadores, estrategia de PK/FK, borrado lógico, manejo robusto de errores, auditoría consistente con pools, precisión en planes de ejecución y reglas de uso de sinónimos |
-| 0.1.7 | 2026-05-29 | OTI | Agrega DDL de catálogos centralizados (BD §2.3, DBLinks §4.9.1, Jobs §4.12), tablespace LOB y sección §3.8 Tipos de datos LOB, §7.6 Sentencia MERGE con manejo de auditoría, §9.5 Estadísticas del optimizador DBMS_STATS, documenta excepción canónica de prefijo ID_ para campos de auditoría (§3.4), corrige tipo en borrado lógico Anexo C.2 |
+| 0.1.7 | 2026-05-29 | OTI | Agrega DDL de catálogos centralizados (BD [sección 2.3](#23-catalogo-centralizado-de-bases-de-datos), DBLinks [sección 4.9.1](#491-condiciones-para-el-uso-de-dblinks), Jobs [sección 4.12](#412-jobs-de-dbms_scheduler)), tablespace LOB y sección [sección 3.8](#38-tipos-de-datos-lob) Tipos de datos LOB, [sección 7.6](#76-sentencia-merge-upsert) Sentencia MERGE con manejo de auditoría, [sección 9.5](#95-estadisticas-del-optimizador-dbms_stats) Estadísticas del optimizador DBMS_STATS, documenta excepción canónica de prefijo ID_ para campos de auditoría ([sección 3.4](#34-prefijos-de-columnas)), corrige tipo en borrado lógico Anexo C.2 |
 
 ---
 
 ## Tabla de contenidos
 
-- [§1 Alcance y vigencia](#1-alcance-y-vigencia)
-- [§2 Plataforma de base de datos](#2-plataforma-de-base-de-datos)
-- [§3 Diseño del modelo de datos](#3-diseño-del-modelo-de-datos)
-  - [§3.8 Tipos de datos LOB](#38-tipos-de-datos-lob)
-- [§4 Nomenclatura de objetos](#4-nomenclatura-de-objetos)
-- [§5 Campos de auditoría](#5-campos-de-auditoría)
-- [§6 Objetos programables PL/SQL](#6-objetos-programables-plsql)
-- [§7 Estándares de codificación PL/SQL](#7-estándares-de-codificación-plsql)
-  - [§7.6 Sentencia MERGE](#76-sentencia-merge)
-- [§8 Scripts de despliegue y control de cambios](#8-scripts-de-despliegue-y-control-de-cambios)
-- [§9 Optimización y rendimiento](#9-optimización-y-rendimiento)
-  - [§9.5 Estadísticas del optimizador (DBMS_STATS)](#95-estadísticas-del-optimizador-dbms_stats)
-- [§10 Seguridad](#10-seguridad)
-- [§11 Administración y operación](#11-administración-y-operación)
+- [sección 1 Alcance y vigencia](#1-alcance-y-vigencia)
+- [sección 2 Plataforma de base de datos](#2-plataforma-de-base-de-datos)
+- [sección 3 Diseño del modelo de datos](#3-diseño-del-modelo-de-datos)
+  - [sección 3.8 Tipos de datos LOB](#38-tipos-de-datos-lob)
+- [sección 4 Nomenclatura de objetos](#4-nomenclatura-de-objetos)
+- [sección 5 Campos de auditoría](#5-campos-de-auditoría)
+- [sección 6 Objetos programables PL/SQL](#6-objetos-programables-plsql)
+- [sección 7 Estándares de codificación PL/SQL](#7-estándares-de-codificación-plsql)
+  - [sección 7.6 Sentencia MERGE](#76-sentencia-merge)
+- [sección 8 Scripts de despliegue y control de cambios](#8-scripts-de-despliegue-y-control-de-cambios)
+- [sección 9 Optimización y rendimiento](#9-optimización-y-rendimiento)
+  - [sección 9.5 Estadísticas del optimizador (DBMS_STATS)](#95-estadísticas-del-optimizador-dbms_stats)
+- [sección 10 Seguridad](#10-seguridad)
+- [sección 11 Administración y operación](#11-administración-y-operación)
 - [Anexo A: Tabla de convenciones de nomenclatura](#anexo-a-tabla-de-convenciones-de-nomenclatura)
 - [Anexo B: Plantillas simplificadas de scripts](#anexo-b-plantillas-simplificadas-de-scripts)
 - [Anexo C: Campos de auditoría — definición y reglas de llenado](#anexo-c-campos-de-auditoría--definición-y-reglas-de-llenado)
@@ -42,7 +42,7 @@
 
 ---
 
-## §1 Alcance y vigencia
+## sección 1 Alcance y vigencia
 
 ### 1.1 Propósito
 
@@ -75,7 +75,7 @@ Este estándar aplica a:
 
 ---
 
-## §2 Plataforma de base de datos
+## sección 2 Plataforma de base de datos
 
 ### 2.1 Oracle 19c — estándar vigente
 
@@ -151,7 +151,7 @@ Para sistemas nuevos y modernizaciones bajo Oracle 19c que requieran alta dispon
 
 ---
 
-## §3 Diseño del modelo de datos
+## sección 3 Diseño del modelo de datos
 
 ### 3.1 Normalización
 
@@ -220,7 +220,7 @@ Reglas canónicas de tipado:
 - Los indicadores lógicos (`IN_`) usan **`NUMBER(1)`** con valores `1` (verdadero) y `0` (falso). No se debe mezclar `VARCHAR2(1)` y `NUMBER(1)` entre sistemas.
 - Todo indicador `IN_` debe tener un `CHECK` explícito (`IN (0,1)`) salvo que el motor o el diseño imponga una restricción equivalente verificable.
 
-> **Excepción canónica — campos de auditoría:** Los campos `ID_USUA_CREA` e `ID_USUA_MODI` definidos en §5.1 usan el prefijo `ID_` con tipo `VARCHAR2(30)`. Almacenan el identificador textual del usuario Oracle o del `CLIENT_IDENTIFIER`, no una clave foránea numérica. Esta excepción es parte del estándar institucional y **no requiere ADR**.
+> **Excepción canónica — campos de auditoría:** Los campos `ID_USUA_CREA` e `ID_USUA_MODI` definidos en [sección 5.1](#51-definicion) usan el prefijo `ID_` con tipo `VARCHAR2(30)`. Almacenan el identificador textual del usuario Oracle o del `CLIENT_IDENTIFIER`, no una clave foránea numérica. Esta excepción es parte del estándar institucional y **no requiere ADR**.
 
 ### 3.5 Claves primarias, claves foráneas y claves de negocio
 
@@ -261,7 +261,7 @@ Oracle soporta dos tipos de objeto grande (LOB) relevantes para los sistemas ONP
 
 **Reglas de almacenamiento:**
 
-- Las columnas LOB deben almacenarse en un tablespace dedicado `TBS_LOB_<ESQUEMA>_<NN>` (ver §4.1), separado del tablespace de datos y de índices.
+- Las columnas LOB deben almacenarse en un tablespace dedicado `TBS_LOB_<ESQUEMA>_<NN>` (ver [sección 4.1](#41-tablespaces)), separado del tablespace de datos y de índices.
 - En Oracle 19c, usar **SecureFiles** como formato de almacenamiento LOB. Es más eficiente que BasicFiles en compresión, deduplicación e I/O.
 - Si el contenido supera los 4 KB en promedio, almacenar fuera de línea de la tabla:
 
@@ -276,7 +276,7 @@ LOB (C_CONTENIDO) STORE AS SECUREFILE (
 ```
 
 - No definir columnas LOB en tablas de alta concurrencia transaccional sin análisis previo de rendimiento e impacto en undo/redo.
-- Los campos de auditoría (§5.1) aplican a las tablas con columnas LOB del mismo modo que a cualquier tabla permanente.
+- Los campos de auditoría ([sección 5.1](#51-definicion)) aplican a las tablas con columnas LOB del mismo modo que a cualquier tabla permanente.
 - Las columnas LOB no participan en índices B-Tree estándar. Para búsqueda de texto libre sobre `CLOB`, coordinar con el DBA la habilitación de **Oracle Text** (esquema CTXSYS). Su implementación se detallará en revisión posterior para el esquema EXPEDIENTES.
 
 > Esta sección cubre los aspectos base de tablespace y formato de almacenamiento. La guía completa de SecureFiles, Oracle Text y estrategia de compresión/deduplicación se madurará en revisiones posteriores del lineamiento.
@@ -305,11 +305,11 @@ Oracle soporta dos niveles de aislamiento estándar:
 
 #### Implicancia arquitectónica
 
-Las propiedades ACID son la razón por la que el **Monolito Modular con BD compartida** es el punto de llegada por defecto de ONP (ver **LIN-ARQ-000 §3.4**). Al dividir en microservicios con bases de datos separadas, `@Transactional` de Spring solo abarca una conexión a una BD: no hay ACID entre servicios. La alternativa correcta para coordinación entre microservicios es el patrón **Saga** (ver LIN-ARQ-000).
+Las propiedades ACID son la razón por la que el **Monolito Modular con BD compartida** es el punto de llegada por defecto de ONP (ver **LIN-ARQ-000 sección 3.4**). Al dividir en microservicios con bases de datos separadas, `@Transactional` de Spring solo abarca una conexión a una BD: no hay ACID entre servicios. La alternativa correcta para coordinación entre microservicios es el patrón **Saga** (ver LIN-ARQ-000).
 
 ---
 
-## §4 Nomenclatura de objetos
+## sección 4 Nomenclatura de objetos
 
 Todas las reglas de esta sección aplican a objetos creados bajo los esquemas de la ONP. Los nombres de objetos no deben referenciar proveedores, marcas ni tecnologías externas.
 
@@ -332,7 +332,7 @@ Todas las reglas de esta sección aplican a objetos creados bajo los esquemas de
 | Temporal global (commit) | `<ESQUEMA>.GTT_<NOMBRE>` | `APORTACIONES.GTT_CALCULO_TEMP` |
 | Temporal global (sesión) | `<ESQUEMA>.GTS_<NOMBRE>` | `APORTACIONES.GTS_CARGA_SESION` |
 
-- `<PREFIJO>`: uno de los prefijos de §3.3.
+- `<PREFIJO>`: uno de los prefijos de [sección 3.3](#33-tipos-de-tablas-prefijos).
 - Longitud máxima del nombre: 30 caracteres (límite Oracle 11g/12c; Oracle 19c admite 128 pero se mantiene 30 para portabilidad).
 
 ### 4.3 Vistas y Vistas Materializadas
@@ -450,7 +450,7 @@ El uso de DBLinks no está prohibido, pero está **restringido** a escenarios ju
 - El usuario de conexión en la base de datos destino debe ser **dedicado exclusivamente al DBLink** y tener permisos de solo lectura sobre los objetos accedidos.
 - Las credenciales no deben quedar expuestas en el DDL. Deben gestionarse mediante Oracle Wallet o mecanismo equivalente aprobado por la OTI/DBA.
 - Debe configurarse un `CONNECT_TIMEOUT` explícito para evitar bloqueos en cascada ante indisponibilidad del destino.
-- El nombre debe seguir el patrón de la sección §4.9: `DBL_<BD_DESTINO>_<ESQUEMA_DESTINO>`.
+- El nombre debe seguir el patrón de la sección [sección 4.9](#49-dblinks-y-directorios): `DBL_<BD_DESTINO>_<ESQUEMA_DESTINO>`.
 
 **Gobernanza y registro**
 
@@ -599,7 +599,7 @@ TABLESPACE TBS_DAT_OTI_ADMIN_01;
 
 ---
 
-## §5 Campos de auditoría
+## sección 5 Campos de auditoría
 
 ### 5.1 Definición
 
@@ -667,7 +667,7 @@ WHERE ID_<ENTIDAD> = :v_id;
 
 ---
 
-## §6 Objetos programables PL/SQL
+## sección 6 Objetos programables PL/SQL
 
 ### 6.0 Gobierno de lógica de negocio en PL/SQL
 
@@ -681,7 +681,7 @@ El objetivo de esta sección no es eliminar ese legado, sino **gobernarlo**: hac
 
 | Categoría | Descripción | Estado |
 |---|---|---|
-| **Técnico permitido** | Constraints, índices, vistas, triggers de auditoría, tablas históricas | Permitido bajo estándar §6 y §7 |
+| **Técnico permitido** | Constraints, índices, vistas, triggers de auditoría, tablas históricas | Permitido bajo estándar sección 6 y sección 7 |
 | **Batch permitido** | Procesos masivos o intensivos en datos donde PL/SQL tiene ventaja técnica real | Permitido con justificación documentada en ADR |
 | **Legacy crítico** | Lógica de negocio existente (cálculos, reglas, liquidaciones) en procedures/packages activos | Permitido; requiere inventario, encapsulamiento y pruebas de caracterización |
 | **Nueva lógica de negocio core** | Nueva regla de negocio core implementada en PL/SQL | **Restringido** — requiere ADR aprobado por Arquitectura |
@@ -792,7 +792,7 @@ Un procedure legacy crítico no tiene especificación formal — su comportamien
 - Los resultados esperados se toman de la ejecución real en producción o QA, no de supuestos
 - Deben fallar si el procedure cambia su comportamiento de salida — son la red de seguridad del refactor
 
-> **Por qué es crítico en ONP:** procedures como `SP_CALCULAR_PENSION` acumulan años de reglas de negocio que nadie conoce completamente. Sin pruebas de caracterización, cualquier modificación —incluso una corrección de bug— puede alterar silenciosamente cálculos de beneficios previsionales. Ver **LIN-TEST-001 §13** para la implementación con Testcontainers + OracleContainer.
+> **Por qué es crítico en ONP:** procedures como `SP_CALCULAR_PENSION` acumulan años de reglas de negocio que nadie conoce completamente. Sin pruebas de caracterización, cualquier modificación —incluso una corrección de bug— puede alterar silenciosamente cálculos de beneficios previsionales. Ver **LIN-TEST-001 sección 13** para la implementación con Testcontainers + OracleContainer.
 
 #### Checklist mínimo para un procedure legacy crítico
 
@@ -822,11 +822,11 @@ Un procedure legacy crítico no tiene especificación formal — su comportamien
 - Los packages son la forma preferida de empaquetar lógica: agrupa spec y body bajo un nombre único, facilita la gestión de dependencias y la compilación incremental.
 - Una function no debe emitir `COMMIT` ni `ROLLBACK`. El control transaccional es responsabilidad del llamador o del stored procedure de nivel superior.
 - Los stored procedures tampoco emiten `COMMIT` salvo que sean el punto de cierre de una unidad lógica de trabajo claramente definida y documentada.
-- Toda excepción no controlada debe capturarse, registrarse o enriquecer su contexto funcional, y relanzarse preservando la mayor cantidad posible de diagnóstico técnico (ver §7.4).
+- Toda excepción no controlada debe capturarse, registrarse o enriquecer su contexto funcional, y relanzarse preservando la mayor cantidad posible de diagnóstico técnico (ver [sección 7.4](#74-manejo-de-excepciones)).
 
 ---
 
-## §7 Estándares de codificación PL/SQL
+## sección 7 Estándares de codificación PL/SQL
 
 ### 7.1 Formato y estilo
 
@@ -964,7 +964,7 @@ END;
 
 Las siguientes reglas son de cumplimiento obligatorio en todo código PL/SQL y SQL producido para la ONP:
 
-1. **Especificar el esquema por defecto**: `SELECT ... FROM aportaciones.mae_aportante`, nunca `SELECT ... FROM mae_aportante` sin esquema, salvo cuando exista un sinónimo aprobado según §4.11.
+1. **Especificar el esquema por defecto**: `SELECT ... FROM aportaciones.mae_aportante`, nunca `SELECT ... FROM mae_aportante` sin esquema, salvo cuando exista un sinónimo aprobado según [sección 4.11](#411-sinonimos).
 2. **No usar `SELECT *`**: Listar explícitamente las columnas requeridas. Excepción: uso de `COUNT(*)` o cursores con `%ROWTYPE`.
 3. **Columnas explícitas en INSERT**: Siempre especificar la lista de columnas en sentencias INSERT.
 4. **No usar `COMMIT` dentro de objetos almacenados** salvo que sean el punto de cierre documentado de una unidad de trabajo.
@@ -991,9 +991,9 @@ El comando `MERGE` combina lógica de `INSERT` y `UPDATE` en una sola sentencia.
 
 **Reglas de uso obligatorias:**
 
-- El uso de bind variables es **obligatorio** en las condiciones `ON` y en los valores de las cláusulas `WHEN MATCHED` y `WHEN NOT MATCHED` (misma regla que §7.2).
+- El uso de bind variables es **obligatorio** en las condiciones `ON` y en los valores de las cláusulas `WHEN MATCHED` y `WHEN NOT MATCHED` (misma regla que [sección 7.2](#72-bind-variables)).
 - Los campos de auditoría se llenan según la rama ejecutada:
-  - `WHEN NOT MATCHED THEN INSERT`: llenar los seis campos, con `_MODI` en `NULL` (mismo criterio que INSERT en §5.3).
+  - `WHEN NOT MATCHED THEN INSERT`: llenar los seis campos, con `_MODI` en `NULL` (mismo criterio que INSERT en [sección 5.3](#53-reglas-de-llenado)).
   - `WHEN MATCHED THEN UPDATE`: actualizar solo los campos `_MODI`; los `_CREA` **nunca se modifican**.
 
 ```sql
@@ -1028,13 +1028,13 @@ WHEN NOT MATCHED THEN
 
 **Restricciones:**
 
-- `MERGE` no emite `COMMIT` implícito. El control transaccional sigue las mismas reglas que `INSERT` y `UPDATE` (ver ítem 4 de §7.5).
+- `MERGE` no emite `COMMIT` implícito. El control transaccional sigue las mismas reglas que `INSERT` y `UPDATE` (ver ítem 4 de [sección 7.5](#75-buenas-practicas-de-codificacion)).
 - En tablas particionadas donde la clave de partición aparece en la condición `ON`, validar el plan de ejecución para confirmar que Oracle aplica *Partition Pruning*.
-- Incluir evidencia del plan de ejecución en la documentación del pase cuando el `MERGE` afecte tablas con más de 100.000 filas (misma exigencia que §9.3).
+- Incluir evidencia del plan de ejecución en la documentación del pase cuando el `MERGE` afecte tablas con más de 100.000 filas (misma exigencia que [sección 9.3](#93-planes-de-ejecucion)).
 
 ---
 
-## §8 Scripts de despliegue y control de cambios
+## sección 8 Scripts de despliegue y control de cambios
 
 ### 8.1 Nomenclatura de scripts
 
@@ -1177,7 +1177,7 @@ Desarrollo (ONP_DESA) → Precalidad (ONP_PQA) → QA (ONP_QA) → Producción (
 
 ---
 
-## §9 Optimización y rendimiento
+## sección 9 Optimización y rendimiento
 
 ### 9.1 Diseño de índices
 
@@ -1333,7 +1333,7 @@ ORDER  BY last_analyzed;
 
 ---
 
-## §10 Seguridad
+## sección 10 Seguridad
 
 ### 10.1 Control de acceso basado en roles (RBAC)
 
@@ -1420,11 +1420,11 @@ Los objetos de aplicación no deben residir en el tablespace SYSTEM. Solo los ob
 
 ---
 
-## §11 Administración y operación
+## sección 11 Administración y operación
 
 ### 11.1 Tablespaces
 
-- Cada esquema de aplicación debe tener su propio tablespace de datos (`TBS_DAT_`) y su tablespace de índices (`TBS_IDX_`). Si el esquema contiene columnas LOB, debe tener además un tablespace dedicado (`TBS_LOB_`) separado de los anteriores (ver §3.8 y §4.1).
+- Cada esquema de aplicación debe tener su propio tablespace de datos (`TBS_DAT_`) y su tablespace de índices (`TBS_IDX_`). Si el esquema contiene columnas LOB, debe tener además un tablespace dedicado (`TBS_LOB_`) separado de los anteriores (ver [sección 3.8](#38-tipos-de-datos-lob) y [sección 4.1](#41-tablespaces)).
 - El tamaño inicial y el autoextend de los tablespaces se define según la proyección de crecimiento anual del sistema, coordinado con el DBA responsable.
 - El monitoreo del uso de tablespaces es responsabilidad del DBA y debe estar incluido en las alertas de operación.
 
@@ -1900,17 +1900,17 @@ Lista de verificación mínima antes de cualquier pase a QA o Producción.
 
 - [ ] El modelo está en 3NF (o se documentó la excepción justificada).
 - [ ] Todas las tablas permanentes tienen los 6 campos de auditoría.
-- [ ] Los nombres de tablas y columnas siguen los prefijos de §3.3 y §3.4.
-- [ ] Las claves primarias técnicas y llaves foráneas siguen las reglas de §3.5.
+- [ ] Los nombres de tablas y columnas siguen los prefijos de [sección 3.3](#33-tipos-de-tablas-prefijos) y [sección 3.4](#34-prefijos-de-columnas).
+- [ ] Las claves primarias técnicas y llaves foráneas siguen las reglas de [sección 3.5](#35-claves-primarias-claves-foraneas-y-claves-de-negocio).
 - [ ] Los indicadores `IN_` usan `NUMBER(1)` con `CHECK` explícito.
 - [ ] Todas las tablas tienen `COMMENT ON TABLE` y `COMMENT ON COLUMN` para cada columna.
-- [ ] Los constraints están nombrados según §4.5 (PK, FK, UK, CK, NN).
-- [ ] Las secuencias siguen el patrón de §4.6.
+- [ ] Los constraints están nombrados según [sección 4.5](#45-constraints) (PK, FK, UK, CK, NN).
+- [ ] Las secuencias siguen el patrón de [sección 4.6](#46-secuencias).
 
 ### D.2 Objetos programables
 
-- [ ] Todo SP, FN, PKG y TRG tiene el bloque de encabezado documentado (§7.3).
-- [ ] No hay `SELECT *` en código de producción (salvo excepciones de §7.5, ítem 2).
+- [ ] Todo SP, FN, PKG y TRG tiene el bloque de encabezado documentado ([sección 7.3](#73-documentacion-de-encabezado)).
+- [ ] No hay `SELECT *` en código de producción (salvo excepciones de [sección 7.5](#75-buenas-practicas-de-codificacion), ítem 2).
 - [ ] No hay concatenación de literales en SQL dinámico — se usan bind variables.
 - [ ] No hay `COMMIT` dentro de funciones ni en objetos de uso general.
 - [ ] Todo bloque PL/SQL tiene sección `EXCEPTION` con `RAISE_APPLICATION_ERROR`.
@@ -1944,10 +1944,10 @@ Lista de verificación mínima antes de cualquier pase a QA o Producción.
 ### D.6 DBLinks (cuando el pase incluye creación o modificación de un DBLink)
 
 - [ ] El uso del DBLink cuenta con aprobación documentada del arquitecto responsable.
-- [ ] El DBLink está registrado en el catálogo centralizado de la OTI con todos los campos requeridos (§4.9.1).
+- [ ] El DBLink está registrado en el catálogo centralizado de la OTI con todos los campos requeridos ([sección 4.9.1](#491-condiciones-para-el-uso-de-dblinks)).
 - [ ] El usuario de conexión en la BD destino es dedicado exclusivamente al DBLink y tiene permisos de solo lectura.
 - [ ] Las credenciales se gestionan mediante Oracle Wallet o mecanismo aprobado por OTI/DBA — no están expuestas en el DDL.
-- [ ] El nombre sigue el patrón `DBL_<BD_DESTINO>_<ESQUEMA_DESTINO>` (§4.9).
+- [ ] El nombre sigue el patrón `DBL_<BD_DESTINO>_<ESQUEMA_DESTINO>` ([sección 4.9](#49-dblinks-y-directorios)).
 - [ ] El DBLink está configurado con `CONNECT_TIMEOUT` explícito.
 - [ ] El uso está limitado exclusivamente a operaciones `SELECT`. No hay DML ni DDL remoto.
 - [ ] Se verificó que no existe API, servicio o vista replicada que pueda sustituir el DBLink.
@@ -1968,7 +1968,7 @@ Casos que siempre requieren ADR en este estándar:
 - Acceso directo entre esquemas de distintos dominios funcionales
 - Omisión de campos de auditoría en tablas de negocio
 - Uso de triggers con lógica de negocio compleja en nuevos desarrollos
-- Uso de DBLink cuando no se cumplen alguna de las condiciones establecidas en §4.9.1
+- Uso de DBLink cuando no se cumplen alguna de las condiciones establecidas en [sección 4.9.1](#491-condiciones-para-el-uso-de-dblinks)
 - Creación de sinónimos públicos sin aprobación del DBA
 - Particionamiento de una tabla existente en un sistema legacy (requiere coordinación con DBA y puede implicar uso de `DBMS_REDEFINITION`)
 

@@ -7,7 +7,7 @@ kind: Kustomization
 resources:
   - ../../base
 
-# Imagen certificada en QA — misma imagen, misma versión (LIN-K8S-001 §6.4)
+# Imagen certificada en QA — misma imagen, misma versión (LIN-K8S-001 sección 6.4)
 images:
   - name: api-nombre-sistema
     newName: registry.gitlab.onp.gob.pe/aplicaciones/nombre-sistema/api-nombre-sistema

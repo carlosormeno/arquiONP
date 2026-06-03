@@ -1,4 +1,4 @@
-# EJEMPLO DE REFERENCIA — LIN-VER-001 Anexo F / LIN-K8S-001 §5.4
+# EJEMPLO DE REFERENCIA — LIN-VER-001 Anexo F / LIN-K8S-001 sección 5.4
 # Dockerfile multi-stage para Angular SPA — imagen institucional ONP
 # Plataforma/Infraestructura es responsable de mantener este archivo en el proyecto GitLab real.
 
