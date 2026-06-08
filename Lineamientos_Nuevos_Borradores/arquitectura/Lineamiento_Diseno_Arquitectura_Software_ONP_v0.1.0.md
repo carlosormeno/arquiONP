@@ -56,11 +56,11 @@ No es un documento de gobierno aprobado formalmente. Es la referencia técnica i
 
 ### 1.3 Alcance y audiencia
 
-**Alcance:** Todos los sistemas de software desarrollados o contratados por ONP a partir de la fecha de este documento.
+**Alcance:** Todos los sistemas de software desarrollados o contratados por ONP a partir de la fecha de aprobación de este documento.
 
 **Audiencia principal:** Arquitectos de TI de ONP.
 
-**Audiencia secundaria:** Líderes técnicos y desarrolladores senior contratados. El personal contratado recibe el conjunto de lineamientos formales derivados de este documento, no este documento directamente.
+**Audiencia secundaria:** Líderes técnicos y desarrolladores senior contratados (Locadores), Fabricas de Software. El personal contratado recibe el conjunto de lineamientos formales derivados de este documento, no este documento directamente.
 
 ---
 
@@ -113,23 +113,71 @@ Para migrar sistemas del Estadio 1 al Estadio 2 sin reescritura completa:
 
 ## 3. Estilos y Patrones de Arquitectura
 
-Esta sección organiza los estilos y patrones de arquitectura adoptados por ONP agrupados por la pregunta que responden:
+Esta sección organiza los estilos y patrones de arquitectura adoptados por ONP agrupados de la siguiente manera:
 
 | Grupo | Pregunta | Secciones |
 |---|---|---|
-| **Organización del código** | ¿Cómo organizo el código dentro de un módulo? | 3.1, 3.2 |
-| **Estructura del sistema** | ¿Cómo estructuro y despliego el sistema completo? | 3.3, 3.4, 3.5 |
-| **Comunicación** | ¿Cómo se comunican los componentes o servicios? | 3.6, 3.7 |
+| **Organización del código** | ¿Cómo organizo el código dentro de un módulo? | [3.1](#31-arquitectura-en-capas-layered), [3.2](#32-arquitectura-hexagonal) |
+| **Estructura del sistema** | ¿Cómo estructuro y despliego el sistema completo? | [3.3](#33-monolito-puro), [3.4](#34-monolito-modular), [3.5](#35-microservicios) |
+| **Comunicación** | ¿Cómo se comunican los componentes o servicios? | [3.6](#36-arquitectura-orientada-a-eventos-eda) |
 
-Los grupos están vinculados por la hoja de ruta de evolución (2): el estilo de organización del código determina hacia qué topología de sistema puede evolucionar un módulo.
+**Los grupos no son decisiones independientes.** La elección de cómo organizas el código dentro de un módulo (grupo 1) condiciona hasta dónde puede llegar ese módulo en la hoja de ruta de evolución (sección 2).
 
-> **MVC (Model-View-Controller)** no es un estilo de arquitectura independiente — es el patrón que opera dentro de la capa de presentación. En ONP está implícito en Spring MVC y no requiere sección propia.
+#### Camino de un sistema nuevo
+
+Todo sistema nuevo nace como **Monolito Modular**. Cada módulo interno usa **Capas simples (3.1)** por defecto, porque es suficiente para la mayoría de los casos. Cuando un módulo específico necesita convertirse en microservicio, lo primero será refactorizar el módulo seleccionado a una arquitectura del tipo **Hexagonal (3.2)** y luego se extrae. No se debe diseñar para microservicios desde el inicio porque tiene un costo muy alto.
+
+```
+  Módulo nuevo en Monolito Modular
+  (Capas simples por defecto)
+           │
+           │  puede quedarse aquí indefinidamente
+           │  si no hay necesidad de extraerlo
+           │
+           │  cuando cumple los 6 criterios de 3.5:
+           │  escala diferenciada, equipo dedicado,
+           │  bounded context claro, datos propios...
+           │
+           ▼
+  Paso 1 ── Refactorizar a Hexagonal (3.2)
+           │
+           │  los ports definen exactamente qué es
+           │  interno y qué necesita del exterior.
+           │  Sin esa frontera clara, la extracción
+           │  genera acoplamiento oculto.
+           │
+           ▼
+  Paso 2 ── Extraer como Microservicio (3.5)
+```
+
+#### Camino de un sistema legado
+
+Un sistema legado (monolito puro, Estadio 1) **sí puede evolucionar** hacia Monolito Modular. El camino es el patrón **Strangler Fig (2.2)**: se construyen módulos nuevos con la arquitectura correcta al lado del legado, y el tráfico se redirige gradualmente. El código legado no se toca ni se exige refactorizar a Hexagonal para iniciar la migración.
+
+```
+  Sistema legado
+  (Monolito puro, JBoss/WebLogic)
+           │
+           │  Strangler Fig (2.2):
+           │  construir módulos nuevos al lado,
+           │  redirigir tráfico gradualmente,
+           │  retirar componentes legados cuando
+           │  el 100% del tráfico migró
+           │
+           ▼
+  Monolito Modular (Estadio 2)
+  ── y desde ahí aplica el camino de arriba ──
+```
+
+> **¿Y MVC?** MVC (Model-View-Controller) no aparece en esta tabla porque no es una arquitectura completa — es el patrón que describe cómo se organiza solo la capa de presentación: el Controller recibe el request, procesa con el Model y devuelve una View (en APIs REST, el JSON). En Spring Boot esto está implícito en `@RestController` y no requiere una decisión explícita. La decisión real de arquitectura es cómo organizas las capas de aplicación, dominio e infraestructura — que es exactamente lo que cubren 3.1 y 3.2.
 
 **── ¿Cómo organizo el código? ─────────────────────────────────**
 
 ### 3.1 Arquitectura en capas (Layered)
 
-Organiza el código en cuatro capas horizontales con responsabilidades claramente separadas. Aplica tanto en el Monolito puro (3.3) como en el Monolito Modular (3.4) — es el estilo por defecto para todo módulo nuevo en ONP.
+Organiza el código en cuatro capas horizontales con responsabilidades separadas. Las dependencias siempre fluyen de arriba hacia abajo — nunca al revés. Es el estilo más simple disponible y el punto de partida correcto para la mayoría de módulos nuevos en ONP.
+
+#### Diagrama
 
 ```
 ┌─────────────────────────────────┐
@@ -137,48 +185,131 @@ Organiza el código en cuatro capas horizontales con responsabilidades clarament
 ├─────────────────────────────────┤
 │         Capa de Aplicación      │  Services, casos de uso, orquestación
 ├─────────────────────────────────┤
-│         Capa de Dominio         │  Entidades, reglas de negocio, ports
+│         Capa de Dominio         │  Entidades, reglas de negocio
 ├─────────────────────────────────┤
 │         Capa de Infraestructura │  Repositorios JPA, clientes HTTP, MQ
 └─────────────────────────────────┘
 ```
 
-**Regla de dependencia:** Las capas superiores dependen de las inferiores. La capa de Dominio no depende de Infraestructura (usa interfaces/ports). Infraestructura implementa esas interfaces.
+#### Cuándo usar
+
+Es el estilo por defecto para todo módulo nuevo en ONP, tanto en sistemas legacy existentes (Monolito puro, [3.3](#33-monolito-puro)) como en sistemas nuevos (Monolito Modular, [3.4](#34-monolito-modular)). Adoptar cuando:
+
+- la lógica del módulo es simple o moderada (CRUD, Transaction Script, Active Record);
+- el módulo tiene menos de 3 integraciones externas;
+- no se prevé cambio de tecnología de persistencia ni de protocolo de entrada.
+
+Un módulo con esta arquitectura puede vivir indefinidamente en el Monolito Modular. Si en el futuro se convierte en candidato a microservicio, deberá refactorizarse primero a Hexagonal ([3.2](#32-arquitectura-hexagonal)) antes de la extracción.
+
+#### Reglas ONP
+
+**Regla de dependencia:** las capas superiores dependen de las inferiores. La capa de Dominio no depende de Infraestructura, usa interfaces que Infraestructura implementa. Ningún Controller accede directamente a un repositorio.
 
 ### 3.2 Arquitectura Hexagonal (Ports & Adapters)
 
-Variante recomendada cuando el módulo tiene múltiples integraciones externas o el dominio es suficientemente complejo para justificar aislarlo completamente.
+Variante avanzada que invierte la dependencia entre dominio e infraestructura. En Capas simples ([3.1](#31-arquitectura-en-capas-layered)), el dominio termina dependiendo de la infraestructura: las entidades usan anotaciones JPA, los servicios llaman directamente a clientes HTTP. Hexagonal rompe esa dependencia: el dominio es Java puro y es la infraestructura la que se adapta al dominio, no al revés.
 
-> **¿Qué es un port?** Es una `interface` Java que define el contrato entre el dominio y el mundo exterior — dice QUÉ puede hacer o necesitar el sistema, sin decir CÓMO. Hay dos tipos: **port de entrada** (lo que el exterior puede hacer con el dominio, ej. `RegistrarAporteUseCase`) y **port de salida** (lo que el dominio necesita del exterior, ej. `PensionistaRepository`). El **adapter** es la clase concreta que implementa ese port.
+#### Conceptos clave
+
+**Dominio** — el núcleo del sistema. Contiene las entidades, los value objects y las reglas de negocio. No importa ningún framework.
+
+**Port** — una `interface` Java que actúa como contrato en la frontera del dominio. Define QUÉ puede hacerse o necesitarse, sin decir CÓMO. Hay dos tipos:
+
+| Tipo | Significado | Dónde vive la interface | Quién la implementa | Ejemplo ONP |
+|---|---|---|---|---|
+| **Port de entrada** | Lo que el exterior puede pedirle al sistema | Capa `application/` | Application Service | `RegistrarAporteUseCase` |
+| **Port de salida** | Lo que el dominio necesita del exterior | Capa `domain/` | Adapter en `infrastructure/` | `PensionistaRepository` |
+
+**Adapter** — la implementación concreta de un port. Vive en infraestructura y conecta el dominio con un sistema externo concreto (Oracle, RENIEC, RabbitMQ, etc.).
+
+#### Diagrama
+
+**Flujo de una operación** — un request REST que registra un aporte recorre las tres capas así:
 
 ```
-           ┌──────────────────────────────────────┐
-           │              DOMINIO                  │
-           │  (lógica de negocio pura, sin imports │
-           │   de Spring, JPA, ni frameworks)      │
-           │                                       │
-           │  ◄── Port de entrada (interface)      │
-           │  ──► Port de salida  (interface)      │
-           └──────────────────────────────────────┘
-                    ▲                    │
-                    │                    ▼
-        ┌───────────────┐     ┌──────────────────────┐
-        │ Adapter REST  │     │ Adapter JPA          │
-        │ (Controller)  │     │ (RepositoryImpl)     │
-        └───────────────┘     └──────────────────────┘
-        ┌───────────────┐     ┌──────────────────────┐
-        │ Adapter MQ    │     │ Adapter HTTP Client  │
-        │ (Consumer)    │     │ (RENIEC/SUNAT/PIDE)  │
-        └───────────────┘     └──────────────────────┘
+  [HTTP Request]
+        │
+        ▼
+  ┌─────────────────┐
+  │  AporteController│  Adapter de entrada — traduce el request a un Command
+  │  (infrastructure)│  y llama al port de entrada
+  └────────┬────────┘
+           │ llama a
+           ▼
+  ┌──────────────────────────────────────────────────┐
+  │                  APPLICATION                      │
+  │                                                   │
+  │  RegistrarAporteUseCase ◄── implementado por ──►  │
+  │  (port de entrada)          RegistrarAporteService│
+  │                             (orquesta el dominio, │
+  │                              llama port de salida)│
+  └──────────────────────┬───────────────────────────┘
+                         │ llama a
+                         ▼
+  ┌──────────────────────────────────────────────────┐
+  │                    DOMINIO                        │
+  │  PensionistaRepository  (port de salida)          │
+  │  (interface — el dominio no sabe si es Oracle     │
+  │   o cualquier otra BD)                            │
+  └──────────────────────┬───────────────────────────┘
+                         │ implementado por
+                         ▼
+  ┌─────────────────────┐
+  │  PensionistaJpaRepo  │  Adapter de salida — habla con Oracle
+  │  (infrastructure)    │
+  └─────────────────────┘
 ```
 
-**Cuándo usar Hexagonal sobre Capas simples:** cuando el módulo tiene 3 o más integraciones externas, o cuando se prevé cambio de motor de base de datos o de protocolo de entrada.
+**Vista de conjunto:**
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│                       INFRAESTRUCTURA                         │
+│                                                               │
+│  ┌───────────────┐                  ┌──────────────────────┐ │
+│  │ Adapter REST  │                  │ Adapter JPA          │ │
+│  │ (Controller)  │                  │ (RepositoryImpl)     │ │
+│  └───────┬───────┘                  └──────────┬───────────┘ │
+│          │ implementa port entrada             │ implementa   │
+│          │                                     │ port salida  │
+└──────────┼─────────────────────────────────────┼─────────────┘
+           │                                     │
+           ▼                                     ▼
+┌──────────────────────────────────────────────────────────────┐
+│                       APPLICATION                             │
+│                                                               │
+│   Port entrada ──► Application Service ──► Port salida       │
+│   (interface)       (orquesta dominio)     (interface)       │
+└───────────────────────────┬──────────────────────────────────┘
+                            │
+                            ▼
+            ┌───────────────────────────────┐
+            │            DOMINIO            │
+            │  Entidades, Value Objects,    │
+            │  reglas de negocio            │
+            │  (sin imports de framework)   │
+            └───────────────────────────────┘
+```
+
+#### Cuándo usar
+
+Adoptar Hexagonal sobre Capas simples cuando se cumple al menos uno de estos criterios:
+
+- el módulo tiene 3 o más integraciones externas;
+- se prevé cambio de motor de base de datos o de protocolo de entrada;
+- el módulo es candidato a extraerse como microservicio ([3.5](#35-microservicios)) — Hexagonal es obligatorio antes de la extracción.
+
+#### Reglas ONP
+
+La regla de dependencia es estricta: `infrastructure → application → domain`. Si una clase en `domain` importa `jakarta.persistence` o `org.springframework`, la frontera está rota. Ver [sección 9.3](#93-hexagonal--clean) para la estructura Maven concreta.
 
 **── ¿Cómo estructuro y despliego el sistema? ───────────────────**
 
 ### 3.3 Monolito puro
 
-Un único proceso desplegable donde toda la lógica, acceso a datos y presentación coexisten sin fronteras explícitas entre módulos. Es el **Estadio 1** de la hoja de ruta de ONP, el estado actual de los sistemas legacy.
+Un único proceso desplegable donde toda la lógica, acceso a datos y presentación coexisten sin fronteras explícitas entre módulos. Es el **Estadio 1** de la hoja de ruta de ONP y el estado actual de los sistemas legacy en producción.
+
+#### Diagrama
 
 ```
 ┌──────────────────────────────────────────┐
@@ -194,20 +325,25 @@ Un único proceso desplegable donde toda la lógica, acceso a datos y presentaci
              └────────────┘
 ```
 
-**Por qué existe en ONP:** los sistemas legacy fueron construidos antes de que las prácticas de modularización fueran estándar. Son sistemas productivos que no se reescriben, se migran progresivamente usando el patrón Strangler Fig (2.2).
+#### Cuándo usar
 
-**Por qué ONP no construye nuevos sistemas como monolito puro:**
+ONP **no construye nuevos sistemas como Monolito puro**. Este estilo existe únicamente en los sistemas legacy heredados. Los motivos para no usarlo en sistemas nuevos son:
+
 - Sin fronteras entre módulos, cualquier cambio tiene un radio de impacto impredecible.
 - El acoplamiento acumulado hace el sistema cada vez más difícil de probar y desplegar.
-- No hay camino natural hacia Monolito Modular ni Microservicios sin reescritura.
+- No hay camino natural hacia Monolito Modular ni Microservicios sin reescritura total.
 
-**Camino de migración:** todo sistema en Estadio 1 debe tener un plan documentado de migración hacia 3.4 (Monolito Modular) usando el patrón Strangler Fig (2.2).
+#### Reglas ONP
+
+**Por qué existe en ONP:** los sistemas legacy fueron construidos antes de que las prácticas de modularización fueran estándar. Son sistemas productivos que no se reescriben, se migran progresivamente usando el patrón Strangler Fig ([2.2](#22-patron-de-migracion-strangler-fig)).
+
+**Camino de migración:** todo sistema en Estadio 1 debe tener un plan documentado de migración hacia [3.4](#34-monolito-modular) (Monolito Modular) usando el patrón Strangler Fig ([2.2](#22-patron-de-migracion-strangler-fig)).
 
 ### 3.4 Monolito Modular
 
-El Estadio 2 de ONP. Un único proceso desplegable organizado en módulos lógicos con fronteras explícitas. La clave es que es **un solo JAR**, no hay red ni comunicación entre procesos, pero cada módulo tiene su propio límite de responsabilidad que se respeta igual que si fuera un servicio separado.
+El Estadio 2 de ONP y el punto de llegada por defecto para todo sistema nuevo. Un único proceso desplegable organizado en módulos lógicos con fronteras explícitas. La clave es que es **un solo JAR** — no hay red ni comunicación entre procesos — pero cada módulo tiene su propio límite de responsabilidad que se respeta igual que si fuera un servicio separado.
 
-**Vista arquitectónica:** un solo proceso, múltiples módulos con fronteras explícitas:
+#### Diagrama
 
 ```
 ┌─────────────────────────────── 1 solo JAR desplegable ───────────────────────────────┐
@@ -232,52 +368,22 @@ El Estadio 2 de ONP. Un único proceso desplegable organizado en módulos lógic
                                    └─────────────┘
 ```
 
-**Estructura Maven** — dos niveles: padre que coordina, hijos que implementan:
+#### Cuándo usar
 
-```
-onp-sistema/                              ← POM padre — packaging: pom, sin código Java
-│   pom.xml                                 <dependencyManagement>: centraliza versiones
-│                                           de librerías compartidas (Spring Boot, Lombok,
-│                                           MapStruct, etc.). Los hijos heredan versiones
-│                                           y solo declaran la dependencia sin versión.
-│
-├── onp-expedientes/                      ← módulo hijo: Expedientes
-│   │   pom.xml                           ← POM hijo, declara <parent>: onp-sistema
-│   └── src/main/java/
-│       ├── api/                          ← paquete: Controllers, DTOs
-│       ├── application/                  ← paquete: Services, casos de uso
-│       ├── domain/                       ← paquete: Entidades, ports
-│       └── infrastructure/               ← paquete: JPA, clientes HTTP
-│
-├── onp-aportes/                          ← módulo hijo: Aportes
-│   │   pom.xml                           ← POM hijo, declara <parent>: onp-sistema
-│   └── src/main/java/
-│       ├── api/
-│       ├── application/
-│       ├── domain/
-│       └── infrastructure/
-│
-├── onp-prestaciones/                     ← módulo hijo: Prestaciones
-│   │   pom.xml                           ← POM hijo, declara <parent>: onp-sistema
-│   └── src/main/java/
-│       ├── api/
-│       ├── application/
-│       ├── domain/
-│       └── infrastructure/
-│
-└── onp-boot/                             ← módulo hijo — packaging: jar
-        pom.xml                           ← POM hijo, declara <parent>: onp-sistema
-                                             depende de onp-expedientes, onp-aportes, etc.
-                                             produce el JAR ejecutable final
-```
+Es el destino por defecto para:
 
-> **Regla:** toda librería usada por más de un módulo se declara en `<dependencyManagement>` del padre. Los hijos agregan la dependencia sin versión — Maven la hereda. Nunca se duplican versiones entre módulos hijos.
+- todo sistema nuevo desarrollado en ONP;
+- todo sistema legacy migrado progresivamente desde el Estadio 1 vía Strangler Fig ([2.2](#22-patron-de-migracion-strangler-fig)).
 
-Las dependencias entre módulos son explícitas y unidireccionales: ningún módulo accede directamente a los paquetes internos de otro. No hay dependencias circulares.
+No se salta directamente a Microservicios ([3.5](#35-microservicios)) desde el Monolito Modular sin antes cumplir los seis criterios de extracción definidos en [3.5](#35-microservicios).
+
+#### Reglas ONP
+
+Las dependencias entre módulos son explícitas y unidireccionales: ningún módulo accede directamente a los paquetes internos de otro. No hay dependencias circulares. Ver [sección 9.2](#92-monolito-modular) para la estructura Maven concreta.
 
 ### 3.5 Microservicios
 
-En el Monolito Modular con una única BD relacional, `@Transactional` garantiza consistencia transaccional (ACID): todas las operaciones de un request se completan o ninguna se aplica, y el estado de la base de datos siempre es válido. Al dividir en microservicios con BDs separadas esa garantía desaparece. El detalle de las propiedades ACID en el contexto Oracle está en **LIN-BD-ORA-001 3.9**.
+Estilo donde cada módulo se despliega como un proceso independiente con su propia base de datos. Al separar en microservicios se pierde la garantía ACID del Monolito Modular: `@Transactional` solo abarca una conexión a una BD y no puede coordinar dos servicios distintos. Esta pérdida de consistencia fuerte es el punto de partida para entender cuándo microservicios aplica y cuándo no. El detalle de las propiedades ACID en el contexto Oracle está en **LIN-BD-ORA-001 3.9**.
 
 #### Teorema CAP — contexto obligatorio antes de decidir microservicios
 
@@ -288,6 +394,8 @@ El teorema CAP (Brewer, 2000) establece que un sistema distribuido solo puede ga
 - **P — Partition Tolerance (Tolerancia a partición):** el sistema sigue funcionando aunque haya fallas de red entre nodos
 
 En la práctica, en un sistema distribuido **P es no negociable** — las redes fallan. La decisión real es entre **CP** o **AP**:
+
+#### Diagrama
 
 ```
 Monolito Modular → una sola BD → ACID garantizado → CAP no aplica
@@ -301,15 +409,9 @@ Microservicios   → BD por servicio → red entre servicios → CAP aplica
 | **CP** | Disponibilidad — el sistema puede rechazar requests si no puede garantizar consistencia | Transacciones distribuidas (evitar), 2PC (evitar en microservicios) | Cálculo de pensión, liquidación, aportes — un dato incorrecto es inaceptable |
 | **AP** | Consistencia fuerte — aceptas consistencia eventual | Saga + Outbox + Dead Letter Queue | Consultas de estado, notificaciones, historial — un dato ligeramente desactualizado es aceptable |
 
-**Regla ONP — elección CAP:** Al extraer un módulo como microservicio se debe declarar explícitamente en el ADR si el servicio es CP o AP, y qué patrón gestiona la consistencia. Un microservicio sin esta decisión documentada no está listo para producción.
+#### Cuándo usar
 
-**Regla ONP — estructura previa obligatoria:** Todo módulo que cumpla los seis criterios de la tabla siguiente debe refactorizarse a **Arquitectura Hexagonal** antes de iniciar la extracción como microservicio. La refactorización a Hexagonal hace explícita la frontera de extracción: los ports definen qué es interno, los adapters definen qué es externo. Sin esa frontera clara, la extracción genera acoplamiento oculto. Ver 9.3 para la estructura Maven correspondiente.
-
-**Por qué no se pueden usar transacciones ACID entre microservicios:** cada servicio tiene su propia base de datos. Un `@Transactional` de Spring solo abarca una conexión a una BD. Coordinar dos BDs distintas requeriría Two-Phase Commit (2PC), que introduce bloqueos distribuidos, acoplamiento fuerte y puntos únicos de falla — exactamente lo opuesto de lo que se busca con microservicios. La alternativa correcta es el patrón **Saga**. Su uso productivo queda sujeto a la regla transitoria de mensajería definida en la [sección 3.7](#37-regla-transitoria-para-mensajeria-y-event-bus).
-
-#### Criterios para extraer un módulo como microservicio
-
-Reservado para módulos que ya existen como Monolito Modular maduro (3.4) y cumplen **todos** los criterios de la siguiente tabla.
+Reservado para módulos del Monolito Modular maduro ([3.4](#34-monolito-modular)) que cumplen **todos** los criterios de la siguiente tabla. Si algún criterio no se cumple, el módulo permanece en el Monolito Modular. No se crean microservicios por razones de moda o preferencia tecnológica.
 
 | Criterio | Descripción |
 |---|---|
@@ -320,13 +422,21 @@ Reservado para módulos que ya existen como Monolito Modular maduro (3.4) y cump
 | Tolerancia a fallo independiente | El sistema principal puede operar aunque este módulo falle |
 | SLO definido | Tiene Service Level Objectives formales documentados (ver **LIN-OBS-001**) |
 
-**Si algún criterio no se cumple, el módulo permanece en el Monolito Modular (3.4).** No se crean microservicios por razones de moda o preferencia tecnológica.
+#### Reglas ONP
+
+**Regla — elección CAP:** al extraer un módulo como microservicio se debe declarar explícitamente en el ADR si el servicio es CP o AP, y qué patrón gestiona la consistencia. Un microservicio sin esta decisión documentada no está listo para producción.
+
+**Regla — estructura previa obligatoria:** todo módulo que cumpla los seis criterios debe refactorizarse a **Arquitectura Hexagonal** ([3.2](#32-arquitectura-hexagonal)) antes de iniciar la extracción. Los ports definen qué es interno, los adapters definen qué es externo. Sin esa frontera clara, la extracción genera acoplamiento oculto. Ver [sección 9.3](#93-hexagonal--clean) para la estructura Maven correspondiente.
+
+**Regla — sin ACID entre microservicios:** coordinar dos BDs distintas requeriría Two-Phase Commit (2PC), que introduce bloqueos distribuidos, acoplamiento fuerte y puntos únicos de falla — exactamente lo opuesto de lo que se busca con microservicios. La alternativa correcta es el patrón **Saga** con **Transactional Outbox**. El detalle de implementación está en **LIN-BUS-001 sección 9**.
 
 **── ¿Cómo se comunican los componentes? ────────────────────────**
 
 ### 3.6 Arquitectura Orientada a Eventos (EDA)
 
-EDA es el estilo arquitectónico donde los componentes se comunican a través de **eventos** en lugar de llamadas directas. Un productor registra que algo ocurrió; los consumidores reaccionan de forma asíncrona y desacoplada.
+Estilo donde los componentes se comunican a través de **eventos** en lugar de llamadas directas. Un productor registra que algo ocurrió; los consumidores reaccionan de forma asíncrona y desacoplada a través de un broker. EDA no reemplaza a REST — es el estilo correcto solo en los contextos específicos descritos más abajo.
+
+#### Diagrama
 
 ```
 [Productor]  ──► evento ──►  [Broker]  ──► evento ──►  [Consumidor A]
@@ -342,16 +452,25 @@ La diferencia fundamental con REST:
 | Acoplamiento | Alto — el productor conoce la API del consumidor | Bajo — solo comparten el contrato del evento |
 | Consistencia | Fuerte (el resultado es inmediato) | Eventual (el consumidor procesa en su tiempo) |
 
-#### Cuándo EDA aplica en ONP
+#### Cuándo usar
 
-EDA no reemplaza a REST. Es el estilo correcto cuando:
+EDA es el estilo correcto cuando:
 
 - la acción del productor está completa sin importar cuándo reacciona el consumidor (notificaciones, auditoría, reporte);
 - el sistema necesita desacoplar dos contextos sin crear una dependencia directa de ciclo de despliegue;
 - la consistencia eventual es aceptable para ese flujo de negocio;
 - el patrón Saga coordina una transacción distribuida entre microservicios.
 
-EDA requiere la infraestructura de un broker (Kafka, RabbitMQ u equivalente). Toda adopción de EDA en ONP está sujeta a la regla transitoria de 3.7 mientras `LIN-BUS-001` no exista.
+EDA requiere la infraestructura de un broker. ONP adopta **Apache Kafka** como broker institucional (ver **LIN-BUS-001 sección 4**). Los criterios detallados de cuándo usar el bus están en **LIN-BUS-001 sección 4.3**. Todo sistema que adopte EDA debe cumplir con **LIN-BUS-001**.
+
+#### Cuándo NO usar
+
+| Situación | Por qué EDA no corresponde |
+|---|---|
+| Lógica de negocio core con requisito ACID (cálculo de pensión, liquidación, aportes) | EDA implica consistencia eventual. En estos contextos se requiere consistencia fuerte, usar `@Transactional` en el Monolito Modular. |
+| El productor necesita la respuesta inmediata del consumidor | Si el productor no puede avanzar sin la respuesta, el patrón correcto es REST sincrónico. EDA con correlación para simular sincronismo añade complejidad sin beneficio. |
+| Desacoplar por desacoplar sin análisis de consistencia | El diseño del evento, el esquema de compensación y la operabilidad del broker tienen un costo real. Desacoplar sin justificación no es una mejora arquitectónica. |
+| Equipo sin observabilidad para sistemas asíncronos | EDA es opaco sin trazas distribuidas que conecten el trace del productor con el del consumidor. Si el stack de observabilidad (LIN-OBS-001) no está maduro, EDA es difícil de operar. LIN-BUS-001 (P7) eleva esta condición a prerequisito formal: ningún flujo EDA entra a producción sin trazabilidad completa en Jaeger. |
 
 #### Patrones EDA aplicables en ONP
 
@@ -364,62 +483,17 @@ EDA requiere la infraestructura de un broker (Kafka, RabbitMQ u equivalente). To
 
 > **Event Sourcing** no está en la lista. Almacenar el estado como secuencia de eventos introduce complejidad operativa (versionado de esquemas de eventos, proyecciones, replay) que supera el beneficio en los sistemas actuales de ONP. Su adopción requiere ADR aprobado por Arquitectura OTI.
 
-#### Estándar de envelope — CloudEvents v1.0
+#### Reglas ONP
 
-El envelope de todos los eventos publicados en el bus institucional cumple **CloudEvents v1.0** (especificación CNCF). Esta decisión garantiza interoperabilidad con sistemas externos — otras instituciones del Estado, herramientas del ecosistema cloud-native — sin necesidad de adaptadores propietarios.
+**Prerequisito arquitectónico:** todo módulo que use mensajería para coordinar transacciones distribuidas debe haber adoptado previamente **Arquitectura Hexagonal** ([3.2](#32-arquitectura-hexagonal)). El broker no es un atajo para omitir esa frontera — los ports y adapters hacen explícita la separación entre el dominio y la infraestructura de mensajería (ver **LIN-BUS-001 sección 1.3**).
 
-El detalle del contrato del envelope (campos, tipos, formato `traceparent` W3C TraceContext) está en **LIN-BUS-001 §5.2**. La decisión de adopción está documentada en **ADR-CLOUDEVENTS-001**.
+**Broker institucional:** ONP opera un único broker Kafka institucional. No se aprueban brokers paralelos por proyecto sin ADR aprobado por Arquitectura OTI (ver **LIN-BUS-001 sección 4.1** y principio P1).
 
-#### Cuándo NO usar EDA
+**Estándar de envelope — CloudEvents v1.0:** el envelope de todos los eventos publicados en el bus institucional cumple **CloudEvents v1.0** (especificación CNCF). Garantiza interoperabilidad con otras instituciones del Estado y el ecosistema cloud-native. El detalle del contrato del envelope (campos, tipos, formato `traceparent` W3C TraceContext) está en **LIN-BUS-001 sección 5.2**. La decisión de adopción está documentada en **ADR-CLOUDEVENTS-001**.
 
-| Situación | Por qué EDA no corresponde |
-|---|---|
-| Lógica de negocio core con requisito ACID (cálculo de pensión, liquidación, aportes) | EDA implica consistencia eventual. En estos contextos se requiere consistencia fuerte — usar `@Transactional` en el Monolito Modular. |
-| El productor necesita la respuesta inmediata del consumidor | Si el productor no puede avanzar sin la respuesta, el patrón correcto es REST sincrónico. EDA con correlación para simular sincronismo añade complejidad sin beneficio. |
-| Desacoplar por desacoplar sin análisis de consistencia | El diseño del evento, el esquema de compensación y la operabilidad del broker tienen un costo real. Desacoplar sin justificación no es una mejora arquitectónica. |
-| Equipo sin observabilidad para sistemas asíncronos | EDA es opaco sin trazas distribuidas que conecten el trace del productor con el del consumidor. Si el stack de observabilidad (LIN-OBS-001) no está maduro, EDA es difícil de operar. LIN-BUS-001 (P7) eleva esta condición a prerequisito formal: ningún flujo EDA entra a producción sin trazabilidad completa en Jaeger. |
+**Observabilidad obligatoria:** ningún flujo EDA entra a producción sin trazabilidad completa en Jaeger — correlación de trazas productor→consumidor. Esta condición es un prerequisito formal (LIN-BUS-001 principio P7). Ver **LIN-OBS-001** para la configuración del stack.
 
-### 3.7 Regla transitoria para mensajería y event bus
-
-Mientras `LIN-BUS-001` no exista como lineamiento formal vigente, la ONP adopta la siguiente regla transitoria:
-
-- no se permite incorporar brokers, colas, topics o patrones event-driven de forma ad hoc en soluciones productivas;
-- no se permite seleccionar por proyecto, sin aprobación central, tecnologías como Kafka, RabbitMQ, ActiveMQ u otra mensajería equivalente;
-- no se permite usar “event bus” como mecanismo genérico para resolver acoplamientos sin diseño de arquitectura explícito.
-
-#### Excepción permitida
-
-Solo se permite un piloto o adopción controlada de mensajería cuando exista:
-
-1. ADR aprobado por Arquitectura OTI;
-2. justificación técnica clara del caso de uso;
-3. definición explícita del broker o mecanismo aprobado para ese piloto;
-4. criterios de operación, observabilidad, seguridad y reversa documentados;
-5. responsable funcional y responsable técnico identificados.
-
-#### Alcance de la restricción
-
-Esta restricción aplica a:
-
-- publicación y consumo asíncrono entre sistemas o módulos;
-- colas de procesamiento interno;
-- eventos de dominio publicados fuera del proceso local;
-- integraciones desacopladas por mensajería.
-
-No impide:
-
-- eventos de dominio internos en memoria dentro del mismo proceso;
-- uso de callbacks, scheduling local o mecanismos estrictamente internos que no constituyan un broker institucional;
-- patrones ya existentes en sistemas legacy, siempre que no se amplíen sin ADR.
-
-#### Regla de gobierno
-
-Hasta que `LIN-BUS-001` exista:
-
-- Arquitectura OTI es el único dueño de la decisión sobre adopción de mensajería;
-- Plataforma valida la viabilidad operativa del mecanismo propuesto;
-- Seguridad valida implicancias de autenticación, autorización, cifrado y trazabilidad;
-- toda excepción debe tener fecha de revisión y plan para converger al estándar futuro.
+**Documento rector:** el estándar completo de diseño, operación y gobierno del bus de eventos está en **LIN-BUS-001 — Lineamiento de Mensajería y Bus de Eventos ONP**. Esta sección es una introducción al estilo; LIN-BUS-001 es la referencia normativa obligatoria para cualquier adopción.
 
 ---
 
@@ -621,7 +695,7 @@ Oracle (OLTP)
 
 La capa **Gold** del Medallion es la fuente natural para los read models analíticos de CQRS — reportes, dashboards y análisis histórico. La capa **Bronze/Silver** se alimenta desde Oracle vía ELT y es el mecanismo de sincronización para ese tipo de consultas.
 
-El detalle de la arquitectura de datos — Medallion, Parquet, Nessie, OpenMetadata y gobierno de datos — se define en **LIN-BI-001** (en elaboración).
+El detalle de la arquitectura de datos — Medallion, Parquet, Nessie, OpenMetadata y gobierno de datos — se define en **LIN-BI-001** (se debe considerar y luego elaborar este documento).
 
 ---
 
@@ -1230,13 +1304,116 @@ ONP define tres estructuras de proyecto según el estilo arquitectónico del sis
 
 Tres capas con responsabilidades claras: presentación (`controller`), aplicación/negocio (`service`), persistencia (`repository`). La regla de dependencia fluye hacia abajo: `controller → service → repository`. Los controllers no acceden a repositorios directamente.
 
+Un único módulo Maven (un solo `pom.xml`, no multi-módulo), con paquetes organizados por capa:
+
+```
+onp-sistema/
+│   pom.xml                    ← POM único — packaging: jar
+└── src/main/java/
+    └── pe/gob/onp/sistema/
+        ├── controller/        ← Controllers, DTOs de entrada/salida
+        ├── service/           ← Services, lógica de negocio
+        ├── repository/        ← Interfaces Spring Data JPA
+        ├── domain/            ← Entidades JPA, enumerados
+        ├── exception/         ← Excepciones propias + @ControllerAdvice global
+        └── config/            ← Configuración Spring (beans, CORS, seguridad)
+```
+
+> **Regla:** los `controller/` dependen de `service/`; los `service/` dependen de `repository/` y `domain/`. Ningún controller accede directamente a un repositorio.
+
+**Concerns transversales — dónde van**
+
+Las carpetas que no son una capa (`auth/`, `util/`, `health/`, `common/`) no tienen lugar propio en la estructura — su contenido pertenece a alguna de las capas existentes:
+
+| Si tienes... | Va en... | Por qué |
+|---|---|---|
+| Filtros de seguridad, Spring Security config | `config/` | Es configuración de infraestructura |
+| Endpoints de login / logout / token | `controller/` | Son presentación como cualquier otro endpoint |
+| Spring Actuator, health checks | `config/` | Son beans de configuración |
+| Utilidades de dominio (formateos de RUC, DNI) | `domain/` | Pertenecen al dominio, no a una capa técnica |
+| Utilidades técnicas (parsers, conversores) | `config/` | Si no son dominio, son infraestructura técnica |
+| DTOs compartidos entre controllers | `controller/` | Los DTOs son presentación |
+| Constantes de negocio | `domain/` | Son parte del modelo de dominio |
+
+> **Señal de alerta:** si un proyecto tiene carpetas `util/`, `common/` o `shared/` como carpetas de primer nivel, es síntoma de que esas clases no encontraron su lugar arquitectónico. La pregunta correcta no es "¿dónde pongo esto?" sino "¿a qué capa pertenece esto?".
+
 ### 9.2 Monolito Modular
 
 Cinco módulos Maven con fronteras explícitas. Las dependencias fluyen hacia el interior: `boot → api/infrastructure → application → domain`. El módulo `domain` no depende de ningún otro módulo del proyecto. Esta es la estructura de destino por defecto para todo sistema nuevo en ONP.
 
+**Estructura Maven** — dos niveles: padre que coordina, hijos que implementan:
+
+```
+onp-sistema/                              ← POM padre — packaging: pom, sin código Java
+│   pom.xml                                 <dependencyManagement>: centraliza versiones
+│                                           de librerías compartidas (Spring Boot, Lombok,
+│                                           MapStruct, etc.). Los hijos heredan versiones
+│                                           y solo declaran la dependencia sin versión.
+│
+├── onp-expedientes/                      ← módulo hijo: Expedientes
+│   │   pom.xml                           ← POM hijo, declara <parent>: onp-sistema
+│   └── src/main/java/
+│       ├── api/                          ← paquete: Controllers, DTOs
+│       ├── application/                  ← paquete: Services, casos de uso
+│       ├── domain/                       ← paquete: Entidades, ports
+│       └── infrastructure/               ← paquete: JPA, clientes HTTP
+│
+├── onp-aportes/                          ← módulo hijo: Aportes
+│   │   pom.xml                           ← POM hijo, declara <parent>: onp-sistema
+│   └── src/main/java/
+│       ├── api/
+│       ├── application/
+│       ├── domain/
+│       └── infrastructure/
+│
+├── onp-prestaciones/                     ← módulo hijo: Prestaciones
+│   │   pom.xml                           ← POM hijo, declara <parent>: onp-sistema
+│   └── src/main/java/
+│       ├── api/
+│       ├── application/
+│       ├── domain/
+│       └── infrastructure/
+│
+└── onp-boot/                             ← módulo hijo — packaging: jar
+        pom.xml                           ← POM hijo, declara <parent>: onp-sistema
+                                             depende de onp-expedientes, onp-aportes, etc.
+                                             produce el JAR ejecutable final
+```
+
+> **Regla:** toda librería usada por más de un módulo se declara en `<dependencyManagement>` del padre. Los hijos agregan la dependencia sin versión — Maven la hereda. Nunca se duplican versiones entre módulos hijos.
+
 ### 9.3 Hexagonal / Clean
 
-Dos anillos concéntricos: `domain` (lógica pura, sin imports de framework) e `infrastructure` (adapters que implementan los ports del dominio). La única dirección de dependencia permitida es `infrastructure → domain`. Si una clase en `domain` importa `jakarta.persistence` o `org.springframework`, la frontera está rota.
+Tres anillos concéntricos con una única dirección de dependencia permitida: `infrastructure → application → domain`. Si una clase en `domain` importa `jakarta.persistence` o `org.springframework`, la frontera está rota.
+
+Un único módulo Maven con paquetes organizados por anillo:
+
+```
+onp-modulo/
+│   pom.xml                              ← POM único — packaging: jar
+└── src/main/java/
+    └── pe/gob/onp/modulo/
+        ├── domain/
+        │   ├── model/                   ← Entidades, Value Objects, Agregados
+        │   │                               (Java puro — sin imports de Spring ni JPA)
+        │   └── port/out/                ← interfaces que el dominio necesita del exterior
+        │                                   (ej. PensionistaRepository, ReniecPort)
+        ├── application/
+        │   ├── port/in/                 ← interfaces de casos de uso
+        │   │                               (ej. RegistrarAporteUseCase)
+        │   └── service/                 ← implementan port/in, orquestan domain,
+        │                                   usan domain/port/out
+        └── infrastructure/
+            ├── adapter/
+            │   ├── in/
+            │   │   └── rest/            ← Controllers REST (llaman a application/port/in)
+            │   └── out/
+            │       ├── persistence/     ← JPA (implementan domain/port/out)
+            │       └── client/          ← Clientes HTTP externos (RENIEC, SUNAT, PIDE)
+            └── config/                  ← Configuración Spring, beans, seguridad
+```
+
+> **Regla:** `domain/` es Java puro — cero imports de `jakarta.*` o `org.springframework.*`. `application/` puede usar anotaciones Spring en los services (`@Service`, `@Transactional`). Todo lo demás de infraestructura vive en `infrastructure/`.
 
 > Para la estructura concreta de paquetes, convenciones de nomenclatura y configuración Maven de cada estilo, ver **LIN-DEV-JAVA-001 — Estándar de Desarrollo Java ONP, 12**.
 
@@ -1478,7 +1655,7 @@ Independientemente del estilo, todo proveedor o profesional contratado debe demo
 | ADR-009 | K8s con containerd como runtime de producción; Docker Engine solo en desarrollo local y etapa de Transición | 2026-05-21 | Aceptada |
 | ADR-010 | Observabilidad (trazas, logs estructurados, métricas, health checks) es requisito obligatorio de producción; ningún sistema se despliega sin los cuatro pilares | 2026-05-21 | Aceptada |
 | ADR-011 | K8s es el destino por defecto; el uso de VM requiere criterio documentado en ADR | 2026-05-21 | Aceptada |
-| ADR-012 | Prohibida la adopción de mensajería/event bus ad hoc en producción mientras LIN-BUS-001 no exista; toda excepción requiere ADR aprobado por Arquitectura OTI | 2026-05-28 | Aceptada |
+| ADR-012 | LIN-BUS-001 formaliza y reemplaza la regla transitoria de mensajería; Apache Kafka es el broker institucional aprobado; toda adopción de EDA debe cumplir LIN-BUS-001 | 2026-06-05 | Aceptada |
 | ADR-013 | CloudEvents v1.0 (CNCF) como estándar institucional de envelope para todos los eventos del bus; habilita interoperabilidad con instituciones del Estado y ecosistema cloud-native | 2026-06-08 | Aceptada |
 
 ---
