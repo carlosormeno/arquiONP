@@ -364,6 +364,12 @@ EDA requiere la infraestructura de un broker (Kafka, RabbitMQ u equivalente). To
 
 > **Event Sourcing** no está en la lista. Almacenar el estado como secuencia de eventos introduce complejidad operativa (versionado de esquemas de eventos, proyecciones, replay) que supera el beneficio en los sistemas actuales de ONP. Su adopción requiere ADR aprobado por Arquitectura OTI.
 
+#### Estándar de envelope — CloudEvents v1.0
+
+El envelope de todos los eventos publicados en el bus institucional cumple **CloudEvents v1.0** (especificación CNCF). Esta decisión garantiza interoperabilidad con sistemas externos — otras instituciones del Estado, herramientas del ecosistema cloud-native — sin necesidad de adaptadores propietarios.
+
+El detalle del contrato del envelope (campos, tipos, formato `traceparent` W3C TraceContext) está en **LIN-BUS-001 §5.2**. La decisión de adopción está documentada en **ADR-CLOUDEVENTS-001**.
+
 #### Cuándo NO usar EDA
 
 | Situación | Por qué EDA no corresponde |
@@ -371,7 +377,7 @@ EDA requiere la infraestructura de un broker (Kafka, RabbitMQ u equivalente). To
 | Lógica de negocio core con requisito ACID (cálculo de pensión, liquidación, aportes) | EDA implica consistencia eventual. En estos contextos se requiere consistencia fuerte — usar `@Transactional` en el Monolito Modular. |
 | El productor necesita la respuesta inmediata del consumidor | Si el productor no puede avanzar sin la respuesta, el patrón correcto es REST sincrónico. EDA con correlación para simular sincronismo añade complejidad sin beneficio. |
 | Desacoplar por desacoplar sin análisis de consistencia | El diseño del evento, el esquema de compensación y la operabilidad del broker tienen un costo real. Desacoplar sin justificación no es una mejora arquitectónica. |
-| Equipo sin observabilidad para sistemas asíncronos | EDA es opaco sin trazas distribuidas que conecten el trace del productor con el del consumidor. Si el stack de observabilidad (LIN-OBS-001) no está maduro, EDA es difícil de operar. |
+| Equipo sin observabilidad para sistemas asíncronos | EDA es opaco sin trazas distribuidas que conecten el trace del productor con el del consumidor. Si el stack de observabilidad (LIN-OBS-001) no está maduro, EDA es difícil de operar. LIN-BUS-001 (P7) eleva esta condición a prerequisito formal: ningún flujo EDA entra a producción sin trazabilidad completa en Jaeger. |
 
 ### 3.7 Regla transitoria para mensajería y event bus
 
@@ -1218,17 +1224,17 @@ ONP define tres estructuras de proyecto según el estilo arquitectónico del sis
 |---|---|---|
 | **Monolito simple (capas)** | Layered | Sistema sin candidatura a microservicio; lógica Transaction Script o Active Record |
 | **Monolito Modular** | Modular | Punto de llegada por defecto para todo sistema nuevo |
-| **Hexagonal / Clean** | Hexagonal | Módulo que cumple los seis criterios de microservicio (3.4) — obligatorio antes de extraer |
+| **Hexagonal / Clean** | Hexagonal | Módulo que cumple los seis criterios de microservicio (3.5) — obligatorio antes de extraer |
 
-### Monolito simple (capas)
+### 9.1 Monolito simple (capas)
 
 Tres capas con responsabilidades claras: presentación (`controller`), aplicación/negocio (`service`), persistencia (`repository`). La regla de dependencia fluye hacia abajo: `controller → service → repository`. Los controllers no acceden a repositorios directamente.
 
-### Monolito Modular
+### 9.2 Monolito Modular
 
 Cinco módulos Maven con fronteras explícitas. Las dependencias fluyen hacia el interior: `boot → api/infrastructure → application → domain`. El módulo `domain` no depende de ningún otro módulo del proyecto. Esta es la estructura de destino por defecto para todo sistema nuevo en ONP.
 
-### Hexagonal / Clean
+### 9.3 Hexagonal / Clean
 
 Dos anillos concéntricos: `domain` (lógica pura, sin imports de framework) e `infrastructure` (adapters que implementan los ports del dominio). La única dirección de dependencia permitida es `infrastructure → domain`. Si una clase en `domain` importa `jakarta.persistence` o `org.springframework`, la frontera está rota.
 
@@ -1243,7 +1249,7 @@ Dos anillos concéntricos: `domain` (lógica pura, sin imports de framework) e `
 La distribución de la pirámide de pruebas la determina el **estilo arquitectónico** — no la estrategia de lógica de dominio. Son dos dimensiones distintas:
 
 - **Estilo arquitectónico** (3): define cómo está estructurado el sistema → determina la proporción de la pirámide
-- **Estrategia de lógica de dominio** (4): define cómo se organiza la lógica de negocio → afecta el foco y complejidad de las pruebas unitarias, no la proporción general
+- **Estrategia de lógica de dominio** (6): define cómo se organiza la lógica de negocio → afecta el foco y complejidad de las pruebas unitarias, no la proporción general
 
 ```
                       ╱╲
@@ -1268,7 +1274,7 @@ La distribución de la pirámide de pruebas la determina el **estilo arquitectó
 
 **Efecto de la estrategia de dominio sobre las pruebas unitarias:**
 
-| Estrategia de dominio (4) | Efecto en pruebas unitarias |
+| Estrategia de dominio (6) | Efecto en pruebas unitarias |
 |---|---|
 | Transaction Script | Unitarias sobre el Service — requieren mocks de repositorios |
 | Active Record | Unitarias sobre la entidad — lógica en el modelo, fáciles de aislar |
@@ -1348,7 +1354,10 @@ FROM eclipse-temurin:21-jdk-alpine AS build
 WORKDIR /app
 COPY .mvn/ .mvn/
 COPY mvnw pom.xml ./
-COPY */pom.xml ./
+COPY onp-expedientes/pom.xml onp-expedientes/
+COPY onp-aportes/pom.xml onp-aportes/
+COPY onp-prestaciones/pom.xml onp-prestaciones/
+COPY onp-boot/pom.xml onp-boot/
 RUN ./mvnw dependency:go-offline -q
 COPY . .
 RUN ./mvnw package -DskipTests -q
@@ -1469,6 +1478,8 @@ Independientemente del estilo, todo proveedor o profesional contratado debe demo
 | ADR-009 | K8s con containerd como runtime de producción; Docker Engine solo en desarrollo local y etapa de Transición | 2026-05-21 | Aceptada |
 | ADR-010 | Observabilidad (trazas, logs estructurados, métricas, health checks) es requisito obligatorio de producción; ningún sistema se despliega sin los cuatro pilares | 2026-05-21 | Aceptada |
 | ADR-011 | K8s es el destino por defecto; el uso de VM requiere criterio documentado en ADR | 2026-05-21 | Aceptada |
+| ADR-012 | Prohibida la adopción de mensajería/event bus ad hoc en producción mientras LIN-BUS-001 no exista; toda excepción requiere ADR aprobado por Arquitectura OTI | 2026-05-28 | Aceptada |
+| ADR-013 | CloudEvents v1.0 (CNCF) como estándar institucional de envelope para todos los eventos del bus; habilita interoperabilidad con instituciones del Estado y ecosistema cloud-native | 2026-06-08 | Aceptada |
 
 ---
 

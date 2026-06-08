@@ -129,7 +129,9 @@ Los recursos, parámetros y mensajes se nombran en **español** siguiendo el len
 
 #### Plataforma institucional
 
-La ONP adopta **WSO2 API Manager** como plataforma institucional de gestión de APIs. Su implementación está en curso. Todo servicio REST nuevo debe diseñarse asumiendo que será publicado y gestionado a través de esta plataforma.
+> **Estado de implementación:** WSO2 API Manager se encuentra en **fase PoC** — no está operativo como gateway centralizado en producción. SAA con `SaaTokenValidationFilter` es el mecanismo institucional vigente. Las reglas de esta sección describen el **estándar objetivo**; la transición está gobernada por **ADR-WSO2-001**. Toda referencia a WSO2 como obligación operativa debe leerse como objetivo de diseño hasta que Arquitectura y Plataforma emitan comunicación formal de graduación del PoC.
+
+La ONP adopta **WSO2 API Manager** como plataforma institucional objetivo de gestión de APIs. Todo servicio REST nuevo debe diseñarse asumiendo que será publicado y gestionado a través de esta plataforma una vez operativa.
 
 WSO2 API Manager integra dos niveles de responsabilidad que deben distinguirse claramente:
 
@@ -138,7 +140,9 @@ WSO2 API Manager integra dos niveles de responsabilidad que deben distinguirse c
 | **Gateway técnico** | WSO2 Gateway | Entrada de tráfico, enrutamiento, validación de tokens, rate limiting, políticas de seguridad, logs de acceso |
 | **API Management** | Publisher + Dev Portal + Key Manager + Analytics | Ciclo de vida de la API: registro, publicación, versionado, documentación, suscripción de consumidores, aprobación de acceso, métricas de consumo y retiro/deprecación |
 
-#### Reglas obligatorias
+#### Reglas obligatorias (estándar objetivo)
+
+Estas reglas son de cumplimiento obligatorio **una vez que WSO2 esté operativo en producción**. Mientras permanezca en PoC, aplican como guía de diseño para que los servicios nuevos sean compatibles con la plataforma cuando se active la transición (ADR-WSO2-001).
 
 **Toda API REST institucional debe publicarse a través de WSO2 API Manager.** No se permite exponer servicios directamente a consumidores externos sin pasar por la plataforma. Excepción: comunicación interna entre servicios dentro del mismo cluster K8s, con justificación en ADR.
 
@@ -185,11 +189,13 @@ Expone /api/v1/...           Define plan de acceso        Habilita en Dev Portal
 
 #### Antipatrón prohibido
 
+> Este antipatrón aplica plenamente cuando WSO2 esté operativo. Hoy, mientras el PoC no haya graduado, el patrón "CORRECTO" es el diseño objetivo que los servicios deben anticipar — no un requisito operativo inmediato.
+
 ```
 # PROHIBIDO — el servicio expuesto directamente sin gateway
 Consumidor → https://mi-servicio.onp.gob.pe/api/v1/expedientes
 
-# CORRECTO — toda exposición pasa por WSO2
+# CORRECTO (objetivo) — toda exposición pasa por WSO2
 Consumidor → https://apis.onp.gob.pe/pensiones/v1/expedientes  (WSO2 Gateway)
                                                     ↓
                                     mi-servicio.onp.internal:8080
