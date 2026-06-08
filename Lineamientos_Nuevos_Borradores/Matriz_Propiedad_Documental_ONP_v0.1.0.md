@@ -28,6 +28,7 @@ Este documento define qué lineamiento es la **fuente autoritativa** de cada tem
 | `LIN-API-REST-001` | Estándar de Servicios Web y APIs REST | Borrador | `Web/Lineamiento_Estandar_APIs_REST_ONP_v0.1.0.md` |
 | `LIN-DEV-JAVA-001` | Estándar de Desarrollo Java | Borrador | `desarrollo/Lineamiento_Estandar_Desarrollo_Java_ONP_v0.1.0.md` |
 | `LIN-BD-ORA-001` | Estándar de Base de Datos Oracle | Borrador | `Datos/Lineamiento_Estandar_Base_de_Datos_ONP_v0.1.0.md` |
+| `LIN-BI-001` | Lineamiento de Explotación y Analítica de Datos (BI) | Borrador | `Datos/Lineamiento_Explotacion_Analitica_Datos_BI_ONP_v0.1.0.md` |
 | `LIN-FE-ANG-001` | Estándar de Diseño Web Frontend Angular | Borrador | `Web/Lineamiento_Estandar_Diseno_Web_Frontend_ONP_v0.1.0.md` |
 | `LIN-OBS-001` | Lineamiento de Log Centralizado, Trazabilidad y Observabilidad | **Borrador** | `observabilidad/Lineamiento_Log_Trazabilidad_Observabilidad_ONP_v0.1.0.md` |
 | `LIN-SEC-APP-001` | Estándar de Seguridad en Aplicaciones | **Borrador** | `seguridad/Lineamiento_Seguridad_Aplicaciones_ONP_v0.1.0.md` |
@@ -198,6 +199,18 @@ Este documento define qué lineamiento es la **fuente autoritativa** de cada tem
 
 ---
 
+### 8.1 Explotación y Analítica de Datos (BI / Lakehouse)
+
+| Tema | Dueño | Consumidores | Estado | Observación |
+|---|---|---|---|---|
+| Arquitectura Medallion (Bronze, Silver, Gold) | `LIN-BI-001` | `LIN-ARQ-000`, `LIN-BD-ORA-001` | En borrador | Define las capas de datos, formatos (Iceberg/Parquet) e ingestas. |
+| Stack tecnológico homologado para analítica | `LIN-BI-001` | `LIN-ARQ-000` | En borrador | Basado en Sección 9 de Estándares de Tecnología v2.0 (MinIO, Spark, Airflow, Trino, Nessie, etc.). |
+| Control de Versiones de Datos (Nessie Branching) | `LIN-BI-001` | `LIN-VER-001` | En borrador | Estrategia de ramas (`main`, `dev`, `feature/*`) para desarrollo de pipelines aislados. |
+| Calidad, Gobernanza y Linaje de Datos | `LIN-BI-001` | `LIN-OBS-001` | En borrador | Great Expectations para validaciones, OpenMetadata para glosario y PII, y OpenLineage para trazabilidad. |
+| Seguridad y Control de Acceso analítico | `LIN-BI-001` | `LIN-SEC-APP-001` | En borrador | Roles en Trino, políticas en MinIO, variables de secretos en Vault y enmascaramiento PII. |
+
+---
+
 ### 9. Frontend
 
 | Tema | Dueño | Consumidores | Estado | Observación |
@@ -301,7 +314,7 @@ Deliverable separado de los lineamientos. Los lineamientos referencian las ficha
 | PT13 | Anti-Corruption Layer | ✅ Sección sección 6.3 en LIN-ARQ-000 — falta formato ficha | LIN-ARQ-000 |
 | PT14 | Adapter | ✅ Sección sección 6.2 en LIN-ARQ-000 — falta formato ficha | LIN-ARQ-000 |
 | PT15 | Facade | ❌ Sin ficha | LIN-ARQ-000 |
-| PT16 | Medallón | ❌ Sin ficha | LIN-BD-ORA-001 / LIN-ARQ-000 |
+| PT16 | Medallón | ❌ Sin ficha | LIN-BI-001 |
 
 **Formato de cada ficha:** problema que resuelve · solución · cuándo usar en ONP · cuándo NO usar · estructura / diagrama · consecuencias y trade-offs · patrones relacionados · ejemplo de referencia.
 

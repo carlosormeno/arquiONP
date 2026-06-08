@@ -695,7 +695,7 @@ Oracle (OLTP)
 
 La capa **Gold** del Medallion es la fuente natural para los read models analíticos de CQRS — reportes, dashboards y análisis histórico. La capa **Bronze/Silver** se alimenta desde Oracle vía ELT y es el mecanismo de sincronización para ese tipo de consultas.
 
-El detalle de la arquitectura de datos — Medallion, Parquet, Nessie, OpenMetadata y gobierno de datos — se define en **LIN-BI-001** (se debe considerar y luego elaborar este documento).
+El detalle de la arquitectura de datos — Medallion, Parquet, Nessie, OpenMetadata y gobierno de datos — se define en el lineamiento **LIN-BI-001** (Lineamiento de Explotación y Analítica de Datos).
 
 ---
 
