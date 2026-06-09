@@ -3,7 +3,6 @@ Lineamientos_Aprobados/
 Lineamientos_Borrador/
 Otros/
 Doc_BI/
-cert-manager.yaml
 
 # Archivos comprimidos
 *.zip
@@ -21,3 +20,4 @@ Thumbs.db
 *.swp
 *.swo
 .claude/
+cert-manager.yaml
