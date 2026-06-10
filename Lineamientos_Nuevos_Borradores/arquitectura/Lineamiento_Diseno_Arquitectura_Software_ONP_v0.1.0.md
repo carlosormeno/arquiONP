@@ -1,8 +1,8 @@
 # Lineamiento de Diseño y Arquitectura de Software ONP
 
 **Código:** LIN-ARQ-000  
-**Versión:** 0.1.2  
-**Fecha:** 2026-05-28  
+**Versión:** 0.1.3  
+**Fecha:** 2026-06-09  
 **Autor:** Oficina de Tecnologías de la Información — ONP  
 **Estado:** Borrador de trabajo interno  
 **Clasificación:** Marco rector interno. No es un entregable oficial de la lista de documentos de arquitectura; es el documento normativo base que guía la redacción de todos los lineamientos técnicos formales. Todo lineamiento derivado debe ser consistente con las decisiones de este documento.
@@ -16,6 +16,7 @@
 | 0.1.0 | 2026-05-21 | Versión inicial del documento de trabajo |
 | 0.1.1 | 2026-05-28 | Alinea el checklist de observabilidad con el modelo YAML institucional y con overrides operativos definidos por Plataforma |
 | 0.1.2 | 2026-05-28 | Restringe la adopción de mensajería/event bus ad hoc mientras `LIN-BUS-001` no exista y define la regla transitoria de excepción |
+| 0.1.3 | 2026-06-09 | Incorpora el marco de Four Golden Signals (Google SRE) en sección 11.5 como fundamento conceptual del dashboard mínimo de métricas |
 
 ---
 
@@ -1584,8 +1585,21 @@ Todo sistema que llega a producción en ONP — independientemente del estilo ar
 |---|---|---|
 | **Trazas distribuidas** | Todo request HTTP genera un trace con spans por operación. Las operaciones lentas o con error son visibles en Jaeger. | Micrometer Tracing + OTEL Collector → Jaeger |
 | **Logs estructurados** | Logs en formato JSON con campos mínimos: `traceId`, `spanId`, `timestamp`, `level`, `service`, `message`. Sin logs en texto plano en producción. | Logback + LogstashEncoder → OTEL Collector → Elasticsearch/Kibana |
-| **Métricas** | El servicio expone métricas de JVM, HTTP y negocio. Prometheus las recoge. Grafana las visualiza. | Spring Actuator + Micrometer → Prometheus → Grafana |
+| **Métricas** | El servicio expone métricas de JVM, HTTP y negocio. Prometheus las recoge. Grafana las visualiza. El dashboard mínimo obligatorio cubre las cuatro señales doradas (ver abajo). | Spring Actuator + Micrometer → Prometheus → Grafana |
 | **Health checks** | Endpoints de liveness y readiness implementados y configurados en el manifiesto K8s. El servicio que no responde se reinicia automáticamente. | `/actuator/health/liveness` y `/actuator/health/readiness` |
+
+#### Marco de referencia — Four Golden Signals (Google SRE)
+
+El dashboard de Grafana obligatorio definido en **LIN-OBS-001 sección 9.3** está diseñado para cubrir las cuatro señales doradas del libro *Site Reliability Engineering* de Google. Estas señales son suficientes para diagnosticar el comportamiento de cualquier servicio en producción:
+
+| Señal | Qué mide | Métrica ONP (Micrometer / Prometheus) |
+|---|---|---|
+| **Latencia** | Tiempo que tarda el servicio en responder — incluyendo la latencia de las respuestas de error, que no debe confundirse con la latencia de los éxitos. | `http.server.requests` — percentiles P50, P95, P99 |
+| **Tráfico** | Volumen de demanda sobre el sistema en un instante dado. | `http.server.requests` — tasa de peticiones (req/s) |
+| **Errores** | Tasa de peticiones que fallan — explícitamente (HTTP 5xx) o implícitamente (HTTP 200 con contenido incorrecto). | `http.server.requests` — tasa de respuestas 4xx y 5xx |
+| **Saturación** | Qué tan "lleno" está el servicio: los recursos más restringidos determinan la capacidad máxima. | Uso de memoria JVM, conexiones activas al pool de BD, uso de CPU del pod |
+
+> **Por qué estas cuatro:** cualquier degradación de un servicio se manifiesta primero en una o más de estas señales. Monitorear solo logs o solo trazas no es suficiente; las métricas de las cuatro señales permiten detectar problemas antes de que los usuarios los reporten.
 
 **Checklist mínimo antes de pasar a producción:**
 
