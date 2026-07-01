@@ -460,7 +460,8 @@ EDA es el estilo correcto cuando:
 - la acción del productor está completa sin importar cuándo reacciona el consumidor (notificaciones, auditoría, reporte);
 - el sistema necesita desacoplar dos contextos sin crear una dependencia directa de ciclo de despliegue;
 - la consistencia eventual es aceptable para ese flujo de negocio;
-- el patrón Saga coordina una transacción distribuida entre microservicios.
+- el patrón Saga coordina una transacción distribuida entre sistemas con BD propia — sean microservicios o aplicativos monolíticos;
+- el Monolito Modular necesita notificar a sistemas externos (auditoría, reportes, otros aplicativos) sin acoplarse directamente a ellos.
 
 EDA requiere la infraestructura de un broker. ONP adopta **Apache Kafka** como broker institucional (ver **LIN-BUS-001 sección 4**). Los criterios detallados de cuándo usar el bus están en **LIN-BUS-001 sección 4.3**. Todo sistema que adopte EDA debe cumplir con **LIN-BUS-001**.
 
@@ -477,16 +478,73 @@ EDA requiere la infraestructura de un broker. ONP adopta **Apache Kafka** como b
 
 | Patrón | Propósito | Cuándo usar |
 |---|---|---|
-| **Saga — coreografía** | Coordinar una transacción distribuida entre microservicios sin 2PC. Cada servicio emite un evento al completar su paso; el siguiente lo consume y reacciona. | Flujos de múltiples pasos entre microservicios donde cada paso puede fallar y requiere compensación. |
-| **Saga — orquestación** | Un orquestador central emite comandos y reacciona a los eventos de respuesta. Más trazable que la coreografía pero introduce un coordinador. | Cuando el flujo tiene muchos pasos o condiciones y la coreografía se vuelve difícil de seguir. |
+| **Saga — coreografía** | Coordinar una transacción distribuida entre sistemas con BD propia sin 2PC. Cada participante emite un evento al completar su paso; el siguiente lo consume y reacciona. No hay coordinador central. | Flujos con pocos pasos y baja complejidad condicional, entre microservicios o aplicativos monolíticos. |
+| **Saga — orquestación** | Un orquestador central emite comandos y reacciona a eventos de respuesta. Más trazable que la coreografía pero introduce un coordinador con estado. | Flujos con muchos pasos, condiciones complejas o múltiples rutas de compensación. Aplica sobre microservicios y sobre monolitos — ver variante ONP abajo. |
 | **Transactional Outbox** | Garantiza que el evento se publica solo si la transacción de BD confirma. Evita pérdida de evento cuando el proceso falla entre el `COMMIT` y la publicación al broker. | Obligatorio cada vez que se publica un evento desde un servicio con BD propia. Sin Outbox, hay riesgo de pérdida silenciosa de evento. |
 | **Event-Driven CQRS** | Separa el modelo de escritura del de lectura. Las escrituras producen eventos que actualizan proyecciones de lectura optimizadas. | Solo cuando el volumen de consultas justifica un modelo de lectura separado y la latencia eventual en las proyecciones es aceptable. |
 
 > **Event Sourcing** no está en la lista. Almacenar el estado como secuencia de eventos introduce complejidad operativa (versionado de esquemas de eventos, proyecciones, replay) que supera el beneficio en los sistemas actuales de ONP. Su adopción requiere ADR aprobado por Arquitectura OTI.
 
+##### Saga por orquestación — variante ONP sobre aplicativos monolíticos (Kafka + REST)
+
+El patrón Saga no requiere microservicios. En ONP, donde el parque de aplicativos está compuesto mayoritariamente por monolitos con BD propia, Saga se podría implementar combinando **Kafka como canal de transporte** y **REST como mecanismo de ejecución** en cada participante.
+
+```
+Orquestador (app separada — gestor del flujo y estado)
+    │
+    ├──► topic: onp.saga.{flujo}.paso1.comando
+    │         └──► Monolito A consume → llama su propio POST /api/v1/... → persiste en su BD
+    │              └──► publica en: onp.saga.{flujo}.paso1.respuesta { estado: OK|FALLO }
+    │                                       ↑
+    │              Orquestador lee respuesta─┘
+    │              Si OK → avanza al paso 2
+    │              Si FALLO → inicia compensaciones en orden inverso
+    │
+    ├──► topic: onp.saga.{flujo}.paso2.comando
+    │    ...
+    └──► Saga COMPLETADA / Saga FALLIDA (todo compensado)
+```
+
+**Roles y responsabilidades:**
+
+| Componente | Responsabilidad |
+|---|---|
+| **Orquestador** | Mantiene el estado de la Saga en BD propia. Publica comandos en Kafka. Lee respuestas. Decide avanzar o compensar. |
+| **Kafka** | Canal de transporte desacoplado. El orquestador no conoce la URL de cada monolito — solo el tópico. |
+| **Monolito participante** | Consume el comando Kafka. Llama su propio servicio REST interno. Publica la respuesta. No sabe que está en una Saga. |
+
+**Estado que el orquestador debe persistir:**
+
+```sql
+SAGA_INSTANCIA
+├── saga_id          UUID      -- identificador del flujo completo
+├── tipo             VARCHAR   -- ej. 'PENSION_COMPLETA'
+├── estado           VARCHAR   -- INICIADA | EN_PROGRESO | COMPENSANDO | COMPLETADA | FALLIDA
+├── paso_actual      INTEGER
+├── contexto         JSON      -- IDs de cada operación ejecutada por paso (para compensación)
+├── creado_en        TIMESTAMP
+└── actualizado_en   TIMESTAMP
+```
+
+**Lo que cada monolito participante debe garantizar:**
+
+- **Idempotencia:** si el comando llega más de una vez (reintento por timeout), el monolito no duplica el efecto. Usar `sagaId` + número de paso como clave de idempotencia.
+- **Endpoint de compensación:** operación de negocio inversa con auditoría. No es un DELETE físico — es una reversión con trazabilidad.
+- **Desconocimiento de la Saga:** el servicio REST del monolito es una operación normal. El conocimiento del flujo completo vive solo en el orquestador.
+
+**Cuándo usar esta variante:**
+
+| Criterio | Saga REST + Kafka (esta variante) | Saga microservicios pura |
+|---|---|---|
+| Participantes | Monolitos existentes con BD propia | Microservicios extraídos con BD propia |
+| Adopción | Baja — los monolitos solo agregan consumer/producer Kafka | Mayor — requiere diseño de microservicio completo |
+| Cuándo aplica en ONP | Corto/mediano plazo — parque actual de aplicativos | Largo plazo — tras extracción de microservicios |
+
+> El detalle de la convención de tópicos Saga y el envelope CloudEvents extendido está en **LIN-BUS-001 §9.4**.
+
 #### Reglas ONP
 
-**Prerequisito arquitectónico:** todo módulo que use mensajería para coordinar transacciones distribuidas debe haber adoptado previamente **Arquitectura Hexagonal** ([3.2](#32-arquitectura-hexagonal)). El broker no es un atajo para omitir esa frontera — los ports y adapters hacen explícita la separación entre el dominio y la infraestructura de mensajería (ver **LIN-BUS-001 sección 1.3**).
+**Prerequisito arquitectónico:** todo sistema que adopte EDA — independientemente de si es un Monolito Modular o un microservicio — debe tener definidos explícitamente sus **ports y adapters** (Arquitectura Hexagonal, §3.2) de modo que Kafka sea un adaptador de infraestructura, no una dependencia interna del dominio. El broker no es un atajo para omitir esa frontera (ver **LIN-BUS-001 sección 1.3**). EDA no requiere microservicios: el Monolito Modular puede adoptar EDA para comunicarse con sistemas externos o coordinar flujos Saga con otros aplicativos.
 
 **Broker institucional:** ONP opera un único broker Kafka institucional. No se aprueban brokers paralelos por proyecto sin ADR aprobado por Arquitectura OTI (ver **LIN-BUS-001 sección 4.1** y principio P1).
 

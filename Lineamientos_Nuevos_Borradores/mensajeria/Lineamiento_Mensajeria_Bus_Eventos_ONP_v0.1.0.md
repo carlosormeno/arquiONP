@@ -583,6 +583,89 @@ Orquestador
 - Todo paso de Saga que persista datos usa **Transactional Outbox** (sección 7.3) para garantizar que el evento se publica solo si la transacción local confirma.
 - Las compensaciones deben ser idempotentes — pueden ejecutarse más de una vez ante reintentos.
 
+### 9.4 Variante: Saga por orquestación sobre aplicativos monolíticos
+
+Esta sección documenta la implementación Kafka de la variante Saga definida en **LIN-ARQ-000 §3.6**. Aplica cuando los participantes son aplicativos monolíticos que exponen servicios REST — no microservicios puros.
+
+El patrón completo (diagrama, roles, tabla de estado, garantías de cada participante) está en **LIN-ARQ-000 §3.6**. Esta sección cubre únicamente la parte Kafka: convención de tópicos y envelope.
+
+#### Nomenclatura de tópicos Saga
+
+Los tópicos Saga son distintos a los tópicos de dominio (§6.1). Su convención es:
+
+```
+onp.saga.{flujo}.{paso}.comando
+onp.saga.{flujo}.{paso}.respuesta
+onp.saga.{flujo}.{paso}.compensacion
+```
+
+Ejemplos para un flujo de pensión completa:
+```
+onp.saga.pension-completa.paso1.comando
+onp.saga.pension-completa.paso1.respuesta
+onp.saga.pension-completa.paso1.compensacion
+onp.saga.pension-completa.paso2.comando
+```
+
+> Los tópicos Saga no siguen la convención `{dominio}.{clasificacion}.{descripcion}` de §6.1 porque no son eventos de dominio — son mensajes de coordinación de flujo.
+
+#### Envelope CloudEvents extendido para Saga
+
+El envelope base CloudEvents v1.0 (§5.2) se extiende con atributos de contexto Saga. El comando que el orquestador publica:
+
+```json
+{
+  "specversion":     "1.0",
+  "id":              "UUID v4 del mensaje",
+  "source":          "/onp/orquestador-saga",
+  "type":            "pe.gob.onp.saga.pension-completa.paso1.comando",
+  "time":            "2026-06-08T10:30:00Z",
+  "datacontenttype": "application/json",
+  "traceparent":     "00-{traceId}-{spanId}-01",
+  "sagaid":          "UUID del flujo completo",
+  "sagapaso":        "1",
+  "sagaflujo":       "pension-completa",
+  "data": {
+    "operacion":  "REGISTRAR_APORTE",
+    "parametros": { "cuentaId": "CTA-123", "monto": 500.00 }
+  }
+}
+```
+
+La respuesta que el monolito participante publica:
+
+```json
+{
+  "specversion":  "1.0",
+  "id":           "UUID v4 nuevo",
+  "source":       "/onp/monolito-aportes",
+  "type":         "pe.gob.onp.saga.pension-completa.paso1.respuesta",
+  "time":         "2026-06-08T10:30:01Z",
+  "datacontenttype": "application/json",
+  "traceparent":  "00-{mismo traceId}-{nuevo spanId}-01",
+  "sagaid":       "mismo UUID del comando",
+  "sagapaso":     "1",
+  "sagaflujo":    "pension-completa",
+  "data": {
+    "estado":      "OK",
+    "operacionId": "APO-2026-00123"
+  }
+}
+```
+
+| Atributo de extensión | Tipo | Descripción |
+|---|---|---|
+| `sagaid` | UUID | Identificador del flujo Saga completo — mismo valor en todos los pasos |
+| `sagapaso` | String | Número de paso dentro del flujo (`"1"`, `"2"`, ...) |
+| `sagaflujo` | String | Nombre del flujo (`"pension-completa"`, `"afiliacion"`) |
+
+#### Reglas adicionales para tópicos Saga
+
+- Los tópicos Saga los crea **Plataforma** igual que los tópicos de dominio — no se crean ad hoc.
+- El `sagaId` debe usarse como **clave de partición** para garantizar orden de mensajes dentro del mismo flujo.
+- Si un paso falla y el mensaje va a DLQ, el orquestador inicia compensación — no espera el replay del DLQ.
+- Cada flujo Saga debe documentarse como **ADR** con el diagrama de pasos y las compensaciones explícitas (regla de LIN-ARQ-000 §3.6).
+
 ---
 
 ## 10. Seguridad
