@@ -41,7 +41,7 @@ Este documento registra los patrones, estilos, principios y decisiones arquitect
 | PA04 | Saga — orquestación | ✅ Documentado | LIN-ARQ-000 §3.6 + LIN-BUS-001 §9.2 | |
 | PA05 | Saga sobre monolitos (Kafka + REST) | ✅ Documentado | LIN-ARQ-000 §3.6 + LIN-BUS-001 §9.4 | Variante ONP — parque actual |
 | PA06 | Transactional Outbox | ✅ Documentado | LIN-ARQ-000 §3.6 + LIN-BUS-001 §7.3 | |
-| PA07 | CQRS (Event-Driven) | ⚠️ Parcial | LIN-ARQ-000 §3.6 | Solo mencionado, sin detalle de implementación |
+| PA07 | CQRS (Event-Driven) | ✅ Documentado | LIN-ARQ-000 §3.10 | Dos variantes: Outbox+Kafka (estándar) y CDC+Kafka (agnóstico al motor). Adopción mediante ADR obligatorio. |
 | PA08 | API Gateway / API Manager | ✅ Documentado | LIN-API-REST-001 §2.5 | WSO2 — estado PoC (ADR-WSO2-001) |
 | PA09 | BFF (Backend for Frontend) | ✅ Documentado | LIN-ARQ-000 §3.8.3 | Patrón oficial PT09 para adaptación de canales y mediación SSO frente a WSO2. |
 | PA10 | Facade (arquitectura) | ✅ Documentado | LIN-ARQ-000 §3.8.1 | Patrón oficial PT12 para ocultar complejidad externa/legada en Monolito Modular. |
@@ -115,7 +115,7 @@ Este documento registra los patrones, estilos, principios y decisiones arquitect
 | PR06 | DRY (Don't Repeat Yourself) | ❌ Pendiente | LIN-DEV-JAVA-001 | |
 | PR07 | KISS (Keep It Simple) | ❌ Pendiente | LIN-DEV-JAVA-001 | |
 | PR08 | YAGNI (You Ain't Gonna Need It) | ❌ Pendiente | LIN-DEV-JAVA-001 | |
-| PR09 | Separation of Concerns | ⚠️ Parcial | LIN-ARQ-000 | Implícito en Hexagonal |
+| PR09 | Separation of Concerns | ✅ Documentado | LIN-ARQ-000 §3.11 + §7.2 | Declarado formalmente en §3.11 y referenciado en §7.2 con ejemplos de violación |
 | PR10 | Law of Demeter | ❌ Pendiente | LIN-DEV-JAVA-001 | |
 | PR11 | Tell Don't Ask | ❌ Pendiente | LIN-DEV-JAVA-001 | |
 
@@ -132,10 +132,10 @@ Este documento registra los patrones, estilos, principios y decisiones arquitect
 | PRA04 | Observabilidad como requisito (4 pilares) | ✅ Documentado | LIN-ARQ-000 + LIN-OBS-001 | |
 | PRA05 | Contract First | ✅ Documentado | LIN-API-REST-001 + LIN-BUS-001 P3 | APIs y eventos |
 | PRA06 | Design for Failure | ✅ Documentado | LIN-ARQ-000 §3.7 | Cubierto en Monolito Modular y Microservicios |
-| PRA07 | Loose Coupling / High Cohesion | ⚠️ Parcial | LIN-ARQ-000 | Implícito, no declarado formalmente |
+| PRA07 | Loose Coupling / High Cohesion | ✅ Documentado | LIN-ARQ-000 §3.11 | Declarado formalmente con tabla de aplicación por decisión arquitectónica |
 | PRA08 | Zero Trust | ⚠️ Parcial | LIN-SEC-APP-001 | Implícito, falta declaración formal |
 | PRA09 | Inmutabilidad de eventos | ⚠️ Parcial | LIN-BUS-001 | Implícito, no declarado formalmente |
-| PRA10 | Single Source of Truth (por dominio) | ❌ Pendiente | LIN-ARQ-000 | Cada dato tiene un único sistema de registro |
+| PRA10 | Single Source of Truth (por dominio) | ✅ Documentado | LIN-ARQ-000 §3.11 | Declarado formalmente — write model es autoritativo, read models son proyecciones derivadas |
 | PRA11 | Trazabilidad completa (audit trail) | ⚠️ Parcial | LIN-OBS-001 + LIN-BUS-001 | Cubierto para observabilidad, falta para negocio |
 
 ---
@@ -162,7 +162,7 @@ Este documento registra los patrones, estilos, principios y decisiones arquitect
 | PD08 | Context Map | ✅ Cerrada (LIN-ARQ-000 §3.9.1) |
 | PD09 | Shared Kernel | ✅ Cerrada (LIN-ARQ-000 §3.9.2) |
 | PI09 | Bulkhead | ✅ Cerrada (LIN-ARQ-000 §3.7.2) |
-| PA07 | CQRS — detalle de implementación |
+| PA07 | CQRS — detalle de implementación | ✅ Cerrada (LIN-ARQ-000 §3.10) |
 
 ### Baja prioridad — complementan el framework a largo plazo
 

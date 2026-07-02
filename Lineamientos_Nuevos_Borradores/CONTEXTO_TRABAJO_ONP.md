@@ -256,25 +256,25 @@ Los 12 patrones oficiales del Lineamiento de Aplicaciones/BD deben estar todos e
 | PT02 | Dead Letter Queue | ✅ cubierto (LIN-BUS-001 §8.5–8.7) |
 | PT03 | Event Sourcing | ❌ pendiente |
 | PT04 | API Gateway | ✅ cubierto (LIN-API-REST-001 §2.5) |
-| PT05 | Retry con backoff | ✅ parcial (LIN-BUS-001 §8.5) |
-| PT06 | Circuit Breaker | ❌ pendiente — **alta prioridad** |
-| PT07 | Bulkhead | ❌ pendiente |
+| PT05 | Retry con backoff | ✅ cubierto (LIN-ARQ-000 §3.7.2 + LIN-BUS-001 §8.5) |
+| PT06 | Circuit Breaker | ✅ cubierto (LIN-ARQ-000 §3.7.3) |
+| PT07 | Bulkhead | ✅ cubierto (LIN-ARQ-000 §3.7.1–3.7.2) |
 | PT08 | Strangler Fig | ✅ cubierto (LIN-ARQ-000 §2.2) |
-| PT09 | BFF (Backend for Frontend) | ❌ pendiente |
-| PT10 | Gateway-Aggregation | ❌ pendiente |
-| PT11 | Adapter / ACL | ✅ cubierto (LIN-ARQ-000 §3.5) |
-| PT12 | Facade | ❌ pendiente |
+| PT09 | BFF (Backend for Frontend) | ✅ cubierto (LIN-ARQ-000 §3.8.3) |
+| PT10 | Gateway-Aggregation | ✅ cubierto (LIN-ARQ-000 §3.8.2) |
+| PT11 | Adapter / ACL | ✅ cubierto (LIN-ARQ-000 §3.5 y §3.9.1) |
+| PT12 | Facade | ✅ cubierto (LIN-ARQ-000 §3.8.1) |
 
 Pendientes adicionales de alta prioridad (no están en el lineamiento oficial pero son transversales):
 
-| Código brecha | Ítem | Documento destino |
-|---|---|---|
-| PI08 | Timeout — estándar para REST y Kafka | LIN-ARQ-000 |
-| PRA06 | Design for Failure — principio transversal | LIN-ARQ-000 |
-| PR01–PR05 | SOLID — cómo ONP lo aplica en Java | LIN-DEV-JAVA-001 |
+| Código brecha | Ítem | Documento destino | Estado |
+|---|---|---|---|
+| PI08 | Timeout — estándar para REST y Kafka | LIN-ARQ-000 | ✅ cubierto (§3.7.1) |
+| PRA06 | Design for Failure — principio transversal | LIN-ARQ-000 | ✅ cubierto (§3.7) |
+| PR01–PR05 | SOLID — cómo ONP lo aplica en Java | LIN-DEV-JAVA-001 | ❌ pendiente |
 
 ### Mediano plazo — cuando el roadmap lo exija
-Context Map, Shared Kernel, CQRS detallado — cuando la extracción de microservicios lo justifique.
+Context Map (`PD08`), Shared Kernel (`PD09`) y CQRS detallado (`PA07`) ya están cubiertos y normados con sus respectivas variantes y criterios de adopción en **LIN-ARQ-000 §3.9 y §3.10**.
 
 ### Pendiente de decisión
 - ¿Qué ítems de la brecha quedan definitivamente fuera del scope ONP actual?
@@ -299,3 +299,4 @@ Context Map, Shared Kernel, CQRS detallado — cuando la extracción de microser
 | 2026-07-01 | Versión inicial — captura del razonamiento acumulado en la sesión de trabajo |
 | 2026-07-01 | §3 actualizado — lineamientos prescriben siempre, enseñan según audiencia; tabla de estilos por lineamiento |
 | 2026-07-01 | §2 actualizado — jerarquía corregida: NIVEL 0 (Lineamiento Modelo, apex), LIN-ARQ-000 como sucesor de Aplicaciones/BD; verificación de alineación con Nivel 0 y Nivel 1 completada |
+| 2026-07-02 | §6 actualizado — se registran como cubiertos en LIN-ARQ-000 los patrones PT05, PT06, PT07, PT09, PT10, PT12, PI08, PRA06, PD08, PD09, PA07 y los principios PRA07, PRA10, PR09 tras incorporar las secciones §3.7, §3.8, §3.9, §3.10 y §3.11 |

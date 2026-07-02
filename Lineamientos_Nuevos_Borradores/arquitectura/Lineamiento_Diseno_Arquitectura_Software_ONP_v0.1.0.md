@@ -127,6 +127,8 @@ Esta sección organiza los estilos y patrones de arquitectura adoptados por ONP 
 | **Comunicación** | ¿Cómo se comunican los componentes o servicios? | [3.6](#36-arquitectura-orientada-a-eventos-eda) |
 | **Resiliencia e integración** | ¿Cómo protejo las llamadas a sistemas externos y gestiono canales de consumo? | [3.7](#37-resiliencia-y-tolerancia-a-fallos-design-for-failure), [3.8](#38-patrones-de-integración-agregación-y-fachada) |
 | **Fronteras entre módulos** | ¿Cómo relaciono los bounded contexts dentro del Monolito Modular? | [3.9](#39-patrones-de-dominio-y-relación-entre-contextos-en-el-monolito-modular-pd08-pd09) |
+| **Consistencia y proyecciones** | ¿Cuándo y cómo separo escritura de lectura con CQRS? | [3.10](#310-cqrs--separación-de-modelos-de-escritura-y-lectura-pa07) |
+| **Principios rectores** | ¿Qué principios gobiernan todas las decisiones de §3? | [3.11](#311-principios-rectores-transversales-pra07-pra10-pr09) |
 
 **Los grupos no son decisiones independientes.** La elección de cómo organizas el código dentro de un módulo (grupo 1) condiciona hasta dónde puede llegar ese módulo en la hoja de ruta de evolución (sección 2).
 
@@ -756,6 +758,171 @@ Debido a que cualquier modificación en el *Shared Kernel* impacta y obliga a re
 
 > **Regla de Soberanía de Dominio:** Ningún módulo de un Monolito Modular puede hacer un `import` directo a paquetes de la capa `domain.*` o `infrastructure.*` de otro módulo. La comunicación entre módulos se realiza exclusivamente a través de los paquetes explícitos de exposición: `application.api.*` o `application.dto.*`. El incumplimiento de esta regla se considera un anti-patrón crítico que bloquea el pase a producción en CI/CD.
 
+### 3.10 CQRS — Separación de Modelos de Escritura y Lectura (`PA07`)
+
+CQRS (*Command Query Responsibility Segregation*) separa el modelo de escritura del de lectura: las operaciones que modifican estado (*Commands*) y las que solo consultan (*Queries*) usan modelos, stores y rutas de código distintos. Esto permite optimizar cada lado de forma independiente — el write model para consistencia y durabilidad; el read model para velocidad y forma de consulta.
+
+**En ONP, el write model es relacional con ACID** (Oracle hoy, potencialmente otros motores en el futuro — ver tabla de variante B en §3.10.3). El read model es un store optimizado para el patrón de consulta del caso de uso (ver **§5.3**): Redis para lookups por clave, MongoDB para documentos agregados con filtros compuestos, Elasticsearch para búsqueda de texto libre.
+
+CQRS no es el estilo por defecto. Aplica cuando los patrones de lectura son lo suficientemente distintos al modelo de escritura como para justificar la complejidad operativa de mantener dos stores sincronizados.
+
+#### 3.10.1 Cuándo aplicar
+
+| Detonador | Señal observable |
+|---|---|
+| Consultas complejas sobre el modelo transaccional | Queries con múltiples JOINs, vistas materializadas, índices de función que degradan el rendimiento de Oracle |
+| Patrones de lectura radicalmente distintos al modelo de escritura | La pantalla necesita datos de 3 módulos distintos consolidados; el write model los tiene normalizados en tablas separadas |
+| Requisito de búsqueda de texto libre o filtros dinámicos | No resolubles eficientemente en Oracle — candidato a Elasticsearch |
+| Volumen de lecturas que supera la capacidad transaccional | Reportes y dashboards que compiten con transacciones OLTP en el mismo Oracle |
+
+**Cuándo NO aplicar:**
+- CRUD simple donde el modelo de escritura y lectura son el mismo.
+- Cuando la complejidad de sincronizar dos stores supera el beneficio de consulta.
+- Como solución a problemas de índices o tuning que no han sido resueltos primero en Oracle.
+
+#### 3.10.2 Variante A — Transactional Outbox + Kafka → NoSQL (estándar actual)
+
+La aplicación publica eventos al bus usando el patrón **Transactional Outbox** (§3.6). Un consumer Kafka construye y mantiene el read model en el store NoSQL adecuado.
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  WRITE SIDE (Command)                                        │
+│                                                              │
+│  Command → Handler → Oracle (ACID)                           │
+│                    └── tabla OUTBOX (misma transacción)      │
+└────────────────────────────┬────────────────────────────────┘
+                             │ relay process
+                             ▼
+                        [ Kafka ]
+                             │ consumer / proyección
+                             ▼
+┌─────────────────────────────────────────────────────────────┐
+│  READ SIDE (Query)                                           │
+│                                                              │
+│  Read Store NoSQL (Redis / Elasticsearch / réplica)          │
+│       ↑                                                      │
+│  Query → Read Repository → Read Store                        │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**Características:**
+- Requiere código en la aplicación (Outbox table + relay process).
+- Compatible con cualquier motor relacional que soporte transacciones.
+- Reutiliza la infraestructura Kafka ya institucionalizada.
+- La sincronización es explícita y trazable en el código.
+
+**Restricción:** el relay del Outbox no puede fallar silenciosamente — debe tener monitoreo activo y DLQ configurado (ver **LIN-BUS-001 §8**).
+
+#### 3.10.3 Variante B — CDC + Kafka → NoSQL (agnóstico al motor)
+
+*Change Data Capture* (CDC) captura los cambios directamente del **log de transacciones del motor de base de datos**, sin modificar el código de la aplicación. La herramienta de referencia es **Debezium**, que publica los cambios como eventos en Kafka.
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  WRITE SIDE (Command)                                        │
+│                                                              │
+│  Command → Handler → BD Relacional (ACID)                    │
+│                          │                                   │
+│                    transaction log                           │
+│                    (redo log / WAL / binlog)                  │
+└────────────────────────────┬────────────────────────────────┘
+                             │ Debezium (CDC connector)
+                             ▼
+                        [ Kafka ]
+                             │ consumer / proyección
+                             ▼
+┌─────────────────────────────────────────────────────────────┐
+│  READ SIDE (Query)                                           │
+│                                                              │
+│  Read Store NoSQL (Redis / Elasticsearch / réplica)          │
+│       ↑                                                      │
+│  Query → Read Repository → Read Store                        │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**Características:**
+- Cero código en la aplicación — captura cambios a nivel de motor.
+- Agnóstico al motor relacional: cada motor tiene su conector Debezium.
+- Requiere Kafka Connect como infraestructura adicional.
+
+**Implicaciones por motor:**
+
+| Motor | Mecanismo CDC | Consideraciones en ONP |
+|---|---|---|
+| **Oracle** | LogMiner o XStream | Requiere supplemental logging habilitado. Puede implicar revisión de licenciamiento Oracle. Validar con DBA e infraestructura antes de adoptar. |
+| **PostgreSQL** | WAL (Write-Ahead Log) | Sin costo de licencia adicional. Habilitación simple (`wal_level = logical`). |
+| **MySQL / MariaDB** | Binlog | Configuración estándar, ampliamente soportado. |
+
+#### 3.10.4 Elección del read store
+
+La elección del store NoSQL para el read model depende del patrón de consulta, no de la variante CDC/Outbox. Ver **§5.3 — CQRS: elección del read model**.
+
+#### Reglas ONP
+
+**Adopción mediante ADR obligatorio:** toda implementación CQRS — en cualquiera de sus variantes — requiere **ADR aprobado por Arquitectura OTI**. El ADR debe declarar:
+1. El detonador que justifica CQRS (ver §3.10.1).
+2. La variante elegida (A — Outbox o B — CDC) y la justificación.
+3. El motor relacional de escritura y el store NoSQL de lectura elegido (ver §5.3).
+4. El mecanismo de sincronización y su monitoreo.
+5. Si es Variante B con Oracle: validación de LogMiner/XStream con DBA e infraestructura confirmada.
+
+**El ADR define la variante; este lineamiento define las opciones disponibles y los criterios de elección.**
+
+**Event Sourcing no es CQRS:** almacenar el estado como secuencia de eventos (Event Sourcing) es un patrón distinto y de mayor complejidad operativa. Su adopción requiere ADR separado (ver §3.6 — nota sobre Event Sourcing).
+
+### 3.11 Principios rectores transversales (`PRA07`, `PRA10`, `PR09`)
+
+Los patrones y estilos definidos en §3.1–§3.10 no son decisiones arbitrarias — están gobernados por tres principios que actúan como criterio de validación de cualquier decisión arquitectónica en ONP. Aquí se declaran formalmente; a lo largo de §3 operan de manera implícita.
+
+#### PRA07 — Bajo Acoplamiento / Alta Cohesión (*Loose Coupling / High Cohesion*)
+
+**Declaración:** Un módulo, servicio o componente debe conocer y depender del menor número posible de otros módulos (bajo acoplamiento). Internamente, todos sus elementos deben estar relacionados por una única responsabilidad clara (alta cohesión).
+
+**Por qué este principio gobierna las decisiones de §3:**
+
+| Decisión en §3 | Cómo aplica PRA07 |
+|---|---|
+| Monolito Modular con fronteras explícitas (§3.4) | Los módulos se comunican solo por `application.api.*` — sin imports directos entre dominios |
+| Regla de Soberanía de Dominio (§3.9.3) | Ningún módulo accede a las tablas o dominio interno de otro |
+| Criterios de extracción a microservicios (§3.5) | Un módulo solo se extrae cuando tiene bounded context claro y datos propios — alta cohesión verificada |
+| EDA como desacoplamiento (§3.6) | El productor no conoce a los consumidores — acoplamiento mínimo por diseño |
+
+**Violación detectable:** dependencia circular entre módulos, imports entre capas `domain.*` de módulos distintos, o un servicio que modifica datos de otro módulo directamente.
+
+---
+
+#### PRA10 — Fuente Única de Verdad por Dominio (*Single Source of Truth*)
+
+**Declaración:** Cada dato tiene exactamente un sistema de registro autoritativo. Ningún otro sistema puede modificar ese dato directamente — solo puede leerlo o recibir una proyección derivada. Cuando dos sistemas tienen valores distintos para el mismo dato, el sistema propietario es el que manda.
+
+**Por qué este principio gobierna las decisiones de §3:**
+
+| Decisión en §3 | Cómo aplica PRA10 |
+|---|---|
+| Write model en CQRS (§3.10) | Oracle (o el motor transaccional) es la fuente de verdad. El read model en MongoDB / Redis / Elasticsearch es una proyección derivada — nunca autoritativa |
+| Soberanía de dominio (§3.9.3) | Cada Bounded Context es dueño soberano y exclusivo de sus tablas. Otro módulo no puede escribir en ellas |
+| Mecanismo de sincronización obligatorio (§3.10, §5.3) | Toda proyección debe documentar explícitamente cómo se sincroniza con su fuente de verdad |
+| Oracle como motor transaccional principal (§5) | La BD relacional con ACID es la fuente de verdad por defecto hasta que un ADR establezca otro sistema como propietario de un dominio específico |
+
+**Violación detectable:** dos sistemas que pueden modificar el mismo dato, un read model sin mecanismo de sincronización documentado, o un módulo que escribe en las tablas de otro.
+
+---
+
+#### PR09 — Separación de Responsabilidades (*Separation of Concerns*)
+
+**Declaración:** Cada módulo, capa, clase o función debe abordar una única preocupación bien definida. Mezclar responsabilidades distintas en el mismo artefacto dificulta el cambio, las pruebas y el razonamiento sobre el sistema.
+
+**Por qué este principio gobierna las decisiones de §3:**
+
+| Decisión en §3 | Cómo aplica PR09 |
+|---|---|
+| Arquitectura en Capas (§3.1) | Presentación, Aplicación, Dominio e Infraestructura son responsabilidades distintas — ninguna capa invade la del otro |
+| Arquitectura Hexagonal (§3.2) | El dominio no sabe cómo se persiste ni cómo se llama por red — esas son responsabilidades de los adapters |
+| CQRS (§3.10) | Escribir estado y consultar estado son responsabilidades distintas con modelos, stores y rutas de código propias |
+| Frontend separado del backend (§4) | La presentación y la lógica de negocio son responsabilidades distintas en repositorios y despliegues independientes |
+
+**Violación detectable:** un `@RestController` que accede directamente a un repositorio JPA, una entidad de dominio con anotaciones `@JsonProperty`, o un servicio de negocio que envía correos y calcula pensiones.
+
 ---
 
 ## 4. Estrategia de Frontend
@@ -927,18 +1094,19 @@ Mientras el lineamiento específico de la tecnología no exista, su uso producti
 
 ### CQRS — elección del read model
 
-CQRS separa el modelo de escritura del de lectura. El **write model siempre es Oracle** (ACID). La elección del read model no es única, depende del patrón de consulta que debe servir.
+CQRS separa el modelo de escritura del de lectura. El **write model es relacional con ACID** (Oracle hoy; otros motores posibles en el futuro según §3.10). La elección del read model no es única — depende del patrón de consulta que debe servir.
 
 | Patrón de consulta del read model | Store adecuado | Razón |
 |---|---|---|
 | Búsqueda por clave o identificador único (DNI, ID expediente) | Redis / Key-value | Latencia sub-milisegundo; proyección precalculada del agregado |
+| Documento agregado con múltiples filtros y estructura anidada | **MongoDB** | Proyección rica del agregado de dominio (ej. expediente completo con aportes y prestaciones en un solo documento). Consultas con filtros compuestos, índices flexibles y aggregation pipeline. Ideal cuando el read model es un documento, no una búsqueda de texto libre. |
 | Búsqueda de texto libre, filtros múltiples, facetas | Elasticsearch | Índices invertidos, scoring, agregaciones flexibles |
 | Consultas que requieren joins moderados y el modelo relacional es el correcto | Read replica relacional | Cuando la complejidad relacional no desaparece al proyectar |
 | Agregaciones analíticas, reportes, tendencias históricas | Capa Gold del Medallion | Ver dominio BI más abajo |
 
 **El read model se elige por el patrón de consulta, no por preferencia tecnológica.** Un mismo sistema puede tener más de un read model si sirve en casos de uso con patrones distintos.
 
-**Condición obligatoria:** Todo read model debe tener su mecanismo de sincronización con Oracle explícitamente documentado, evento de dominio + Transactional Outbox, CDC, o ELT programado según el caso. Sin ese mecanismo, el read model es un dato desconectado que producirá inconsistencias silenciosas.
+**Condición obligatoria:** Todo read model debe tener su mecanismo de sincronización con el write model explícitamente documentado — evento de dominio + Transactional Outbox, CDC, o ELT programado según el caso. Sin ese mecanismo, el read model es un dato desconectado que producirá inconsistencias silenciosas.
 
 ### Dominio complementario — Business Intelligence
 
@@ -1280,6 +1448,7 @@ public class AprobarExpedienteService {
 | **DRY** (Don't Repeat Yourself) | Lógica de negocio duplicada en dos lugares = deuda técnica crítica. Si dos servicios calculan lo mismo, se extrae a una clase de dominio compartida. |
 | **KISS** (Keep It Simple) | La solución más simple que funciona correctamente es la correcta. No se diseña para casos de uso hipotéticos. |
 | **YAGNI** (You Aren't Gonna Need It) | No se implementa funcionalidad que no tenga un requerimiento concreto y aprobado. |
+| **Separation of Concerns** (`PR09`) | Cada clase o función aborda una única preocupación. Un `@RestController` no contiene lógica de negocio; una entidad de dominio no tiene anotaciones `@JsonProperty`. Ver declaración formal y contexto arquitectónico en **§3.11**. |
 
 ---
 
