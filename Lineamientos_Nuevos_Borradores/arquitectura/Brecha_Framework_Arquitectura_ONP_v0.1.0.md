@@ -1,6 +1,6 @@
 # Brecha del Framework de Arquitectura ONP
 
-**Fecha:** 2026-07-01
+**Fecha:** 2026-07-02
 **Responsable:** Arquitectura OTI
 **Estado:** En revisión
 
@@ -43,9 +43,9 @@ Este documento registra los patrones, estilos, principios y decisiones arquitect
 | PA06 | Transactional Outbox | ✅ Documentado | LIN-ARQ-000 §3.6 + LIN-BUS-001 §7.3 | |
 | PA07 | CQRS (Event-Driven) | ⚠️ Parcial | LIN-ARQ-000 §3.6 | Solo mencionado, sin detalle de implementación |
 | PA08 | API Gateway / API Manager | ✅ Documentado | LIN-API-REST-001 §2.5 | WSO2 — estado PoC (ADR-WSO2-001) |
-| PA09 | BFF (Backend for Frontend) | ❌ Pendiente | LIN-API-REST-001 o LIN-ARQ-000 | Relevante cuando frontend y móvil coexistan. PT09 oficial. |
-| PA10 | Facade (arquitectura) | ❌ Pendiente | LIN-ARQ-000 | Componente que oculta complejidad de múltiples sistemas externos (ej. fachada RENIEC+SUNAT+SBS). Ya se usa en ONP sin definición formal. PT12 oficial. Ver también PG02 (GoF, nivel de código). |
-| PA11 | Gateway-Aggregation | ❌ Pendiente | LIN-ARQ-000 | Agrega respuestas de múltiples servicios en una sola respuesta al cliente. PT10 oficial. |
+| PA09 | BFF (Backend for Frontend) | ✅ Documentado | LIN-ARQ-000 §3.8.3 | Patrón oficial PT09 para adaptación de canales y mediación SSO frente a WSO2. |
+| PA10 | Facade (arquitectura) | ✅ Documentado | LIN-ARQ-000 §3.8.1 | Patrón oficial PT12 para ocultar complejidad externa/legada en Monolito Modular. |
+| PA11 | Gateway-Aggregation | ✅ Documentado | LIN-ARQ-000 §3.8.2 | Patrón oficial PT10 intra-JVM para Monolito Modular y vía red en Microservicios. |
 | PA12 | Sidecar | ❌ Pendiente | LIN-K8S-001 | Relevante para observabilidad y mTLS en K8s |
 | PA13 | Ambassador | ❌ Pendiente | LIN-K8S-001 | Proxy de salida en K8s |
 | PA14 | Feature Toggle (Strangler complemento) | ❌ Pendiente | LIN-ARQ-000 | Útil en migraciones graduales |
@@ -62,10 +62,10 @@ Este documento registra los patrones, estilos, principios y decisiones arquitect
 | PI03 | CloudEvents v1.0 | ✅ Documentado | LIN-BUS-001 §5.2 + ADR-CLOUDEVENTS-001 | |
 | PI04 | Dead Letter Queue (DLQ) | ✅ Documentado | LIN-BUS-001 §8.5–8.7 | |
 | PI05 | Idempotent Consumer | ✅ Documentado | LIN-BUS-001 §8.4 | |
-| PI06 | Circuit Breaker | ❌ Pendiente | LIN-ARQ-000 o LIN-RESILIENCIA-001 | **Alta prioridad** — aplica ya en REST y Kafka |
-| PI07 | Retry con backoff exponencial | ⚠️ Parcial | LIN-BUS-001 §8.5 | Mencionado para Kafka, falta estándar para REST |
-| PI08 | Timeout | ❌ Pendiente | LIN-ARQ-000 o LIN-RESILIENCIA-001 | **Alta prioridad** — sin estándar definido |
-| PI09 | Bulkhead | ❌ Pendiente | LIN-RESILIENCIA-001 | Aislamiento de fallos entre pools de recursos |
+| PI06 | Circuit Breaker | ✅ Documentado | LIN-ARQ-000 §3.7.3 | Estándar y condicionales (Estadio 3 Microservicios o excepción en Monolito Modular) |
+| PI07 | Retry con backoff exponencial | ✅ Documentado | LIN-ARQ-000 §3.7.2 + LIN-BUS-001 §8.5 | Cubierto para REST y Kafka |
+| PI08 | Timeout | ✅ Documentado | LIN-ARQ-000 §3.7.1 | Matriz de timeouts por criticidad y demanda |
+| PI09 | Bulkhead | ✅ Documentado | LIN-ARQ-000 §3.7.2 | Aislamiento por pools de conexión HTTP/JDBC |
 | PI10 | Rate Limiting (patrón de diseño) | ⚠️ Parcial | LIN-API-REST-001 | Cubierto en WSO2 Gateway, falta para consumo interno |
 | PI11 | Competing Consumers | ❌ Pendiente | LIN-BUS-001 | Múltiples instancias consumiendo el mismo tópico |
 | PI12 | Content-Based Router | ❌ Pendiente | LIN-BUS-001 | Enrutamiento de mensajes según contenido |
@@ -85,8 +85,8 @@ Este documento registra los patrones, estilos, principios y decisiones arquitect
 | PD05 | Domain Service | ⚠️ Parcial | LIN-DEV-JAVA-001 | Implícito, sin guía concreta |
 | PD06 | Application Service | ⚠️ Parcial | LIN-DEV-JAVA-001 | Implícito, sin guía concreta |
 | PD07 | Bounded Context | ✅ Documentado | LIN-ARQ-000 | |
-| PD08 | Context Map | ❌ Pendiente | LIN-ARQ-000 | Cómo se relacionan los BCs entre sí |
-| PD09 | Shared Kernel | ❌ Pendiente | LIN-ARQ-000 | Modelo compartido entre dos BCs |
+| PD08 | Context Map | ✅ Documentado | LIN-ARQ-000 §3.9.1 | Contrato y relaciones entre Bounded Contexts en Monolito Modular |
+| PD09 | Shared Kernel | ✅ Documentado | LIN-ARQ-000 §3.9.2 | Estándar y tabla de elementos permitidos/prohibidos en módulo común |
 | PD10 | Published Language | ❌ Pendiente | LIN-ARQ-000 + LIN-BUS-001 | Relacionado con CloudEvents y contratos de eventos |
 
 ---
@@ -131,7 +131,7 @@ Este documento registra los patrones, estilos, principios y decisiones arquitect
 | PRA03 | Idempotencia | ✅ Documentado | LIN-BUS-001 §8.4 | |
 | PRA04 | Observabilidad como requisito (4 pilares) | ✅ Documentado | LIN-ARQ-000 + LIN-OBS-001 | |
 | PRA05 | Contract First | ✅ Documentado | LIN-API-REST-001 + LIN-BUS-001 P3 | APIs y eventos |
-| PRA06 | Design for Failure | ❌ Pendiente | LIN-ARQ-000 | **Alta prioridad** — atraviesa EDA, Saga, microservicios |
+| PRA06 | Design for Failure | ✅ Documentado | LIN-ARQ-000 §3.7 | Cubierto en Monolito Modular y Microservicios |
 | PRA07 | Loose Coupling / High Cohesion | ⚠️ Parcial | LIN-ARQ-000 | Implícito, no declarado formalmente |
 | PRA08 | Zero Trust | ⚠️ Parcial | LIN-SEC-APP-001 | Implícito, falta declaración formal |
 | PRA09 | Inmutabilidad de eventos | ⚠️ Parcial | LIN-BUS-001 | Implícito, no declarado formalmente |
@@ -144,24 +144,24 @@ Este documento registra los patrones, estilos, principios y decisiones arquitect
 
 ### Alta prioridad — afectan lo que ya está en construcción
 
-| Código | Brecha |
-|---|---|
-| PI06 | Circuit Breaker — resiliencia en llamadas REST y Kafka |
-| PI08 | Timeout — sin estándar definido |
-| PRA06 | Design for Failure — principio transversal a todo |
+| Código | Brecha | Estado |
+|---|---|---|
+| PI06 | Circuit Breaker — resiliencia en llamadas REST y Kafka | ✅ Cerrada (LIN-ARQ-000 §3.7.3) |
+| PI08 | Timeout — sin estándar definido | ✅ Cerrada (LIN-ARQ-000 §3.7.1) |
+| PRA06 | Design for Failure — principio transversal a todo | ✅ Cerrada (LIN-ARQ-000 §3.7) |
 | PR01–PR05 | SOLID — base del código Java ONP |
 
 ### Media prioridad — necesarios al avanzar hacia microservicios
 
-| Código | Brecha |
-|---|---|
-| PA09 | BFF (Backend for Frontend) — PT09 oficial |
-| PA10 | Facade (arquitectura) — PT12 oficial |
-| PA11 | Gateway-Aggregation — PT10 oficial |
+| Código | Brecha | Estado |
+|---|---|---|
+| PA09 | BFF (Backend for Frontend) — PT09 oficial | ✅ Cerrada (LIN-ARQ-000 §3.8.3) |
+| PA10 | Facade (arquitectura) — PT12 oficial | ✅ Cerrada (LIN-ARQ-000 §3.8.1) |
+| PA11 | Gateway-Aggregation — PT10 oficial | ✅ Cerrada (LIN-ARQ-000 §3.8.2) |
 | PA12 | Sidecar |
-| PD08 | Context Map |
-| PD09 | Shared Kernel |
-| PI09 | Bulkhead |
+| PD08 | Context Map | ✅ Cerrada (LIN-ARQ-000 §3.9.1) |
+| PD09 | Shared Kernel | ✅ Cerrada (LIN-ARQ-000 §3.9.2) |
+| PI09 | Bulkhead | ✅ Cerrada (LIN-ARQ-000 §3.7.2) |
 | PA07 | CQRS — detalle de implementación |
 
 ### Baja prioridad — complementan el framework a largo plazo
@@ -194,3 +194,6 @@ Lineamientos identificados como necesarios para roles que aún no tienen cobertu
 | Versión | Fecha | Autor | Descripción |
 |---|---|---|---|
 | v0.1.0 | 2026-07-01 | Arquitectura OTI | Versión inicial — brecha identificada a partir de análisis del framework vigente |
+| v0.1.1 | 2026-07-02 | Arquitectura OTI | Cierra brechas de alta prioridad PI06, PI08, PRA06 y media prioridad PI07, PI09 normadas en LIN-ARQ-000 §3.7 |
+| v0.1.2 | 2026-07-02 | Arquitectura OTI | Cierra brechas de patrones oficiales PT09 (PA09), PT10 (PA11) y PT12 (PA10) normadas en LIN-ARQ-000 §3.8 |
+| v0.1.3 | 2026-07-02 | Arquitectura OTI | Cierra brechas de patrones DDD en Monolito Modular PD08 (Context Map) y PD09 (Shared Kernel) normadas en LIN-ARQ-000 §3.9 |

@@ -1,8 +1,8 @@
 # Lineamiento de Diseño y Arquitectura de Software ONP
 
 **Código:** LIN-ARQ-000  
-**Versión:** 0.1.3  
-**Fecha:** 2026-06-09  
+**Versión:** 0.1.7  
+**Fecha:** 2026-07-02  
 **Autor:** Oficina de Tecnologías de la Información — ONP  
 **Estado:** Borrador de trabajo interno  
 **Clasificación:** Marco rector interno. No es un entregable oficial de la lista de documentos de arquitectura; es el documento normativo base que guía la redacción de todos los lineamientos técnicos formales. Todo lineamiento derivado debe ser consistente con las decisiones de este documento.
@@ -17,6 +17,10 @@
 | 0.1.1 | 2026-05-28 | Alinea el checklist de observabilidad con el modelo YAML institucional y con overrides operativos definidos por Plataforma |
 | 0.1.2 | 2026-05-28 | Restringe la adopción de mensajería/event bus ad hoc mientras `LIN-BUS-001` no exista y define la regla transitoria de excepción |
 | 0.1.3 | 2026-06-09 | Incorpora el marco de Four Golden Signals (Google SRE) en sección 11.5 como fundamento conceptual del dashboard mínimo de métricas |
+| 0.1.4 | 2026-07-02 | Incorpora sección 3.7 de Resiliencia y Tolerancia a Fallos (*Design for Failure*) con matriz de timeouts según criticidad y criterios de adopción de Resilience4j condicionados a Microservicios o excepciones en Monolito Modular |
+| 0.1.5 | 2026-07-02 | Incorpora sección 3.8 con estándares de implementación para patrones oficiales PT09 (BFF), PT10 (Gateway-Aggregation) y PT12 (Facade Arquitectónico) adaptados al Monolito Modular |
+| 0.1.6 | 2026-07-02 | Corrige §3.7.1–3.7.2: estandariza configuración de clientes externos en Apache HttpClient 5 integrando connection timeout, read timeout y Bulkhead en una sola factory; elimina inconsistencia con JdkClientHttpRequestFactory |
+| 0.1.7 | 2026-07-02 | Incorpora sección 3.9 de Patrones de Dominio y Relación en Monolito Modular con Mapa de Contextos (PD08) y gobierno de Shared Kernel (PD09) |
 
 ---
 
@@ -121,6 +125,8 @@ Esta sección organiza los estilos y patrones de arquitectura adoptados por ONP 
 | **Organización del código** | ¿Cómo organizo el código dentro de un módulo? | [3.1](#31-arquitectura-en-capas-layered), [3.2](#32-arquitectura-hexagonal) |
 | **Estructura del sistema** | ¿Cómo estructuro y despliego el sistema completo? | [3.3](#33-monolito-puro), [3.4](#34-monolito-modular), [3.5](#35-microservicios) |
 | **Comunicación** | ¿Cómo se comunican los componentes o servicios? | [3.6](#36-arquitectura-orientada-a-eventos-eda) |
+| **Resiliencia e integración** | ¿Cómo protejo las llamadas a sistemas externos y gestiono canales de consumo? | [3.7](#37-resiliencia-y-tolerancia-a-fallos-design-for-failure), [3.8](#38-patrones-de-integración-agregación-y-fachada) |
+| **Fronteras entre módulos** | ¿Cómo relaciono los bounded contexts dentro del Monolito Modular? | [3.9](#39-patrones-de-dominio-y-relación-entre-contextos-en-el-monolito-modular-pd08-pd09) |
 
 **Los grupos no son decisiones independientes.** La elección de cómo organizas el código dentro de un módulo (grupo 1) condiciona hasta dónde puede llegar ese módulo en la hoja de ruta de evolución (sección 2).
 
@@ -554,6 +560,202 @@ SAGA_INSTANCIA
 
 **Documento rector:** el estándar completo de diseño, operación y gobierno del bus de eventos está en **LIN-BUS-001 — Lineamiento de Mensajería y Bus de Eventos ONP**. Esta sección es una introducción al estilo; LIN-BUS-001 es la referencia normativa obligatoria para cualquier adopción.
 
+### 3.7 Resiliencia y Tolerancia a Fallos (*Design for Failure*)
+
+En la hoja de ruta de la ONP, el **Monolito Modular (Estadio 2)** es la arquitectura por defecto. Al ejecutarse en un único proceso desplegable (un solo JAR), la comunicación entre módulos internos es intra-JVM (llamadas a métodos en memoria), por lo que **no requiere** patrones de resiliencia de red para interactuar entre sí.
+
+Sin embargo, bajo el principio innegociable de **Design for Failure (`PRA06`)**, toda integración de salida por red hacia sistemas externos del Estado (RENIEC, SUNAT, PIDE), APIs bancarias o brokers de eventos debe estar blindada. Un fallo en un tercero externo nunca debe provocar el agotamiento del pool de hilos (`Thread Pool Exhaustion`) del servidor de aplicaciones ni tumbar el aplicativo.
+
+#### 3.7.1 Matriz de Timeouts según Demanda y Criticidad (`PI08`)
+
+Está **prohibido** desplegar clientes de integración exterior (HTTP, JDBC, Kafka) sin timeouts explícitos. En lugar de aplicar tiempos fijos genéricos, los umbrales de espera se configuran en función de la **demanda concurrente** y la **criticidad en la ruta interactiva del usuario**:
+
+| Categoría del Servicio Externo | Ejemplo en ONP | Perfil de Demanda | Connection Timeout | Read Timeout | Estrategia ante Fallo |
+|---|---|---|---|---|---|
+| **Alta Demanda / Ruta Crítica Interactiva** | **RENIEC**, SAA (Token), Validación DNI en ventanilla virtual | Muy alta (cientos de req/min). Bloquea directamente al ciudadano en pantalla. | `≤ 1.5s - 2s` | `2s - 3s` | *Fail-Fast*: Abortar rápido para liberar hilos del monolito. Notificar en UI o consultar caché temporal si existe. |
+| **Demanda Media / Consulta Negocio** | **PIDE**, Consulta de deudas, padrones externos | Media. Consultas durante la tramitación interna de un expediente. | `≤ 2s` | `4s - 6s` | Reintento simple acotado (solo si es lectura idempotente). |
+| **Baja Demanda / Proceso Asincrónico o Diferido** | **SUNAT**, PLAME, Conciliaciones por lote, validaciones nocturnas | Baja concurrencia en tiempo real o ejecutado por *workers* en segundo plano. | `≤ 3s` | `10s - 15s` | Mayor tolerancia de espera al no bloquear la UI del ciudadano. Ante fallo persistente, derivar a cola o DLQ. |
+
+En **Spring Boot 3 / Java 21**, esto se parametriza usando **Apache HttpClient 5** (`HttpComponentsClientHttpRequestFactory`), que en una sola configuración provee connection timeout, read timeout y límite de conexiones por ruta (Bulkhead). Los tres controles van juntos para evitar configuraciones incompletas:
+
+```java
+@Configuration
+public class ExternalClientsConfig {
+
+    @Bean
+    @Qualifier("reniecClient")
+    public RestClient reniecRestClient(@Value("${onp.externos.reniec.url}") String url) {
+        var factory = clienteRestFactory(
+            Duration.ofMillis(1500), // connection timeout: Alta demanda — Fail-Fast
+            Duration.ofSeconds(2),   // read timeout
+            10                       // Bulkhead: máx 10 conexiones concurrentes a RENIEC
+        );
+        return RestClient.builder().baseUrl(url).requestFactory(factory).build();
+    }
+
+    @Bean
+    @Qualifier("sunatClient")
+    public RestClient sunatRestClient(@Value("${onp.externos.sunat.url}") String url) {
+        var factory = clienteRestFactory(
+            Duration.ofSeconds(3),  // connection timeout: Proceso diferido — mayor tolerancia
+            Duration.ofSeconds(12), // read timeout
+            5                       // Bulkhead: proceso diferido, menor concurrencia esperada
+        );
+        return RestClient.builder().baseUrl(url).requestFactory(factory).build();
+    }
+
+    private HttpComponentsClientHttpRequestFactory clienteRestFactory(
+            Duration connectTimeout, Duration readTimeout, int maxConnPerRoute) {
+        var connManager = PoolingHttpClientConnectionManagerBuilder.create()
+            .setMaxConnPerRoute(maxConnPerRoute)
+            .setMaxConnTotal(maxConnPerRoute * 3)
+            .build();
+        var httpClient = HttpClients.custom()
+            .setConnectionManager(connManager)
+            .evictExpiredConnections()
+            .build();
+        var factory = new HttpComponentsClientHttpRequestFactory(httpClient);
+        factory.setConnectTimeout(connectTimeout);
+        factory.setReadTimeout(readTimeout);
+        return factory;
+    }
+}
+```
+
+> **Por qué Apache HttpClient 5 y no `JdkClientHttpRequestFactory`:** El cliente JDK nativo no expone control de connection timeout a nivel de factory ni límites de conexiones por ruta. Apache HttpClient 5 (`httpclient5`) centraliza los tres controles en una sola configuración, eliminando la posibilidad de desplegar un cliente sin alguno de los tres blindajes.
+
+#### 3.7.2 Resiliencia Nativa en el Monolito Modular — Reintentos (`PI07`)
+
+El Bulkhead (`PI09`) queda resuelto en la configuración de `clienteRestFactory` del punto anterior (`setMaxConnPerRoute`). El complemento son los reintentos acotados:
+
+**Reintentos Nativos Acotados (`PI07`):** Para mitigar microcortes en lecturas idempotentes, se prefiere **Spring Retry** simple. **Prohibido** reintentar automáticamente operaciones de escritura (`POST`, `PUT`) no idempotentes.
+
+```java
+// 2 intentos en total: 1 inicial + 1 reintento
+@Retryable(maxAttempts = 2, backoff = @Backoff(delay = 500, multiplier = 2))
+public DatosPersonaReniec consultarDni(String dni) { ... }
+```
+
+#### 3.7.3 Adopción de Circuit Breaker con Resilience4j (`PI06`) — Criterios y Condicionales
+
+**Resilience4j (`resilience4j-spring-boot3`)** no es el estándar por defecto en un Monolito Modular. Su adopción está condicionada a los siguientes criterios:
+
+1. **Criterio Primario (Microservicios — Estadio 3):** El patrón es **obligatorio** cuando el sistema opera como **Microservicios** (habiéndose cumplido los seis criterios del [§3.5](#35-microservicios)). Con múltiples servicios llamándose por red, un *Circuit Breaker* formal (estados *Closed*, *Open*, *Half-Open*) con *Fallback* es indispensable para evitar colapsos en cascada.
+
+2. **Criterio de Excepción en Monolito Modular:** Un Monolito Modular puede adoptar Resilience4j **únicamente** para envolver el *Adapter* de salida hacia un proveedor externo que cumpla **ambas** condiciones:
+   - **(a) Volumetría masiva en ruta crítica interactiva:** el proveedor recibe cientos de llamadas por minuto en la ruta directa del ciudadano (ej. RENIEC en ventanilla virtual).
+   - **(b) Necesidad de corte automático sin intento de red (*fast fail*):** el timeout + pool de conexiones de §3.7.1 no es suficiente porque, bajo carga alta con el proveedor caído, los slots del pool se agotan igualmente esperando el timeout en cada intento. El Circuit Breaker detecta el patrón de fallo y corta de inmediato sin consumir un slot de conexión, protegiendo el monolito completo.
+
+   > **Lo que NO justifica el ADR:** necesitar Bulkhead o Retry — ambos ya están cubiertos por Apache HttpClient 5 (`setMaxConnPerRoute`) y Spring Retry (§3.7.2). Resilience4j en Monolito Modular se justifica exclusivamente por la **máquina de estados del Circuit Breaker**.
+
+   Esta adopción excepcional requiere **ADR aprobado** por Arquitectura OTI.
+
+### 3.8 Patrones de Integración, Agregación y Fachada
+
+Para gestionar eficientemente la comunicación entre los canales de consumo (SPAs, aplicaciones móviles, interoperabilidad PIDE) y los backends institucionales (parque heredado y Monolitos Modulares nuevos), son oficiales y de aplicación regulada los siguientes tres patrones:
+
+#### 3.8.1 Facade Arquitectónico de Integración (`PT12` / `PA10`)
+
+**Propósito:** Ocultar la complejidad, heterogeneidad y protocolos de múltiples sistemas externos o legados (ej. consultar RENIEC, SUNAT y un monolito heredado en JBoss) detrás de una interfaz unificada y limpia adaptada al dominio de la ONP.
+
+**Diferencia con el patrón GoF Facade (§8):** Actúa en la capa de **Infraestructura de Integración**, combinando múltiples adaptadores de salida (`Adapters`), aplicando *Anti-Corruption Layer (ACL)*, control de resiliencia (`§3.7`) y orquestación externa sin contaminar la lógica de negocio.
+
+```java
+@Component
+public class GobiernoIntegracionFacadeAdapter implements VerificacionCiudadanoPort {
+
+    private final ReniecClient reniecClient;
+    private final SunatClient sunatClient;
+    private final PerfilIntegralMapper mapper;
+
+    @Override
+    public PerfilVerificado consultarPerfilIntegral(String dni) {
+        CompletableFuture<DatosPersonaReniec> reniecFuture = 
+            CompletableFuture.supplyAsync(() -> reniecClient.consultar(dni));
+        CompletableFuture<DatosContribuyenteSunat> sunatFuture = 
+            CompletableFuture.supplyAsync(() -> sunatClient.consultarRucPorDni(dni));
+
+        CompletableFuture.allOf(reniecFuture, sunatFuture).join();
+        return mapper.consolidar(reniecFuture.join(), sunatFuture.join());
+    }
+}
+```
+
+#### 3.8.2 Gateway-Aggregation (`PT10` / `PA11`)
+
+**Propósito:** Consolidar múltiples consultas en una sola respuesta hacia el cliente, reduciendo el *chattiness* (exceso de peticiones HTTP por red) y mejorando los tiempos de carga en la pantalla del ciudadano.
+
+**Reglas de aplicación según Estilo Arquitectónico:**
+1. **En Monolito Modular (Estadio 2):** La agregación **no se realiza por red**. Se ejecuta en memoria mediante un *Controller de Agregación* o *Query Service* que invoca los APIs de los diferentes módulos internos del JAR (`onp-expedientes` + `onp-aportes`), devolviendo el DTO unificado.
+2. **En Microservicios (Estadio 3):** Se implementa como un servicio especializado o en el **API Gateway institucional (WSO2)**, ejecutando llamadas concurrentes a los microservicios descendentes.
+
+#### 3.8.3 Backend for Frontend — BFF (`PT09` / `PA09`)
+
+**Propósito:** Crear una capa adaptada y especializada en las necesidades de presentación y comunicación de un canal de consumo concreto (ej. SPA Angular, App Móvil iOS/Android, o portal ciudadano), desacoplando los requerimientos de la interfaz de usuario respecto a los servicios del backend core.
+
+**Capacidades y Casos de Uso Clave en el Ecosistema ONP:**
+* **Adaptación de Modelos por Canal:** Moldear las respuestas del backend core al formato exacto que necesita cada tipo de pantalla, reduciendo el sobre-envío de datos (*over-fetching*) en redes móviles y evitando lógica de transformación compleja en el dispositivo del ciudadano.
+* **Mediación de Seguridad frente al API Manager (WSO2 / SSO):** El BFF es un punto ideal para implementar el patrón *Token Handler*. En arquitecturas donde el backend core está protegido por el **API Manager institucional (WSO2)** y políticas de SSO, el BFF puede actuar como puente: gestiona sesiones ligeras o cookies seguras (`HttpOnly`) con la SPA o App Móvil, intercepta las peticiones e inyecta los tokens criptográficos institucionales (`Authorization: Bearer <Token>`) al llamar al API Manager. Esto protege los tokens contra ataques XSS en el navegador y simplifica la seguridad del canal.
+
+**Criterios de Adopción Normativa en ONP:**
+* **Adopción Recomendada:** Cuando un sistema presta servicios a **dos o más canales de consumo diferenciados** (ej. Portal Web Angular + Aplicación Móvil nativa) con flujos de navegación, anchos de banda o requisitos de seguridad distintos, o cuando un canal requiere de mediación especializada frente al API Manager.
+* **Evitar Sobreingeniería:** Si un proyecto cuenta con **un único canal estándar** (ej. una única SPA institucional en Angular consumiendo directamente su backend) y no existe requisito de traducción de protocolos o mediación SSO externa, **no se construye un servicio BFF separado**. En este escenario, la propia capa de presentación REST (`controller/`) del Monolito Modular sirve el contrato directamente, evitando saltos de red y sobrecarga operativa innecesarios.
+
+### 3.9 Patrones de Dominio y Relación entre Contextos en el Monolito Modular (`PD08`, `PD09`)
+
+El diseño de un **Monolito Modular (Estadio 2)** exige delimitar fronteras estrictas entre sus subdominios funcionales (*Bounded Contexts*). Para garantizar un bajo acoplamiento y posibilitar la extracción limpia a microservicios en el futuro, es obligatorio regirse por dos patrones fundamentales de *Domain-Driven Design (DDD)*:
+
+```
+┌────────────────────────────────────────────────────────────────────────┐
+│ MONOLITO MODULAR ONP                                                   │
+│                                                                        │
+│   ┌─────────────────────┐               ┌──────────────────────────┐   │
+│   │   onp-expedientes   │               │       onp-aportes        │   │
+│   │  (Downstream - D)   │               │     (Upstream - U)       │   │
+│   │                     │               │                          │   │
+│   │  [ExpedienteService]│               │                          │   │
+│   │          │          │               │                          │   │
+│   │          ▼          │               │                          │   │
+│   │ [AportesQueryPort]  │               │   [AportesPublicApi]     │   │
+│   └──────────┬──────────┘               └────────────▲─────────────┘   │
+│              │ ACL (Anti-Corruption Layer)           │                 │
+│              └───────────────────────────────────────┘                 │
+│                                                                        │
+│   ┌────────────────────────────────────────────────────────────────┐   │
+│   │ PD09 - SHARED KERNEL (onp-common-domain)                       │   │
+│   │ Tipos Inmutables: Dni, Ruc, MontoMonetario, OnpDomainException │   │
+│   └────────────────────────────────────────────────────────────────┘   │
+└────────────────────────────────────────────────────────────────────────┘
+```
+
+#### 3.9.1 Mapa de Contextos (*Context Map* — `PD08`)
+
+El *Context Map* es el contrato formal y arquitectónico que gobierna cómo interactúan los diferentes módulos o subdominios entre sí dentro del sistema. En ONP se regulan las siguientes cuatro relaciones:
+
+1. **Cliente-Proveedor (*Customer-Supplier* / Upstream-Downstream):** El módulo proveedor (*Upstream*, ej. `onp-aportes`) expone un **API pública en Java** (interfaz de capa de aplicación o DTO inmutable). El módulo consumidor (*Downstream*, ej. `onp-expedientes`) lo consume. Cualquier cambio en los requerimientos del consumidor debe coordinarse en el contrato de esa API.
+2. **Capa Anticorrupción (*Anti-Corruption Layer — ACL*, §8.3):** Obligatoria cuando un módulo nuevo consume datos de un módulo heredado o de un subdominio externo complejo. El consumidor implementa una interfaz propia (*Port*) y un *Adapter* interno que traduce el modelo de datos del proveedor a su propio modelo de dominio, evitando que los cambios en el proveedor rompan sus reglas de negocio.
+3. **Conformista (*Conformist*):** Permitido **únicamente** para consultas de catálogos o datos referenciales simples (ej. tipos de documento, ubigeo). El consumidor acepta y utiliza directamente los DTOs de salida del proveedor sin capa de traducción.
+4. **Caminos Separados (*Separate Ways*):** Si dos subdominios no tienen relación de negocio coherente (ej. Mesa de Partes Virtual y Cálculo de Reserva Matemática), está **terminantemente prohibido** acoplarlos en código. Deben operar de forma completamente independiente o comunicarse vía eventos de dominio asíncronos en el Bus Kafka (`§3.6`).
+
+#### 3.9.2 Núcleo Compartido (*Shared Kernel* — `PD09`)
+
+El *Shared Kernel* representa el subconjunto estrictamente acotado de código que se comparte libremente en memoria entre todos los *Bounded Contexts* del Monolito Modular (típicamente encapsulado en el módulo Maven `onp-common-domain`).
+
+Debido a que cualquier modificación en el *Shared Kernel* impacta y obliga a recompilar/probar a todos los demás módulos, su contenido está sujeto a un estricto gobierno:
+
+| Elemento | Condición en el Shared Kernel | Ejemplo Aprobado en ONP |
+|---|---|---|
+| **Value Objects Universales** | **✅ PERMITIDO** | Tipos inmutables transversales a toda la entidad: `Dni`, `Ruc`, `PeriodoTributario`, `MontoMonetario`, `NumeroExpediente`. |
+| **Excepciones Base del Dominio** | **✅ PERMITIDO** | Jerarquía raíz de errores: `OnpDomainException`, `RecursoNoEncontradoException`, `ReglaNegocioVioladaException`. |
+| **Envolventes / Primitivas de Arquitectura** | **✅ PERMITIDO** | Clases base de paginación (`PageResult<T>`), interfaces marcador (`DomainEvent`, `AggregateRoot`). |
+| **Entidades de Base de Datos (`@Entity`)** | **❌ PROHIBIDO TERMINANTEMENTE** | NINGUNA entidad JPA puede compartirse en el Kernel. Cada *Bounded Context* es dueño soberano y exclusivo de sus tablas y entidades. |
+| **Lógica de Negocio / Servicios** | **❌ PROHIBIDO TERMINANTEMENTE** | Flujos de cálculo, validaciones de expedientes o reglas previsionales deben vivir exclusivamente en sus módulos respectivos. |
+| **Repositorios o Adapters HTTP/JDBC** | **❌ PROHIBIDO TERMINANTEMENTE** | Prohibido incluir acceso a infraestructura en el núcleo de dominio compartido. |
+
+#### 3.9.3 Regla de Oro del Acoplamiento en Monolito Modular
+
+> **Regla de Soberanía de Dominio:** Ningún módulo de un Monolito Modular puede hacer un `import` directo a paquetes de la capa `domain.*` o `infrastructure.*` de otro módulo. La comunicación entre módulos se realiza exclusivamente a través de los paquetes explícitos de exposición: `application.api.*` o `application.dto.*`. El incumplimiento de esta regla se considera un anti-patrón crítico que bloquea el pase a producción en CI/CD.
+
 ---
 
 ## 4. Estrategia de Frontend
@@ -578,10 +780,10 @@ Cuando se usa React o Vue, los estándares de **LIN-FE-ANG-001** (sección Front
 ┌─────────────────────┐        REST + JSON         ┌──────────────────────┐
 │   SPA (Angular)     │  ──────────────────────►   │  Backend Spring Boot │
 │                     │  ◄──────────────────────   │  (Java)              │
-│  Repositorio propio │        HTTP/HTTPS           │  Repositorio propio  │
-│  Pipeline propio    │                             │  Pipeline propio     │
-│  Despliegue propio  │                             │  Despliegue propio   │
-└─────────────────────┘                             └──────────────────────┘
+│  Repositorio propio │        HTTP/HTTPS          │  Repositorio propio  │
+│  Pipeline propio    │                            │  Pipeline propio     │
+│  Despliegue propio  │                            │  Despliegue propio   │
+└─────────────────────┘                            └──────────────────────┘
 ```
 
 **Reglas de separación:**
