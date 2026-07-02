@@ -78,8 +78,8 @@ Este documento registra los patrones, estilos, principios y decisiones arquitect
 
 | # | Patrón | Estado | Documento destino | Notas |
 |---|---|---|---|---|
-| PD01 | Aggregate | ⚠️ Parcial | LIN-ARQ-000 | Mencionado, sin guía de implementación |
-| PD02 | Entity / Value Object | ⚠️ Parcial | LIN-ARQ-000 | Mencionado, sin guía de implementación |
+| PD01 | Aggregate | ✅ Documentado | LIN-ARQ-000 §6.4.1 | Guía normativa en contexto Spring: transacciones y eventos en Agregado Raíz |
+| PD02 | Entity / Value Object | ✅ Documentado | LIN-ARQ-000 §6.4.1 | Diferenciación estricta con `@Entity` JPA; records autovalidados en Java 21 |
 | PD03 | Domain Event | ✅ Documentado | LIN-ARQ-000 + LIN-BUS-001 | |
 | PD04 | Repository | ⚠️ Parcial | LIN-DEV-JAVA-001 | Implícito en Hexagonal, no definido explícitamente |
 | PD05 | Domain Service | ⚠️ Parcial | LIN-DEV-JAVA-001 | Implícito, sin guía concreta |
@@ -107,14 +107,14 @@ Este documento registra los patrones, estilos, principios y decisiones arquitect
 
 | # | Principio | Estado | Documento destino | Notas |
 |---|---|---|---|---|
-| PR01 | SOLID — Single Responsibility | ❌ Pendiente | LIN-DEV-JAVA-001 | **Alta prioridad** — base de todo el código Java ONP |
-| PR02 | SOLID — Open/Closed | ❌ Pendiente | LIN-DEV-JAVA-001 | |
-| PR03 | SOLID — Liskov Substitution | ❌ Pendiente | LIN-DEV-JAVA-001 | |
-| PR04 | SOLID — Interface Segregation | ❌ Pendiente | LIN-DEV-JAVA-001 | |
-| PR05 | SOLID — Dependency Inversion | ❌ Pendiente | LIN-DEV-JAVA-001 | Clave para Hexagonal |
-| PR06 | DRY (Don't Repeat Yourself) | ❌ Pendiente | LIN-DEV-JAVA-001 | |
-| PR07 | KISS (Keep It Simple) | ❌ Pendiente | LIN-DEV-JAVA-001 | |
-| PR08 | YAGNI (You Ain't Gonna Need It) | ❌ Pendiente | LIN-DEV-JAVA-001 | |
+| PR01 | SOLID — Single Responsibility | ⚠️ Parcial | LIN-ARQ-000 §7.1 + LIN-DEV-JAVA-001 | Declaración arquitectónica en LIN-ARQ-000 §7.1. Pendiente tratamiento Java/Spring específico en LIN-DEV-JAVA-001. |
+| PR02 | SOLID — Open/Closed | ⚠️ Parcial | LIN-ARQ-000 §7.1 + LIN-DEV-JAVA-001 | Ídem PR01 |
+| PR03 | SOLID — Liskov Substitution | ⚠️ Parcial | LIN-ARQ-000 §7.1 + LIN-DEV-JAVA-001 | Ídem PR01 |
+| PR04 | SOLID — Interface Segregation | ⚠️ Parcial | LIN-ARQ-000 §7.1 + LIN-DEV-JAVA-001 | Ídem PR01 |
+| PR05 | SOLID — Dependency Inversion | ⚠️ Parcial | LIN-ARQ-000 §7.1 + LIN-DEV-JAVA-001 | Declaración en LIN-ARQ-000 §7.1. Pendiente guía DI con @Bean/@Autowired en LIN-DEV-JAVA-001. |
+| PR06 | DRY (Don't Repeat Yourself) | ⚠️ Parcial | LIN-ARQ-000 §7.2 + LIN-DEV-JAVA-001 | Declarado en LIN-ARQ-000 §7.2. Pendiente ejemplos Spring concretos en LIN-DEV-JAVA-001. |
+| PR07 | KISS (Keep It Simple) | ⚠️ Parcial | LIN-ARQ-000 §7.2 + LIN-DEV-JAVA-001 | Ídem PR06 |
+| PR08 | YAGNI (You Ain't Gonna Need It) | ⚠️ Parcial | LIN-ARQ-000 §7.2 + LIN-DEV-JAVA-001 | Ídem PR06 |
 | PR09 | Separation of Concerns | ✅ Documentado | LIN-ARQ-000 §3.11 + §7.2 | Declarado formalmente en §3.11 y referenciado en §7.2 con ejemplos de violación |
 | PR10 | Law of Demeter | ❌ Pendiente | LIN-DEV-JAVA-001 | |
 | PR11 | Tell Don't Ask | ❌ Pendiente | LIN-DEV-JAVA-001 | |
@@ -149,7 +149,7 @@ Este documento registra los patrones, estilos, principios y decisiones arquitect
 | PI06 | Circuit Breaker — resiliencia en llamadas REST y Kafka | ✅ Cerrada (LIN-ARQ-000 §3.7.3) |
 | PI08 | Timeout — sin estándar definido | ✅ Cerrada (LIN-ARQ-000 §3.7.1) |
 | PRA06 | Design for Failure — principio transversal a todo | ✅ Cerrada (LIN-ARQ-000 §3.7) |
-| PR01–PR05 | SOLID — base del código Java ONP |
+| PR01–PR05 | SOLID — base del código Java ONP | ⚠️ Parcial (declaración arquitectónica en LIN-ARQ-000 §7.1; pendiente guía Java/Spring en LIN-DEV-JAVA-001) |
 
 ### Media prioridad — necesarios al avanzar hacia microservicios
 
@@ -158,7 +158,7 @@ Este documento registra los patrones, estilos, principios y decisiones arquitect
 | PA09 | BFF (Backend for Frontend) — PT09 oficial | ✅ Cerrada (LIN-ARQ-000 §3.8.3) |
 | PA10 | Facade (arquitectura) — PT12 oficial | ✅ Cerrada (LIN-ARQ-000 §3.8.1) |
 | PA11 | Gateway-Aggregation — PT10 oficial | ✅ Cerrada (LIN-ARQ-000 §3.8.2) |
-| PA12 | Sidecar |
+| PA12 | Sidecar | ❌ Pendiente (LIN-K8S-001) |
 | PD08 | Context Map | ✅ Cerrada (LIN-ARQ-000 §3.9.1) |
 | PD09 | Shared Kernel | ✅ Cerrada (LIN-ARQ-000 §3.9.2) |
 | PI09 | Bulkhead | ✅ Cerrada (LIN-ARQ-000 §3.7.2) |

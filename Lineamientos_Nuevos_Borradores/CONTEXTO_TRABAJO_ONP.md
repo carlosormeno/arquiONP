@@ -299,4 +299,4 @@ Context Map (`PD08`), Shared Kernel (`PD09`) y CQRS detallado (`PA07`) ya están
 | 2026-07-01 | Versión inicial — captura del razonamiento acumulado en la sesión de trabajo |
 | 2026-07-01 | §3 actualizado — lineamientos prescriben siempre, enseñan según audiencia; tabla de estilos por lineamiento |
 | 2026-07-01 | §2 actualizado — jerarquía corregida: NIVEL 0 (Lineamiento Modelo, apex), LIN-ARQ-000 como sucesor de Aplicaciones/BD; verificación de alineación con Nivel 0 y Nivel 1 completada |
-| 2026-07-02 | §6 actualizado — se registran como cubiertos en LIN-ARQ-000 los patrones PT05, PT06, PT07, PT09, PT10, PT12, PI08, PRA06, PD08, PD09, PA07 y los principios PRA07, PRA10, PR09 tras incorporar las secciones §3.7, §3.8, §3.9, §3.10 y §3.11 |
+| 2026-07-02 | §6 actualizado — se registran como cubiertos en LIN-ARQ-000 los patrones PT05, PT06, PT07, PT09, PT10, PT12, PI08, PRA06, PD08, PD09, PA07, PD01, PD02 y los principios PRA07, PRA10, PR09 tras incorporar las secciones §3.7, §3.8, §3.9, §3.10, §3.11 y §6.4.1 |

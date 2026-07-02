@@ -1,7 +1,7 @@
 # Lineamiento de Diseño y Arquitectura de Software ONP
 
 **Código:** LIN-ARQ-000  
-**Versión:** 0.1.7  
+**Versión:** 0.1.10  
 **Fecha:** 2026-07-02  
 **Autor:** Oficina de Tecnologías de la Información — ONP  
 **Estado:** Borrador de trabajo interno  
@@ -21,6 +21,9 @@
 | 0.1.5 | 2026-07-02 | Incorpora sección 3.8 con estándares de implementación para patrones oficiales PT09 (BFF), PT10 (Gateway-Aggregation) y PT12 (Facade Arquitectónico) adaptados al Monolito Modular |
 | 0.1.6 | 2026-07-02 | Corrige §3.7.1–3.7.2: estandariza configuración de clientes externos en Apache HttpClient 5 integrando connection timeout, read timeout y Bulkhead en una sola factory; elimina inconsistencia con JdkClientHttpRequestFactory |
 | 0.1.7 | 2026-07-02 | Incorpora sección 3.9 de Patrones de Dominio y Relación en Monolito Modular con Mapa de Contextos (PD08) y gobierno de Shared Kernel (PD09) |
+| 0.1.8 | 2026-07-02 | Incorpora sección 3.10 CQRS con dos variantes (Outbox+Kafka y CDC+Kafka), diagrama de flujo por variante y reglas ONP (ADR obligatorio); añade MongoDB como motor de lectura válido en §5.3 |
+| 0.1.9 | 2026-07-02 | Incorpora sección 3.11 Principios Rectores Transversales: PRA07 Loose Coupling/High Cohesion, PRA10 Single Source of Truth, PR09 Separation of Concerns; añade PR09 en §7.2 |
+| 0.1.10 | 2026-07-02 | Incorpora sección 6.4.1 con la guía normativa de Building Blocks DDD en contexto Spring (Agregado PD01, Entidad y Value Object PD02), separando explícitamente el modelo puramente de dominio de las entidades JPA |
 
 ---
 
@@ -1288,6 +1291,98 @@ public record DniPensionista(String valor) {
     }
 }
 ```
+
+#### 6.4.1 Guía normativa de Building Blocks DDD en contexto Spring (`PD01`, `PD02`)
+
+Al implementar Domain-Driven Design en los sistemas core de ONP sobre el stack Java 21 / Spring Boot 3, es obligatorio diferenciar y aplicar correctamente los bloques de construcción (*Building Blocks*) del dominio. El mayor antipatrón en proyectos Spring que afirman usar DDD es acoplar el modelo de dominio con el framework de persistencia.
+
+##### A. Entidad de Dominio vs. Entidad JPA (`PD02`)
+
+En ONP es **prohibido terminantemente** mezclar la Entidad de Dominio con la Entidad JPA (`@Entity`). Deben existir en paquetes y capas distintas:
+
+| Característica | Entidad de Dominio (`PD02`) | Entidad JPA (`@Entity`) |
+|---|---|---|
+| **Capa / Paquete** | `domain.model.*` (Dominio puro) | `infrastructure.persistence.entity.*` (Infraestructura) |
+| **Anotaciones de Framework** | **CERO**. Sin `@Entity`, `@Table`, `@Id`, `@Column` ni anotaciones Spring Data. | Obligatorias (`@Entity`, `@Table`, `@Id`, etc.) |
+| **Enfoque** | Encapsula reglas de negocio, invariantes, transiciones de estado e identidad conceptual. | Mapeo objeto-relacional (ORM) hacia filas y columnas de Oracle DB. |
+| **Exposición de Setters** | **PROHIBIDO `@Setter` o setters públicos abarcadores**. El estado cambia solo mediante métodos de negocio significativos (`aprobar()`, `archivar()`). | Permitido o requerido por Hibernate/JPA para hidratar objetos. |
+| **Sincronización** | N/A | Convertida hacia y desde la Entidad de Dominio exclusivamente vía Mappers en el adaptador de repositorio. |
+
+**Ejemplo de diferenciación obligatoria:**
+
+```java
+// 1. ENTIDAD DE DOMINIO PURA (domain.model.Pensionista)
+public class Pensionista {
+    private final PensionistaId id;
+    private DniPensionista dni;
+    private EstadoPensionista estado;
+
+    public Pensionista(PensionistaId id, DniPensionista dni, EstadoPensionista estado) {
+        this.id = id;
+        this.dni = dni;
+        this.estado = estado;
+    }
+
+    // Método de negocio (invariante)
+    public void suspenderPago(String motivo) {
+        if (this.estado == EstadoPensionista.FALLECIDO) {
+            throw new ReglaNegocioVioladaException("No se puede suspender a un pensionista fallecido");
+        }
+        this.estado = EstadoPensionista.SUSPENDIDO;
+    }
+}
+
+// 2. ENTIDAD JPA DE INFRAESTRUCTURA (infrastructure.persistence.entity.PensionistaEntity)
+@Entity
+@Table(name = "T_PENSIONISTA", schema = "PEN")
+public class PensionistaEntity {
+    @Id
+    @Column(name = "ID_PENSIONISTA")
+    private Long id;
+
+    @Column(name = "NUM_DNI", nullable = false, length = 8)
+    private String dni;
+
+    @Column(name = "COD_ESTADO", nullable = false, length = 20)
+    private String estado;
+
+    // Getters y Setters para uso exclusivo de Hibernate y Mappers
+}
+```
+
+##### B. Value Object (`PD02`) en Java 21
+
+Un **Value Object (Objeto de Valor)** modela una característica descriptiva que carece de identidad propia. Dos Value Objects son iguales si sus atributos tienen el mismo valor.
+
+- **Implementación como Java `record`:** En ONP, todo Value Object debe implementarse como `record` de Java 21, lo que garantiza inmutabilidad, semántica de valor (`equals` y `hashCode` automáticos) y concisión.
+- **Autovalidación obligatoria en constructor compacto:** Ningún Value Object puede instanciarse en estado inválido. La validación vive dentro de su constructor compacto.
+- **Persistencia JPA:** Cuando un Value Object de dominio deba guardarse en base de datos, el adaptador de persistencia lo mapea como campo primitivo en la entidad JPA o utiliza `@Embedded`/`AttributeConverter` en la capa de infraestructura.
+
+```java
+// domain.model.MontoPension (Value Object autovalidado)
+public record MontoPension(BigDecimal valor, String moneda) {
+    public MontoPension {
+        if (valor == null || valor.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new ReglaNegocioVioladaException("El monto de pensión debe ser positivo");
+        }
+        if (moneda == null || (!moneda.equals("PEN") && !moneda.equals("USD"))) {
+            throw new ReglaNegocioVioladaException("Moneda no permitida: " + moneda);
+        }
+    }
+}
+```
+
+##### C. Agregado y Agregado Raíz (`PD01` — *Aggregate Root*)
+
+Un **Agregado** es un clúster de entidades y Value Objects que se tratan como una única unidad transaccional para garantizar la consistencia en modificaciones concurrentes.
+
+1. **Frontera de Consistencia Transaccional:** Toda modificación a cualquier entidad dentro del agregado debe realizarse invocando métodos en el **Agregado Raíz (*Aggregate Root*)**. Ningún servicio de aplicación o adaptador externo puede obtener una referencia directa y modificar una entidad interna del agregado evadiendo la raíz.
+2. **Referencia por ID entre Agregados:** Un Agregado Raíz **nunca debe mantener referencias directas en memoria (punteros de objeto Java)** a otro Agregado Raíz. La referencia entre agregados se realiza exclusivamente mediante sus identificadores (Value Objects de ID).
+   - *Mal:* `public class Expediente { private Pensionista pensionista; }`
+   - *Bien:* `public class Expediente { private PensionistaId pensionistaId; }`
+3. **Gestión de Transacciones y Eventos en Spring Boot:**
+   - En la capa de aplicación (`application.service.*`), el caso de uso abre una transacción Spring (`@Transactional`), carga el Agregado Raíz mediante el puerto de repositorio, ejecuta la operación de negocio en el agregado y guarda el agregado modificado.
+   - Las transiciones de estado en el Agregado Raíz emiten **Eventos de Dominio (`DomainEvent`)**. La comunicación de cambios hacia otros agregados o bounded contexts se realiza consumiendo estos eventos de forma asíncrona tras el *commit* de la transacción (utilizando `ApplicationEventPublisher` de Spring o el patrón Outbox §3.6).
 
 ---
 
