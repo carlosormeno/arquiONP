@@ -31,12 +31,40 @@ Antes de responder cualquier consulta sobre el framework de arquitectura ONP, le
 | 4 | Lineamiento Arquitectura Patrón Apps y BD v1.0 | `Lineamientos_Aprobados/1.4.2.a Lineamiento sobre la Arquitectura patrón de Aplicaciones y Base de Datos v1.0.pdf` | **El más importante.** 8 capas, 3 estilos, 12 patrones oficiales (PT01–PT12) con ficha. LIN-ARQ-000 lo reemplazará cuando se apruebe. |
 | 5 | Lineamiento Analítica de Datos v1.0 | `Lineamientos_Aprobados/1.4.3.a. Lineamiento de Explotación y Analítica de Datos v1.0.pdf` | Arquitectura para la capa analítica — relevante si el tema involucra datos o BI |
 
-Luego lee los documentos en borrador activo:
+Luego lee los documentos en borrador activo (Nivel 2 y control de brechas):
 
 | Documento | Ruta | Qué es |
 |---|---|---|
-| LIN-ARQ-000 | `Lineamientos_Nuevos_Borradores/arquitectura/Lineamiento_Diseno_Arquitectura_Software_ONP_v0.1.0.md` | Sucesor del lineamiento de Aplicaciones/BD. El documento más importante del trabajo en curso. |
+| LIN-ARQ-000 | `Lineamientos_Nuevos_Borradores/arquitectura/Lineamiento_Diseno_Arquitectura_Software_ONP_v0.1.0.md` | Sucesor del lineamiento de Aplicaciones/BD. El documento más importante del trabajo en curso. Léelo completo. |
 | Brecha_Framework | `Lineamientos_Nuevos_Borradores/arquitectura/Brecha_Framework_Arquitectura_ONP_v0.1.0.md` | Tablero de control de qué falta documentar. Refleja el estado actual del framework. |
+
+Si el tema involucra un dominio técnico específico, lee también el lineamiento de Nivel 3 correspondiente. Todos dependen de LIN-ARQ-000 — ninguno puede contradecirlo:
+
+| Código | Ruta | Dominio | Qué buscar |
+|---|---|---|---|
+| LIN-BUS-001 | `Lineamientos_Nuevos_Borradores/mensajeria/Lineamiento_Mensajeria_Bus_Eventos_ONP_v0.1.0.md` | Mensajería y Bus de Eventos | Kafka topics, CloudEvents v1.0, variantes Saga, DLQ, idempotencia, retry con backoff, Transactional Outbox |
+| LIN-OBS-001 | `Lineamientos_Nuevos_Borradores/observabilidad/Lineamiento_Log_Trazabilidad_Observabilidad_ONP_v0.1.0.md` | Observabilidad | Logback/ECS, métricas Prometheus, trazas OTEL, orden de filtros (RequestId→SaaToken→Log), Four Golden Signals |
+| LIN-API-REST-001 | `Lineamientos_Nuevos_Borradores/Web/Lineamiento_Estandar_APIs_REST_ONP_v0.1.0.md` | APIs REST | Naming conventions, versionado, paginación, manejo de errores, WSO2, contratos OpenAPI 3.0 |
+| LIN-K8S-001 | `Lineamientos_Nuevos_Borradores/contenedores/Lineamiento_Contenedores_Orquestacion_ONP_v0.1.0.md` | Contenedores y Orquestación K8s | Estructura Deployment/Service/ConfigMap, namespaces ONP, readiness/liveness probes, GitLab Container Registry |
+| LIN-SEC-APP-001 | `Lineamientos_Nuevos_Borradores/seguridad/Lineamiento_Seguridad_Aplicaciones_ONP_v0.1.0.md` | Seguridad en Aplicaciones | Autenticación SAA, JWT, HTTPS obligatorio, OWASP Top 10, headers de seguridad, protección de endpoints |
+| LIN-DEV-JAVA-001 | `Lineamientos_Nuevos_Borradores/desarrollo/Lineamiento_Estandar_Desarrollo_Java_ONP_v0.1.0.md` | Desarrollo Java 21 / Spring Boot 3 | Estructura de paquetes, estilo de código ONP, DDD building blocks en Spring — SOLID/DRY/KISS/YAGNI pendiente completar (⚠️ Parcial) |
+| LIN-BD-ORA-001 | `Lineamientos_Nuevos_Borradores/Datos/Lineamiento_Estandar_Base_de_Datos_ONP_v0.1.0.md` | Base de Datos Oracle | Naming de tablas/columnas/índices, transacciones ACID, acceso desde Spring Boot, prohibiciones de acceso directo |
+| LIN-FE-ANG-001 | `Lineamientos_Nuevos_Borradores/Web/Lineamiento_Estandar_Diseno_Web_Frontend_ONP_v0.1.0.md` | Frontend Angular | Estructura de módulos, consumo de APIs REST, manejo de sesión SAA, accesibilidad |
+| LIN-VER-001 | `Lineamientos_Nuevos_Borradores/versionamiento/Lineamiento_Versionamiento_Control_Cambios_ONP_v0.1.1.md` | Versionamiento y Control de Cambios | SemVer, GitFlow simplificado (feature/release/hotfix), convención de commits, MR templates GitLab |
+| LIN-TEST-001 | `Lineamientos_Nuevos_Borradores/pruebas/Lineamiento_Estandar_Pruebas_ONP_v0.1.0.md` | Pruebas de Software | Pirámide de pruebas, JUnit 5 + Mockito, pruebas de integración, cobertura mínima, gates de calidad |
+| LIN-TEST-PERF-001 | `Lineamientos_Nuevos_Borradores/pruebas/Lineamiento_Pruebas_Rendimiento_Carga_Estres_ONP_v0.1.0.md` | Pruebas de Rendimiento | JMeter / Gatling, SLA, pruebas de carga y estrés, criterios de aceptación de rendimiento |
+| LIN-CICD-001 | `Lineamientos_Nuevos_Borradores/CICD/Lineamiento_Integracion_Entrega_Continua_ONP_v0.1.0.md` | CI/CD | Pipelines GitLab CI, stages (build/test/scan/deploy), gates de calidad automáticos, artefactos |
+| LIN-IaC-001 | `Lineamientos_Nuevos_Borradores/Infraestructura/Lineamiento_Infraestructura_Código_ONP_v0.1.0.md` | Infraestructura como Código | Terraform / Ansible para K8s on-premise, gestión de secretos, provisioning reproducible |
+| LIN-BI-001 | `Lineamientos_Nuevos_Borradores/Datos/Lineamiento_Explotacion_Analitica_Datos_BI_ONP_v0.1.0.md` | Business Intelligence / Analítica | Medallion architecture, Parquet, Nessie, OpenMetadata, pipelines de datos analíticos |
+
+Documentos de trabajo adicionales útiles:
+
+| Documento | Ruta | Rol |
+|---|---|---|
+| START_HERE | `Lineamientos_Nuevos_Borradores/START_HERE_Proyecto_Java_ONP.md` | Checklist de inicio rápido para un proyecto Spring Boot ONP — primer documento que lee un desarrollador |
+| GLOSARIO_ONP | `Lineamientos_Nuevos_Borradores/GLOSARIO_ONP.md` | Glosario de términos técnicos y de negocio ONP — consultar ante ambigüedades de nomenclatura |
+| Matriz_Propiedad_Documental | `Lineamientos_Nuevos_Borradores/Matriz_Propiedad_Documental_ONP_v0.1.0.md` | Quién es responsable de cada documento del framework |
+| Plantilla_Documento_Arquitectura | `Lineamientos_Nuevos_Borradores/arquitectura/Plantilla_Documento_Arquitectura_ONP_v1.2.md` | Plantilla oficial para documentos de arquitectura de proyecto (estructura C4 conceptual + ArchiMate) |
 
 Con eso tienes el contexto suficiente para trabajar sin asumir cosas que no son ciertas.
 
@@ -155,14 +183,22 @@ Lo que NO hace: contradecir el Lineamiento Modelo (NIVEL 0) ni los Principios de
 
 Cada uno cubre un dominio técnico específico y debe alinearse tanto a LIN-ARQ-000 como a los documentos de Nivel 1.
 
-| Lineamiento | Dominio |
-|---|---|
-| LIN-BUS-001 | Mensajería y Bus de Eventos — Kafka, CloudEvents, Saga, DLQ |
-| LIN-OBS-001 — Observabilidad | Trazas, logs, métricas, health checks |
-| LIN-API-REST-001 | APIs REST — diseño, versionado, WSO2 |
-| LIN-K8S-001 | Contenedores, orquestación, despliegue |
-| LIN-SEC-APP-001 | Seguridad en aplicaciones, autenticación, SAA |
-| LIN-DEV-JAVA-001 | Estándar de desarrollo Java + Spring Boot |
+| Código | Dominio | Estado |
+|---|---|---|
+| LIN-BUS-001 | Mensajería y Bus de Eventos — Kafka, CloudEvents, Saga, DLQ, idempotencia | Borrador |
+| LIN-OBS-001 | Observabilidad — trazas OTEL, logs Logback/ECS, métricas Prometheus, filtros | Borrador |
+| LIN-API-REST-001 | APIs REST — diseño, naming, versionado, paginación, WSO2, OpenAPI 3.0 | Borrador |
+| LIN-K8S-001 | Contenedores y Orquestación — K8s on-premise, namespaces, probes, Registry | Borrador |
+| LIN-SEC-APP-001 | Seguridad en Aplicaciones — SAA, JWT, OWASP, headers de seguridad | Borrador |
+| LIN-DEV-JAVA-001 | Desarrollo Java 21 / Spring Boot 3 — estructura, DDD en Spring, SOLID (⚠️ pendiente completar) | Borrador |
+| LIN-BD-ORA-001 | Base de Datos Oracle — naming, ACID, acceso desde Spring, prohibiciones | Borrador |
+| LIN-FE-ANG-001 | Frontend Angular — módulos, consumo REST, sesión SAA, accesibilidad | Borrador |
+| LIN-VER-001 | Versionamiento y Control de Cambios — SemVer, GitFlow, commits, MR templates | Borrador |
+| LIN-TEST-001 | Pruebas de Software — pirámide, JUnit 5, Mockito, integración, cobertura mínima | Borrador |
+| LIN-TEST-PERF-001 | Pruebas de Rendimiento — JMeter/Gatling, SLA, carga y estrés | Borrador |
+| LIN-CICD-001 | CI/CD — pipelines GitLab CI, stages, gates de calidad, artefactos | Borrador |
+| LIN-IaC-001 | Infraestructura como Código — Terraform/Ansible para K8s on-premise | Borrador |
+| LIN-BI-001 | Business Intelligence / Analítica — Medallion, Parquet, Nessie, OpenMetadata | Borrador |
 
 ---
 
@@ -271,15 +307,22 @@ Pendientes adicionales de alta prioridad (no están en el lineamiento oficial pe
 |---|---|---|---|
 | PI08 | Timeout — estándar para REST y Kafka | LIN-ARQ-000 | ✅ cubierto (§3.7.1) |
 | PRA06 | Design for Failure — principio transversal | LIN-ARQ-000 | ✅ cubierto (§3.7) |
-| PR01–PR05 | SOLID — cómo ONP lo aplica en Java | LIN-DEV-JAVA-001 | ❌ pendiente |
+| PR01–PR05 | SOLID — cómo ONP lo aplica en Java | LIN-ARQ-000 §7.1 + LIN-DEV-JAVA-001 | ⚠️ Parcial — declaración arquitectónica ✅ en §7.1; guía Java/Spring ❌ pendiente en LIN-DEV-JAVA-001 |
 
-### Mediano plazo — cuando el roadmap lo exija
-Context Map (`PD08`), Shared Kernel (`PD09`) y CQRS detallado (`PA07`) ya están cubiertos y normados con sus respectivas variantes y criterios de adopción en **LIN-ARQ-000 §3.9 y §3.10**.
+### Plan de Acción Unificado y Secuencial (Acordado el 2026-07-02)
 
-### Pendiente de decisión
-- ¿Qué ítems de la brecha quedan definitivamente fuera del scope ONP actual?
-- ¿Quién es el responsable de documentar cada ítem pendiente?
-- ¿Cuándo se revisa formalmente el estado de la brecha?
+Tras cerrar los bloques tácticos de DDD (`PD01` Agregados, `PD02` Entidades y Value Objects en §6.4.1) y consolidar `LIN-ARQ-000` al 100% como superconjunto de los 12 patrones oficiales, se define la siguiente secuencia ejecutiva de cierre de brechas antes de descender al código de Nivel 3:
+
+#### Fase 1: Cierre de Brechas Restantes en Nivel 2 (`LIN-ARQ-000`) — ✅ COMPLETADA Y AUDITADA (v0.1.16)
+1. **`PD10` (Published Language — Contratos de eventos + CloudEvents):** ✅ **CUBIERTO en LIN-ARQ-000 §3.9.3**. Se normó el contrato público exterior entre Bounded Contexts vía CloudEvents v1.0 (asíncrono sobre Kafka) y OpenAPI 3.0 (síncrono REST), prohibiendo exponer el modelo interno (`domain.model.*`).
+2. **`PA14` (Feature Toggle — Complemento de Strangler Fig):** ✅ **CUBIERTO en LIN-ARQ-000 §2.2.1**. Se normaron los 4 tipos de toggles (*Release*, *Ops*, *Experiment*, *Permission*), el mandato de Deuda Técnica Cero para borrarlos tras liberar la migración y la integración con *Branch by Abstraction*. Se oficializó Unleash / Spring Cloud Config como estándar on-premise.
+3. **`E07` (SOA — Interoperabilidad Gubernamental: PIDE, RENIEC, SUNAT):** ✅ **CUBIERTO en LIN-ARQ-000 §3.8.4**. Se normó el modelo G2G/B2G para consumo del Estado, delegando los umbrales a la Matriz de Timeouts (§3.7.1) y exigiendo aislamiento por Anti-Corruption Layer (`PT11`) y resiliencia en WSO2.
+
+#### Fase 2: Descenso Normativo al Nivel 3 (`LIN-DEV-JAVA-001`) — EN CURSO
+4. **Cierre al 100% de Principios de Código (`PR01–PR08`) y Patrones Tácticos DDD (`PD04–PD06`):**
+   - **`PR01–PR05` (SOLID en Spring Boot 3 / Java 21):** Inyección obligatoria por constructor (Inversión de Dependencias), SRP en controladores y repositorios.
+   - **`PR06–PR08` (DRY, KISS, YAGNI):** Criterios pragmáticos de reutilización vs. acoplamiento indeseado.
+   - **`PD04–PD06` (Repository, Domain Service, Application Service):** Plantillas concretas en Spring Boot separando orquestación transaccional (`@Service`) de lógica pura de dominio.
 
 ---
 
@@ -300,3 +343,9 @@ Context Map (`PD08`), Shared Kernel (`PD09`) y CQRS detallado (`PA07`) ya están
 | 2026-07-01 | §3 actualizado — lineamientos prescriben siempre, enseñan según audiencia; tabla de estilos por lineamiento |
 | 2026-07-01 | §2 actualizado — jerarquía corregida: NIVEL 0 (Lineamiento Modelo, apex), LIN-ARQ-000 como sucesor de Aplicaciones/BD; verificación de alineación con Nivel 0 y Nivel 1 completada |
 | 2026-07-02 | §6 actualizado — se registran como cubiertos en LIN-ARQ-000 los patrones PT05, PT06, PT07, PT09, PT10, PT12, PI08, PRA06, PD08, PD09, PA07, PD01, PD02 y los principios PRA07, PRA10, PR09 tras incorporar las secciones §3.7, §3.8, §3.9, §3.10, §3.11 y §6.4.1 |
+| 2026-07-02 | §5 actualizado — se documenta el Plan de Acción Unificado y Secuencial priorizando PD10 (Published Language), PA14 (Feature Toggle) y E07 (SOA Interoperabilidad Gubernamental) en LIN-ARQ-000 antes del descenso al Nivel 3 en LIN-DEV-JAVA-001 |
+| 2026-07-02 | §0 expandido — añadida tabla completa de los 14 lineamientos de Nivel 3 con rutas y qué buscar en cada uno; añadidos documentos de trabajo (START_HERE, GLOSARIO, Matriz, Plantilla). §2 NIVEL 3 actualizado con todos los lineamientos. §5 corregido: PR01-PR05 pasa de ❌ pendiente a ⚠️ Parcial. |
+| 2026-07-02 | §5 actualizado — se marca como cubierto el Paso 1 de la Fase 1 (`PD10` Published Language) tras ser normado y estructurado en LIN-ARQ-000 §3.9.3 |
+| 2026-07-02 | §5 actualizado — se marca como cubierto el Paso 2 de la Fase 1 (`PA14` Feature Toggle) tras normarse sus 4 variantes, mandato de deuda técnica cero y Branch by Abstraction en LIN-ARQ-000 §2.2.1 |
+| 2026-07-02 | §5 actualizado — se marca como cubierto el Paso 3 de la Fase 1 (`E07` SOA Gubernamental) tras normarse en LIN-ARQ-000 §3.8.4 con resiliencia extrema y ACL obligatorios |
+| 2026-07-02 | §5 actualizado — se registra el cierre definitivo y auditoría de congruencia interna al 100% de la **Fase 1 (`LIN-ARQ-000 v0.1.16`)** y el inicio formal de la **Fase 2 (`LIN-DEV-JAVA-001`)** |

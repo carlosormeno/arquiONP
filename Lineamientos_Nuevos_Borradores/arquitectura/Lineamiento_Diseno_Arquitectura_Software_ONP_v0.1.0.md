@@ -1,7 +1,7 @@
 # Lineamiento de Diseño y Arquitectura de Software ONP
 
 **Código:** LIN-ARQ-000  
-**Versión:** 0.1.10  
+**Versión:** 0.1.16  
 **Fecha:** 2026-07-02  
 **Autor:** Oficina de Tecnologías de la Información — ONP  
 **Estado:** Borrador de trabajo interno  
@@ -24,6 +24,12 @@
 | 0.1.8 | 2026-07-02 | Incorpora sección 3.10 CQRS con dos variantes (Outbox+Kafka y CDC+Kafka), diagrama de flujo por variante y reglas ONP (ADR obligatorio); añade MongoDB como motor de lectura válido en §5.3 |
 | 0.1.9 | 2026-07-02 | Incorpora sección 3.11 Principios Rectores Transversales: PRA07 Loose Coupling/High Cohesion, PRA10 Single Source of Truth, PR09 Separation of Concerns; añade PR09 en §7.2 |
 | 0.1.10 | 2026-07-02 | Incorpora sección 6.4.1 con la guía normativa de Building Blocks DDD en contexto Spring (Agregado PD01, Entidad y Value Object PD02), separando explícitamente el modelo puramente de dominio de las entidades JPA |
+| 0.1.11 | 2026-07-02 | Incorpora sección 3.9.3 con el patrón Lenguaje Publicado (Published Language — PD10), normando el uso de CloudEvents v1.0 (CNCF) en integración asíncrona sobre Kafka y OpenAPI 3.0 en REST |
+| 0.1.12 | 2026-07-02 | Incorpora sección 2.2.1 normando el patrón Feature Toggle (PA14) en sus 4 variantes como complemento operativo mandatorio de Strangler Fig (PT08) para Trunk-Based Development y Branch by Abstraction |
+| 0.1.13 | 2026-07-02 | Incorpora sección 3.8.4 normando la Arquitectura Orientada a Servicios (SOA — E07) como estándar mandatorio de interoperabilidad gubernamental (PIDE, RENIEC, SUNAT), exigiendo aislamiento ACL (PT11) y resiliencia extrema (PT06/PI08) |
+| 0.1.14 | 2026-07-02 | Correcciones de consistencia: §3.8.4 timeout referencia §3.7.1 en lugar de rango hardcodeado; §2.2.1 Ops Toggle aclara que Unleash es el estándar on-premise y LaunchDarkly requiere ADR+Seguridad; §3 tabla intro actualiza §3.8 para incluir interoperabilidad gubernamental |
+| 0.1.15 | 2026-07-02 | Revisión exhaustiva de congruencia interna: sincroniza referencias y títulos en la tabla introductoria de §3 con las subsecciones §3.8 y §3.9 actualizadas, y complementa el glosario del Apéndice B con los términos Feature Toggle y Published Language |
+| 0.1.16 | 2026-07-02 | Auditoría de cierre: numera §5.3 y §5.4 (headings sin número), corrige referencia §9.3 al formato §12, añade aviso "pendiente de redacción" en §2.2.1 para LIN-DEV-JAVA-001 §14, agrega ADR-014 (Feature Toggle/Unleash) en Apéndice A, amplía Apéndice B con CQRS y CDC, y refuerza obligatoriedad de Circuit Breaker en §3.8.4 para proveedores SOA de alta volumetría |
 
 ---
 
@@ -93,7 +99,7 @@ Tradicional   ──►  (Maven Multi-módulo)    ──►  Selectivos
 
 **Estadio 3 — Microservicios Selectivos:** Un módulo del Estadio 2 puede extraerse como microservicio independiente cuando cumple los criterios de la tabla de la [sección 3.5](#35-microservicios). No se diseña para microservicios desde el inicio.
 
-### 2.2 Patrón de migración: Strangler Fig
+### 2.2 Patrón de migración: Strangler Fig (`PT08`) y Feature Toggles (`PA14`)
 
 El **Strangler Fig** es un patrón de migración que toma su nombre de la higuera estranguladora: una planta que crece alrededor de un árbol existente hasta reemplazarlo completamente, sin derribarlo. En software, el sistema nuevo crece en paralelo al legacy y lo reemplaza de forma progresiva — nunca hay una reescritura total ni un corte abrupto.
 
@@ -117,6 +123,27 @@ Para migrar sistemas del Estadio 1 al Estadio 2 sin reescritura completa:
 
 **Regla ONP:** Toda migración de sistema legacy debe documentarse como un ADR (Architecture Decision Record) con la ruta de migración explícita.
 
+#### 2.2.1 Complemento operativo mandatorio: Feature Toggles (`PA14`)
+
+Mientras que el patrón *Strangler Fig* (`PT08`) gestiona el enrutamiento perimetral en el API Gateway o proxy de red para desviar tráfico desde el sistema legado hacia el nuevo módulo, **dentro de la aplicación** es obligatorio utilizar el patrón **Feature Toggle** (*Alternador de Funcionalidades* — `PA14`) para controlar en tiempo de ejecución la ejecución de nuevos fragmentos de código sin requerir un redespliegue ni ramas de Git longevas.
+
+##### A. Tipos de Toggles y Criterio de Uso Institucional
+
+| Categoría | Propósito en ONP | Dinamismo | Vida Útil Permitida |
+|---|---|---|---|
+| **Release Toggle** | Habilitar *Trunk-Based Development*. Permite integrar código incompleto a la rama `main` a diario sin activar el flujo en producción hasta terminar la funcionalidad. | Estático / Archivo de configuración | **Corto plazo** (máximo 2 a 4 semanas; se borra inmediatamente al liberar el *release*). |
+| **Ops Toggle** | Mecanismo de *Kill-Switch* / Degradación elegante. Permite apagar un algoritmo pesado o una nueva integración en **< 1 segundo** ante una alerta de sobrecarga sin reiniciar pods en Kubernetes. | Dinámico — **Unleash** (self-hosted, estándar ONP) o **Spring Cloud Config** + flags en YAML (alternativa ligera sin infraestructura adicional). LaunchDarkly y otros SaaS solo con ADR aprobado por Arquitectura OTI + Seguridad (requieren salida de red externa, incompatible con entorno on-premise sin autorización). | **Largo plazo** (mientras el caso de uso se considere crítico operativamente). |
+| **Experiment Toggle** | Pruebas A/B o *Canary Launching* interno (ej. enrutar al 5% de usuarios al nuevo motor de cálculo de reserva matemática para comparar precisión). | Dinámico por petición / usuario | **Medio plazo** (dura lo que dure la fase de evaluación y validación actuarial). |
+| **Permission Toggle** | Habilitar funcionalidades beta o administrativas únicamente a ciertos roles de usuario (ej. auditores o supervisores ONP). | Dinámico por contexto de seguridad (JWT) | **Largo plazo** o permanente en control de accesos. |
+
+##### B. Regla Antideuda Técnica de Toggles
+
+> **Mandato de Deuda Técnica Cero:** Todo *Release Toggle* o *Experiment Toggle* creado en el código fuente conlleva una **deuda técnica temporal programada**. Al finalizar la migración o validación de la funcionalidad, el equipo de desarrollo está **obligado a eliminar el toggle, sus condicionales (`if/else`) y el código legado asociado** en el sprint inmediatamente posterior. Mantener *toggles* muertos en el código se considera un anti-patrón de mantenibilidad sancionable en revisión de código (`LIN-DEV-JAVA-001 §14` *(pendiente de redacción)*).
+
+##### C. Integración con Branch by Abstraction
+
+Para migraciones profundas dentro del Monolito Modular donde no interviene la red (ej. reemplazar una librería de acceso a datos o un conector SOAP hacia SUNAT por un cliente REST), se combina el Feature Toggle con el patrón **Branch by Abstraction**: se define una interfaz Java común en `domain.port.out` y una factoría o *Router* en la capa de infraestructura que evalúa el estado del *toggle* para inyectar la implementación antigua o la moderna sin alterar la lógica de negocio.
+
 ---
 
 ## 3. Estilos y Patrones de Arquitectura
@@ -128,8 +155,8 @@ Esta sección organiza los estilos y patrones de arquitectura adoptados por ONP 
 | **Organización del código** | ¿Cómo organizo el código dentro de un módulo? | [3.1](#31-arquitectura-en-capas-layered), [3.2](#32-arquitectura-hexagonal) |
 | **Estructura del sistema** | ¿Cómo estructuro y despliego el sistema completo? | [3.3](#33-monolito-puro), [3.4](#34-monolito-modular), [3.5](#35-microservicios) |
 | **Comunicación** | ¿Cómo se comunican los componentes o servicios? | [3.6](#36-arquitectura-orientada-a-eventos-eda) |
-| **Resiliencia e integración** | ¿Cómo protejo las llamadas a sistemas externos y gestiono canales de consumo? | [3.7](#37-resiliencia-y-tolerancia-a-fallos-design-for-failure), [3.8](#38-patrones-de-integración-agregación-y-fachada) |
-| **Fronteras entre módulos** | ¿Cómo relaciono los bounded contexts dentro del Monolito Modular? | [3.9](#39-patrones-de-dominio-y-relación-entre-contextos-en-el-monolito-modular-pd08-pd09) |
+| **Resiliencia, integración e interoperabilidad** | ¿Cómo protejo las llamadas a sistemas externos, gestiono canales de consumo e integro con entidades del Estado? | [3.7](#37-resiliencia-y-tolerancia-a-fallos-design-for-failure), [3.8](#38-patrones-de-integración-agregación-fachada-e-interoperabilidad-soa-e07) |
+| **Fronteras entre módulos** | ¿Cómo relaciono los bounded contexts dentro del Monolito Modular? | [3.9](#39-patrones-de-dominio-y-relación-entre-contextos-en-el-monolito-modular-pd08-pd09-pd10) |
 | **Consistencia y proyecciones** | ¿Cuándo y cómo separo escritura de lectura con CQRS? | [3.10](#310-cqrs--separación-de-modelos-de-escritura-y-lectura-pa07) |
 | **Principios rectores** | ¿Qué principios gobiernan todas las decisiones de §3? | [3.11](#311-principios-rectores-transversales-pra07-pra10-pr09) |
 
@@ -137,7 +164,7 @@ Esta sección organiza los estilos y patrones de arquitectura adoptados por ONP 
 
 #### Camino de un sistema nuevo
 
-Todo sistema nuevo nace como **Monolito Modular**. Cada módulo interno usa **Capas simples (3.1)** por defecto, porque es suficiente para la mayoría de los casos. Cuando un módulo específico necesita convertirse en microservicio, lo primero será refactorizar el módulo seleccionado a una arquitectura del tipo **Hexagonal (3.2)** y luego se extrae. No se debe diseñar para microservicios desde el inicio porque tiene un costo muy alto.
+Todo sistema nuevo nace como **Monolito Modular**. Cada módulo interno usa **Capas simples (3.1)** por defecto, porque es suficiente para la mayoría de los casos. Ahora bien, cuando un módulo específico del monolito modular cumple con las condiciones y criterios detallados en la [sección 3.5.2 (Criterios y Matriz de Extracción)](#352-cuándo-usar--criterios-y-matriz-de-extracción-a-microservicios), dicho módulo se convierte en un candidato legítimo para extracción; en ese momento, lo primero será refactorizar el módulo seleccionado a una arquitectura del tipo **Hexagonal (3.2)** para aislar su frontera y luego se extrae. No se debe diseñar para microservicios desde el inicio porque tiene un costo operativo y de consistencia muy alto.
 
 ```
   Módulo nuevo en Monolito Modular
@@ -182,8 +209,6 @@ Un sistema legado (monolito puro, Estadio 1) **sí puede evolucionar** hacia Mon
 ```
 
 > **¿Y MVC?** MVC (Model-View-Controller) no aparece en esta tabla porque no es una arquitectura completa — es el patrón que describe cómo se organiza solo la capa de presentación: el Controller recibe el request, procesa con el Model y devuelve una View (en APIs REST, el JSON). En Spring Boot esto está implícito en `@RestController` y no requiere una decisión explícita. La decisión real de arquitectura es cómo organizas las capas de aplicación, dominio e infraestructura — que es exactamente lo que cubren 3.1 y 3.2.
-
-**── ¿Cómo organizo el código? ─────────────────────────────────**
 
 ### 3.1 Arquitectura en capas (Layered)
 
@@ -315,8 +340,6 @@ Adoptar Hexagonal sobre Capas simples cuando se cumple al menos uno de estos cri
 
 La regla de dependencia es estricta: `infrastructure → application → domain`. Si una clase en `domain` importa `jakarta.persistence` o `org.springframework`, la frontera está rota. Ver [sección 9.3](#93-hexagonal--clean) para la estructura Maven concreta.
 
-**── ¿Cómo estructuro y despliego el sistema? ───────────────────**
-
 ### 3.3 Monolito puro
 
 Un único proceso desplegable donde toda la lógica, acceso a datos y presentación coexisten sin fronteras explícitas entre módulos. Es el **Estadio 1** de la hoja de ruta de ONP y el estado actual de los sistemas legacy en producción.
@@ -397,7 +420,7 @@ Las dependencias entre módulos son explícitas y unidireccionales: ningún mód
 
 Estilo donde cada módulo se despliega como un proceso independiente con su propia base de datos. Al separar en microservicios se pierde la garantía ACID del Monolito Modular: `@Transactional` solo abarca una conexión a una BD y no puede coordinar dos servicios distintos. Esta pérdida de consistencia fuerte es el punto de partida para entender cuándo microservicios aplica y cuándo no. El detalle de las propiedades ACID en el contexto Oracle está en **LIN-BD-ORA-001 3.9**.
 
-#### Teorema CAP — contexto obligatorio antes de decidir microservicios
+#### 3.5.1 Teorema CAP — contexto obligatorio antes de decidir microservicios
 
 El teorema CAP (Brewer, 2000) establece que un sistema distribuido solo puede garantizar simultáneamente **dos** de estas tres propiedades:
 
@@ -421,9 +444,9 @@ Microservicios   → BD por servicio → red entre servicios → CAP aplica
 | **CP** | Disponibilidad — el sistema puede rechazar requests si no puede garantizar consistencia | Transacciones distribuidas (evitar), 2PC (evitar en microservicios) | Cálculo de pensión, liquidación, aportes — un dato incorrecto es inaceptable |
 | **AP** | Consistencia fuerte — aceptas consistencia eventual | Saga + Outbox + Dead Letter Queue | Consultas de estado, notificaciones, historial — un dato ligeramente desactualizado es aceptable |
 
-#### Cuándo usar
+#### 3.5.2 Cuándo usar — Criterios y Matriz de Extracción a Microservicios
 
-Reservado para módulos del Monolito Modular maduro ([3.4](#34-monolito-modular)) que cumplen **todos** los criterios de la siguiente tabla. Si algún criterio no se cumple, el módulo permanece en el Monolito Modular. No se crean microservicios por razones de moda o preferencia tecnológica.
+Reservado para módulos del Monolito Modular maduro ([3.4](#34-monolito-modular)) que cumplen **todos** los criterios de la siguiente tabla. Si algún criterio no se cumple, el módulo permanece en el Monolito Modular. Es importante indicar que por ningún motivo se deben crear microservicios como reemplazo de modulos del Monolito Modular por razones de moda o preferencia tecnológica, esto solo se debe hacer cuando el módulo cumple los criterios aquí indicados y luego de un análisis riguroso de sus implicaciones. Los criterios se evalúan de forma conjunta, es decir, no basta con cumplir uno o dos criterios para decidir extraer un módulo como microservicio.
 
 | Criterio | Descripción |
 |---|---|
@@ -434,15 +457,13 @@ Reservado para módulos del Monolito Modular maduro ([3.4](#34-monolito-modular)
 | Tolerancia a fallo independiente | El sistema principal puede operar aunque este módulo falle |
 | SLO definido | Tiene Service Level Objectives formales documentados (ver **LIN-OBS-001**) |
 
-#### Reglas ONP
+#### 3.5.3 Reglas ONP para Microservicios
 
 **Regla — elección CAP:** al extraer un módulo como microservicio se debe declarar explícitamente en el ADR si el servicio es CP o AP, y qué patrón gestiona la consistencia. Un microservicio sin esta decisión documentada no está listo para producción.
 
 **Regla — estructura previa obligatoria:** todo módulo que cumpla los seis criterios debe refactorizarse a **Arquitectura Hexagonal** ([3.2](#32-arquitectura-hexagonal)) antes de iniciar la extracción. Los ports definen qué es interno, los adapters definen qué es externo. Sin esa frontera clara, la extracción genera acoplamiento oculto. Ver [sección 9.3](#93-hexagonal--clean) para la estructura Maven correspondiente.
 
 **Regla — sin ACID entre microservicios:** coordinar dos BDs distintas requeriría Two-Phase Commit (2PC), que introduce bloqueos distribuidos, acoplamiento fuerte y puntos únicos de falla — exactamente lo opuesto de lo que se busca con microservicios. La alternativa correcta es el patrón **Saga** con **Transactional Outbox**. El detalle de implementación está en **LIN-BUS-001 sección 9**.
-
-**── ¿Cómo se comunican los componentes? ────────────────────────**
 
 ### 3.6 Arquitectura Orientada a Eventos (EDA)
 
@@ -492,7 +513,7 @@ EDA requiere la infraestructura de un broker. ONP adopta **Apache Kafka** como b
 | **Saga — coreografía** | Coordinar una transacción distribuida entre sistemas con BD propia sin 2PC. Cada participante emite un evento al completar su paso; el siguiente lo consume y reacciona. No hay coordinador central. | Flujos con pocos pasos y baja complejidad condicional, entre microservicios o aplicativos monolíticos. |
 | **Saga — orquestación** | Un orquestador central emite comandos y reacciona a eventos de respuesta. Más trazable que la coreografía pero introduce un coordinador con estado. | Flujos con muchos pasos, condiciones complejas o múltiples rutas de compensación. Aplica sobre microservicios y sobre monolitos — ver variante ONP abajo. |
 | **Transactional Outbox** | Garantiza que el evento se publica solo si la transacción de BD confirma. Evita pérdida de evento cuando el proceso falla entre el `COMMIT` y la publicación al broker. | Obligatorio cada vez que se publica un evento desde un servicio con BD propia. Sin Outbox, hay riesgo de pérdida silenciosa de evento. |
-| **Event-Driven CQRS** | Separa el modelo de escritura del de lectura. Las escrituras producen eventos que actualizan proyecciones de lectura optimizadas. | Solo cuando el volumen de consultas justifica un modelo de lectura separado y la latencia eventual en las proyecciones es aceptable. |
+| **Event-Driven CQRS** | Separa el modelo de escritura del de lectura. Las escrituras producen eventos que actualizan proyecciones de lectura optimizadas. | Solo cuando el volumen de consultas justifica un modelo de lectura separado y la latencia eventual en las proyecciones es aceptable. Ver **§3.10** para la norma completa de adopción, variantes (Outbox/CDC) y criterios de elección del read model. |
 
 > **Event Sourcing** no está en la lista. Almacenar el estado como secuencia de eventos introduce complejidad operativa (versionado de esquemas de eventos, proyecciones, replay) que supera el beneficio en los sistemas actuales de ONP. Su adopción requiere ADR aprobado por Arquitectura OTI.
 
@@ -655,9 +676,9 @@ public DatosPersonaReniec consultarDni(String dni) { ... }
 
    Esta adopción excepcional requiere **ADR aprobado** por Arquitectura OTI.
 
-### 3.8 Patrones de Integración, Agregación y Fachada
+### 3.8 Patrones de Integración, Agregación, Fachada e Interoperabilidad SOA (`E07`)
 
-Para gestionar eficientemente la comunicación entre los canales de consumo (SPAs, aplicaciones móviles, interoperabilidad PIDE) y los backends institucionales (parque heredado y Monolitos Modulares nuevos), son oficiales y de aplicación regulada los siguientes tres patrones:
+Para gestionar eficientemente la comunicación entre los canales de consumo (SPAs, aplicaciones móviles, interoperabilidad PIDE) y los backends institucionales (parque heredado y Monolitos Modulares nuevos), son oficiales y de aplicación regulada los siguientes cuatro patrones:
 
 #### 3.8.1 Facade Arquitectónico de Integración (`PT12` / `PA10`)
 
@@ -706,7 +727,55 @@ public class GobiernoIntegracionFacadeAdapter implements VerificacionCiudadanoPo
 * **Adopción Recomendada:** Cuando un sistema presta servicios a **dos o más canales de consumo diferenciados** (ej. Portal Web Angular + Aplicación Móvil nativa) con flujos de navegación, anchos de banda o requisitos de seguridad distintos, o cuando un canal requiere de mediación especializada frente al API Manager.
 * **Evitar Sobreingeniería:** Si un proyecto cuenta con **un único canal estándar** (ej. una única SPA institucional en Angular consumiendo directamente su backend) y no existe requisito de traducción de protocolos o mediación SSO externa, **no se construye un servicio BFF separado**. En este escenario, la propia capa de presentación REST (`controller/`) del Monolito Modular sirve el contrato directamente, evitando saltos de red y sobrecarga operativa innecesarios.
 
-### 3.9 Patrones de Dominio y Relación entre Contextos en el Monolito Modular (`PD08`, `PD09`)
+#### 3.8.4 Interoperabilidad Gubernamental SOA (`E07` — PIDE, RENIEC, SUNAT)
+
+La **Arquitectura Orientada a Servicios (SOA — `E07`)** no es el estilo arquitectónico interno de construcción de software en ONP (donde rigen el Monolito Modular y Microservicios), sino el **estilo mandatorio e institucional de interoperabilidad G2G (Gobierno a Gobierno)** para el intercambio de información con otras entidades del Estado Peruano (RENIEC, SUNAT, ESSALUD, MIDIS, Poder Judicial) a través de la **Plataforma de Interoperabilidad del Estado (PIDE - PCM)** o canales B2G directos.
+
+##### A. Reglas Mandatorias de Consumo SOA / PIDE
+
+1. **Aislamiento Estricto vía Anti-Corruption Layer (ACL — `PT11`):**
+   Los servicios gubernamentales externos exponen contratos heterogéneos (SOAP/WSDL, XML antiguo, o REST con esquemas heredados). Está **terminantemente prohibido** que las clases generadas (ej. Stubs JAX-WS, esquemas XML Beans) o DTOs externos penetren en la capa de negocio (`domain.model.*`). Todo consumo SOA exige un adaptador en `infrastructure.client.*` que aplique ACL para traducir la respuesta a los *Value Objects* inmutables de ONP.
+
+2. **Blindaje de Resiliencia Extrema (*Design for Failure* — `PRA06`):**
+   Dado que los servicios externos gubernamentales están fuera del control operativo de la ONP y pueden presentar latencias impredecibles o ventanas de mantenimiento no avisadas, **toda invocación síncrona a la PIDE / SUNAT / RENIEC** debe implementar de forma obligatoria la siguiente tríada de resiliencia:
+   - **Timeout Estricto (`PI08`):** Los umbrales de connection timeout y read timeout se aplican según la categoría del servicio externo definida en la **Matriz de Timeouts (`§3.7.1`)**. No se aplica un rango único: RENIEC (alta demanda, ruta crítica interactiva) exige valores más agresivos que PIDE (demanda media) o SUNAT (proceso diferido/batch).
+   - **Circuit Breaker (`PT06`):** Configurado con Resilience4j (`§3.7.3`). Los proveedores SOA como RENIEC en ventanilla virtual satisfacen ambos criterios del §3.7.3b (volumetría masiva en ruta crítica interactiva + necesidad de corte automático sin intento de red), por lo que su adopción es obligatoria aquí — no discrecional. Si RENIEC o SUNAT superan el umbral de fallos (ej. 50% en una ventana de 20 peticiones), el circuito se abre para evitar agotar el *pool* de hilos de los servidores de la ONP.
+   - **Estrategia de Fallback / Degradación Elegante:** Ante la apertura del circuito o caída externa, el sistema debe devolver un mensaje claro y estandarizado al ciudadano o, si la normativa legal lo permite, consultar una caché local de contingencia de corta duración o encolar el trámite para verificación asíncrona posterior.
+
+3. **Seguridad y Gestión de Credenciales perimetrales:**
+   La firma de mensajes SOAP (WS-Security), el intercambio de certificados digitales de cliente (mTLS) y la autenticación con tokens de la PIDE deben ser gestionados en el **API Gateway institucional (WSO2 — `PA08`)** o encapsulados en fábricas HTTP especializadas de infraestructura, nunca codificados en la lógica de las aplicaciones.
+
+##### B. Matriz de Patrones Obligatorios para Consumo SOA
+
+```
+┌────────────────────────────────────────────────────────────────────────┐
+│ MONOLITO MODULAR ONP (onp-expedientes)                                 │
+│                                                                        │
+│   [ExpedienteService] (Dominio Puro - Java 21)                         │
+│           │                                                            │
+│           ▼ (inyección por puerto out)                                 │
+│   [ReniecConsultaPort]                                                 │
+│           │                                                            │
+│ ┌─────────┴──────────────────────────────────────────────────────────┐ │
+│ │ ADAPTADOR INFRAESTRUCTURA (Infrastructure Layer)                   │ │
+│ │                                                                    │ │
+│ │   ┌────────────────────────────────────────────────────────────┐   │ │
+│ │   │ Resilience4j Circuit Breaker + Timeout (Máx 4s)            │   │ │
+│ │   └─────────────────────────────┬──────────────────────────────┘   │ │
+│ │                                 │                                  │ │
+│ │   ┌─────────────────────────────▼──────────────────────────────┐   │ │
+│ │   │ ACL Mapper (Convierte SOAP/XML a Dni/PersonaOnpVO)         │   │ │
+│ │   └─────────────────────────────┬──────────────────────────────┘   │ │
+│ └─────────────────────────────────┼──────────────────────────────────┘ │
+└───────────────────────────────────┼────────────────────────────────────┘
+                                    │ mTLS / WS-Security
+                                    ▼
+                 ┌──────────────────────────────────────┐
+                 │ PIDE / RENIEC / SUNAT (Servicios SOA)│
+                 └──────────────────────────────────────┘
+```
+
+### 3.9 Patrones de Dominio y Relación entre Contextos en el Monolito Modular (`PD08`, `PD09`, `PD10`)
 
 El diseño de un **Monolito Modular (Estadio 2)** exige delimitar fronteras estrictas entre sus subdominios funcionales (*Bounded Contexts*). Para garantizar un bajo acoplamiento y posibilitar la extracción limpia a microservicios en el futuro, es obligatorio regirse por dos patrones fundamentales de *Domain-Driven Design (DDD)*:
 
@@ -757,7 +826,38 @@ Debido a que cualquier modificación en el *Shared Kernel* impacta y obliga a re
 | **Lógica de Negocio / Servicios** | **❌ PROHIBIDO TERMINANTEMENTE** | Flujos de cálculo, validaciones de expedientes o reglas previsionales deben vivir exclusivamente en sus módulos respectivos. |
 | **Repositorios o Adapters HTTP/JDBC** | **❌ PROHIBIDO TERMINANTEMENTE** | Prohibido incluir acceso a infraestructura en el núcleo de dominio compartido. |
 
-#### 3.9.3 Regla de Oro del Acoplamiento en Monolito Modular
+#### 3.9.3 Lenguaje Publicado (*Published Language* — `PD10`)
+
+El patrón *Published Language* define el contrato público, estable y común mediante el cual dos o más *Bounded Contexts* intercambian información. Su objetivo principal es evitar que los consumidores se acoplen a las estructuras internas o modelos de datos privados (`domain.model.*` o `infrastructure.persistence.entity.*`) del proveedor.
+
+En ONP, la exposición de un Lenguaje Publicado es mandatoria para toda comunicación externa a la frontera de un contexto y se articula bajo dos estándares institucionales según el protocolo:
+
+| Tipo de Comunicación | Estándar Institucional | Registro y Gobierno del Contrato | Reglas de Evolución |
+|---|---|---|---|
+| **Asíncrona (Eventos sobre Bus Kafka)** | **CloudEvents v1.0 (CNCF)** con esquema de payload en JSON Schema o Avro | **Confluent Schema Registry** institucional (`LIN-BUS-001 §5.2`). Decisión regida por `ADR-CLOUDEVENTS-001`. | Inmutabilidad de eventos publicados (`PRA09` — principio de inmutabilidad de eventos; declaración formal pendiente de incorporar a §3.11). Evolución bajo regla *Full Compatibility* (prohibido eliminar campos o agregar obligatorios sin valor por defecto). |
+| **Síncrona (APIs REST entre módulos/servicios)** | **OpenAPI 3.0+** (YAML/JSON) | Especificación en el repositorio Git del proveedor y publicada en el Portal de APIs (WSO2 / Swagger Hub). | Versionamiento semántico en la URL (`/api/v1/...`). Los DTOs de salida (`application.dto.*`) son inmutables (`records`). |
+
+**Ejemplo de Lenguaje Publicado para Evento de Dominio (CloudEvent v1.0 en JSON):**
+
+```json
+{
+  "specversion": "1.0",
+  "id": "f81d4fae-7dec-11d0-a765-00a0c91e6bf6",
+  "source": "urn:onp:core:expedientes",
+  "type": "pe.gob.onp.core.expedientes.expedientepresentado.v1",
+  "time": "2026-07-02T16:30:00Z",
+  "datacontenttype": "application/json",
+  "data": {
+    "numeroExpediente": "EXP-2026-0008421",
+    "dniPensionista": "08241578",
+    "tipoTramite": "JUBILACION_GENERAL",
+    "fechaPresentacion": "2026-07-02T16:30:00Z"
+  }
+}
+```
+> **Nota normativa:** El objeto interior `data` representa el modelo de dominio traducido a lenguaje público (sin identificadores internos de BD de Oracle). Los consumidores procesan únicamente este esquema público sin conocer las entidades JPA del servicio emisor.
+
+#### 3.9.4 Regla de Oro del Acoplamiento en Monolito Modular
 
 > **Regla de Soberanía de Dominio:** Ningún módulo de un Monolito Modular puede hacer un `import` directo a paquetes de la capa `domain.*` o `infrastructure.*` de otro módulo. La comunicación entre módulos se realiza exclusivamente a través de los paquetes explícitos de exposición: `application.api.*` o `application.dto.*`. El incumplimiento de esta regla se considera un anti-patrón crítico que bloquea el pase a producción en CI/CD.
 
@@ -1095,7 +1195,7 @@ La adopción de cualquier BD no relacional en ONP requiere:
 
 Mientras el lineamiento específico de la tecnología no exista, su uso productivo no está autorizado.
 
-### CQRS — elección del read model
+### 5.3 CQRS — elección del read model
 
 CQRS separa el modelo de escritura del de lectura. El **write model es relacional con ACID** (Oracle hoy; otros motores posibles en el futuro según §3.10). La elección del read model no es única — depende del patrón de consulta que debe servir.
 
@@ -1111,7 +1211,7 @@ CQRS separa el modelo de escritura del de lectura. El **write model es relaciona
 
 **Condición obligatoria:** Todo read model debe tener su mecanismo de sincronización con el write model explícitamente documentado — evento de dominio + Transactional Outbox, CDC, o ELT programado según el caso. Sin ese mecanismo, el read model es un dato desconectado que producirá inconsistencias silenciosas.
 
-### Dominio complementario — Business Intelligence
+### 5.4 Dominio complementario — Business Intelligence
 
 ONP está construyendo una plataforma de BI basada en **Arquitectura Medallion** (Bronze → Silver → Gold) con almacenamiento en Parquet, versionado de datos con Nessie y gobierno con OpenMetadata. Este dominio es **complementario** al stack transaccional Oracle y al modelo CQRS operacional — no los reemplaza.
 
@@ -1940,7 +2040,7 @@ onp-modulo/
 
 > **Regla:** `domain/` es Java puro — cero imports de `jakarta.*` o `org.springframework.*`. `application/` puede usar anotaciones Spring en los services (`@Service`, `@Transactional`). Todo lo demás de infraestructura vive en `infrastructure/`.
 
-> Para la estructura concreta de paquetes, convenciones de nomenclatura y configuración Maven de cada estilo, ver **LIN-DEV-JAVA-001 — Estándar de Desarrollo Java ONP, 12**.
+> Para la estructura concreta de paquetes, convenciones de nomenclatura y configuración Maven de cada estilo, ver **LIN-DEV-JAVA-001 §12**.
 
 ---
 
@@ -2195,6 +2295,7 @@ Independientemente del estilo, todo proveedor o profesional contratado debe demo
 | ADR-011 | K8s es el destino por defecto; el uso de VM requiere criterio documentado en ADR | 2026-05-21 | Aceptada |
 | ADR-012 | LIN-BUS-001 formaliza y reemplaza la regla transitoria de mensajería; Apache Kafka es el broker institucional aprobado; toda adopción de EDA debe cumplir LIN-BUS-001 | 2026-06-05 | Aceptada |
 | ADR-013 | CloudEvents v1.0 (CNCF) como estándar institucional de envelope para todos los eventos del bus; habilita interoperabilidad con instituciones del Estado y ecosistema cloud-native | 2026-06-08 | Aceptada |
+| ADR-014 | Feature Toggle (PA14) con Unleash (self-hosted) como plataforma estándar on-premise para Trunk-Based Development; LaunchDarkly y otros SaaS requieren ADR adicional aprobado por Arquitectura OTI + Seguridad | 2026-07-02 | Aceptada |
 
 ---
 
@@ -2209,5 +2310,9 @@ Independientemente del estilo, todo proveedor o profesional contratado debe demo
 | **Bounded Context** | Límite explícito dentro del cual un modelo de dominio es coherente y tiene significado único |
 | **Strangler Fig** | Patrón de migración donde el sistema nuevo reemplaza progresivamente funcionalidades del legacy sin reescritura total |
 | **Transaction Script** | Estrategia de lógica de dominio donde cada operación de negocio es un procedimiento secuencial en un servicio |
+| **Feature Toggle** | Mecanismo que permite habilitar o deshabilitar fragmentos de código en tiempo de ejecución sin redespliegue (`PA14`) |
+| **Published Language** | Estándar de contrato explícito (CloudEvents v1.0 o OpenAPI 3.0) para el intercambio de datos entre Bounded Contexts sin exponer modelos internos (`PD10`) |
+| **CQRS** | Command Query Responsibility Segregation — patrón que separa el modelo de escritura (comandos) del modelo de lectura (queries) en modelos físicamente distintos para optimizar cada operación de forma independiente (`PA07`) |
+| **CDC (Change Data Capture)** | Técnica que captura cambios en la base de datos a nivel de log binario (ej. Debezium + Oracle LogMiner/XStream) para propagar modificaciones al read model sin polling activo — variante B del patrón CQRS en ONP |
 | **ADR** | Architecture Decision Record — registro formal de una decisión de arquitectura con contexto, decisión y consecuencias |
 | **SLO** | Service Level Objective — objetivo cuantitativo de confiabilidad de un servicio (ej. 99.5% de disponibilidad mensual) |

@@ -24,7 +24,7 @@ Este documento registra los patrones, estilos, principios y decisiones arquitect
 | E04 | Monolito Modular | ✅ Documentado | LIN-ARQ-000 §3.4 | Destino por defecto ONP |
 | E05 | Microservicios | ✅ Documentado | LIN-ARQ-000 §3.5 | Con criterios de extracción |
 | E06 | Arquitectura Orientada a Eventos (EDA) | ✅ Documentado | LIN-ARQ-000 §3.6 | |
-| E07 | Arquitectura Orientada a Servicios (SOA) | ❌ Pendiente | LIN-ARQ-000 | Relevante para integración con entidades del Estado |
+| E07 | Arquitectura Orientada a Servicios (SOA) | ✅ Documentado | LIN-ARQ-000 §3.8.4 | Modelo mandatorio para interoperabilidad B2G/G2G (PIDE, RENIEC, SUNAT) con resiliencia y ACL obligatorios |
 | E08 | Serverless | ❌ Pendiente | LIN-ARQ-000 | Evaluar si aplica a largo plazo en ONP |
 | E09 | Pipe and Filter | ❌ Pendiente | LIN-ARQ-000 | Revisar si aplica para pipelines de datos |
 
@@ -48,7 +48,7 @@ Este documento registra los patrones, estilos, principios y decisiones arquitect
 | PA11 | Gateway-Aggregation | ✅ Documentado | LIN-ARQ-000 §3.8.2 | Patrón oficial PT10 intra-JVM para Monolito Modular y vía red en Microservicios. |
 | PA12 | Sidecar | ❌ Pendiente | LIN-K8S-001 | Relevante para observabilidad y mTLS en K8s |
 | PA13 | Ambassador | ❌ Pendiente | LIN-K8S-001 | Proxy de salida en K8s |
-| PA14 | Feature Toggle (Strangler complemento) | ❌ Pendiente | LIN-ARQ-000 | Útil en migraciones graduales |
+| PA14 | Feature Toggle (Strangler complemento) | ✅ Documentado | LIN-ARQ-000 §2.2.1 | Normado en 4 variantes para Trunk-Based Development, Kill-Switch y Branch by Abstraction |
 
 ---
 
@@ -87,7 +87,7 @@ Este documento registra los patrones, estilos, principios y decisiones arquitect
 | PD07 | Bounded Context | ✅ Documentado | LIN-ARQ-000 | |
 | PD08 | Context Map | ✅ Documentado | LIN-ARQ-000 §3.9.1 | Contrato y relaciones entre Bounded Contexts en Monolito Modular |
 | PD09 | Shared Kernel | ✅ Documentado | LIN-ARQ-000 §3.9.2 | Estándar y tabla de elementos permitidos/prohibidos en módulo común |
-| PD10 | Published Language | ❌ Pendiente | LIN-ARQ-000 + LIN-BUS-001 | Relacionado con CloudEvents y contratos de eventos |
+| PD10 | Published Language | ✅ Documentado | LIN-ARQ-000 §3.9.3 + LIN-BUS-001 §5.2 | Contratos CloudEvents v1.0 / Schema Registry (asíncrono) y OpenAPI 3.0 (síncrono) |
 
 ---
 
@@ -134,7 +134,7 @@ Este documento registra los patrones, estilos, principios y decisiones arquitect
 | PRA06 | Design for Failure | ✅ Documentado | LIN-ARQ-000 §3.7 | Cubierto en Monolito Modular y Microservicios |
 | PRA07 | Loose Coupling / High Cohesion | ✅ Documentado | LIN-ARQ-000 §3.11 | Declarado formalmente con tabla de aplicación por decisión arquitectónica |
 | PRA08 | Zero Trust | ⚠️ Parcial | LIN-SEC-APP-001 | Implícito, falta declaración formal |
-| PRA09 | Inmutabilidad de eventos | ⚠️ Parcial | LIN-BUS-001 | Implícito, no declarado formalmente |
+| PRA09 | Inmutabilidad de eventos | ⚠️ Parcial | LIN-ARQ-000 §3.9.3 + LIN-BUS-001 | Referenciado normativamente en §3.9.3 (Published Language); declaración formal pendiente en LIN-ARQ-000 §3.11 |
 | PRA10 | Single Source of Truth (por dominio) | ✅ Documentado | LIN-ARQ-000 §3.11 | Declarado formalmente — write model es autoritativo, read models son proyecciones derivadas |
 | PRA11 | Trazabilidad completa (audit trail) | ⚠️ Parcial | LIN-OBS-001 + LIN-BUS-001 | Cubierto para observabilidad, falta para negocio |
 
@@ -169,9 +169,9 @@ Este documento registra los patrones, estilos, principios y decisiones arquitect
 | Código | Brecha |
 |---|---|
 | PG01–PG03 | Patrones GoF — se asume conocimiento del equipo |
-| E07–E09 | SOA, Serverless, Pipe and Filter |
+| E08–E09 | Serverless, Pipe and Filter |
 | PR06–PR11 | DRY, KISS, YAGNI y otros principios de diseño |
-| PA13–PA14 | Ambassador, Feature Toggle |
+| PA13 | Ambassador |
 
 ---
 
