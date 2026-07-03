@@ -134,7 +134,7 @@ Este documento registra los patrones, estilos, principios y decisiones arquitect
 | PRA06 | Design for Failure | ✅ Documentado | LIN-ARQ-000 §3.7 | Cubierto en Monolito Modular y Microservicios |
 | PRA07 | Loose Coupling / High Cohesion | ✅ Documentado | LIN-ARQ-000 §3.11 | Declarado formalmente con tabla de aplicación por decisión arquitectónica |
 | PRA08 | Zero Trust | ⚠️ Parcial | LIN-SEC-APP-001 | Implícito, falta declaración formal |
-| PRA09 | Inmutabilidad de eventos | ⚠️ Parcial | LIN-ARQ-000 §3.9.3 + LIN-BUS-001 | Referenciado normativamente en §3.9.3 (Published Language); declaración formal pendiente en LIN-ARQ-000 §3.11 |
+| PRA09 | Inmutabilidad de eventos | ✅ Documentado | LIN-ARQ-000 §3.11 + §3.9.3 | Declarado formalmente en §3.11 con tabla de decisiones; referenciado normativamente en §3.9.3 (Published Language) |
 | PRA10 | Single Source of Truth (por dominio) | ✅ Documentado | LIN-ARQ-000 §3.11 | Declarado formalmente — write model es autoritativo, read models son proyecciones derivadas |
 | PRA11 | Trazabilidad completa (audit trail) | ⚠️ Parcial | LIN-OBS-001 + LIN-BUS-001 | Cubierto para observabilidad, falta para negocio |
 

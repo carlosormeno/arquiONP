@@ -1,8 +1,8 @@
 # Lineamiento de Diseño y Arquitectura de Software ONP
 
 **Código:** LIN-ARQ-000  
-**Versión:** 0.1.16  
-**Fecha:** 2026-07-02  
+**Versión:** 0.1.17  
+**Fecha:** 2026-07-03  
 **Autor:** Oficina de Tecnologías de la Información — ONP  
 **Estado:** Borrador de trabajo interno  
 **Clasificación:** Marco rector interno. No es un entregable oficial de la lista de documentos de arquitectura; es el documento normativo base que guía la redacción de todos los lineamientos técnicos formales. Todo lineamiento derivado debe ser consistente con las decisiones de este documento.
@@ -30,6 +30,7 @@
 | 0.1.14 | 2026-07-02 | Correcciones de consistencia: §3.8.4 timeout referencia §3.7.1 en lugar de rango hardcodeado; §2.2.1 Ops Toggle aclara que Unleash es el estándar on-premise y LaunchDarkly requiere ADR+Seguridad; §3 tabla intro actualiza §3.8 para incluir interoperabilidad gubernamental |
 | 0.1.15 | 2026-07-02 | Revisión exhaustiva de congruencia interna: sincroniza referencias y títulos en la tabla introductoria de §3 con las subsecciones §3.8 y §3.9 actualizadas, y complementa el glosario del Apéndice B con los términos Feature Toggle y Published Language |
 | 0.1.16 | 2026-07-02 | Auditoría de cierre: numera §5.3 y §5.4 (headings sin número), corrige referencia §9.3 al formato §12, añade aviso "pendiente de redacción" en §2.2.1 para LIN-DEV-JAVA-001 §14, agrega ADR-014 (Feature Toggle/Unleash) en Apéndice A, amplía Apéndice B con CQRS y CDC, y refuerza obligatoriedad de Circuit Breaker en §3.8.4 para proveedores SOA de alta volumetría |
+| 0.1.17 | 2026-07-03 | Revisión estructural de §3, §5, §8 y §10: elimina separadores visuales redundantes de §3 (sustituidos por tabla introductoria); restructura §8 en 4 grupos (GoF Estructurales/Creacionales/Comportamiento + Capas y DDD) añadiendo 5 patrones nuevos (Strategy, Observer, Command, State, Decorator); declara formalmente PRA09 en §3.11 y cierra el deferral en §3.9.3; numera §5.1–§5.2 (Oracle y BD no relacional); actualiza §10.1 con EDA y DDD desglosado en Value Object y Aggregate Root |
 
 ---
 
@@ -93,13 +94,13 @@ Tradicional   ──►  (Maven Multi-módulo)    ──►  Selectivos
                     para sistemas nuevos)        se justifica)
 ```
 
-**Estadio 1 — Monolito Tradicional:** Sistemas legacy existentes. El objetivo no es reescribirlos sino migrarlos progresivamente usando Strangler Fig (ver [sección 2.2](#22-patron-de-migracion-strangler-fig)).
+**Estadio 1 — Monolito Tradicional:** Sistemas legacy existentes. El objetivo no es reescribirlos sino migrarlos progresivamente usando Strangler Fig y Feature Toggles (ver [sección 2.2](#22-patron-de-migracion-strangler-fig)).
 
 **Estadio 2 — Monolito Modular:** Es el **punto de llegada por defecto para todo sistema nuevo**. Se implementa como un proyecto Maven multi-módulo (ver [sección 9](#9-estructura-de-proyecto)). Cada módulo tiene límites claros, su propio paquete raíz y puede evolucionar de forma independiente. La frontera entre módulos se respeta igual que si fueran servicios separados: sin dependencias circulares, sin acceso directo entre capas de módulos distintos.
 
-**Estadio 3 — Microservicios Selectivos:** Un módulo del Estadio 2 puede extraerse como microservicio independiente cuando cumple los criterios de la tabla de la [sección 3.5](#35-microservicios). No se diseña para microservicios desde el inicio.
+**Estadio 3 — Microservicios Selectivos:** Un módulo del Estadio 2 puede extraerse como microservicio independiente cuando cumple los criterios señalados en el punto [sección 3.5.2](#352-cuándo-usar--criterios-y-matriz-de-extracción-a-microservicios). No se diseña para microservicios desde el inicio.
 
-### 2.2 Patrón de migración: Strangler Fig (`PT08`) y Feature Toggles (`PA14`)
+### 2.2 Patrón de migración: Strangler Fig y Feature Toggles
 
 El **Strangler Fig** es un patrón de migración que toma su nombre de la higuera estranguladora: una planta que crece alrededor de un árbol existente hasta reemplazarlo completamente, sin derribarlo. En software, el sistema nuevo crece en paralelo al legacy y lo reemplaza de forma progresiva — nunca hay una reescritura total ni un corte abrupto.
 
@@ -123,9 +124,9 @@ Para migrar sistemas del Estadio 1 al Estadio 2 sin reescritura completa:
 
 **Regla ONP:** Toda migración de sistema legacy debe documentarse como un ADR (Architecture Decision Record) con la ruta de migración explícita.
 
-#### 2.2.1 Complemento operativo mandatorio: Feature Toggles (`PA14`)
+#### 2.2.1 Complemento operativo mandatorio: Feature Toggles
 
-Mientras que el patrón *Strangler Fig* (`PT08`) gestiona el enrutamiento perimetral en el API Gateway o proxy de red para desviar tráfico desde el sistema legado hacia el nuevo módulo, **dentro de la aplicación** es obligatorio utilizar el patrón **Feature Toggle** (*Alternador de Funcionalidades* — `PA14`) para controlar en tiempo de ejecución la ejecución de nuevos fragmentos de código sin requerir un redespliegue ni ramas de Git longevas.
+Mientras que el patrón *Strangler Fig* gestiona el enrutamiento perimetral en el API Gateway o proxy de red para desviar tráfico desde el sistema legado hacia el nuevo módulo, **dentro de la aplicación** es obligatorio utilizar el patrón **Feature Toggle** (*Alternador de Funcionalidades*) para controlar en tiempo de ejecución, la ejecución de nuevos fragmentos de código sin requerir un redespliegue ni ramas de Git longevas.
 
 ##### A. Tipos de Toggles y Criterio de Uso Institucional
 
@@ -152,19 +153,19 @@ Esta sección organiza los estilos y patrones de arquitectura adoptados por ONP 
 
 | Grupo | Pregunta | Secciones |
 |---|---|---|
-| **Organización del código** | ¿Cómo organizo el código dentro de un módulo? | [3.1](#31-arquitectura-en-capas-layered), [3.2](#32-arquitectura-hexagonal) |
-| **Estructura del sistema** | ¿Cómo estructuro y despliego el sistema completo? | [3.3](#33-monolito-puro), [3.4](#34-monolito-modular), [3.5](#35-microservicios) |
-| **Comunicación** | ¿Cómo se comunican los componentes o servicios? | [3.6](#36-arquitectura-orientada-a-eventos-eda) |
-| **Resiliencia, integración e interoperabilidad** | ¿Cómo protejo las llamadas a sistemas externos, gestiono canales de consumo e integro con entidades del Estado? | [3.7](#37-resiliencia-y-tolerancia-a-fallos-design-for-failure), [3.8](#38-patrones-de-integración-agregación-fachada-e-interoperabilidad-soa-e07) |
-| **Fronteras entre módulos** | ¿Cómo relaciono los bounded contexts dentro del Monolito Modular? | [3.9](#39-patrones-de-dominio-y-relación-entre-contextos-en-el-monolito-modular-pd08-pd09-pd10) |
-| **Consistencia y proyecciones** | ¿Cuándo y cómo separo escritura de lectura con CQRS? | [3.10](#310-cqrs--separación-de-modelos-de-escritura-y-lectura-pa07) |
-| **Principios rectores** | ¿Qué principios gobiernan todas las decisiones de §3? | [3.11](#311-principios-rectores-transversales-pra07-pra10-pr09) |
+| **Organización del código** | ¿Cómo organizo el código dentro de un módulo? | Arquitectura en capas (Layered) [3.1](#31-arquitectura-en-capas-layered), Arquitectura Hexagonal (Ports & Adapters) [3.2](#32-arquitectura-hexagonal-ports--adapters) |
+| **Estructura del sistema** | ¿Cómo estructuro y despliego el sistema completo? | Monolito puro [3.3](#33-monolito-puro), Monolito Modular [3.4](#34-monolito-modular), Microservicios [3.5](#35-microservicios) |
+| **Comunicación** | ¿Cómo se comunican los componentes o servicios? | Arquitectura Orientada a Eventos (EDA) [3.6](#36-arquitectura-orientada-a-eventos-eda) |
+| **Resiliencia, integración e interoperabilidad** | ¿Cómo protejo las llamadas a sistemas externos, gestiono canales de consumo e integro con entidades del Estado? | Resiliencia y Tolerancia a Fallos (Design for Failure) [3.7](#37-resiliencia-y-tolerancia-a-fallos-design-for-failure), Patrones de Integración, Agregación, Fachada e Interoperabilidad SOA [3.8](#38-patrones-de-integración-agregación-fachada-e-interoperabilidad-soa-e07) |
+| **Fronteras entre módulos** | ¿Cómo relaciono los bounded contexts dentro del Monolito Modular? | Patrones de Dominio y Relación entre Contextos en el Monolito Modular [3.9](#39-patrones-de-dominio-y-relación-entre-contextos-en-el-monolito-modular-pd08-pd09-pd10) |
+| **Consistencia y proyecciones** | ¿Cuándo y cómo separo escritura de lectura con CQRS? | CQRS — Separación de Modelos de Escritura y Lectura [3.10](#310-cqrs--separación-de-modelos-de-escritura-y-lectura-pa07) |
+| **Principios rectores** | ¿Qué principios gobiernan todas las decisiones de §3? | Principios rectores transversales [3.11](#311-principios-rectores-transversales-pra07-pra10-pr09) |
 
-**Los grupos no son decisiones independientes.** La elección de cómo organizas el código dentro de un módulo (grupo 1) condiciona hasta dónde puede llegar ese módulo en la hoja de ruta de evolución (sección 2).
+**Los grupos no son decisiones independientes.** La elección de cómo organizas el código dentro de un módulo condiciona hasta dónde puede llegar ese módulo en la hoja de ruta de evolución.
 
 #### Camino de un sistema nuevo
 
-Todo sistema nuevo nace como **Monolito Modular**. Cada módulo interno usa **Capas simples (3.1)** por defecto, porque es suficiente para la mayoría de los casos. Ahora bien, cuando un módulo específico del monolito modular cumple con las condiciones y criterios detallados en la [sección 3.5.2 (Criterios y Matriz de Extracción)](#352-cuándo-usar--criterios-y-matriz-de-extracción-a-microservicios), dicho módulo se convierte en un candidato legítimo para extracción; en ese momento, lo primero será refactorizar el módulo seleccionado a una arquitectura del tipo **Hexagonal (3.2)** para aislar su frontera y luego se extrae. No se debe diseñar para microservicios desde el inicio porque tiene un costo operativo y de consistencia muy alto.
+Todo sistema nuevo nace como **Monolito Modular**. Cada módulo interno usa **Capas simples [(3.1)](#31-arquitectura-en-capas-layered)**, y por defecto, porque es suficiente para la mayoría de los casos. Ahora bien, cuando un módulo específico del monolito modular cumple con las condiciones y criterios detallados en la [sección 3.5.2 (Criterios y Matriz de Extracción)](#352-cuándo-usar--criterios-y-matriz-de-extracción-a-microservicios), dicho módulo se convierte en un candidato legítimo para extracción; en ese momento, lo primero será refactorizar el módulo seleccionado a una arquitectura del tipo **Hexagonal [(3.2)](#32-arquitectura-hexagonal-ports--adapters)** para aislar su frontera y luego se extrae. No se debe diseñar para microservicios desde el inicio porque tiene un costo operativo y de consistencia muy alto.
 
 ```
   Módulo nuevo en Monolito Modular
@@ -191,13 +192,13 @@ Todo sistema nuevo nace como **Monolito Modular**. Cada módulo interno usa **Ca
 
 #### Camino de un sistema legado
 
-Un sistema legado (monolito puro, Estadio 1) **sí puede evolucionar** hacia Monolito Modular. El camino es el patrón **Strangler Fig (2.2)**: se construyen módulos nuevos con la arquitectura correcta al lado del legado, y el tráfico se redirige gradualmente. El código legado no se toca ni se exige refactorizar a Hexagonal para iniciar la migración.
+Un sistema legado (monolito puro, Estadio 1) **sí puede evolucionar** hacia Monolito Modular. El camino es el patrón **Strangler Fig [(2.2)](#22-patrón-de-migración-strangler-fig-y-feature-toggles)**: se construyen módulos nuevos con la arquitectura correcta al lado del legado, y el tráfico se redirige gradualmente. El código legado no se toca ni se exige refactorizar a Hexagonal para iniciar la migración.
 
 ```
   Sistema legado
   (Monolito puro, JBoss/WebLogic)
            │
-           │  Strangler Fig (2.2):
+           │  Strangler Fig:
            │  construir módulos nuevos al lado,
            │  redirigir tráfico gradualmente,
            │  retirar componentes legados cuando
@@ -208,7 +209,7 @@ Un sistema legado (monolito puro, Estadio 1) **sí puede evolucionar** hacia Mon
   ── y desde ahí aplica el camino de arriba ──
 ```
 
-> **¿Y MVC?** MVC (Model-View-Controller) no aparece en esta tabla porque no es una arquitectura completa — es el patrón que describe cómo se organiza solo la capa de presentación: el Controller recibe el request, procesa con el Model y devuelve una View (en APIs REST, el JSON). En Spring Boot esto está implícito en `@RestController` y no requiere una decisión explícita. La decisión real de arquitectura es cómo organizas las capas de aplicación, dominio e infraestructura — que es exactamente lo que cubren 3.1 y 3.2.
+> **¿Y MVC?** MVC (Model-View-Controller) no aparece en esta tabla porque no es una arquitectura completa — es el patrón que describe cómo se organiza solo la capa de presentación: el Controller recibe el request, procesa con el Model y devuelve una View (en APIs REST, el JSON). En Spring Boot esto está implícito en `@RestController` y no requiere una decisión explícita. La decisión real de arquitectura es cómo organizas las capas de aplicación, dominio e infraestructura — que es exactamente lo que cubren [3.1](#31-arquitectura-en-capas-layered) y [3.2](#32-arquitectura-hexagonal-ports--adapters).
 
 ### 3.1 Arquitectura en capas (Layered)
 
@@ -236,7 +237,7 @@ Es el estilo por defecto para todo módulo nuevo en ONP, tanto en sistemas legac
 - el módulo tiene menos de 3 integraciones externas;
 - no se prevé cambio de tecnología de persistencia ni de protocolo de entrada.
 
-Un módulo con esta arquitectura puede vivir indefinidamente en el Monolito Modular. Si en el futuro se convierte en candidato a microservicio, deberá refactorizarse primero a Hexagonal ([3.2](#32-arquitectura-hexagonal)) antes de la extracción.
+Un módulo con esta arquitectura puede vivir indefinidamente en el Monolito Modular. Si en el futuro se convierte en candidato a microservicio, deberá aplicarse lo indicado en el punto 3 **Camino de un sistema nuevo**.
 
 #### Reglas ONP
 
@@ -267,54 +268,54 @@ Variante avanzada que invierte la dependencia entre dominio e infraestructura. E
   [HTTP Request]
         │
         ▼
-  ┌─────────────────┐
+  ┌──────────────────┐
   │  AporteController│  Adapter de entrada — traduce el request a un Command
   │  (infrastructure)│  y llama al port de entrada
-  └────────┬────────┘
+  └────────┬─────────┘
            │ llama a
            ▼
-  ┌──────────────────────────────────────────────────┐
+  ┌───────────────────────────────────────────────────┐
   │                  APPLICATION                      │
   │                                                   │
   │  RegistrarAporteUseCase ◄── implementado por ──►  │
   │  (port de entrada)          RegistrarAporteService│
   │                             (orquesta el dominio, │
   │                              llama port de salida)│
-  └──────────────────────┬───────────────────────────┘
+  └──────────────────────┬────────────────────────────┘
                          │ llama a
                          ▼
-  ┌──────────────────────────────────────────────────┐
+  ┌───────────────────────────────────────────────────┐
   │                    DOMINIO                        │
   │  PensionistaRepository  (port de salida)          │
   │  (interface — el dominio no sabe si es Oracle     │
   │   o cualquier otra BD)                            │
-  └──────────────────────┬───────────────────────────┘
+  └──────────────────────┬────────────────────────────┘
                          │ implementado por
                          ▼
-  ┌─────────────────────┐
+  ┌──────────────────────┐
   │  PensionistaJpaRepo  │  Adapter de salida — habla con Oracle
   │  (infrastructure)    │
-  └─────────────────────┘
+  └──────────────────────┘
 ```
 
 **Vista de conjunto:**
 
 ```
-┌──────────────────────────────────────────────────────────────┐
+┌───────────────────────────────────────────────────────────────┐
 │                       INFRAESTRUCTURA                         │
 │                                                               │
-│  ┌───────────────┐                  ┌──────────────────────┐ │
-│  │ Adapter REST  │                  │ Adapter JPA          │ │
-│  │ (Controller)  │                  │ (RepositoryImpl)     │ │
-│  └───────┬───────┘                  └──────────┬───────────┘ │
+│  ┌───────────────┐                  ┌──────────────────────┐  │
+│  │ Adapter REST  │                  │ Adapter JPA          │  │
+│  │ (Controller)  │                  │ (RepositoryImpl)     │  │
+│  └───────┬───────┘                  └──────────┬───────────┘  │
 │          │ implementa port entrada             │ implementa   │
 │          │                                     │ port salida  │
-└──────────┼─────────────────────────────────────┼─────────────┘
+└──────────┼─────────────────────────────────────┼──────────────┘
            │                                     │
            ▼                                     ▼
 ┌──────────────────────────────────────────────────────────────┐
-│                       APPLICATION                             │
-│                                                               │
+│                       APPLICATION                            │
+│                                                              │
 │   Port entrada ──► Application Service ──► Port salida       │
 │   (interface)       (orquesta dominio)     (interface)       │
 └───────────────────────────┬──────────────────────────────────┘
@@ -366,7 +367,7 @@ ONP **no construye nuevos sistemas como Monolito puro**. Este estilo existe úni
 
 - Sin fronteras entre módulos, cualquier cambio tiene un radio de impacto impredecible.
 - El acoplamiento acumulado hace el sistema cada vez más difícil de probar y desplegar.
-- No hay camino natural hacia Monolito Modular ni Microservicios sin reescritura total.
+- No existe un camino natural hacia Monolito Modular ni Microservicios sin reescritura total.
 
 #### Reglas ONP
 
@@ -381,9 +382,9 @@ El Estadio 2 de ONP y el punto de llegada por defecto para todo sistema nuevo. U
 #### Diagrama
 
 ```
-┌─────────────────────────────── 1 solo JAR desplegable ───────────────────────────────┐
-│                                                                                        │
-│  ┌──────────────────┐    ┌──────────────────┐    ┌──────────────────┐                │
+┌──────────────────────────────── 1 solo JAR desplegable ───────────────────────────────┐
+│                                                                                       │
+│  ┌──────────────────┐    ┌───────────────────┐    ┌──────────────────┐                │
 │  │    Módulo        │    │    Módulo         │    │    Módulo        │                │
 │  │   Expedientes    │    │    Aportes        │    │  Prestaciones    │                │
 │  │  ──────────────  │    │  ──────────────   │    │  ──────────────  │                │
@@ -391,16 +392,16 @@ El Estadio 2 de ONP y el punto de llegada por defecto para todo sistema nuevo. U
 │  │  Application     │    │  Application      │    │  Application     │                │
 │  │  Domain          │    │  Domain           │    │  Domain          │                │
 │  │  Infrastructure  │    │  Infrastructure   │    │  Infrastructure  │                │
-│  └──────────────────┘    └──────────────────┘    └──────────────────┘                │
-│                                                                                        │
+│  └──────────────────┘    └───────────────────┘    └──────────────────┘                │
+│                                                                                       │
 │  Frontera explícita — sin dependencias circulares entre módulos                       │
 └───────────────────────────────────────────────────────────────────────────────────────┘
                                           │
                                           ▼
-                                   ┌─────────────┐
+                                   ┌──────────────┐
                                    │  Oracle BD   │
                                    │ (compartida) │
-                                   └─────────────┘
+                                   └──────────────┘
 ```
 
 #### Cuándo usar
@@ -410,7 +411,7 @@ Es el destino por defecto para:
 - todo sistema nuevo desarrollado en ONP;
 - todo sistema legacy migrado progresivamente desde el Estadio 1 vía Strangler Fig ([2.2](#22-patron-de-migracion-strangler-fig)).
 
-No se salta directamente a Microservicios ([3.5](#35-microservicios)) desde el Monolito Modular sin antes cumplir los seis criterios de extracción definidos en [3.5](#35-microservicios).
+No se salta directamente a Microservicios ([3.5](#35-microservicios)) desde el Monolito Modular sin antes cumplir los criterios de extracción definidos en [3.5.2](#352-cuándo-usar--criterios-y-matriz-de-extracción-a-microservicios).
 
 #### Reglas ONP
 
@@ -418,7 +419,7 @@ Las dependencias entre módulos son explícitas y unidireccionales: ningún mód
 
 ### 3.5 Microservicios
 
-Estilo donde cada módulo se despliega como un proceso independiente con su propia base de datos. Al separar en microservicios se pierde la garantía ACID del Monolito Modular: `@Transactional` solo abarca una conexión a una BD y no puede coordinar dos servicios distintos. Esta pérdida de consistencia fuerte es el punto de partida para entender cuándo microservicios aplica y cuándo no. El detalle de las propiedades ACID en el contexto Oracle está en **LIN-BD-ORA-001 3.9**.
+Estilo donde cada módulo se despliega como un proceso independiente con su propia base de datos. Al separar en microservicios se pierde la garantía ACID del Monolito Modular: `@Transactional` solo abarca una conexión a una BD y no puede coordinar dos servicios distintos. Esta pérdida de consistencia fuerte es el punto de partida para entender cuándo microservicios aplica y cuándo no. El detalle de las propiedades ACID en el contexto Oracle está en **LIN-BD-ORA-001 sección 3.9**.
 
 #### 3.5.1 Teorema CAP — contexto obligatorio antes de decidir microservicios
 
@@ -439,14 +440,14 @@ Microservicios   → BD por servicio → red entre servicios → CAP aplica
                    la elección CP vs AP es una decisión de arquitectura explícita
 ```
 
-| Elección | Qué sacrificas | Patrón resultante | Cuándo aplica en ONP |
+| Elección | Qué sacrificas | Patrón resultante | Ejemplo de cuándo podría  aplica en ONP |
 |---|---|---|---|
 | **CP** | Disponibilidad — el sistema puede rechazar requests si no puede garantizar consistencia | Transacciones distribuidas (evitar), 2PC (evitar en microservicios) | Cálculo de pensión, liquidación, aportes — un dato incorrecto es inaceptable |
 | **AP** | Consistencia fuerte — aceptas consistencia eventual | Saga + Outbox + Dead Letter Queue | Consultas de estado, notificaciones, historial — un dato ligeramente desactualizado es aceptable |
 
 #### 3.5.2 Cuándo usar — Criterios y Matriz de Extracción a Microservicios
 
-Reservado para módulos del Monolito Modular maduro ([3.4](#34-monolito-modular)) que cumplen **todos** los criterios de la siguiente tabla. Si algún criterio no se cumple, el módulo permanece en el Monolito Modular. Es importante indicar que por ningún motivo se deben crear microservicios como reemplazo de modulos del Monolito Modular por razones de moda o preferencia tecnológica, esto solo se debe hacer cuando el módulo cumple los criterios aquí indicados y luego de un análisis riguroso de sus implicaciones. Los criterios se evalúan de forma conjunta, es decir, no basta con cumplir uno o dos criterios para decidir extraer un módulo como microservicio.
+Reservado para módulos del Monolito Modular maduro ([3.4](#34-monolito-modular)) que cumplen **todos** los criterios indicados en la siguiente tabla. Si algún criterio no se cumple, el módulo permanece en el Monolito Modular. Es importante indicar que **por ningún motivo se deben crear microservicios como reemplazo de modulos del Monolito Modular por razones de moda o preferencia tecnológica**, esto solo se debe hacer cuando el módulo cumple los criterios aquí indicados y luego de un análisis riguroso de sus implicaciones. Los criterios se evalúan de forma conjunta, es decir, no basta con cumplir uno o dos criterios para decidir extraer un módulo como microservicio.
 
 | Criterio | Descripción |
 |---|---|
@@ -461,7 +462,7 @@ Reservado para módulos del Monolito Modular maduro ([3.4](#34-monolito-modular)
 
 **Regla — elección CAP:** al extraer un módulo como microservicio se debe declarar explícitamente en el ADR si el servicio es CP o AP, y qué patrón gestiona la consistencia. Un microservicio sin esta decisión documentada no está listo para producción.
 
-**Regla — estructura previa obligatoria:** todo módulo que cumpla los seis criterios debe refactorizarse a **Arquitectura Hexagonal** ([3.2](#32-arquitectura-hexagonal)) antes de iniciar la extracción. Los ports definen qué es interno, los adapters definen qué es externo. Sin esa frontera clara, la extracción genera acoplamiento oculto. Ver [sección 9.3](#93-hexagonal--clean) para la estructura Maven correspondiente.
+**Regla — estructura previa obligatoria:** todo módulo que cumpla los seis criterios debe refactorizarse a **Arquitectura Hexagonal** ([3.2](#32-arquitectura-hexagonal-ports--adapters)) antes de iniciar la extracción. Los ports definen qué es interno, los adapters definen qué es externo. Sin esa frontera clara, la extracción genera acoplamiento oculto. Ver [sección 9.3](#93-hexagonal--clean) para la estructura Maven correspondiente.
 
 **Regla — sin ACID entre microservicios:** coordinar dos BDs distintas requeriría Two-Phase Commit (2PC), que introduce bloqueos distribuidos, acoplamiento fuerte y puntos únicos de falla — exactamente lo opuesto de lo que se busca con microservicios. La alternativa correcta es el patrón **Saga** con **Transactional Outbox**. El detalle de implementación está en **LIN-BUS-001 sección 9**.
 
@@ -495,7 +496,7 @@ EDA es el estilo correcto cuando:
 - el patrón Saga coordina una transacción distribuida entre sistemas con BD propia — sean microservicios o aplicativos monolíticos;
 - el Monolito Modular necesita notificar a sistemas externos (auditoría, reportes, otros aplicativos) sin acoplarse directamente a ellos.
 
-EDA requiere la infraestructura de un broker. ONP adopta **Apache Kafka** como broker institucional (ver **LIN-BUS-001 sección 4**). Los criterios detallados de cuándo usar el bus están en **LIN-BUS-001 sección 4.3**. Todo sistema que adopte EDA debe cumplir con **LIN-BUS-001**.
+EDA requiere la infraestructura de un broker. ONP adopta **Apache Kafka** como broker institucional (ver **LIN-BUS-001 sección 4**). Los criterios detallados de cuándo usar, están en **LIN-BUS-001 sección 4.3**. Todo sistema que adopte EDA debe cumplir con **LIN-BUS-001**.
 
 #### Cuándo NO usar
 
@@ -504,7 +505,7 @@ EDA requiere la infraestructura de un broker. ONP adopta **Apache Kafka** como b
 | Lógica de negocio core con requisito ACID (cálculo de pensión, liquidación, aportes) | EDA implica consistencia eventual. En estos contextos se requiere consistencia fuerte, usar `@Transactional` en el Monolito Modular. |
 | El productor necesita la respuesta inmediata del consumidor | Si el productor no puede avanzar sin la respuesta, el patrón correcto es REST sincrónico. EDA con correlación para simular sincronismo añade complejidad sin beneficio. |
 | Desacoplar por desacoplar sin análisis de consistencia | El diseño del evento, el esquema de compensación y la operabilidad del broker tienen un costo real. Desacoplar sin justificación no es una mejora arquitectónica. |
-| Equipo sin observabilidad para sistemas asíncronos | EDA es opaco sin trazas distribuidas que conecten el trace del productor con el del consumidor. Si el stack de observabilidad (LIN-OBS-001) no está maduro, EDA es difícil de operar. LIN-BUS-001 (P7) eleva esta condición a prerequisito formal: ningún flujo EDA entra a producción sin trazabilidad completa en Jaeger. |
+| Equipo sin observabilidad para sistemas asíncronos | EDA es opaco sin trazas distribuidas que conecten el trace del productor con el del consumidor. Si el stack de observabilidad (LIN-OBS-001) no está maduro, EDA es difícil de operar. LIN-BUS-001 eleva esta condición a prerequisito formal: ningún flujo EDA entra a producción sin trazabilidad completa. |
 
 #### Patrones EDA aplicables en ONP
 
@@ -513,7 +514,7 @@ EDA requiere la infraestructura de un broker. ONP adopta **Apache Kafka** como b
 | **Saga — coreografía** | Coordinar una transacción distribuida entre sistemas con BD propia sin 2PC. Cada participante emite un evento al completar su paso; el siguiente lo consume y reacciona. No hay coordinador central. | Flujos con pocos pasos y baja complejidad condicional, entre microservicios o aplicativos monolíticos. |
 | **Saga — orquestación** | Un orquestador central emite comandos y reacciona a eventos de respuesta. Más trazable que la coreografía pero introduce un coordinador con estado. | Flujos con muchos pasos, condiciones complejas o múltiples rutas de compensación. Aplica sobre microservicios y sobre monolitos — ver variante ONP abajo. |
 | **Transactional Outbox** | Garantiza que el evento se publica solo si la transacción de BD confirma. Evita pérdida de evento cuando el proceso falla entre el `COMMIT` y la publicación al broker. | Obligatorio cada vez que se publica un evento desde un servicio con BD propia. Sin Outbox, hay riesgo de pérdida silenciosa de evento. |
-| **Event-Driven CQRS** | Separa el modelo de escritura del de lectura. Las escrituras producen eventos que actualizan proyecciones de lectura optimizadas. | Solo cuando el volumen de consultas justifica un modelo de lectura separado y la latencia eventual en las proyecciones es aceptable. Ver **§3.10** para la norma completa de adopción, variantes (Outbox/CDC) y criterios de elección del read model. |
+| **Event-Driven CQRS** | Separa el modelo de escritura del de lectura. Las escrituras producen eventos que actualizan proyecciones de lectura optimizadas. | Solo cuando el volumen de consultas justifica un modelo de lectura separado y la latencia eventual en las proyecciones es aceptable. Ver punto **[3.10](#310-cqrs--separación-de-modelos-de-escritura-y-lectura-pa07)**. para la norma completa de adopción, variantes (Outbox/CDC) y criterios de elección del read model. |
 
 > **Event Sourcing** no está en la lista. Almacenar el estado como secuencia de eventos introduce complejidad operativa (versionado de esquemas de eventos, proyecciones, replay) que supera el beneficio en los sistemas actuales de ONP. Su adopción requiere ADR aprobado por Arquitectura OTI.
 
@@ -572,17 +573,17 @@ SAGA_INSTANCIA
 | Adopción | Baja — los monolitos solo agregan consumer/producer Kafka | Mayor — requiere diseño de microservicio completo |
 | Cuándo aplica en ONP | Corto/mediano plazo — parque actual de aplicativos | Largo plazo — tras extracción de microservicios |
 
-> El detalle de la convención de tópicos Saga y el envelope CloudEvents extendido está en **LIN-BUS-001 §9.4**.
+> El detalle de la convención de tópicos Saga y la estructura de CloudEvents extendido está en **LIN-BUS-001 sección 9.4**.
 
 #### Reglas ONP
 
-**Prerequisito arquitectónico:** todo sistema que adopte EDA — independientemente de si es un Monolito Modular o un microservicio — debe tener definidos explícitamente sus **ports y adapters** (Arquitectura Hexagonal, §3.2) de modo que Kafka sea un adaptador de infraestructura, no una dependencia interna del dominio. El broker no es un atajo para omitir esa frontera (ver **LIN-BUS-001 sección 1.3**). EDA no requiere microservicios: el Monolito Modular puede adoptar EDA para comunicarse con sistemas externos o coordinar flujos Saga con otros aplicativos.
+**Prerequisito arquitectónico:** todo sistema que adopte EDA — independientemente de si es un Monolito Modular o un microservicio — debe tener definidos explícitamente sus **ports y adapters** (Arquitectura Hexagonal, [3.2](#32-arquitectura-hexagonal-ports--adapters) de modo que Kafka sea un adaptador de infraestructura, no una dependencia interna del dominio. El broker no es un atajo para omitir esa frontera (ver **LIN-BUS-001 sección 1.3**). EDA no requiere microservicios: el Monolito Modular puede adoptar EDA para comunicarse con sistemas externos o coordinar flujos Saga con otros aplicativos.
 
-**Broker institucional:** ONP opera un único broker Kafka institucional. No se aprueban brokers paralelos por proyecto sin ADR aprobado por Arquitectura OTI (ver **LIN-BUS-001 sección 4.1** y principio P1).
+**Broker institucional:** ONP opera un único broker Kafka institucional. No se aprueban brokers paralelos por proyecto sin ADR aprobado por Arquitectura OTI (ver **LIN-BUS-001 sección 4.1**, principio P1).
 
-**Estándar de envelope — CloudEvents v1.0:** el envelope de todos los eventos publicados en el bus institucional cumple **CloudEvents v1.0** (especificación CNCF). Garantiza interoperabilidad con otras instituciones del Estado y el ecosistema cloud-native. El detalle del contrato del envelope (campos, tipos, formato `traceparent` W3C TraceContext) está en **LIN-BUS-001 sección 5.2**. La decisión de adopción está documentada en **ADR-CLOUDEVENTS-001**.
+**Estándar de estructura de evento — CloudEvents v1.0:** la estructura de todos los eventos publicados en el bus institucional cumple **CloudEvents v1.0** (especificación CNCF). Garantiza interoperabilidad con otras instituciones del Estado y el ecosistema cloud-native. El detalle de la estructura de CloudEvents (campos, tipos, formato `traceparent` W3C TraceContext) está en **LIN-BUS-001 sección 5.2**. La decisión de adopción está documentada en **ADR-CLOUDEVENTS-001**.
 
-**Observabilidad obligatoria:** ningún flujo EDA entra a producción sin trazabilidad completa en Jaeger — correlación de trazas productor→consumidor. Esta condición es un prerequisito formal (LIN-BUS-001 principio P7). Ver **LIN-OBS-001** para la configuración del stack.
+**Observabilidad obligatoria:** ningún flujo EDA entra a producción sin trazabilidad completa — correlación de trazas productor→consumidor. Esta condición es un prerequisito formal (LIN-BUS-001, principio P7). Ver **LIN-OBS-001** para la configuración del stack.
 
 **Documento rector:** el estándar completo de diseño, operación y gobierno del bus de eventos está en **LIN-BUS-001 — Lineamiento de Mensajería y Bus de Eventos ONP**. Esta sección es una introducción al estilo; LIN-BUS-001 es la referencia normativa obligatoria para cualquier adopción.
 
@@ -590,9 +591,9 @@ SAGA_INSTANCIA
 
 En la hoja de ruta de la ONP, el **Monolito Modular (Estadio 2)** es la arquitectura por defecto. Al ejecutarse en un único proceso desplegable (un solo JAR), la comunicación entre módulos internos es intra-JVM (llamadas a métodos en memoria), por lo que **no requiere** patrones de resiliencia de red para interactuar entre sí.
 
-Sin embargo, bajo el principio innegociable de **Design for Failure (`PRA06`)**, toda integración de salida por red hacia sistemas externos del Estado (RENIEC, SUNAT, PIDE), APIs bancarias o brokers de eventos debe estar blindada. Un fallo en un tercero externo nunca debe provocar el agotamiento del pool de hilos (`Thread Pool Exhaustion`) del servidor de aplicaciones ni tumbar el aplicativo.
+Sin embargo, bajo el principio innegociable de **Design for Failure**, toda integración de salida por red hacia sistemas externos del Estado (como por ejemplo RENIEC, SUNAT, PIDE, entre otros), APIs bancarias o brokers de eventos deben estar blindadas. Un fallo en un tercero externo nunca debe provocar el agotamiento del pool de hilos (`Thread Pool Exhaustion`) del servidor de aplicaciones ni tumbar el aplicativo.
 
-#### 3.7.1 Matriz de Timeouts según Demanda y Criticidad (`PI08`)
+#### 3.7.1 Matriz de Timeouts según Demanda y Criticidad
 
 Está **prohibido** desplegar clientes de integración exterior (HTTP, JDBC, Kafka) sin timeouts explícitos. En lugar de aplicar tiempos fijos genéricos, los umbrales de espera se configuran en función de la **demanda concurrente** y la **criticidad en la ruta interactiva del usuario**:
 
@@ -650,11 +651,11 @@ public class ExternalClientsConfig {
 
 > **Por qué Apache HttpClient 5 y no `JdkClientHttpRequestFactory`:** El cliente JDK nativo no expone control de connection timeout a nivel de factory ni límites de conexiones por ruta. Apache HttpClient 5 (`httpclient5`) centraliza los tres controles en una sola configuración, eliminando la posibilidad de desplegar un cliente sin alguno de los tres blindajes.
 
-#### 3.7.2 Resiliencia Nativa en el Monolito Modular — Reintentos (`PI07`)
+#### 3.7.2 Resiliencia Nativa en el Monolito Modular — Reintentos
 
-El Bulkhead (`PI09`) queda resuelto en la configuración de `clienteRestFactory` del punto anterior (`setMaxConnPerRoute`). El complemento son los reintentos acotados:
+El Bulkhead queda resuelto en la configuración de `clienteRestFactory` del punto anterior (`setMaxConnPerRoute`). El complemento son los reintentos acotados:
 
-**Reintentos Nativos Acotados (`PI07`):** Para mitigar microcortes en lecturas idempotentes, se prefiere **Spring Retry** simple. **Prohibido** reintentar automáticamente operaciones de escritura (`POST`, `PUT`) no idempotentes.
+**Reintentos Nativos Acotados:** Para mitigar microcortes en lecturas idempotentes, se prefiere **Spring Retry** simple. **Prohibido** reintentar automáticamente operaciones de escritura (`POST`, `PUT`) no idempotentes.
 
 ```java
 // 2 intentos en total: 1 inicial + 1 reintento
@@ -662,29 +663,29 @@ El Bulkhead (`PI09`) queda resuelto en la configuración de `clienteRestFactory`
 public DatosPersonaReniec consultarDni(String dni) { ... }
 ```
 
-#### 3.7.3 Adopción de Circuit Breaker con Resilience4j (`PI06`) — Criterios y Condicionales
+#### 3.7.3 Adopción de Circuit Breaker con Resilience4j — Criterios y Condicionales
 
 **Resilience4j (`resilience4j-spring-boot3`)** no es el estándar por defecto en un Monolito Modular. Su adopción está condicionada a los siguientes criterios:
 
-1. **Criterio Primario (Microservicios — Estadio 3):** El patrón es **obligatorio** cuando el sistema opera como **Microservicios** (habiéndose cumplido los seis criterios del [§3.5](#35-microservicios)). Con múltiples servicios llamándose por red, un *Circuit Breaker* formal (estados *Closed*, *Open*, *Half-Open*) con *Fallback* es indispensable para evitar colapsos en cascada.
+1. **Criterio Primario (Microservicios — Estadio 3):** El patrón es **obligatorio** cuando el sistema opera como **Microservicios** (habiéndose cumplido los criterios indicados en [3.5.2](#352-cuando-usar--criterios-y-matriz-de-extracción-a-microservicios)). Con múltiples servicios llamándose por red, un *Circuit Breaker* formal (estados *Closed*, *Open*, *Half-Open*) con *Fallback* es indispensable para evitar colapsos en cascada.
 
 2. **Criterio de Excepción en Monolito Modular:** Un Monolito Modular puede adoptar Resilience4j **únicamente** para envolver el *Adapter* de salida hacia un proveedor externo que cumpla **ambas** condiciones:
    - **(a) Volumetría masiva en ruta crítica interactiva:** el proveedor recibe cientos de llamadas por minuto en la ruta directa del ciudadano (ej. RENIEC en ventanilla virtual).
-   - **(b) Necesidad de corte automático sin intento de red (*fast fail*):** el timeout + pool de conexiones de §3.7.1 no es suficiente porque, bajo carga alta con el proveedor caído, los slots del pool se agotan igualmente esperando el timeout en cada intento. El Circuit Breaker detecta el patrón de fallo y corta de inmediato sin consumir un slot de conexión, protegiendo el monolito completo.
+   - **(b) Necesidad de corte automático sin intento de red (*fast fail*):** el timeout + pool de conexiones de [3.7.1](#371-matriz-de-timeouts-según-demanda-y-criticidad) no es suficiente porque, bajo carga alta con el proveedor caído, los slots del pool se agotan igualmente esperando el timeout en cada intento. El Circuit Breaker detecta el patrón de fallo y corta de inmediato sin consumir un slot de conexión, protegiendo el monolito completo.
 
-   > **Lo que NO justifica el ADR:** necesitar Bulkhead o Retry — ambos ya están cubiertos por Apache HttpClient 5 (`setMaxConnPerRoute`) y Spring Retry (§3.7.2). Resilience4j en Monolito Modular se justifica exclusivamente por la **máquina de estados del Circuit Breaker**.
+   > **Lo que NO justifica el ADR:** necesitar Bulkhead o Retry — ambos ya están cubiertos por Apache HttpClient 5 (`setMaxConnPerRoute`) y Spring Retry ([3.7.2](#372-resiliencia-nativa-en-el-monolito-modular--reintentos)). Resilience4j en Monolito Modular se justifica exclusivamente por la **máquina de estados del Circuit Breaker**.
 
-   Esta adopción excepcional requiere **ADR aprobado** por Arquitectura OTI.
+   Esta adopción excepcional requiere **ADR aprobado** por Arquitectura.
 
-### 3.8 Patrones de Integración, Agregación, Fachada e Interoperabilidad SOA (`E07`)
+### 3.8 Patrones de Integración, Agregación, Fachada e Interoperabilidad SOA
 
 Para gestionar eficientemente la comunicación entre los canales de consumo (SPAs, aplicaciones móviles, interoperabilidad PIDE) y los backends institucionales (parque heredado y Monolitos Modulares nuevos), son oficiales y de aplicación regulada los siguientes cuatro patrones:
 
-#### 3.8.1 Facade Arquitectónico de Integración (`PT12` / `PA10`)
+#### 3.8.1 Facade Arquitectónico de Integración
 
 **Propósito:** Ocultar la complejidad, heterogeneidad y protocolos de múltiples sistemas externos o legados (ej. consultar RENIEC, SUNAT y un monolito heredado en JBoss) detrás de una interfaz unificada y limpia adaptada al dominio de la ONP.
 
-**Diferencia con el patrón GoF Facade (§8):** Actúa en la capa de **Infraestructura de Integración**, combinando múltiples adaptadores de salida (`Adapters`), aplicando *Anti-Corruption Layer (ACL)*, control de resiliencia (`§3.7`) y orquestación externa sin contaminar la lógica de negocio.
+**Diferencia con el patrón GoF Facade ([8.1.3](#813-facade-simplificación-de-subsistema-interno)):** Actúa en la capa de **Infraestructura de Integración**, combinando múltiples adaptadores de salida (`Adapters`), aplicando *Anti-Corruption Layer (ACL)*, control de resiliencia ([3.7](#37-resiliencia-y-tolerancia-a-fallos-design-for-failure)) y orquestación externa sin contaminar la lógica de negocio.
 
 ```java
 @Component
@@ -707,7 +708,7 @@ public class GobiernoIntegracionFacadeAdapter implements VerificacionCiudadanoPo
 }
 ```
 
-#### 3.8.2 Gateway-Aggregation (`PT10` / `PA11`)
+#### 3.8.2 Gateway-Aggregation
 
 **Propósito:** Consolidar múltiples consultas en una sola respuesta hacia el cliente, reduciendo el *chattiness* (exceso de peticiones HTTP por red) y mejorando los tiempos de carga en la pantalla del ciudadano.
 
@@ -715,7 +716,7 @@ public class GobiernoIntegracionFacadeAdapter implements VerificacionCiudadanoPo
 1. **En Monolito Modular (Estadio 2):** La agregación **no se realiza por red**. Se ejecuta en memoria mediante un *Controller de Agregación* o *Query Service* que invoca los APIs de los diferentes módulos internos del JAR (`onp-expedientes` + `onp-aportes`), devolviendo el DTO unificado.
 2. **En Microservicios (Estadio 3):** Se implementa como un servicio especializado o en el **API Gateway institucional (WSO2)**, ejecutando llamadas concurrentes a los microservicios descendentes.
 
-#### 3.8.3 Backend for Frontend — BFF (`PT09` / `PA09`)
+#### 3.8.3 Backend for Frontend — BFF
 
 **Propósito:** Crear una capa adaptada y especializada en las necesidades de presentación y comunicación de un canal de consumo concreto (ej. SPA Angular, App Móvil iOS/Android, o portal ciudadano), desacoplando los requerimientos de la interfaz de usuario respecto a los servicios del backend core.
 
@@ -727,23 +728,23 @@ public class GobiernoIntegracionFacadeAdapter implements VerificacionCiudadanoPo
 * **Adopción Recomendada:** Cuando un sistema presta servicios a **dos o más canales de consumo diferenciados** (ej. Portal Web Angular + Aplicación Móvil nativa) con flujos de navegación, anchos de banda o requisitos de seguridad distintos, o cuando un canal requiere de mediación especializada frente al API Manager.
 * **Evitar Sobreingeniería:** Si un proyecto cuenta con **un único canal estándar** (ej. una única SPA institucional en Angular consumiendo directamente su backend) y no existe requisito de traducción de protocolos o mediación SSO externa, **no se construye un servicio BFF separado**. En este escenario, la propia capa de presentación REST (`controller/`) del Monolito Modular sirve el contrato directamente, evitando saltos de red y sobrecarga operativa innecesarios.
 
-#### 3.8.4 Interoperabilidad Gubernamental SOA (`E07` — PIDE, RENIEC, SUNAT)
+#### 3.8.4 Interoperabilidad Gubernamental SOA
 
-La **Arquitectura Orientada a Servicios (SOA — `E07`)** no es el estilo arquitectónico interno de construcción de software en ONP (donde rigen el Monolito Modular y Microservicios), sino el **estilo mandatorio e institucional de interoperabilidad G2G (Gobierno a Gobierno)** para el intercambio de información con otras entidades del Estado Peruano (RENIEC, SUNAT, ESSALUD, MIDIS, Poder Judicial) a través de la **Plataforma de Interoperabilidad del Estado (PIDE - PCM)** o canales B2G directos.
+La **Arquitectura Orientada a Servicios (SOA)** no es el estilo arquitectónico interno de construcción de software en ONP (donde rigen el Monolito Modular y Microservicios), sino el **estilo mandatorio e institucional de interoperabilidad G2G (Gobierno a Gobierno)** para el intercambio de información con otras entidades del Estado Peruano (RENIEC, SUNAT, ESSALUD, MIDIS, Poder Judicial) a través de la **Plataforma de Interoperabilidad del Estado (PIDE - PCM)** o canales B2G directos.
 
 ##### A. Reglas Mandatorias de Consumo SOA / PIDE
 
-1. **Aislamiento Estricto vía Anti-Corruption Layer (ACL — `PT11`):**
+1. **Aislamiento Estricto vía Anti-Corruption Layer (ACL):**
    Los servicios gubernamentales externos exponen contratos heterogéneos (SOAP/WSDL, XML antiguo, o REST con esquemas heredados). Está **terminantemente prohibido** que las clases generadas (ej. Stubs JAX-WS, esquemas XML Beans) o DTOs externos penetren en la capa de negocio (`domain.model.*`). Todo consumo SOA exige un adaptador en `infrastructure.client.*` que aplique ACL para traducir la respuesta a los *Value Objects* inmutables de ONP.
 
-2. **Blindaje de Resiliencia Extrema (*Design for Failure* — `PRA06`):**
+2. **Blindaje de Resiliencia Extrema (*Design for Failure*):**
    Dado que los servicios externos gubernamentales están fuera del control operativo de la ONP y pueden presentar latencias impredecibles o ventanas de mantenimiento no avisadas, **toda invocación síncrona a la PIDE / SUNAT / RENIEC** debe implementar de forma obligatoria la siguiente tríada de resiliencia:
-   - **Timeout Estricto (`PI08`):** Los umbrales de connection timeout y read timeout se aplican según la categoría del servicio externo definida en la **Matriz de Timeouts (`§3.7.1`)**. No se aplica un rango único: RENIEC (alta demanda, ruta crítica interactiva) exige valores más agresivos que PIDE (demanda media) o SUNAT (proceso diferido/batch).
-   - **Circuit Breaker (`PT06`):** Configurado con Resilience4j (`§3.7.3`). Los proveedores SOA como RENIEC en ventanilla virtual satisfacen ambos criterios del §3.7.3b (volumetría masiva en ruta crítica interactiva + necesidad de corte automático sin intento de red), por lo que su adopción es obligatoria aquí — no discrecional. Si RENIEC o SUNAT superan el umbral de fallos (ej. 50% en una ventana de 20 peticiones), el circuito se abre para evitar agotar el *pool* de hilos de los servidores de la ONP.
+   - **Timeout Estricto:** Los umbrales de connection timeout y read timeout se aplican según la categoría del servicio externo definida en la **Matriz de Timeouts (`§3.7.1`)**. No se aplica un rango único: RENIEC (alta demanda, ruta crítica interactiva) exige valores más agresivos que PIDE (demanda media) o SUNAT (proceso diferido/batch).
+   - **Circuit Breaker:** Configurado con Resilience4j ([3.7.3](#373-adopción-de-circuit-breaker-con-resilience4j--criterios-y-condicionales)). Los proveedores SOA como RENIEC en ventanilla virtual satisfacen ambos criterios de la sección 3.7.3 (volumetría masiva en ruta crítica interactiva + necesidad de corte automático sin intento de red), por lo que su adopción es obligatoria aquí — no discrecional. Si RENIEC o SUNAT superan el umbral de fallos (ej. 50% en una ventana de 20 peticiones), el circuito se abre para evitar agotar el *pool* de hilos de los servidores de la ONP.
    - **Estrategia de Fallback / Degradación Elegante:** Ante la apertura del circuito o caída externa, el sistema debe devolver un mensaje claro y estandarizado al ciudadano o, si la normativa legal lo permite, consultar una caché local de contingencia de corta duración o encolar el trámite para verificación asíncrona posterior.
 
 3. **Seguridad y Gestión de Credenciales perimetrales:**
-   La firma de mensajes SOAP (WS-Security), el intercambio de certificados digitales de cliente (mTLS) y la autenticación con tokens de la PIDE deben ser gestionados en el **API Gateway institucional (WSO2 — `PA08`)** o encapsulados en fábricas HTTP especializadas de infraestructura, nunca codificados en la lógica de las aplicaciones.
+   La firma de mensajes SOAP (WS-Security), el intercambio de certificados digitales de cliente (mTLS) y la autenticación con tokens de la PIDE deben ser gestionados en el **API Gateway institucional (WSO2)** o encapsulados en fábricas HTTP especializadas de infraestructura, nunca codificados en la lógica de las aplicaciones.
 
 ##### B. Matriz de Patrones Obligatorios para Consumo SOA
 
@@ -770,12 +771,12 @@ La **Arquitectura Orientada a Servicios (SOA — `E07`)** no es el estilo arquit
 └───────────────────────────────────┼────────────────────────────────────┘
                                     │ mTLS / WS-Security
                                     ▼
-                 ┌──────────────────────────────────────┐
-                 │ PIDE / RENIEC / SUNAT (Servicios SOA)│
-                 └──────────────────────────────────────┘
+                 ┌───────────────────────────────────────┐
+                 │ PIDE / RENIEC / SUNAT (Servicios SOA) │
+                 └───────────────────────────────────────┘
 ```
 
-### 3.9 Patrones de Dominio y Relación entre Contextos en el Monolito Modular (`PD08`, `PD09`, `PD10`)
+### 3.9 Patrones de Dominio y Relación entre Contextos en el Monolito Modular
 
 El diseño de un **Monolito Modular (Estadio 2)** exige delimitar fronteras estrictas entre sus subdominios funcionales (*Bounded Contexts*). Para garantizar un bajo acoplamiento y posibilitar la extracción limpia a microservicios en el futuro, es obligatorio regirse por dos patrones fundamentales de *Domain-Driven Design (DDD)*:
 
@@ -802,16 +803,16 @@ El diseño de un **Monolito Modular (Estadio 2)** exige delimitar fronteras estr
 └────────────────────────────────────────────────────────────────────────┘
 ```
 
-#### 3.9.1 Mapa de Contextos (*Context Map* — `PD08`)
+#### 3.9.1 Mapa de Contextos (*Context Map*)
 
 El *Context Map* es el contrato formal y arquitectónico que gobierna cómo interactúan los diferentes módulos o subdominios entre sí dentro del sistema. En ONP se regulan las siguientes cuatro relaciones:
 
 1. **Cliente-Proveedor (*Customer-Supplier* / Upstream-Downstream):** El módulo proveedor (*Upstream*, ej. `onp-aportes`) expone un **API pública en Java** (interfaz de capa de aplicación o DTO inmutable). El módulo consumidor (*Downstream*, ej. `onp-expedientes`) lo consume. Cualquier cambio en los requerimientos del consumidor debe coordinarse en el contrato de esa API.
-2. **Capa Anticorrupción (*Anti-Corruption Layer — ACL*, §8.3):** Obligatoria cuando un módulo nuevo consume datos de un módulo heredado o de un subdominio externo complejo. El consumidor implementa una interfaz propia (*Port*) y un *Adapter* interno que traduce el modelo de datos del proveedor a su propio modelo de dominio, evitando que los cambios en el proveedor rompan sus reglas de negocio.
+2. **Capa Anticorrupción (*Anti-Corruption Layer — ACL*, [8.4.3](#843-anti-corruption-layer-acl)):** Obligatoria cuando un módulo nuevo consume datos de un módulo heredado o de un subdominio externo complejo. El consumidor implementa una interfaz propia (*Port*) y un *Adapter* interno que traduce el modelo de datos del proveedor a su propio modelo de dominio, evitando que los cambios en el proveedor rompan sus reglas de negocio.
 3. **Conformista (*Conformist*):** Permitido **únicamente** para consultas de catálogos o datos referenciales simples (ej. tipos de documento, ubigeo). El consumidor acepta y utiliza directamente los DTOs de salida del proveedor sin capa de traducción.
-4. **Caminos Separados (*Separate Ways*):** Si dos subdominios no tienen relación de negocio coherente (ej. Mesa de Partes Virtual y Cálculo de Reserva Matemática), está **terminantemente prohibido** acoplarlos en código. Deben operar de forma completamente independiente o comunicarse vía eventos de dominio asíncronos en el Bus Kafka (`§3.6`).
+4. **Caminos Separados (*Separate Ways*):** Si dos subdominios no tienen relación de negocio coherente (ej. Mesa de Partes Virtual y Cálculo de Reserva Matemática), está **terminantemente prohibido** acoplarlos en código. Deben operar de forma completamente independiente o comunicarse vía eventos de dominio asíncronos en el Bus de Kafka ([3.6](#36-kafka-como-canal-de-transporte)).
 
-#### 3.9.2 Núcleo Compartido (*Shared Kernel* — `PD09`)
+#### 3.9.2 Núcleo Compartido (*Shared Kernel*)
 
 El *Shared Kernel* representa el subconjunto estrictamente acotado de código que se comparte libremente en memoria entre todos los *Bounded Contexts* del Monolito Modular (típicamente encapsulado en el módulo Maven `onp-common-domain`).
 
@@ -826,7 +827,7 @@ Debido a que cualquier modificación en el *Shared Kernel* impacta y obliga a re
 | **Lógica de Negocio / Servicios** | **❌ PROHIBIDO TERMINANTEMENTE** | Flujos de cálculo, validaciones de expedientes o reglas previsionales deben vivir exclusivamente en sus módulos respectivos. |
 | **Repositorios o Adapters HTTP/JDBC** | **❌ PROHIBIDO TERMINANTEMENTE** | Prohibido incluir acceso a infraestructura en el núcleo de dominio compartido. |
 
-#### 3.9.3 Lenguaje Publicado (*Published Language* — `PD10`)
+#### 3.9.3 Lenguaje Publicado (*Published Language*)
 
 El patrón *Published Language* define el contrato público, estable y común mediante el cual dos o más *Bounded Contexts* intercambian información. Su objetivo principal es evitar que los consumidores se acoplen a las estructuras internas o modelos de datos privados (`domain.model.*` o `infrastructure.persistence.entity.*`) del proveedor.
 
@@ -834,7 +835,7 @@ En ONP, la exposición de un Lenguaje Publicado es mandatoria para toda comunica
 
 | Tipo de Comunicación | Estándar Institucional | Registro y Gobierno del Contrato | Reglas de Evolución |
 |---|---|---|---|
-| **Asíncrona (Eventos sobre Bus Kafka)** | **CloudEvents v1.0 (CNCF)** con esquema de payload en JSON Schema o Avro | **Confluent Schema Registry** institucional (`LIN-BUS-001 §5.2`). Decisión regida por `ADR-CLOUDEVENTS-001`. | Inmutabilidad de eventos publicados (`PRA09` — principio de inmutabilidad de eventos; declaración formal pendiente de incorporar a §3.11). Evolución bajo regla *Full Compatibility* (prohibido eliminar campos o agregar obligatorios sin valor por defecto). |
+| **Asíncrona (Eventos sobre Bus de Kafka)** | **CloudEvents v1.0 (CNCF)** con esquema de payload en JSON Schema o Avro | **Confluent Schema Registry** institucional (`LIN-BUS-001 sección 5.2`). Decisión regida por `ADR-CLOUDEVENTS-001`. | Inmutabilidad de eventos publicados (ver [Event Immutability](#inmutabilidad-de-eventos-event-immutability)). Evolución bajo regla *Full Compatibility* (prohibido eliminar campos o agregar obligatorios sin valor por defecto). |
 | **Síncrona (APIs REST entre módulos/servicios)** | **OpenAPI 3.0+** (YAML/JSON) | Especificación en el repositorio Git del proveedor y publicada en el Portal de APIs (WSO2 / Swagger Hub). | Versionamiento semántico en la URL (`/api/v1/...`). Los DTOs de salida (`application.dto.*`) son inmutables (`records`). |
 
 **Ejemplo de Lenguaje Publicado para Evento de Dominio (CloudEvent v1.0 en JSON):**
@@ -859,13 +860,13 @@ En ONP, la exposición de un Lenguaje Publicado es mandatoria para toda comunica
 
 #### 3.9.4 Regla de Oro del Acoplamiento en Monolito Modular
 
-> **Regla de Soberanía de Dominio:** Ningún módulo de un Monolito Modular puede hacer un `import` directo a paquetes de la capa `domain.*` o `infrastructure.*` de otro módulo. La comunicación entre módulos se realiza exclusivamente a través de los paquetes explícitos de exposición: `application.api.*` o `application.dto.*`. El incumplimiento de esta regla se considera un anti-patrón crítico que bloquea el pase a producción en CI/CD.
+> **Regla de Soberanía de Dominio:** Ningún módulo de un Monolito Modular puede hacer un `import` directo a paquetes de la capa `domain.*` o `infrastructure.*` de otro módulo. La comunicación entre módulos se realiza exclusivamente a través de los paquetes explícitos de exposición: `application.api.*` o `application.dto.*`. **El incumplimiento de esta regla se considera un anti-patrón crítico que bloquea el pase a producción en CI/CD**.
 
-### 3.10 CQRS — Separación de Modelos de Escritura y Lectura (`PA07`)
+### 3.10 CQRS — Separación de Modelos de Escritura y Lectura
 
 CQRS (*Command Query Responsibility Segregation*) separa el modelo de escritura del de lectura: las operaciones que modifican estado (*Commands*) y las que solo consultan (*Queries*) usan modelos, stores y rutas de código distintos. Esto permite optimizar cada lado de forma independiente — el write model para consistencia y durabilidad; el read model para velocidad y forma de consulta.
 
-**En ONP, el write model es relacional con ACID** (Oracle hoy, potencialmente otros motores en el futuro — ver tabla de variante B en §3.10.3). El read model es un store optimizado para el patrón de consulta del caso de uso (ver **§5.3**): Redis para lookups por clave, MongoDB para documentos agregados con filtros compuestos, Elasticsearch para búsqueda de texto libre.
+**En ONP, el write model es relacional con ACID** (Oracle hoy, potencialmente otros motores en el futuro — ver tabla de variante B en [3.10.3](#3103-variante-b--cdc--kafka--nosql-agnóstico-al-motor)). El read model es un store optimizado para el patrón de consulta del caso de uso (ver sección **[5.3](#53-cqrs--elección-del-read-model)**): Redis para lookups por clave, MongoDB para documentos agregados con filtros compuestos, Elasticsearch para búsqueda de texto libre.
 
 CQRS no es el estilo por defecto. Aplica cuando los patrones de lectura son lo suficientemente distintos al modelo de escritura como para justificar la complejidad operativa de mantener dos stores sincronizados.
 
@@ -885,27 +886,27 @@ CQRS no es el estilo por defecto. Aplica cuando los patrones de lectura son lo s
 
 #### 3.10.2 Variante A — Transactional Outbox + Kafka → NoSQL (estándar actual)
 
-La aplicación publica eventos al bus usando el patrón **Transactional Outbox** (§3.6). Un consumer Kafka construye y mantiene el read model en el store NoSQL adecuado.
+La aplicación publica eventos al bus usando el patrón **Transactional Outbox** ([3.6](#36-arquitectura-orientada-a-eventos-eda)). Un consumer Kafka construye y mantiene el read model en el store NoSQL adecuado.
 
 ```
-┌─────────────────────────────────────────────────────────────┐
+┌──────────────────────────────────────────────────────────────┐
 │  WRITE SIDE (Command)                                        │
 │                                                              │
 │  Command → Handler → Oracle (ACID)                           │
 │                    └── tabla OUTBOX (misma transacción)      │
-└────────────────────────────┬────────────────────────────────┘
+└────────────────────────────┬─────────────────────────────────┘
                              │ relay process
                              ▼
                         [ Kafka ]
                              │ consumer / proyección
                              ▼
-┌─────────────────────────────────────────────────────────────┐
+┌──────────────────────────────────────────────────────────────┐
 │  READ SIDE (Query)                                           │
 │                                                              │
 │  Read Store NoSQL (Redis / Elasticsearch / réplica)          │
 │       ↑                                                      │
 │  Query → Read Repository → Read Store                        │
-└─────────────────────────────────────────────────────────────┘
+└──────────────────────────────────────────────────────────────┘
 ```
 
 **Características:**
@@ -914,33 +915,33 @@ La aplicación publica eventos al bus usando el patrón **Transactional Outbox**
 - Reutiliza la infraestructura Kafka ya institucionalizada.
 - La sincronización es explícita y trazable en el código.
 
-**Restricción:** el relay del Outbox no puede fallar silenciosamente — debe tener monitoreo activo y DLQ configurado (ver **LIN-BUS-001 §8**).
+**Restricción:** el relay del Outbox no puede fallar silenciosamente — debe tener monitoreo activo y DLQ configurado (ver **LIN-BUS-001 sección 8**).
 
 #### 3.10.3 Variante B — CDC + Kafka → NoSQL (agnóstico al motor)
 
 *Change Data Capture* (CDC) captura los cambios directamente del **log de transacciones del motor de base de datos**, sin modificar el código de la aplicación. La herramienta de referencia es **Debezium**, que publica los cambios como eventos en Kafka.
 
 ```
-┌─────────────────────────────────────────────────────────────┐
+┌──────────────────────────────────────────────────────────────┐
 │  WRITE SIDE (Command)                                        │
 │                                                              │
 │  Command → Handler → BD Relacional (ACID)                    │
 │                          │                                   │
 │                    transaction log                           │
-│                    (redo log / WAL / binlog)                  │
-└────────────────────────────┬────────────────────────────────┘
+│                    (redo log / WAL / binlog)                 │
+└────────────────────────────┬─────────────────────────────────┘
                              │ Debezium (CDC connector)
                              ▼
                         [ Kafka ]
                              │ consumer / proyección
                              ▼
-┌─────────────────────────────────────────────────────────────┐
+┌──────────────────────────────────────────────────────────────┐
 │  READ SIDE (Query)                                           │
 │                                                              │
 │  Read Store NoSQL (Redis / Elasticsearch / réplica)          │
 │       ↑                                                      │
 │  Query → Read Repository → Read Store                        │
-└─────────────────────────────────────────────────────────────┘
+└──────────────────────────────────────────────────────────────┘
 ```
 
 **Características:**
@@ -958,71 +959,88 @@ La aplicación publica eventos al bus usando el patrón **Transactional Outbox**
 
 #### 3.10.4 Elección del read store
 
-La elección del store NoSQL para el read model depende del patrón de consulta, no de la variante CDC/Outbox. Ver **§5.3 — CQRS: elección del read model**.
+La elección del store NoSQL para el read model depende del patrón de consulta, no de la variante CDC/Outbox. Ver sección **[5.3](#53-cqrs--elección-del-read-model) — CQRS: elección del read model**.
 
 #### Reglas ONP
 
 **Adopción mediante ADR obligatorio:** toda implementación CQRS — en cualquiera de sus variantes — requiere **ADR aprobado por Arquitectura OTI**. El ADR debe declarar:
-1. El detonador que justifica CQRS (ver §3.10.1).
+1. El detonador que justifica CQRS (ver sección [3.10.1](#3101-cuando-aplicar-cqrs).
 2. La variante elegida (A — Outbox o B — CDC) y la justificación.
-3. El motor relacional de escritura y el store NoSQL de lectura elegido (ver §5.3).
+3. El motor relacional de escritura y el store NoSQL de lectura elegido (ver sección [5.3](#53-cqrs--elección-del-read-model)).
 4. El mecanismo de sincronización y su monitoreo.
 5. Si es Variante B con Oracle: validación de LogMiner/XStream con DBA e infraestructura confirmada.
 
 **El ADR define la variante; este lineamiento define las opciones disponibles y los criterios de elección.**
 
-**Event Sourcing no es CQRS:** almacenar el estado como secuencia de eventos (Event Sourcing) es un patrón distinto y de mayor complejidad operativa. Su adopción requiere ADR separado (ver §3.6 — nota sobre Event Sourcing).
+**Event Sourcing no es CQRS:** almacenar el estado como secuencia de eventos (Event Sourcing) es un patrón distinto y de mayor complejidad operativa. Su adopción requiere ADR separado (ver sección [3.6](#36-arquitectura-orientada-a-eventos-eda) — nota sobre Event Sourcing).
 
-### 3.11 Principios rectores transversales (`PRA07`, `PRA10`, `PR09`)
+### 3.11 Principios rectores transversales
 
-Los patrones y estilos definidos en §3.1–§3.10 no son decisiones arbitrarias — están gobernados por tres principios que actúan como criterio de validación de cualquier decisión arquitectónica en ONP. Aquí se declaran formalmente; a lo largo de §3 operan de manera implícita.
+Los patrones y estilos definidos previamente no son decisiones arbitrarias — están gobernados por cuatro principios que actúan como criterio de validación de cualquier decisión arquitectónica en ONP. Aquí se declaran como norma rectora el fundamente de los puntos indicados previamente dentro de la sección 3.
 
-#### PRA07 — Bajo Acoplamiento / Alta Cohesión (*Loose Coupling / High Cohesion*)
+#### Bajo Acoplamiento / Alta Cohesión (*Loose Coupling / High Cohesion*)
 
 **Declaración:** Un módulo, servicio o componente debe conocer y depender del menor número posible de otros módulos (bajo acoplamiento). Internamente, todos sus elementos deben estar relacionados por una única responsabilidad clara (alta cohesión).
 
-**Por qué este principio gobierna las decisiones de §3:**
+**Por qué este principio gobierna las decisiones:**
 
-| Decisión en §3 | Cómo aplica PRA07 |
+| Decisión | Cómo aplica |
 |---|---|
-| Monolito Modular con fronteras explícitas (§3.4) | Los módulos se comunican solo por `application.api.*` — sin imports directos entre dominios |
-| Regla de Soberanía de Dominio (§3.9.3) | Ningún módulo accede a las tablas o dominio interno de otro |
-| Criterios de extracción a microservicios (§3.5) | Un módulo solo se extrae cuando tiene bounded context claro y datos propios — alta cohesión verificada |
-| EDA como desacoplamiento (§3.6) | El productor no conoce a los consumidores — acoplamiento mínimo por diseño |
+| Monolito Modular con fronteras explícitas ([3.4](#34-monolito-modular)) | Los módulos se comunican solo por `application.api.*` — sin imports directos entre dominios |
+| Regla de Soberanía de Dominio ([3.9.3](#393-lenguaje-publicado-published-language)) | Ningún módulo accede a las tablas o dominio interno de otro |
+| Criterios de extracción a microservicios ([3.5](#35-microservicios)) | Un módulo solo se extrae cuando tiene bounded context claro y datos propios — alta cohesión verificada |
+| EDA como desacoplamiento ([3.6](#36-arquitectura-orientada-a-eventos-eda)) | El productor no conoce a los consumidores — acoplamiento mínimo por diseño |
 
 **Violación detectable:** dependencia circular entre módulos, imports entre capas `domain.*` de módulos distintos, o un servicio que modifica datos de otro módulo directamente.
 
 ---
 
-#### PRA10 — Fuente Única de Verdad por Dominio (*Single Source of Truth*)
+#### Inmutabilidad de Eventos (*Event Immutability*)
+
+**Declaración:** Un evento publicado en el bus de mensajería es inmutable. Una vez publicado, su contenido no puede modificarse ni eliminarse. Si la realidad de negocio cambia, se publica un nuevo evento que corrige o complementa al anterior — nunca se edita el original.
+
+**Por qué este principio gobierna las decisiones:**
+
+| Decisión | Cómo aplica |
+|---|---|
+| Published Language / CloudEvents v1.0 ([3.9.3](#393-lenguaje-publicado-published-language)) | Los eventos incluyen `id` único e inmutable + `time` de ocurrencia — el campo `data` no puede mutar tras la publicación |
+| Full Compatibility en Schema Registry ([3.9.3](#393-lenguaje-publicado-published-language)) | Prohibido eliminar campos o agregar obligatorios sin valor por defecto — protege la legibilidad histórica de eventos anteriores |
+| Transactional Outbox ([3.10.2](#3102-variante-a--transactional-outbox--kafka--nosql-estándar-actual)) | Los registros en la tabla Outbox no se borran ni modifican tras el envío — son el registro histórico del sistema |
+| EDA ([3.6](#36-arquitectura-orientada-a-eventos-eda)) | Los consumidores pueden reprocesar eventos desde el inicio del topic; solo es fiable si los eventos son inmutables |
+
+**Violación detectable:** actualización del payload de un evento ya publicado en Kafka, borrado de mensajes fuera de la política de retención del topic, o reutilización del mismo `id` de evento para dos publicaciones con contenidos distintos.
+
+---
+
+#### Fuente Única de Verdad por Dominio (*Single Source of Truth*)
 
 **Declaración:** Cada dato tiene exactamente un sistema de registro autoritativo. Ningún otro sistema puede modificar ese dato directamente — solo puede leerlo o recibir una proyección derivada. Cuando dos sistemas tienen valores distintos para el mismo dato, el sistema propietario es el que manda.
 
-**Por qué este principio gobierna las decisiones de §3:**
+**Por qué este principio gobierna las decisiones:**
 
-| Decisión en §3 | Cómo aplica PRA10 |
+| Decisión | Cómo aplica |
 |---|---|
-| Write model en CQRS (§3.10) | Oracle (o el motor transaccional) es la fuente de verdad. El read model en MongoDB / Redis / Elasticsearch es una proyección derivada — nunca autoritativa |
-| Soberanía de dominio (§3.9.3) | Cada Bounded Context es dueño soberano y exclusivo de sus tablas. Otro módulo no puede escribir en ellas |
-| Mecanismo de sincronización obligatorio (§3.10, §5.3) | Toda proyección debe documentar explícitamente cómo se sincroniza con su fuente de verdad |
-| Oracle como motor transaccional principal (§5) | La BD relacional con ACID es la fuente de verdad por defecto hasta que un ADR establezca otro sistema como propietario de un dominio específico |
+| Write model en CQRS ([3.10](#310-cqrs--separación-de-modelos-de-escritura-y-lectura)) | Oracle (o el motor transaccional) es la fuente de verdad. El read model en MongoDB / Redis / Elasticsearch es una proyección derivada — nunca autoritativa |
+| Soberanía de dominio ([3.9.3](#393-lenguaje-publicado-published-language)) | Cada Bounded Context es dueño soberano y exclusivo de sus tablas. Otro módulo no puede escribir en ellas |
+| Mecanismo de sincronización obligatorio ([3.10](#310-cqrs--separación-de-modelos-de-escritura-y-lectura), [5.3](#53-cqrs--elección-del-read-model)) | Toda proyección debe documentar explícitamente cómo se sincroniza con su fuente de verdad |
+| Oracle como motor transaccional principal ([5](#5-estrategia-de-datos)) | La BD relacional con ACID es la fuente de verdad por defecto hasta que un ADR establezca otro sistema como propietario de un dominio específico |
 
 **Violación detectable:** dos sistemas que pueden modificar el mismo dato, un read model sin mecanismo de sincronización documentado, o un módulo que escribe en las tablas de otro.
 
 ---
 
-#### PR09 — Separación de Responsabilidades (*Separation of Concerns*)
+#### Separación de Responsabilidades (*Separation of Concerns*)
 
 **Declaración:** Cada módulo, capa, clase o función debe abordar una única preocupación bien definida. Mezclar responsabilidades distintas en el mismo artefacto dificulta el cambio, las pruebas y el razonamiento sobre el sistema.
 
-**Por qué este principio gobierna las decisiones de §3:**
+**Por qué este principio gobierna las decisiones:**
 
-| Decisión en §3 | Cómo aplica PR09 |
+| Decisión | Cómo aplica |
 |---|---|
-| Arquitectura en Capas (§3.1) | Presentación, Aplicación, Dominio e Infraestructura son responsabilidades distintas — ninguna capa invade la del otro |
-| Arquitectura Hexagonal (§3.2) | El dominio no sabe cómo se persiste ni cómo se llama por red — esas son responsabilidades de los adapters |
-| CQRS (§3.10) | Escribir estado y consultar estado son responsabilidades distintas con modelos, stores y rutas de código propias |
-| Frontend separado del backend (§4) | La presentación y la lógica de negocio son responsabilidades distintas en repositorios y despliegues independientes |
+| Arquitectura en Capas ([3.1](#31-arquitectura-en-capas-layered)) | Presentación, Aplicación, Dominio e Infraestructura son responsabilidades distintas — ninguna capa invade la del otro |
+| Arquitectura Hexagonal ([3.2](#32-arquitectura-hexagonal-ports--adapters)) | El dominio no sabe cómo se persiste ni cómo se llama por red — esas son responsabilidades de los adapters |
+| CQRS ([3.10](#310-cqrs--separación-de-modelos-de-escritura-y-lectura)) | Escribir estado y consultar estado son responsabilidades distintas con modelos, stores y rutas de código propias |
+| Frontend separado del backend ([4](#4-estrategia-de-frontend)) | La presentación y la lógica de negocio son responsabilidades distintas en repositorios y despliegues independientes |
 
 **Violación detectable:** un `@RestController` que accede directamente a un repositorio JPA, una entidad de dominio con anotaciones `@JsonProperty`, o un servicio de negocio que envía correos y calcula pensiones.
 
@@ -1040,9 +1058,9 @@ El frontend de los sistemas ONP se implementa como una SPA separada del backend:
 | 2 — Alternativa | React | Solo si existe una restricción técnica o contractual documentada que impide usar Angular |
 | 3 — Alternativa | Vue | Igual que React — requiere justificación documentada en ADR |
 
-La preferencia por Angular se basa en: TypeScript estricto obligatorio, estructura opinionada comparable a Spring Boot (reduce decisiones de arquitectura propias), CLI robusto, y alineamiento con el perfil de contratistas disponibles en el mercado peruano para entidades del Estado.
+La preferencia por Angular se basa en: TypeScript estricto obligatorio, estructura comparable a Spring Boot (reduce decisiones de arquitectura propias), CLI robusto, entre otros.
 
-Cuando se usa React o Vue, los estándares de **LIN-FE-ANG-001** (sección Frontend) aplican igualmente. El framework alternativo no exime del cumplimiento de métricas de performance ni de los anti-patrones prohibidos.
+Cuando se usa React o Vue, los estándares de **LIN-FE-ANG-001** aplican igualmente. El framework alternativo no exime del cumplimiento de métricas de performance ni de los anti-patrones prohibidos.
 
 ### Modelo de separación
 
@@ -1143,7 +1161,7 @@ La base de datos relacional Oracle es el **estándar por defecto** de ONP para t
 
 > ONP ya opera una BD no relacional en producción: **Elasticsearch**, utilizada por el stack de observabilidad (logs estructurados y trazas — ver LIN-OBS-001). No es un caso hipotético.
 
-### Principio rector
+### 5.1 Oracle como estándar transaccional
 
 ```
 BD relacional (Oracle)   → núcleo transaccional siempre
@@ -1155,7 +1173,9 @@ BD no relacional         → capa complementaria
                            por sus propios méritos técnicos
 ```
 
-### Detonadores para analizar BD no relacional
+### 5.2 BD no relacional complementaria
+
+#### Detonadores para analizar BD no relacional
 
 El análisis de adopción se inicia cuando **al menos uno** de los siguientes detonadores se verifica con evidencia medible, no por intuición:
 
@@ -1167,7 +1187,7 @@ El análisis de adopción se inicia cuando **al menos uno** de los siguientes de
 | **Rendimiento de lectura no se resuelve con tuning Oracle** | Reportes o dashboards con tiempos >5 segundos después de aplicar índices, particionamiento y vistas materializadas. El caso de uso tolera consistencia eventual. | Search / Column-family |
 | **Datos con ciclo de vida corto y TTL** | Sesiones, tokens, rate limiting, contadores temporales. Síntoma: tablas `TMP_` o `GTT_` que actúan como caché de estado de aplicación. | Key-value / Cache |
 
-### Tipos de BD no relacional y cuándo aplica en ONP
+#### Tipos de BD no relacional y cuándo aplica en ONP
 
 | Tipo | Tecnologías de referencia | Cuándo aplica en ONP |
 |---|---|---|
@@ -1177,19 +1197,19 @@ El análisis de adopción se inicia cuando **al menos uno** de los siguientes de
 | **Column-family** | Apache Cassandra | Escritura masiva de eventos, audit logs de alto volumen, series temporales de negocio |
 | **Time-series** | InfluxDB, TimescaleDB | Métricas de negocio con altísima frecuencia de escritura. Las métricas de infraestructura ya las cubre Prometheus (LIN-OBS-001) |
 
-### Lo que NO es un detonador válido
+#### Lo que NO es un detonador válido
 
 - "NoSQL escala mejor" sin evidencia de que Oracle sea el cuello de botella.
 - "El equipo quiere aprender la tecnología".
 - "La arquitectura de referencia del proveedor la usa".
 - "Es más simple que modelar en relacional" — la simplicidad de escritura no compensa la pérdida de ACID ni las garantías de integridad referencial.
 
-### Regla de gobierno
+#### Regla de gobierno
 
 La adopción de cualquier BD no relacional en ONP requiere:
 
 1. **ADR aprobado por Arquitectura OTI** con el detonador verificado, el tipo de BD seleccionado y la justificación técnica.
-2. **Nuevo lineamiento LIN-BD-XXX** específico para esa tecnología, equivalente a LIN-BD-ORA-001 para Oracle, que cubra diseño de datos, operación, seguridad y observabilidad.
+2. **Nuevo lineamiento** que sea específico para la tecnología de un NoSQL, equivalente a LIN-BD-ORA-001 para Oracle, que cubra diseño de datos, operación, seguridad y observabilidad.
 3. **Validación de Plataforma** sobre viabilidad operativa en K8s (backups, monitoreo, alta disponibilidad).
 4. **Piloto controlado** antes de uso productivo, con criterios de éxito documentados y fecha de evaluación.
 
@@ -1197,7 +1217,7 @@ Mientras el lineamiento específico de la tecnología no exista, su uso producti
 
 ### 5.3 CQRS — elección del read model
 
-CQRS separa el modelo de escritura del de lectura. El **write model es relacional con ACID** (Oracle hoy; otros motores posibles en el futuro según §3.10). La elección del read model no es única — depende del patrón de consulta que debe servir.
+CQRS separa el modelo de escritura del de lectura. El **write model es relacional con ACID** (Oracle hoy; otros motores posibles en el futuro según [3.10](#310-cqrs--separación-de-modelos-de-escritura-y-lectura)). La elección del read model no es única — depende del patrón de consulta que debe servir.
 
 | Patrón de consulta del read model | Store adecuado | Razón |
 |---|---|---|
@@ -1392,15 +1412,15 @@ public record DniPensionista(String valor) {
 }
 ```
 
-#### 6.4.1 Guía normativa de Building Blocks DDD en contexto Spring (`PD01`, `PD02`)
+#### 6.4.1 Guía normativa de Building Blocks DDD en contexto Spring
 
 Al implementar Domain-Driven Design en los sistemas core de ONP sobre el stack Java 21 / Spring Boot 3, es obligatorio diferenciar y aplicar correctamente los bloques de construcción (*Building Blocks*) del dominio. El mayor antipatrón en proyectos Spring que afirman usar DDD es acoplar el modelo de dominio con el framework de persistencia.
 
-##### A. Entidad de Dominio vs. Entidad JPA (`PD02`)
+##### A. Entidad de Dominio vs. Entidad JPA
 
 En ONP es **prohibido terminantemente** mezclar la Entidad de Dominio con la Entidad JPA (`@Entity`). Deben existir en paquetes y capas distintas:
 
-| Característica | Entidad de Dominio (`PD02`) | Entidad JPA (`@Entity`) |
+| Característica | Entidad de Dominio | Entidad JPA (`@Entity`) |
 |---|---|---|
 | **Capa / Paquete** | `domain.model.*` (Dominio puro) | `infrastructure.persistence.entity.*` (Infraestructura) |
 | **Anotaciones de Framework** | **CERO**. Sin `@Entity`, `@Table`, `@Id`, `@Column` ni anotaciones Spring Data. | Obligatorias (`@Entity`, `@Table`, `@Id`, etc.) |
@@ -1450,7 +1470,7 @@ public class PensionistaEntity {
 }
 ```
 
-##### B. Value Object (`PD02`) en Java 21
+##### B. Value Object en Java 21
 
 Un **Value Object (Objeto de Valor)** modela una característica descriptiva que carece de identidad propia. Dos Value Objects son iguales si sus atributos tienen el mismo valor.
 
@@ -1472,17 +1492,17 @@ public record MontoPension(BigDecimal valor, String moneda) {
 }
 ```
 
-##### C. Agregado y Agregado Raíz (`PD01` — *Aggregate Root*)
+##### C. Agregado y Agregado Raíz (`PD01` — *Aggregate Root*
 
-Un **Agregado** es un clúster de entidades y Value Objects que se tratan como una única unidad transaccional para garantizar la consistencia en modificaciones concurrentes.
+Un **Aggregate** es un clúster de entidades y Value Objects que se tratan como una única unidad transaccional para garantizar la consistencia en modificaciones concurrentes.
 
-1. **Frontera de Consistencia Transaccional:** Toda modificación a cualquier entidad dentro del agregado debe realizarse invocando métodos en el **Agregado Raíz (*Aggregate Root*)**. Ningún servicio de aplicación o adaptador externo puede obtener una referencia directa y modificar una entidad interna del agregado evadiendo la raíz.
-2. **Referencia por ID entre Agregados:** Un Agregado Raíz **nunca debe mantener referencias directas en memoria (punteros de objeto Java)** a otro Agregado Raíz. La referencia entre agregados se realiza exclusivamente mediante sus identificadores (Value Objects de ID).
+1. **Frontera de Consistencia Transaccional:** Toda modificación a cualquier entidad dentro del agregado debe realizarse invocando métodos en el ***Aggregate Root***. Ningún servicio de aplicación o adaptador externo puede obtener una referencia directa y modificar una entidad interna del agregado evadiendo la raíz.
+2. **Referencia por ID entre Aggregates:** Un Aggregate Root **nunca debe mantener referencias directas en memoria (punteros de objeto Java)** a otro Aggregate Root. La referencia entre aggregates se realiza exclusivamente mediante sus identificadores (Value Objects de ID).
    - *Mal:* `public class Expediente { private Pensionista pensionista; }`
    - *Bien:* `public class Expediente { private PensionistaId pensionistaId; }`
 3. **Gestión de Transacciones y Eventos en Spring Boot:**
-   - En la capa de aplicación (`application.service.*`), el caso de uso abre una transacción Spring (`@Transactional`), carga el Agregado Raíz mediante el puerto de repositorio, ejecuta la operación de negocio en el agregado y guarda el agregado modificado.
-   - Las transiciones de estado en el Agregado Raíz emiten **Eventos de Dominio (`DomainEvent`)**. La comunicación de cambios hacia otros agregados o bounded contexts se realiza consumiendo estos eventos de forma asíncrona tras el *commit* de la transacción (utilizando `ApplicationEventPublisher` de Spring o el patrón Outbox §3.6).
+   - En la capa de aplicación (`application.service.*`), el caso de uso abre una transacción Spring (`@Transactional`), carga el Aggregate Root mediante el puerto de repositorio, ejecuta la operación de negocio en el agregado y guarda el agregado modificado.
+   - Las transiciones de estado en el Aggregate Root emiten **Eventos de Dominio (`DomainEvent`)**. La comunicación de cambios hacia otros aggregates o bounded contexts se realiza consumiendo estos eventos de forma asíncrona tras el *commit* de la transacción (utilizando `ApplicationEventPublisher` de Spring o el patrón Outbox §3.6).
 
 ---
 
@@ -1490,7 +1510,7 @@ Un **Agregado** es un clúster de entidades y Value Objects que se tratan como u
 
 ### 7.1 SOLID
 
-Los cinco principios SOLID son **obligatorios** en todo código Java producido para ONP. Se aplican a nivel de clase y de módulo.
+Los cinco principios SOLID son **obligatorios** en todo código producido para ONP. Se aplican a nivel de clase y de módulo.
 
 #### S — Single Responsibility Principle
 
@@ -1643,53 +1663,32 @@ public class AprobarExpedienteService {
 | **DRY** (Don't Repeat Yourself) | Lógica de negocio duplicada en dos lugares = deuda técnica crítica. Si dos servicios calculan lo mismo, se extrae a una clase de dominio compartida. |
 | **KISS** (Keep It Simple) | La solución más simple que funciona correctamente es la correcta. No se diseña para casos de uso hipotéticos. |
 | **YAGNI** (You Aren't Gonna Need It) | No se implementa funcionalidad que no tenga un requerimiento concreto y aprobado. |
-| **Separation of Concerns** (`PR09`) | Cada clase o función aborda una única preocupación. Un `@RestController` no contiene lógica de negocio; una entidad de dominio no tiene anotaciones `@JsonProperty`. Ver declaración formal y contexto arquitectónico en **§3.11**. |
+| **Separation of Concerns** | Cada clase o función aborda una única preocupación. Un `@RestController` no contiene lógica de negocio; una entidad de dominio no tiene anotaciones `@JsonProperty`. Ver declaración formal y contexto arquitectónico en la sección **[3.11](#311-principios-rectores-transversales)**. |
 
 ---
 
 ## 8. Patrones de diseño de código
 
-Todos los patrones de esta sección son del catálogo GoF (Gang of Four) o variantes establecidas. Su uso debe ser justificado — no se aplican por costumbre sino porque resuelven un problema concreto.
+Los patrones de esta sección provienen del catálogo GoF (Gang of Four), del modelo de capas (Repository, Mapper) y del lenguaje DDD (ACL). Su uso debe ser justificado — no se aplican por costumbre sino porque resuelven un problema concreto.
 
-### 8.1 Repository (Acceso a datos)
+| Grupo | Patrones | Secciones |
+|---|---|---|
+| **GoF — Estructurales** | Adapter, Decorator, Facade | [8.1.1](#811-adapter-integración-externa), [8.1.2](#812-decorator-comportamiento-adicional-sin-modificar-la-clase), [8.1.3](#813-facade-simplificación-de-subsistemas-interno) |
+| **GoF — Creacionales** | Factory Method, Builder, Singleton | [8.2.1](#821-factory-method-creación-compleja-o-variable-por-tipo), [8.2.2](#822-builder-construcción-paso-a-paso), [8.2.3](#823-singleton-instancia-única) |
+| **GoF — Comportamiento** | Strategy, Observer, Command, State | [8.3.1](#831-strategy-algoritmo-intercambiable), [8.3.2](#832-observer-notificación-asíncrona), [8.3.3](#833-command-ejecución-asíncrona), [8.3.4](#834-state-ciclo-de-vida-con-transiciones-controladas) |
+| **Capas y DDD** | Repository, Mapper, ACL | [8.4.1](#841-repository-aislamiento-de-persistencia), [8.4.2](#842-mapper-transformación-entre-capas), [8.4.3](#843-anti-corruption-layer-acl) |
 
-**Propósito:** Aislar la lógica de dominio del mecanismo de persistencia.  
-**Categoría:** Patrón de acceso a datos (variante GoF Proxy/Facade).  
-**Cuándo usar:** Siempre que se acceda a una base de datos desde la capa de aplicación.
+---
 
-```java
-// Port (capa de dominio)
-public interface PensionistaRepository {
-    Optional<Pensionista> buscarPorDni(String dni);
-    Pensionista guardar(Pensionista pensionista);
-    List<Pensionista> buscarActivosPorRegimen(TipoRegimen regimen);
-}
+### 8.1 GoF — Estructurales
 
-// Adapter (capa de infraestructura)
-@Repository
-public class PensionistaJpaRepository implements PensionistaRepository {
+Patrones que se ocupan de cómo se componen clases y objetos para formar estructuras más grandes.
 
-    private final PensionistaJpaEntityRepository jpa;
-    private final PensionistaMapper mapper;
-
-    @Override
-    public Optional<Pensionista> buscarPorDni(String dni) {
-        return jpa.findByDni(dni).map(mapper::toDomain);
-    }
-
-    @Override
-    public Pensionista guardar(Pensionista pensionista) {
-        PensionistaEntity entity = mapper.toEntity(pensionista);
-        return mapper.toDomain(jpa.save(entity));
-    }
-}
-```
-
-### 8.2 Adapter (Integración externa)
+#### 8.1.1 Adapter (Integración externa)
 
 **Propósito:** Convertir la interfaz de un sistema externo a la interfaz que el dominio espera.  
-**Categoría:** Estructural.  
-**Cuándo usar:** Integraciones con sistemas externos (RENIEC, SUNAT, PIDE, PLAME).
+**Categoría:** Estructural (GoF).  
+**Cuándo usar:** Integraciones con sistemas externos (por ejemplo: RENIEC, SUNAT, PIDE, PLAME, entre otros).
 
 ```java
 // Port esperado por el dominio
@@ -1699,6 +1698,7 @@ public interface ConsultaReniecPort {
 
 // Adapter que habla con RENIEC
 @Component
+@RequiredArgsConstructor
 public class ReniecHttpAdapter implements ConsultaReniecPort {
 
     private final RestClient reniecClient;
@@ -1715,86 +1715,128 @@ public class ReniecHttpAdapter implements ConsultaReniecPort {
 }
 ```
 
-### 8.3 Anti-Corruption Layer (ACL)
+#### 8.1.2 Decorator (Comportamiento adicional sin modificar la clase)
 
-**Propósito:** Aislar el dominio de ONP de los modelos de datos de sistemas externos. Evita que conceptos externos contaminen el modelo de dominio propio.  
-**Categoría:** Patrón DDD / Estructural.  
-**Cuándo usar:** Obligatorio en integraciones con RENIEC, SUNAT, PIDE, PLAME y cualquier sistema externo del Estado.
+**Propósito:** Añadir responsabilidades a un objeto de forma dinámica sin modificar su clase ni usar herencia.  
+**Categoría:** Estructural (GoF).  
+**Cuándo usar en ONP:** Cuando se necesita añadir comportamiento transversal (caché, logging, auditoría, métricas) a una implementación existente sin tocarla. Útil para decorar repositorios con caché o clientes externos con registro de tiempos de respuesta.
 
 ```java
-// El dominio ONP tiene su propio modelo
-public record DatosPersona(String dni, String nombres, String apellidos, LocalDate fechaNacimiento) {}
-
-// El sistema RENIEC retorna su propio modelo (no controlado por ONP)
-public class ReniecResponse {
-    public String numDni;
-    public String primerNombre;
-    public String segundoNombre;
-    public String apePaterno;
-    public String apeMaterno;
-    public String fecNacimiento; // formato "dd/MM/yyyy" — diferente al estándar ONP
+// Port de dominio (sin cambios)
+public interface PensionistaRepository {
+    Optional<Pensionista> buscarPorDni(String dni);
+    Pensionista guardar(Pensionista pensionista);
 }
 
-// El mapper ES la Anti-Corruption Layer
-@Component
-public class ReniecResponseMapper {
-    private static final DateTimeFormatter FORMATO_RENIEC = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+// Implementación original (sin cambios)
+@Repository
+@RequiredArgsConstructor
+class PensionistaJpaRepository implements PensionistaRepository {
+    private final PensionistaJpaEntityRepository jpa;
+    private final PensionistaMapper mapper;
 
-    public DatosPersona toDomain(ReniecResponse response) {
-        String nombres = Stream.of(response.primerNombre, response.segundoNombre)
-            .filter(n -> n != null && !n.isBlank())
-            .collect(joining(" "));
-        String apellidos = response.apePaterno + " " + response.apeMaterno;
-        LocalDate fechaNacimiento = LocalDate.parse(response.fecNacimiento, FORMATO_RENIEC);
-        return new DatosPersona(response.numDni, nombres, apellidos, fechaNacimiento);
+    @Override
+    public Optional<Pensionista> buscarPorDni(String dni) {
+        return jpa.findByDni(dni).map(mapper::toDomain);
+    }
+
+    @Override
+    public Pensionista guardar(Pensionista pensionista) {
+        return mapper.toDomain(jpa.save(mapper.toEntity(pensionista)));
+    }
+}
+
+// Decorator que añade caché — envuelve la implementación sin modificarla
+@Component
+@Primary
+@RequiredArgsConstructor
+class CachedPensionistaRepository implements PensionistaRepository {
+
+    private final PensionistaJpaRepository delegado;
+    private final Cache<String, Pensionista> cache;
+
+    @Override
+    public Optional<Pensionista> buscarPorDni(String dni) {
+        Pensionista cached = cache.getIfPresent(dni);
+        if (cached != null) return Optional.of(cached);
+        Optional<Pensionista> resultado = delegado.buscarPorDni(dni);
+        resultado.ifPresent(p -> cache.put(dni, p));
+        return resultado;
+    }
+
+    @Override
+    public Pensionista guardar(Pensionista pensionista) {
+        Pensionista guardado = delegado.guardar(pensionista);
+        cache.put(guardado.getDni(), guardado);
+        return guardado;
     }
 }
 ```
 
-### 8.4 Mapper (Transformación entre capas)
+**Regla ONP:** el Decorator implementa el mismo port que el objeto que decora — Spring inyecta el decorador gracias a `@Primary`. El objeto decorado es package-private para que solo el decorador pueda instanciarlo directamente.
 
-**Propósito:** Transformar objetos entre capas (DTO ↔ Domain ↔ Entity) sin mezclar responsabilidades.  
-**Categoría:** Patrón de capas (variante Translator).  
-**Cuándo usar:** Siempre que se transfieran datos entre capas.
+#### 8.1.3 Facade (Simplificación de subsistema interno)
+
+**Propósito:** Ocultar la complejidad de un subsistema interno detrás de una interfaz simplificada, sin cruzar fronteras de red ni integrar sistemas externos.  
+**Categoría:** Estructural (GoF).  
+**Cuándo usar en ONP:** Cuando un caso de uso de aplicación necesita coordinar varios componentes internos del mismo módulo y exponer esa coordinación como una operación simple. Aplica dentro de la capa `application/` o como clase de soporte en `domain/`.
+
+**Distinción clave con el Facade Arquitectónico de Integración ([3.8.1](#381-facade-arquitectónico-de-integración)):**
+
+| | GoF Facade ([8.1.3](#813-facade-simplificación-de-subsistema-interno)) | Facade Arquitectónico ([3.8.1](#381-facade-arquitectónico-de-integración)) |
+|---|---|---|
+| **Alcance** | Dentro de un módulo — sin red | Infraestructura de integración — sistemas externos |
+| **Qué oculta** | Complejidad de colaboración interna | Heterogeneidad de protocolos y sistemas externos |
+| **Dónde vive** | `application/` o `domain/` | `infrastructure/` |
+| **ACL / Resiliencia** | No aplica | Obligatorio |
 
 ```java
+// Subsistema de cálculo de pensión — tres servicios internos
 @Component
-public class PensionMapper {
+@RequiredArgsConstructor
+class CalculoPensionFacade {
 
-    public PensionResponseDto toDto(Pension pension) {
-        return new PensionResponseDto(
-            pension.getId(),
-            pension.getMonto().toPlainString(),
-            pension.getPeriodo().toString(),
-            pension.getEstado().name()
-        );
+    private final HistorialAportesService historialService;
+    private final TablasBeneficiosService tablasBeneficios;
+    private final ReglasElegibilidadService reglasElegibilidad;
+
+    public ResultadoCalculo calcularPension(String codigoPensionista) {
+        HistorialAportes historial = historialService.obtener(codigoPensionista);
+        reglasElegibilidad.validar(historial);
+        return tablasBeneficios.calcular(historial);
     }
+}
 
-    public Pension toDomain(CrearPensionCommand cmd) {
-        return new Pension(
-            null,
-            new Monto(new BigDecimal(cmd.monto())),
-            Periodo.of(cmd.anio(), cmd.mes()),
-            EstadoPension.BORRADOR
-        );
-    }
+// El Application Service solo ve la fachada
+@Service
+@RequiredArgsConstructor
+public class LiquidarPensionService implements LiquidarPensionUseCase {
 
-    public PensionEntity toEntity(Pension pension) {
-        PensionEntity e = new PensionEntity();
-        e.setId(pension.getId());
-        e.setMonto(pension.getMonto().valor());
-        e.setPeriodo(pension.getPeriodo().toString());
-        e.setEstado(pension.getEstado().name());
-        return e;
+    private final CalculoPensionFacade calculoFacade;
+    private final PensionRepository pensionRepository;
+
+    @Override
+    @Transactional
+    public void liquidar(String codigoPensionista) {
+        ResultadoCalculo resultado = calculoFacade.calcularPension(codigoPensionista);
+        pensionRepository.registrar(resultado.toPension());
     }
 }
 ```
 
-### 8.5 Factory (Creación compleja)
+**Regla ONP:** el GoF Facade no implementa lógica de negocio — solo coordina. Si la coordinación requiere decisiones de dominio, esa lógica pertenece al Aggregate Root o a un Domain Service, no a la fachada.
 
-**Propósito:** Centralizar la lógica de creación de objetos complejos o que varían según tipo.  
-**Categoría:** Creacional.  
-**Cuándo usar:** Cuando la construcción de un objeto requiere lógica de negocio, validaciones, o varía según parámetros.
+---
+
+### 8.2 GoF — Creacionales
+
+Patrones que abstraen el proceso de creación de objetos, haciéndolo independiente del tipo concreto.
+
+#### 8.2.1 Factory Method (Creación compleja o variable por tipo)
+
+**Propósito:** Centralizar la lógica de creación de objetos complejos o que varían según tipo, sin exponer la clase concreta al llamador.  
+**Categoría:** Creacional (GoF).  
+**Cuándo usar:** Cuando la construcción de un objeto requiere lógica de negocio, validaciones, o varía según parámetros de dominio.
 
 ```java
 @Component
@@ -1819,11 +1861,11 @@ public class ExpedienteFactory {
 }
 ```
 
-### 8.6 Builder (Construcción paso a paso)
+#### 8.2.2 Builder (Construcción paso a paso)
 
 **Propósito:** Construir objetos complejos paso a paso, especialmente cuando tienen muchos campos opcionales.  
-**Categoría:** Creacional.  
-**Cuándo usar:** Objetos con más de 4 parámetros o con campos opcionales. En ONP: DTOs de respuesta, objetos de configuración, comandos de búsqueda.
+**Categoría:** Creacional (GoF).  
+**Cuándo usar:** Objetos con más de 4 parámetros o con campos opcionales. En ONP: DTOs de respuesta, objetos de configuración, criterios de búsqueda.
 
 ```java
 public class BusquedaPensionistaCriteria {
@@ -1881,11 +1923,11 @@ BusquedaPensionistaCriteria criteria = BusquedaPensionistaCriteria.builder()
 
 > **Nota:** Lombok `@Builder` es una alternativa válida para simplificar la implementación. Se prefiere cuando el equipo ya usa Lombok en el proyecto.
 
-### 8.7 Singleton (Instancia única)
+#### 8.2.3 Singleton (Instancia única gestionada por Spring)
 
 **Propósito:** Garantizar una única instancia de una clase durante toda la vida de la aplicación.  
-**Categoría:** Creacional.  
-**Cuándo usar en ONP:** Spring Boot gestiona el ciclo de vida de los beans. Los beans `@Service`, `@Repository`, `@Component` son singleton por defecto. **No implementar Singleton manualmente** — declarar el bean con la anotación Spring correspondiente.
+**Categoría:** Creacional (GoF).  
+**Cuándo usar en ONP:** Spring Boot gestiona este ciclo de vida automáticamente. Los beans `@Service`, `@Repository`, `@Component` son singleton por defecto. **No implementar Singleton manualmente** — declarar el bean con la anotación Spring correspondiente.
 
 ```java
 // MAL: Singleton manual en un contexto Spring
@@ -1911,13 +1953,360 @@ public class ConfiguracionSistema {
 }
 ```
 
-El Singleton manual solo se justifica en utilidades puras que no tienen dependencias de Spring y se usan en contextos donde el contenedor no está disponible (ej. pruebas unitarias sin contexto).
+El Singleton manual solo se justifica en utilidades puras sin dependencias de Spring que se usan en contextos donde el contenedor no está disponible (ej. pruebas unitarias sin contexto).
+
+---
+
+### 8.3 GoF — Comportamiento
+
+Patrones que definen cómo los objetos se comunican y distribuyen responsabilidades entre sí.
+
+#### 8.3.1 Strategy (Algoritmo intercambiable)
+
+**Propósito:** Encapsular una familia de algoritmos detrás de una interfaz común, permitiendo intercambiarlos sin modificar el contexto que los usa.  
+**Categoría:** Comportamiento (GoF).  
+**Cuándo usar en ONP:** Cuando la lógica de negocio varía según un tipo o categoría y quieres evitar bloques `if/switch` en el servicio. Caso típico: cálculo de pensión varía por régimen (19990 vs 20530).
+
+```java
+// Interfaz común para todas las estrategias
+public interface CalculoPensionStrategy {
+    ResultadoCalculo calcular(HistorialAportes historial);
+    boolean aplica(TipoRegimen regimen);
+}
+
+// Estrategia para Régimen 19990
+@Component
+public class CalculoRegimen19990Strategy implements CalculoPensionStrategy {
+
+    @Override
+    public ResultadoCalculo calcular(HistorialAportes historial) {
+        BigDecimal monto = historial.getMesesAportados()
+            .multiply(FACTOR_MENSUAL_19990);
+        return new ResultadoCalculo(monto, TipoRegimen.REGIMEN_19990);
+    }
+
+    @Override
+    public boolean aplica(TipoRegimen regimen) {
+        return TipoRegimen.REGIMEN_19990.equals(regimen);
+    }
+}
+
+// Estrategia para Régimen 20530 (cédula viva)
+@Component
+public class CalculoRegimen20530Strategy implements CalculoPensionStrategy {
+
+    @Override
+    public ResultadoCalculo calcular(HistorialAportes historial) {
+        BigDecimal monto = historial.getRemuneracionReferencial()
+            .multiply(PORCENTAJE_CEDULA_VIVA);
+        return new ResultadoCalculo(monto, TipoRegimen.REGIMEN_20530);
+    }
+
+    @Override
+    public boolean aplica(TipoRegimen regimen) {
+        return TipoRegimen.REGIMEN_20530.equals(regimen);
+    }
+}
+
+// El contexto delega en la estrategia correcta — Spring inyecta todas las implementaciones
+@Service
+@RequiredArgsConstructor
+public class CalculoPensionService {
+
+    private final List<CalculoPensionStrategy> estrategias;
+
+    public ResultadoCalculo calcular(HistorialAportes historial, TipoRegimen regimen) {
+        return estrategias.stream()
+            .filter(e -> e.aplica(regimen))
+            .findFirst()
+            .orElseThrow(() -> new IllegalArgumentException("Sin estrategia para régimen: " + regimen))
+            .calcular(historial);
+    }
+}
+```
+
+**Regla ONP:** cada estrategia es un `@Component` independiente. Spring los inyecta como `List<CalculoPensionStrategy>` en el contexto — no se necesita un `switch` ni un registro manual.
+
+#### 8.3.2 Observer (Domain Events con Spring Events)
+
+**Propósito:** Notificar a múltiples componentes de un cambio de estado sin acoplarlos al emisor.  
+**Categoría:** Comportamiento (GoF).  
+**Cuándo usar en ONP:** Cuando un Aggregate Root emite Domain Events y otros componentes del sistema necesitan reaccionar sin conocerse mutuamente. La implementación Spring es `ApplicationEventPublisher` + `@EventListener`.
+
+```java
+// 1. El Domain Event — inmutable, sin dependencias de framework
+public record AporteRegistradoEvent(
+    String codigoPensionista,
+    BigDecimal monto,
+    YearMonth periodo,
+    Instant occurredOn
+) {}
+
+// 2. El Application Service publica el evento tras confirmar la transacción
+@Service
+@RequiredArgsConstructor
+public class RegistrarAporteService implements RegistrarAporteUseCase {
+
+    private final AporteRepository aporteRepository;
+    private final ApplicationEventPublisher eventPublisher;
+
+    @Override
+    @Transactional
+    public void registrar(RegistrarAporteCommand cmd) {
+        Aporte aporte = new Aporte(cmd.codigoPensionista(), cmd.monto(), cmd.periodo());
+        aporteRepository.guardar(aporte);
+        eventPublisher.publishEvent(new AporteRegistradoEvent(
+            cmd.codigoPensionista(), cmd.monto(), cmd.periodo(), Instant.now()
+        ));
+    }
+}
+
+// 3. Observadores desacoplados — no saben nada del servicio emisor
+@Component
+public class NotificacionAporteListener {
+
+    @EventListener
+    @Async
+    public void onAporteRegistrado(AporteRegistradoEvent evento) {
+        // notificar al pensionista — en hilo separado, no bloquea la transacción
+    }
+}
+
+@Component
+public class AuditoriaAporteListener {
+
+    @EventListener
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void onAporteRegistrado(AporteRegistradoEvent evento) {
+        // registrar en log de auditoría en transacción separada e independiente
+    }
+}
+```
+
+**Regla ONP:** los Domain Events se publican dentro de la transacción del caso de uso. Los listeners que requieren aislamiento transaccional usan `Propagation.REQUIRES_NEW`. Los que no deben bloquear el hilo principal usan `@Async`.
+
+#### 8.3.3 Command (Operación encapsulada como objeto)
+
+**Propósito:** Encapsular una solicitud de negocio como un objeto inmutable, separando quien la invoca de quien la ejecuta.  
+**Categoría:** Comportamiento (GoF).  
+**Cuándo usar en ONP:** En el lado de escritura del patrón CQRS ([3.10](#310-cqrs--separación-de-modelos-de-escritura-y-lectura)). Cada operación de negocio que modifica estado se modela como un `record` inmutable que viaja desde el Controller hasta el Application Service (Use Case).
+
+```java
+// Command — record inmutable con validación en el constructor compacto
+public record RegistrarAporteCommand(
+    String codigoPensionista,
+    BigDecimal monto,
+    YearMonth periodo,
+    String usuarioRegistrador
+) {
+    public RegistrarAporteCommand {
+        Objects.requireNonNull(codigoPensionista, "codigoPensionista requerido");
+        Objects.requireNonNull(monto, "monto requerido");
+        if (monto.compareTo(BigDecimal.ZERO) <= 0)
+            throw new IllegalArgumentException("monto debe ser positivo");
+    }
+}
+
+// El Controller construye el Command desde el DTO de entrada
+@RestController
+@RequiredArgsConstructor
+@RequestMapping("/api/v1/aportes")
+public class AporteController {
+
+    private final RegistrarAporteUseCase registrarAporte;
+
+    @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
+    public void registrar(@RequestBody @Valid RegistrarAporteRequest request,
+                          @AuthenticationPrincipal String usuario) {
+        registrarAporte.registrar(new RegistrarAporteCommand(
+            request.codigoPensionista(),
+            new BigDecimal(request.monto()),
+            YearMonth.of(request.anio(), request.mes()),
+            usuario
+        ));
+    }
+}
+```
+
+**Regla ONP:** los Commands son `record` de Java 21 — inmutables por construcción. La validación de negocio va en el constructor compacto del `record`, no en el Controller ni en el Application Service.
+
+#### 8.3.4 State (Ciclo de vida con transiciones controladas)
+
+**Propósito:** Permitir que un objeto altere su comportamiento cuando su estado interno cambia, delegando las transiciones válidas en el propio estado.  
+**Categoría:** Comportamiento (GoF).  
+**Cuándo usar en ONP:** Cuando un objeto de dominio tiene un ciclo de vida con estados bien definidos y reglas de transición estrictas. En ONP: `Expediente` (BORRADOR → EN_REVISION → APROBADO | RECHAZADO), `Pension` (CALCULADA → APROBADA → PAGADA | SUSPENDIDA).
+
+```java
+// Los estados encapsulan sus transiciones válidas — una transición inválida lanza excepción
+public enum EstadoExpediente {
+
+    BORRADOR {
+        @Override public EstadoExpediente presentar() { return EN_REVISION; }
+    },
+    EN_REVISION {
+        @Override public EstadoExpediente aprobar()  { return APROBADO; }
+        @Override public EstadoExpediente rechazar() { return RECHAZADO; }
+    },
+    APROBADO,
+    RECHAZADO;
+
+    public EstadoExpediente presentar() {
+        throw new IllegalStateException("Transición 'presentar' no válida desde: " + this);
+    }
+    public EstadoExpediente aprobar() {
+        throw new IllegalStateException("Transición 'aprobar' no válida desde: " + this);
+    }
+    public EstadoExpediente rechazar() {
+        throw new IllegalStateException("Transición 'rechazar' no válida desde: " + this);
+    }
+}
+
+// El Aggregate Root expone los métodos de transición — nunca se setea el estado directamente
+public class Expediente {
+
+    private EstadoExpediente estado = EstadoExpediente.BORRADOR;
+
+    public void presentar() {
+        this.estado = estado.presentar();
+        // emitir ExpedientePresentadoEvent
+    }
+
+    public void aprobar(String motivo) {
+        this.estado = estado.aprobar();
+        // emitir ExpedienteAprobadoEvent
+    }
+
+    public void rechazar(String motivo) {
+        this.estado = estado.rechazar();
+        // emitir ExpedienteRechazadoEvent
+    }
+}
+```
+
+**Regla ONP:** ningún servicio de aplicación ni repositorio asigna directamente el estado de un Aggregate Root (`expediente.setEstado(...)`). Toda transición ocurre a través de los métodos de negocio del propio agregado, que validan la transición y emiten el Domain Event correspondiente.
+
+---
+
+### 8.4 Capas y DDD
+
+Patrones de estructuración que no son GoF pero son fundamentales en la arquitectura en capas y el modelo de dominio de ONP.
+
+#### 8.4.1 Repository (Aislamiento de persistencia)
+
+**Propósito:** Aislar la lógica de dominio del mecanismo de persistencia.  
+**Categoría:** Patrón de acceso a datos (DDD / Fowler).  
+**Cuándo usar:** Siempre que se acceda a una base de datos desde la capa de aplicación.
+
+```java
+// Port (capa de dominio) — interfaz Java pura, sin imports de JPA
+public interface PensionistaRepository {
+    Optional<Pensionista> buscarPorDni(String dni);
+    Pensionista guardar(Pensionista pensionista);
+    List<Pensionista> buscarActivosPorRegimen(TipoRegimen regimen);
+}
+
+// Adapter (capa de infraestructura) — implementa el port con JPA
+@Repository
+@RequiredArgsConstructor
+public class PensionistaJpaRepository implements PensionistaRepository {
+
+    private final PensionistaJpaEntityRepository jpa;
+    private final PensionistaMapper mapper;
+
+    @Override
+    public Optional<Pensionista> buscarPorDni(String dni) {
+        return jpa.findByDni(dni).map(mapper::toDomain);
+    }
+
+    @Override
+    public Pensionista guardar(Pensionista pensionista) {
+        PensionistaEntity entity = mapper.toEntity(pensionista);
+        return mapper.toDomain(jpa.save(entity));
+    }
+}
+```
+
+#### 8.4.2 Mapper (Transformación entre capas)
+
+**Propósito:** Transformar objetos entre capas (DTO ↔ Domain ↔ Entity) sin mezclar responsabilidades.  
+**Categoría:** Patrón de capas (Translator).  
+**Cuándo usar:** Siempre que se transfieran datos entre capas.
+
+```java
+@Component
+public class PensionMapper {
+
+    public PensionResponseDto toDto(Pension pension) {
+        return new PensionResponseDto(
+            pension.getId(),
+            pension.getMonto().toPlainString(),
+            pension.getPeriodo().toString(),
+            pension.getEstado().name()
+        );
+    }
+
+    public Pension toDomain(RegistrarAporteCommand cmd) {
+        return new Pension(
+            null,
+            new Monto(new BigDecimal(cmd.monto())),
+            Periodo.of(cmd.anio(), cmd.mes()),
+            EstadoPension.BORRADOR
+        );
+    }
+
+    public PensionEntity toEntity(Pension pension) {
+        PensionEntity e = new PensionEntity();
+        e.setId(pension.getId());
+        e.setMonto(pension.getMonto().valor());
+        e.setPeriodo(pension.getPeriodo().toString());
+        e.setEstado(pension.getEstado().name());
+        return e;
+    }
+}
+```
+
+#### 8.4.3 Anti-Corruption Layer (ACL)
+
+**Propósito:** Aislar el dominio de ONP de los modelos de datos de sistemas externos. Evita que conceptos externos contaminen el modelo de dominio propio.  
+**Categoría:** Patrón DDD.  
+**Cuándo usar:** Obligatorio en integraciones con RENIEC, SUNAT, PIDE, PLAME y cualquier sistema externo del Estado.
+
+```java
+// El dominio ONP tiene su propio modelo
+public record DatosPersona(String dni, String nombres, String apellidos, LocalDate fechaNacimiento) {}
+
+// El sistema RENIEC retorna su propio modelo (no controlado por ONP)
+public class ReniecResponse {
+    public String numDni;
+    public String primerNombre;
+    public String segundoNombre;
+    public String apePaterno;
+    public String apeMaterno;
+    public String fecNacimiento; // formato "dd/MM/yyyy" — diferente al estándar ONP
+}
+
+// El mapper ES la Anti-Corruption Layer
+@Component
+public class ReniecResponseMapper {
+    private static final DateTimeFormatter FORMATO_RENIEC = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+
+    public DatosPersona toDomain(ReniecResponse response) {
+        String nombres = Stream.of(response.primerNombre, response.segundoNombre)
+            .filter(n -> n != null && !n.isBlank())
+            .collect(joining(" "));
+        String apellidos = response.apePaterno + " " + response.apeMaterno;
+        LocalDate fechaNacimiento = LocalDate.parse(response.fecNacimiento, FORMATO_RENIEC);
+        return new DatosPersona(response.numDni, nombres, apellidos, fechaNacimiento);
+    }
+}
+```
 
 ---
 
 ## 9. Estructura de proyecto
 
-ONP define tres estructuras de proyecto según el estilo arquitectónico del sistema. La elección sigue directamente del estilo declarado en 3 — no es libre.
+ONP define tres estructuras de proyecto según el estilo arquitectónico del sistema. La elección sigue directamente del estilo declarado en la sección [3](#3-estilos-y-patrones-de-arquitectura) — no es libre.
 
 | Estructura | Estilo | Cuándo usar |
 |---|---|---|
@@ -2040,7 +2429,7 @@ onp-modulo/
 
 > **Regla:** `domain/` es Java puro — cero imports de `jakarta.*` o `org.springframework.*`. `application/` puede usar anotaciones Spring en los services (`@Service`, `@Transactional`). Todo lo demás de infraestructura vive en `infrastructure/`.
 
-> Para la estructura concreta de paquetes, convenciones de nomenclatura y configuración Maven de cada estilo, ver **LIN-DEV-JAVA-001 §12**.
+> Para la estructura concreta de paquetes, convenciones de nomenclatura y configuración Maven de cada estilo, ver **LIN-DEV-JAVA-001 sección 12**.
 
 ---
 
@@ -2050,8 +2439,8 @@ onp-modulo/
 
 La distribución de la pirámide de pruebas la determina el **estilo arquitectónico** — no la estrategia de lógica de dominio. Son dos dimensiones distintas:
 
-- **Estilo arquitectónico** (3): define cómo está estructurado el sistema → determina la proporción de la pirámide
-- **Estrategia de lógica de dominio** (6): define cómo se organiza la lógica de negocio → afecta el foco y complejidad de las pruebas unitarias, no la proporción general
+- **Estilo arquitectónico** ([3](#3-estilos-y-patrones-de-arquitectura)): define cómo está estructurado el sistema → determina la proporción de la pirámide
+- **Estrategia de lógica de dominio** ([6](#6-estrategias-para-organizar-la-lógica-de-negocio)): define cómo se organiza la lógica de negocio → afecta el foco y complejidad de las pruebas unitarias, no la proporción general
 
 ```
                       ╱╲
@@ -2073,15 +2462,17 @@ La distribución de la pirámide de pruebas la determina el **estilo arquitectó
 | Monolito Modular | 55% | 35% | 10% | 75% líneas |
 | Hexagonal (candidato a MS) | 70% | 25% | 5% | 80% líneas |
 | Microservicio | 60% | 30% | 10% | 80% líneas |
+| EDA (consumidor Kafka) | 50% | 45% | 5% | 75% líneas |
 
 **Efecto de la estrategia de dominio sobre las pruebas unitarias:**
 
-| Estrategia de dominio (6) | Efecto en pruebas unitarias |
+| Estrategia de dominio ([6](#6-estrategias-para-organizar-la-lógica-de-negocio)) | Efecto en pruebas unitarias |
 |---|---|
 | Transaction Script | Unitarias sobre el Service — requieren mocks de repositorios |
 | Active Record | Unitarias sobre la entidad — lógica en el modelo, fáciles de aislar |
 | Table Module | Unitarias sobre el módulo con colecciones en memoria |
-| DDD | Unitarias sobre agregados y value objects — sin Spring, sin mocks de infra; cobertura mínima sube a 85% porque el dominio rico es testeable de forma pura |
+| DDD — Value Object | Pruebas sobre `record` Java puro — sin Spring, sin mocks; validan invariantes del constructor compacto |
+| DDD — Aggregate Root | Pruebas sobre el agregado completo — sin Spring, sin mocks de infra; verifican transiciones de estado y eventos de dominio emitidos |
 
 > Los porcentajes detallados, herramientas obligatorias, naming conventions y gates de CI/CD se definen en **LIN-TEST-001 — Estándar de Pruebas ONP**.
 
@@ -2114,9 +2505,9 @@ SISTEMA LEGACY                         SISTEMA NUEVO
 │  JBoss / WebLogic │                          │
 │  (sin cambio)     │                          │
 └────────┬──────────┘                          │
-         │  Strangler Fig                       │
-         │  (migracion gradual)                 │
-         ▼                                      │
+         │  Strangler Fig                      │
+         │  (migracion gradual)                │
+         ▼                                     │
 ┌───────────────────┐                          │  Solo si existe
 │   TRANSICION      │                          │  restriccion
 │  Docker +         │◄─────────────────────────┤  documentada
@@ -2126,16 +2517,16 @@ SISTEMA LEGACY                         SISTEMA NUEVO
          │  infraestructura K8s                │
          │  esta disponible                    │
          ▼                                     ▼
-┌─────────────────────────────────────────────────┐
+┌──────────────────────────────────────────────────┐
 │                    TARGET                        │
 │                    K8s                           │
 │   (destino de todo sistema nuevo y migrado)      │
-└─────────────────────────────────────────────────┘
+└──────────────────────────────────────────────────┘
 ```
 
 **Reglas ONP:**
 - **Sistema nuevo → K8s directamente.** No pasa por Transición salvo que exista una restricción técnica o de infraestructura documentada en un ADR.
-- **Sistema legacy → Transición primero, luego K8s.** La migración usa Strangler Fig (ver 2.2). No se salta la etapa de contenedores: es donde se valida que la aplicación funciona correctamente en Docker antes de orquestarla en K8s.
+- **Sistema legacy → Transición primero, luego K8s.** La migración usa Strangler Fig (ver [2.2](#22-patrón-de-migración-strangler-fig-y-feature-toggles)). No se salta la etapa de contenedores: es donde se valida que la aplicación funciona correctamente en Docker antes de orquestarla en K8s.
 - **Transición no es un destino final** — es una etapa temporal de migración.
 
 | Contexto | Descripción | Runtime | Backend | Frontend SPA |
@@ -2294,7 +2685,7 @@ Independientemente del estilo, todo proveedor o profesional contratado debe demo
 | ADR-010 | Observabilidad (trazas, logs estructurados, métricas, health checks) es requisito obligatorio de producción; ningún sistema se despliega sin los cuatro pilares | 2026-05-21 | Aceptada |
 | ADR-011 | K8s es el destino por defecto; el uso de VM requiere criterio documentado en ADR | 2026-05-21 | Aceptada |
 | ADR-012 | LIN-BUS-001 formaliza y reemplaza la regla transitoria de mensajería; Apache Kafka es el broker institucional aprobado; toda adopción de EDA debe cumplir LIN-BUS-001 | 2026-06-05 | Aceptada |
-| ADR-013 | CloudEvents v1.0 (CNCF) como estándar institucional de envelope para todos los eventos del bus; habilita interoperabilidad con instituciones del Estado y ecosistema cloud-native | 2026-06-08 | Aceptada |
+| ADR-013 | CloudEvents v1.0 (CNCF) como estándar institucional de estructura para todos los eventos del bus; habilita interoperabilidad con instituciones del Estado y ecosistema cloud-native | 2026-06-08 | Aceptada |
 | ADR-014 | Feature Toggle (PA14) con Unleash (self-hosted) como plataforma estándar on-premise para Trunk-Based Development; LaunchDarkly y otros SaaS requieren ADR adicional aprobado por Arquitectura OTI + Seguridad | 2026-07-02 | Aceptada |
 
 ---
