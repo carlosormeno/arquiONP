@@ -313,7 +313,7 @@ Pendientes adicionales de alta prioridad (no están en el lineamiento oficial pe
 
 Tras cerrar los bloques tácticos de DDD (`PD01` Agregados, `PD02` Entidades y Value Objects en §6.4.1) y consolidar `LIN-ARQ-000` al 100% como superconjunto de los 12 patrones oficiales, se define la siguiente secuencia ejecutiva de cierre de brechas antes de descender al código de Nivel 3:
 
-#### Fase 1: Cierre de Brechas Restantes en Nivel 2 (`LIN-ARQ-000`) — ✅ COMPLETADA Y AUDITADA (v0.1.16)
+#### Fase 1: Cierre de Brechas Restantes en Nivel 2 (`LIN-ARQ-000`) — ✅ COMPLETADA Y AUDITADA (v0.1.17)
 1. **`PD10` (Published Language — Contratos de eventos + CloudEvents):** ✅ **CUBIERTO en LIN-ARQ-000 §3.9.3**. Se normó el contrato público exterior entre Bounded Contexts vía CloudEvents v1.0 (asíncrono sobre Kafka) y OpenAPI 3.0 (síncrono REST), prohibiendo exponer el modelo interno (`domain.model.*`).
 2. **`PA14` (Feature Toggle — Complemento de Strangler Fig):** ✅ **CUBIERTO en LIN-ARQ-000 §2.2.1**. Se normaron los 4 tipos de toggles (*Release*, *Ops*, *Experiment*, *Permission*), el mandato de Deuda Técnica Cero para borrarlos tras liberar la migración y la integración con *Branch by Abstraction*. Se oficializó Unleash / Spring Cloud Config como estándar on-premise.
 3. **`E07` (SOA — Interoperabilidad Gubernamental: PIDE, RENIEC, SUNAT):** ✅ **CUBIERTO en LIN-ARQ-000 §3.8.4**. Se normó el modelo G2G/B2G para consumo del Estado, delegando los umbrales a la Matriz de Timeouts (§3.7.1) y exigiendo aislamiento por Anti-Corruption Layer (`PT11`) y resiliencia en WSO2.
@@ -349,3 +349,4 @@ Tras cerrar los bloques tácticos de DDD (`PD01` Agregados, `PD02` Entidades y V
 | 2026-07-02 | §5 actualizado — se marca como cubierto el Paso 2 de la Fase 1 (`PA14` Feature Toggle) tras normarse sus 4 variantes, mandato de deuda técnica cero y Branch by Abstraction en LIN-ARQ-000 §2.2.1 |
 | 2026-07-02 | §5 actualizado — se marca como cubierto el Paso 3 de la Fase 1 (`E07` SOA Gubernamental) tras normarse en LIN-ARQ-000 §3.8.4 con resiliencia extrema y ACL obligatorios |
 | 2026-07-02 | §5 actualizado — se registra el cierre definitivo y auditoría de congruencia interna al 100% de la **Fase 1 (`LIN-ARQ-000 v0.1.16`)** y el inicio formal de la **Fase 2 (`LIN-DEV-JAVA-001`)** |
+| 2026-07-03 | LIN-ARQ-000 bumpeado a v0.1.17 — revisión estructural: §8 restructurado en 4 grupos GoF con 5 patrones nuevos (Strategy, Observer, Command, State, Decorator); PRA09 declarado formalmente en §3.11; §5 numerado (5.1–5.4); §10.1 actualizado con EDA y DDD desglosado |
