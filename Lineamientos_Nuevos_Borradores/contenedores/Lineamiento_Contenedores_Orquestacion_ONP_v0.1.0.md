@@ -1,9 +1,9 @@
 # LIN-K8S-001 — Lineamiento de Contenedores y Orquestación ONP
 
 **Código:** LIN-K8S-001  
-**Versión:** v0.1.1  
+**Versión:** v0.1.3  
 **Estado:** Borrador  
-**Fecha:** 2026-05-26  
+**Fecha:** 2026-07-06  
 **Propietario documental:** Arquitectura de Software — OTI  
 **Revisores sugeridos:** Plataforma/Infraestructura, Seguridad Digital, Desarrollo, Arquitectura  
 **Marco rector:** LIN-ARQ-000 — Marco Rector de Diseño y Arquitectura de Software  
@@ -17,6 +17,8 @@
 |---|---|---|---|
 | v0.1.0 | 2026-05-26 | Arquitectura OTI | Borrador inicial del lineamiento de contenedores y orquestación |
 | v0.1.1 | 2026-05-28 | Arquitectura OTI | Normaliza el lenguaje de despliegue hacia plan de reversa y elimina ambigüedad con rollback de base de datos |
+| v0.1.2 | 2026-07-06 | Arquitectura OTI | Incorpora sección 4.3 (Runtime de contenedores: containerd/crictl) para reconciliar con LIN-ARQ-000 §11.1 y ADR-009, que ya establecían containerd como runtime de producción sin que este lineamiento lo reflejara operativamente. Añade términos al glosario. |
+| v0.1.3 | 2026-07-06 | Arquitectura OTI | Incorpora sección 4.4 (Convención de nombres de namespace: `<sistema>-<componente>`, sin sufijo de ambiente, confirmado un clúster K8s por ambiente). Cierra el vacío señalado en `Matriz_Propiedad_Documental` donde este lineamiento figuraba como dueño de la política de namespaces sin haberla definido. Señala como pendiente de verificación con Plataforma la posible inconsistencia de sufijos de ambiente en namespaces de infraestructura compartida (`otel-{env}` en LIN-OBS-001, `kafka-{env}` en LIN-BUS-001) |
 
 ---
 
@@ -179,6 +181,54 @@ Aplica a:
 Leyenda: **R** responsable, **A** aprueba, **C** consulta.
 
 > Para proyectos que siguen el lineamiento estándar, Plataforma valida el Dockerfile y los manifiestos antes del despliegue. Arquitectura interviene como aprobador únicamente en revisiones de excepción (ADR) o en la primera adopción de un tipo de workload no contemplado previamente.
+
+### 4.3 Runtime de contenedores en el clúster ONP
+
+El clúster de Kubernetes de la ONP usa **containerd** como container runtime de producción — no Docker Engine. Esta decisión ya está sancionada en `LIN-ARQ-000 §11.1` (ADR-009) y se reproduce aquí porque afecta directamente cómo Desarrollo y Plataforma operan e inspeccionan contenedores.
+
+| Aspecto | Regla |
+|---|---|
+| Runtime en DEV local | Docker Engine (o Podman) — libre elección del desarrollador |
+| Runtime en Transición | Docker Engine + Docker Compose (ver LIN-ARQ-000 §11.1) — etapa temporal, no es destino final |
+| Runtime en QA y PROD (clúster K8s) | **containerd** — único runtime soportado por Plataforma |
+| Construcción de imágenes | El `Dockerfile` sigue siendo el estándar de construcción en todos los casos (ver sección 5). Produce imágenes OCI estándar, compatibles con containerd sin cambios |
+| Inspección de contenedores en nodos QA/PROD | `crictl`, no `docker`. El comando `docker` no existe ni aplica en los nodos del clúster |
+
+> **Qué NO cambia para Desarrollo:** el Dockerfile, el proceso de build local con Docker y las pruebas de la imagen en el equipo del desarrollador siguen siendo iguales. La diferencia de runtime es puramente operativa, del lado de Plataforma, y ocurre únicamente en los nodos del clúster — no afecta cómo se construye ni cómo se prueba una imagen antes de subirla al registro.
+
+> **Anti-patrón:** documentar procedimientos de troubleshooting o runbooks que asuman `docker exec`, `docker logs` o `docker ps` contra un nodo de QA/PROD. En esos ambientes el equivalente es `crictl exec`, `crictl logs`, `crictl ps` (o `kubectl exec`/`kubectl logs` a nivel de pod, que es la vía preferente para Desarrollo).
+
+### 4.4 Convención de nombres de namespace
+
+ONP opera **un clúster Kubernetes independiente por ambiente** (DEV, QA, PROD). El ambiente **nunca** forma parte del nombre del namespace de aplicación — ya está implícito en a qué clúster pertenece.
+
+**Estructura:**
+
+```text
+<sistema>-<componente>
+```
+
+| Elemento | Fuente del valor | Ejemplo |
+|---|---|---|
+| `<sistema>` | Mismo nombre de sistema usado en la ruta del registro de imágenes (§6.2) y en la etiqueta `app.kubernetes.io/part-of` (§9.3) | `past`, `notificacion_electronica` |
+| `<componente>` | Mismo vocabulario del tipo de workload (§4.1) y de la etiqueta `app.kubernetes.io/component` (§9.3) | `backend`, `frontend`, `worker`, `job` |
+
+Ejemplos:
+
+```text
+past-backend
+past-frontend
+notificacion_electronica-backend
+notificacion_electronica-worker
+```
+
+**Reglas:**
+
+- Un namespace agrupa todos los recursos desplegables de un mismo `<sistema>` + `<componente>` dentro de un ambiente — no se crea un namespace nuevo por cada `Deployment` individual.
+- La creación, cuotas (`ResourceQuota`/`LimitRange`) y políticas del namespace son responsabilidad de Plataforma (ver RACI en §4.2). Desarrollo **declara** el namespace en sus manifiestos versionados (Kustomize/Helm, ver Anexo A) pero no lo crea ni administra directamente en el clúster.
+- Todo namespace debe quedar documentado en la ficha de despliegue del sistema (ver sección 16).
+
+> **Inconsistencia detectada, pendiente de verificar con Plataforma:** los namespaces de infraestructura compartida ya documentados en `LIN-OBS-001` (`otel-dev`, `otel-qa`, `otel`) y `LIN-BUS-001` (`kafka-dev`, `kafka-qa`, `kafka`) sí llevan sufijo de ambiente. Si cada ambiente es un clúster independiente, ese sufijo sería redundante — salvo que esos componentes de plataforma vivan en un clúster compartido distinto al de las aplicaciones de negocio. Este lineamiento no asume una respuesta; se recomienda que Arquitectura confirme con Plataforma si esos dos documentos deben corregirse para alinearse a la convención sin sufijo, o si existe en efecto un clúster de plataforma compartido que justifica la excepción.
 
 ---
 
@@ -1013,6 +1063,8 @@ Toda desviación relevante requiere ADR aprobado por Arquitectura. Si afecta seg
 | Contenedor | Unidad ejecutable que empaqueta aplicación y dependencias necesarias |
 | Imagen | Plantilla inmutable desde la cual se crean contenedores |
 | Registry | Repositorio de imágenes de contenedor |
+| containerd | Container runtime de bajo nivel usado por el clúster Kubernetes de la ONP en QA y PROD (ver 4.3). No requiere Docker Engine para ejecutar contenedores |
+| crictl | Herramienta de línea de comandos para inspeccionar contenedores gestionados por containerd en los nodos del clúster — reemplaza a `docker` en QA/PROD (ver 4.3) |
 | Pod | Unidad mínima desplegable en Kubernetes |
 | Deployment | Recurso Kubernetes que gestiona réplicas de pods |
 | Service | Recurso Kubernetes que expone pods dentro del clúster |

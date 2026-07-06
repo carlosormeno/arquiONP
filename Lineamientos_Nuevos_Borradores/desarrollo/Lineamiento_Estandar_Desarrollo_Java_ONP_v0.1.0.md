@@ -1,6 +1,6 @@
 # LIN-DEV-JAVA-001 — Estándar de Desarrollo Java ONP
 ## Oficina de Normalización Previsional — OTI
-### Código: LIN-DEV-JAVA-001 | Versión 0.1.1 | Estado: Borrador | Marco rector: LIN-ARQ-000
+### Código: LIN-DEV-JAVA-001 | Versión 0.1.2 | Estado: Borrador | Marco rector: LIN-ARQ-000
 
 ---
 
@@ -10,6 +10,7 @@
 |---------|-------|-------|-------------|
 | 0.1.0 | 2026-05-22 | OTI | Versión inicial |
 | 0.1.1 | 2026-05-28 | OTI | Alinea la configuración institucional a YAML, corrige el árbol de proyecto y adopta Checkstyle junto a PMD |
+| 0.1.2 | 2026-07-06 | OTI | Cierre de brechas Nivel 3 (PR01-PR08, PD04-PD06, PA14): Inclusión de secciones 10.4, 11.5, 14.6, catálogo de plantillas Java y reconciliación total con LIN-ARQ-000 y LIN-BD-ORA-001 |
 
 ---
 
@@ -77,9 +78,12 @@ Al iniciar un proyecto Spring Boot en ONP, configurar los siguientes componentes
 
 ### 1.4 Relación con otros documentos
 
+> **Importante:** **Supremacía Jerárquica del Marco Rector (LIN-ARQ-000):**  
+> `LIN-ARQ-000` es el **documento rector de jerarquía superior (Nivel 2)** que rige de manera absoluta sobre todos los estándares y lineamientos técnicos específicos de **Nivel 3** (incluyendo el presente documento, `LIN-API-REST-001`, `LIN-BD-ORA-001`, `LIN-OBS-001`, etc.). Este estándar implementa de forma táctica y operativa en Java 21 / Spring Boot 3 los principios arquitectónicos (PR01–PR08), patrones de diseño (PD04–PD06) y lineamientos de contención de deuda técnica (PA14) definidos en `LIN-ARQ-000`. **Ante cualquier vacío, conflicto o presunta discrepancia de interpretación entre este documento y el marco rector, prevalecerán siempre y en todo momento los mandatos, patrones y directivas de LIN-ARQ-000.**
+
 | Documento | Relación |
 |-----------|----------|
-| LIN-ARQ-000 — Marco Rector de Diseño y Arquitectura de Software | Marco arquitectónico que este estándar implementa |
+| **LIN-ARQ-000 — Marco Rector de Diseño y Arquitectura de Software** | **Documento Rector (Nivel 2) de supremacía jerárquica.** Rige y fundamenta todos los mandatos arquitectónicos de este estándar. |
 | LIN-API-REST-001 — Estándar de APIs REST | Complementa [sección 11.4](#114-api-rest-y-documentacion-openapi): convenciones REST detalladas |
 | LIN-BD-ORA-001 — Estándar de Base de Datos Oracle | Complementa [sección 11.3](#113-transacciones): convenciones de persistencia |
 | LIN-OBS-001 — Log, Trazabilidad y Observabilidad | Complementa sección 8: logging estructurado avanzado |
@@ -280,9 +284,12 @@ public class DatabaseHealthIndicator { ... }
 | Tipo | Sufijo | Ejemplo completo |
 |------|--------|-----------------|
 | Controlador REST | `Controller` | `ExpedienteController` |
-| Interfaz de servicio | `Service` | `ExpedienteService` |
-| Implementación de servicio | `ServiceImpl` | `ExpedienteServiceImpl` |
-| Repositorio JPA | `Repository` | `ExpedienteRepository` |
+| Interfaz de servicio (Application Service) | `Service` | `ExpedienteService`, `SolicitudPensionService` |
+| Implementación de servicio (Application Service) | `ServiceImpl` | `ExpedienteServiceImpl`, `SolicitudPensionServiceImpl` |
+| Servicio de dominio puro (POJO) | `DomainService` | `CalculoPensionVitaliciaDomainService` |
+| Puerto de repositorio (Dominio) | `Repository` | `ExpedienteRepository`, `AportanteRepository` |
+| Adaptador de repositorio JPA (Infra) | `JpaRepository` | `ExpedienteJpaRepository` |
+| Adaptador de repositorio JDBC/Oracle (Infra) | `JdbcRepository` / `OracleRepository` | `AportanteJdbcRepository` |
 | Entidad de dominio | *(sin sufijo)* | `Expediente`, `Pensionista` |
 | DTO de entrada (request) | `Request` | `CrearExpedienteRequest` |
 | DTO de salida (response) | `Response` | `ExpedienteResponse` |
@@ -1351,6 +1358,146 @@ El archivo `onp-pmd-ruleset.xml` debe estar en la raíz de cada repositorio. Con
 </ruleset>
 ```
 
+### 10.4 Principios de Diseño (SOLID, DRY, KISS, YAGNI)
+
+Todo desarrollo en Java 21 y Spring Boot 3 dentro de la ONP debe regirse estrictamente por los principios fundamentales de ingeniería de software. Estos principios orientan la toma de decisiones técnicas para garantizar que el código sea mantenible, testeable y resistente a la degradación arquitectónica en el largo plazo.
+
+#### 10.4.1 Principios SOLID en el Ecosistema ONP
+
+| Principio | Aplicación Práctica en Spring Boot 3 / Java 21 | Anti-patrón Prohibido |
+|---|---|---|
+| **S — Single Responsibility (SRP)** | Una clase debe tener una única razón para cambiar. Los servicios de aplicación orquestan; los servicios de dominio calculan y aplican reglas de negocio; los repositorios acceden a datos. | *God Objects* o servicios monolíticos (ej. `PensionService` con > 1000 líneas que valida HTTP, calcula rentas, llama a PL/SQL y formatea correos). |
+| **O — Open/Closed (OCP)** | Abierto a extensión, cerrado a modificación. Usar polimorfismo, interfaces y el patrón Estrategia inyectado por Spring (`@Service`, `List<CalculadorPensionStrategy>`). | Sentencias `switch` o `if-else` en cadena que crecen infinitamente cada vez que aparece una nueva modalidad o régimen previsional. |
+| **L — Liskov Substitution (LSP)** | Las clases derivadas o implementaciones de una interfaz deben poder sustituir a su abstracción sin alterar la corrección del programa ni lanzar excepciones inesperadas. | Implementaciones que lanzan `UnsupportedOperationException` en métodos de la interfaz o violan los contratos de retorno esperados. |
+| **I — Interface Segregation (ISP)** | Es preferible tener múltiples interfaces específicas orientadas al cliente (o caso de uso) que una única interfaz de propósito general. | Interfaces gigantes (`IAdministracionSistema`) que obligan a los clientes a implementar métodos que no necesitan o no utilizan. |
+| **D — Dependency Inversion (DIP)** | Los módulos de alto nivel (Dominio) no deben depender de los de bajo nivel (Infraestructura/JPA/REST); ambos deben depender de abstracciones (Puertos/Interfaces). | Importar clases de infraestructura (ej. `AportanteJpaEntity`, `WSO2Client`) directamente en las entidades o servicios de la capa de dominio puro. |
+
+##### Ejemplos de Implementación SOLID (OCP y DIP en Spring Boot 3)
+
+**INCORRECTO (Violación de OCP y DIP - Acoplamiento a implementaciones y condicionales infinitos):**
+```java
+@Service
+public class CalculadoraPensionService {
+    // Violación DIP: depende directamente del adaptador de persistencia JPA de infraestructura
+    @Autowired
+    private AportanteJpaRepository aportanteRepo;
+
+    public BigDecimal calcular(String dni, String regimen) {
+        AportanteJpaEntity aportante = aportanteRepo.buscarPorDni(dni);
+        // Violación OCP: cada nuevo régimen obliga a modificar este método
+        if ("DL_19990".equals(regimen)) {
+            return aportante.getSueldoPromedio().multiply(new BigDecimal("0.50"));
+        } else if ("DL_20530".equals(regimen)) {
+            return aportante.getSueldoPromedio().multiply(new BigDecimal("0.80"));
+        } else if ("RENTA_VITALICIA".equals(regimen)) {
+            return aportante.getSueldoPromedio().multiply(new BigDecimal("0.65"));
+        }
+        throw new IllegalArgumentException("Régimen no soportado");
+    }
+}
+```
+
+**CORRECTO (Cumplimiento de OCP y DIP - Inyección de abstracciones y patrón Estrategia):**
+```java
+// Abstracción en el Dominio (Puerto)
+public interface CalculadorRegimenStrategy {
+    boolean soporta(String regimen);
+    BigDecimal calcularPension(Aportante aportante);
+}
+
+@Service
+public class CalculadoraPensionService {
+    // Cumplimiento DIP: depende del puerto del repositorio en dominio
+    private final AportanteRepository aportanteRepository;
+    // Cumplimiento OCP: Spring inyecta todas las estrategias implementadas
+    private final List<CalculadorRegimenStrategy> estrategias;
+
+    public CalculadoraPensionService(AportanteRepository aportanteRepository,
+                                   List<CalculadorRegimenStrategy> estrategias) {
+        this.aportanteRepository = aportanteRepository;
+        this.estrategias = estrategias;
+    }
+
+    public BigDecimal calcular(String dni, String regimen) {
+        Aportante aportante = aportanteRepository.obtenerPorDni(dni)
+            .orElseThrow(() -> new DomainException("Aportante no encontrado: " + dni));
+            
+        return estrategias.stream()
+            .filter(e -> e.soporta(regimen))
+            .findFirst()
+            .orElseThrow(() -> new DomainException("Régimen previsional no soportado: " + regimen))
+            .calcularPension(aportante);
+    }
+}
+```
+
+#### 10.4.2 DRY (Don't Repeat Yourself) — Reutilización Responsable
+
+El principio DRY establece que toda pieza de conocimiento o lógica de negocio debe tener una representación única y autoritativa en el sistema.
+- **Aplicación correcta:** Centralizar validaciones previsionales, algoritmos actuariales y transformaciones de datos en servicios de dominio o librerías institucionales aprobadas (`core-common`).
+- **Límite arquitectónico (Prevención de Acoplamiento):** DRY se aplica a la *duplicación de conocimiento de negocio*, no necesariamente a la coincidencia accidental de código. Se prohíbe acoplar dos microservicios o módulos de dominio independientes compartiendo modelos de base de datos o clases internas únicamente por evitar duplicar 50 líneas de código (lo que generaría un monolito distribuido).
+
+**INCORRECTO (Duplicación de regla de negocio previsional en múltiples controladores):**
+```java
+// En AfiliacionController.java
+if (aportes < 240 || edad < 65) {
+    throw new ValidacionException("No cumple requisitos mínimos de jubilación");
+}
+// En SolicitudPensionController.java (se repite la misma lógica mágica)
+if (aportes < 240 || edad < 65) {
+    throw new ValidacionException("No cumple requisitos mínimos de jubilación");
+}
+```
+
+**CORRECTO (Conocimiento centralizado en el Dominio):**
+```java
+// En ReglasJubilacionDomainService.java (Dominio puro)
+public void validarRequisitosJubilacion(int mesesAporte, int edadAños) {
+    if (mesesAporte < MESES_MINIMOS_LEY || edadAños < EDAD_MINIMA_LEY) {
+        throw new RequisitosJubilacionNoCumplidosException(mesesAporte, edadAños);
+    }
+}
+```
+
+#### 10.4.3 KISS (Keep It Simple, Stupid) — Simplicidad y Legibilidad
+
+La simplicidad es un objetivo arquitectónico de primer nivel. El código debe ser directo, legible y fácil de entender para cualquier desarrollador que se incorpore al equipo.
+- Aprovechar las características nativas de Java 21: preferir `Records` para DTOs inmutables, `Pattern Matching` y `Sealed Classes` en lugar de jerarquías complejas de herencia.
+- Prohibido el "sobre-ingeniería" (over-engineering): evitar el uso innecesario de genéricos altamente complejos, metaprogramación excesiva, reflexión o patrones de diseño estéticos donde una función simple y clara resuelve el problema.
+
+**INCORRECTO (Sobre-ingeniería y clases verbosas para transporte de datos simples):**
+```java
+public class AportanteResumenDto {
+    private String dni;
+    private String nombreCompleto;
+    private BigDecimal totalAportes;
+
+    public AportanteResumenDto() {}
+    public String getDni() { return dni; }
+    public void setDni(String dni) { this.dni = dni; }
+    public String getNombreCompleto() { return nombreCompleto; }
+    public void setNombreCompleto(String nombreCompleto) { this.nombreCompleto = nombreCompleto; }
+    public BigDecimal getTotalAportes() { return totalAportes; }
+    public void setTotalAportes(BigDecimal totalAportes) { this.totalAportes = totalAportes; }
+    // + equals, hashCode, toString... (50 líneas de boilerplate)
+}
+```
+
+**CORRECTO (Uso de Records nativos de Java 21):**
+```java
+public record AportanteResumenDto(
+    String dni,
+    String nombreCompleto,
+    BigDecimal totalAportes
+) {}
+```
+
+#### 10.4.4 YAGNI (You Aren't Gonna Need It) — Cero Esfuerzo Especulativo
+
+No se debe escribir código, interfaces ni abstracciones basándose en suposiciones de necesidades futuras no confirmadas en el alcance actual del requerimiento o ticket funcional.
+- **Regla estricta:** Si una abstracción o interfaz tiene una única implementación y no existe evidencia arquitectónica ni requerimiento formal de múltiples implementaciones futuras, se debe implementar de forma directa (o con una interfaz simple sin capas de indirección vacías).
+- Toda funcionalidad especulativa o "por si acaso" es considerada deuda técnica prematura y será rechazada en la revisión de Pull Request.
+
 ---
 
 ## sección 11 Convenciones Spring Boot
@@ -1894,6 +2041,174 @@ public class AsyncMdcConfig {
                 }
             };
         };
+    }
+}
+```
+
+### 11.5 Patrones Tácticos de Dominio (Repository, Domain Service, Application Service)
+
+En coherencia con los estilos arquitectónicos de Monolito Modular y Arquitectura Hexagonal / Limpia promovidos por **LIN-ARQ-000**, el diseño interno de los componentes en Spring Boot 3 debe segregar claramente las responsabilidades en tres patrones tácticos fundamentales.
+
+#### 11.5.1 Application Service (Servicios de Aplicación / Orquestadores)
+
+Los servicios de aplicación son el punto de entrada transaccional para los casos de uso del sistema. Su rol es coordinar la ejecución del flujo, delegar las decisiones al dominio y conectar con la infraestructura, sin contener reglas de negocio puras.
+
+- **Ubicación en el paquete:** `pe.gob.onp.<sistema>.<modulo>.application.service`
+- **Responsabilidades:**
+  - Gestionar el límite transaccional (uso de `@Transactional` de Spring).
+  - Coordinar la autenticación, autorización y validación de permisos de usuario (en integración con SAA).
+  - Iniciar o continuar spans de observabilidad (`@NewSpan` según **LIN-OBS-001**).
+  - Invocar repositorios para cargar entidades del dominio, invocar a los servicios de dominio para aplicar las reglas de negocio, y guardar los cambios.
+  - Publicar eventos de integración o de dominio (ej. vía Spring ApplicationEventPublisher o CloudEvents / Kafka según **LIN-BUS-001**).
+- **Prohibiciones:** No deben ejecutar cálculos previsionales, condicionales complejos de negocio ni consultas SQL directas.
+- **Nomenclatura (Sección 4.2):** En la convención de nombres de la ONP, el rol arquitectónico de "Application Service" corresponde directamente a la interfaz con sufijo `Service` (ej. `SolicitudPensionService`) y su implementación con sufijo `ServiceImpl` (ej. `SolicitudPensionServiceImpl`), o directamente como clase `Service` en estilos modulares.
+
+> **Referencia Institucional:** Ver plantillas completas en [SolicitudPensionService.java](file:///home/carlos/Documentos/Telemetria-traza-swagger/Lineamientos_Nuevos_Borradores/desarrollo/plantillas/SolicitudPensionService.java) e [SolicitudPensionServiceImpl.java](file:///home/carlos/Documentos/Telemetria-traza-swagger/Lineamientos_Nuevos_Borradores/desarrollo/plantillas/SolicitudPensionServiceImpl.java).
+
+**Ejemplo de Orquestación Transaccional y Observabilidad en Application Service:**
+```java
+// pe.gob.onp.pensiones.solicitud.application.service.SolicitudPensionServiceImpl
+@Service
+public class SolicitudPensionServiceImpl implements SolicitudPensionService {
+
+    private final AportanteRepository aportanteRepository;
+    private final CalculoPensionVitaliciaDomainService calculoDomainService;
+    private final ApplicationEventPublisher eventPublisher;
+
+    public SolicitudPensionServiceImpl(AportanteRepository aportanteRepository,
+                                     CalculoPensionVitaliciaDomainService calculoDomainService,
+                                     ApplicationEventPublisher eventPublisher) {
+        this.aportanteRepository = aportanteRepository;
+        this.calculoDomainService = calculoDomainService;
+        this.eventPublisher = eventPublisher;
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    @NewSpan("solicitud-pension-registrar")
+    public SolicitudPensionResponse registrarSolicitud(@SpanTag("dni") String dni, int añosAporte) {
+        // 1. Carga de entidad vía puerto del repositorio en dominio
+        Aportante aportante = aportanteRepository.obtenerPorDni(dni)
+            .orElseThrow(() -> new AportanteNoEncontradoException(dni));
+
+        // 2. Delegación de lógica previsional al servicio de dominio puro (POJO)
+        BigDecimal montoCalculado = calculoDomainService.calcularMontoVitalicio(aportante, añosAporte);
+        aportante.asignarPensionVitalicia(montoCalculado);
+
+        // 3. Persistencia de cambios
+        aportanteRepository.guardar(aportante);
+
+        // 4. Publicación de evento de dominio (LIN-BUS-001)
+        eventPublisher.publishEvent(new SolicitudPensionRegistradaEvent(aportante.getId(), montoCalculado));
+
+        return new SolicitudPensionResponse(aportante.getId(), montoCalculado, "REGISTRADA");
+    }
+}
+```
+
+#### 11.5.2 Domain Service (Servicios de Dominio) — Pureza Hexagonal y Registro DI
+
+Los servicios de dominio encapsulan la lógica de negocio pura, reglas previsionales, cálculos actuariales o invariantes que no pertenecen de forma natural a una sola entidad o que requieren coordinar múltiples agregados del dominio.
+
+- **Ubicación en el paquete:** `pe.gob.onp.<sistema>.<modulo>.domain.service`
+- **Pureza del Dominio (Mandatorio):** Un servicio de dominio **debe ser una clase Java pura (POJO)**. Queda estrictamente prohibido incluir en esta capa anotaciones de infraestructura de Spring (`@Service`, `@Component`, `@Transactional`, `@Autowired`, `@Value`), anotaciones de persistencia JPA (`@Entity`, `@Table`) o dependencias de librerías de transporte/serialización (Jackson, OpenAPI, WSO2, clientes SOAP).
+- **Estandarización de Registro en Spring Boot (`@Configuration` / `@Bean`):** Para preservar la pureza hexagonal sin renunciar a la gestión del ciclo de vida y la inyección de dependencias del contenedor de Spring, los servicios de dominio se registrarán obligatoriamente mediante clases de configuración (`@Configuration`) en la capa de aplicación o infraestructura del módulo.
+
+> **Referencia Institucional:** Ver plantilla completa en [CalculoPensionVitaliciaDomainService.java](file:///home/carlos/Documentos/Telemetria-traza-swagger/Lineamientos_Nuevos_Borradores/desarrollo/plantillas/CalculoPensionVitaliciaDomainService.java).
+
+**Ejemplo de Servicio de Dominio Puro (POJO sin anotaciones Spring):**
+```java
+// pe.gob.onp.pensiones.calculo.domain.service.CalculoPensionVitaliciaDomainService
+public class CalculoPensionVitaliciaDomainService {
+    
+    private final TablaActuarialRepository tablaActuarialRepository;
+
+    // Constructor puro para inyección por parámetro
+    public CalculoPensionVitaliciaDomainService(TablaActuarialRepository tablaActuarialRepository) {
+        this.tablaActuarialRepository = tablaActuarialRepository;
+    }
+
+    public BigDecimal calcularMontoVitalicio(Aportante aportante, int añosAporte) {
+        if (añosAporte < 20) {
+            throw new ReglaPrevisionalException("Años de aporte insuficientes para renta vitalicia");
+        }
+        BigDecimal factor = tablaActuarialRepository.obtenerFactorEsperanzaVida(aportante.getEdad());
+        return aportante.getFondoAcumulado().multiply(factor);
+    }
+}
+```
+
+**Ejemplo de Registro e Inyección vía `@Configuration` en Capa de Aplicación:**
+```java
+// pe.gob.onp.pensiones.calculo.application.config.DomainServiceConfig
+@Configuration
+public class DomainServiceConfig {
+
+    @Bean
+    public CalculoPensionVitaliciaDomainService calculoPensionVitaliciaDomainService(
+            TablaActuarialRepository tablaActuarialRepository) {
+        // Spring inyecta la implementación del repositorio y gestiona el bean como Singleton
+        return new CalculoPensionVitaliciaDomainService(tablaActuarialRepository);
+    }
+}
+```
+
+#### 11.5.3 Repository (Repositorios de Dominio vs. Adaptadores de Persistencia)
+
+El patrón Repositorio media entre el dominio y las capas de mapeo de datos, actuando como una colección en memoria de entidades de dominio.
+
+- **Segregación Hexagonal y Nomenclatura (Sección 12):**
+  - **Puerto (Interfaz en Dominio):** La interfaz del repositorio (`AportanteRepository`) se define en la capa de dominio (`...domain.repository`). No expone tipos de JPA ni excepciones de base de datos; retorna entidades de dominio y tipos `Optional`.
+  - **Adaptador (Implementación en Infraestructura):** Reside en la capa de infraestructura (`...infrastructure.persistence`) y adopta obligatoriamente el sufijo `JpaRepository` (ej. `AportanteJpaRepository`) si utiliza Spring Data JPA, o `JdbcRepository` / `OracleRepository` (ej. `AportanteJdbcRepository`) si utiliza `JdbcTemplate` o llamados a procedimientos PL/SQL.
+- **Cumplimiento con LIN-BD-ORA-001:** Todo adaptador de repositorio que invoque procedures o packages PL/SQL legacy debe cumplir estrictamente con:
+  - Encapsular la llamada mediante puertos limpios.
+  - Traducir las excepciones técnicas de Oracle (`RAISE_APPLICATION_ERROR`, SQLCODE) a excepciones limpias de la jerarquía de aplicación, preservando el *backtrace* técnico sin exponer el stacktrace SQL a la capa REST.
+  - Utilizar obligatoriamente *bind variables* (o parámetros parametrizados por Spring/JDBC) para prevenir inyecciones SQL y optimizar el plan cache de Oracle.
+
+> **Referencia Institucional:** Ver plantilla completa en [AportanteJdbcRepository.java](file:///home/carlos/Documentos/Telemetria-traza-swagger/Lineamientos_Nuevos_Borradores/desarrollo/plantillas/AportanteJdbcRepository.java).
+
+**Ejemplo de Puerto en Dominio y Adaptador Oracle con Traducción de Excepciones:**
+```java
+// PUERTO EN DOMINIO: pe.gob.onp.pensiones.solicitud.domain.repository.AportanteRepository
+public interface AportanteRepository {
+    Optional<Aportante> obtenerPorDni(String dni);
+    void guardar(Aportante aportante);
+}
+
+// ADAPTADOR EN INFRAESTRUCTURA: pe.gob.onp.pensiones.solicitud.infrastructure.persistence.AportanteJdbcRepository
+@Repository
+public class AportanteJdbcRepository implements AportanteRepository {
+
+    private final JdbcTemplate jdbcTemplate;
+    private final RowMapper<Aportante> rowMapper;
+
+    public AportanteJdbcRepository(JdbcTemplate jdbcTemplate, RowMapper<Aportante> rowMapper) {
+        this.jdbcTemplate = jdbcTemplate;
+        this.rowMapper = rowMapper;
+    }
+
+    @Override
+    public Optional<Aportante> obtenerPorDni(String dni) {
+        final String sql = "SELECT ID_APORTANTE, C_DNI, N_EDAD, N_FONDO_ACUMULADO, IN_ACTIVO " +
+                           "FROM PE_ESQ_PENSIONES.TBL_APORTANTE WHERE C_DNI = ? AND IN_ACTIVO = 1";
+        try {
+            List<Aportante> resultados = jdbcTemplate.query(sql, rowMapper, dni);
+            return resultados.stream().findFirst();
+        } catch (DataAccessException ex) {
+            throw traducirExcepcionOracle("obtenerPorDni", ex);
+        }
+    }
+
+    private RuntimeException traducirExcepcionOracle(String operacion, DataAccessException ex) {
+        if (ex.getRootCause() instanceof SQLException sqlEx) {
+            int sqlCode = sqlEx.getErrorCode();
+            if (sqlCode >= 20000 && sqlCode <= 20999) {
+                // Traducción de error de negocio lanzado por PL/SQL (RAISE_APPLICATION_ERROR)
+                return new ReglaPrevisionalOracleException(sqlEx.getMessage(), sqlCode);
+            }
+            return new InfrastructureException("Error técnico de BD en " + operacion + " [SQLCODE=" + sqlCode + "]", sqlEx);
+        }
+        return new InfrastructureException("Error de acceso a datos en " + operacion, ex);
     }
 }
 ```
@@ -2463,9 +2778,88 @@ Un PR que modifica más de **400 líneas** de código productivo (excluidos test
 
 Cualquier desviación de este estándar — incluyendo omitir la revisión por urgencia — requiere **ADR aprobado por Arquitectura** con: contexto, decisión, consecuencias, vigencia de la excepción y fecha de revisión. Ver sección 15.
 
+### 14.6 Patrón Feature Toggle y Deuda Técnica Cero (PA14)
+
+En alineación con el patrón arquitectónico **PA14 (Feature Toggle)** de **LIN-ARQ-000** y las directivas de control de cambios de **LIN-VER-001**, el uso de *Feature Toggles* (o banderas de funcionalidad) es un mecanismo permitido para el despliegue continuo y la entrega progresiva, pero está sujeto a un riguroso control de ciclo de vida para garantizar la **deuda técnica cero**.
+
+#### 14.6.1 Estrategia Tecnológica Oficial en Dos Niveles
+Para mantener un stack mínimo, homogéneo y eficiente en Spring Boot 3, la ONP estandariza la implementación de *Feature Toggles* en dos niveles operativos, en conformidad con **ADR-014 (LIN-ARQ-000 Apéndice A)**:
+
+| Nivel Operativo | Tecnologías Estándar | Cuándo Utilizar |
+|---|---|---|
+| **Nivel 1: Nativo / Estático** | `Spring Profiles` y `@ConditionalOnProperty` / `@ConditionalOnExpression` configurados en `application.yml` o inyectados vía **K8s ConfigMaps**. | Toggles estructurales, activación de adaptadores externos, migraciones de infraestructura o funcionalidades de conmutación poco frecuente que toleran el reinicio del pod en el despliegue. |
+| **Nivel 2: Dinámico / Runtime** | **Unleash** como estándar institucional on-premise mandatorio. Librerías cliente en Java como **Togglz** se permiten únicamente como proveedor conectado al backend de Unleash (`togglz-unleash-provider`). | Exclusivamente para funcionalidades de alta criticidad o conmutación frecuente en tiempo real en Producción, donde el negocio o la operación requiere apagar/encender flujos sin reiniciar contenedores en Kubernetes. Cualquier plataforma externa alternativa requiere ADR de Arquitectura y Seguridad. |
+
+**Ejemplo de Toggle Nivel 1 (Nativo con `@ConditionalOnProperty`):**
+```java
+@Configuration
+@ConditionalOnProperty(name = "onp.features.calculador-v2.enabled", havingValue = "true", matchIfMissing = false)
+public class CalculadorV2Config {
+    
+    @Bean
+    public CalculoPensionDomainService calculoPensionDomainService(TablaActuarialRepository repo) {
+        return new CalculoPensionV2DomainService(repo);
+    }
+}
+```
+
+**Ejemplo de Toggle Nivel 2 (Dinámico en Runtime con Cliente Togglz / Unleash Provider):**
+```java
+// pe.gob.onp.pensiones.solicitud.application.service.SolicitudPensionServiceImpl
+@Service
+public class SolicitudPensionServiceImpl implements SolicitudPensionService {
+
+    private final FeatureManager featureManager; // Cliente Togglz conectado al backend institucional Unleash (ADR-014)
+    private final CalculoPensionVitaliciaDomainService calculoV1;
+    private final CalculoPensionV2DomainService calculoV2;
+
+    public SolicitudPensionServiceImpl(FeatureManager featureManager,
+                                     CalculoPensionVitaliciaDomainService calculoV1,
+                                     CalculoPensionV2DomainService calculoV2) {
+        this.featureManager = featureManager;
+        this.calculoV1 = calculoV1;
+        this.calculoV2 = calculoV2;
+    }
+
+    public BigDecimal calcularPension(Aportante aportante, int añosAporte) {
+        // Evaluación dinámica en runtime sin reiniciar pod (Release Toggle - caducidad mandatoria: 1 sprint tras Go-Live)
+        if (featureManager.isActive(OnpFeatures.CALCULO_ACTUARIAL_V2)) {
+            return calculoV2.calcularMontoVitalicio(aportante, añosAporte);
+        }
+        return calculoV1.calcularMontoVitalicio(aportante, añosAporte);
+    }
+}
+```
+
+#### 14.6.2 Ciclo de Vida y Caducidad Acotada (Deuda Técnica Cero)
+En estricta coherencia con **LIN-ARQ-000 §2.2.1.A**, la obligación de caducidad y retiro del código fuente aplica diferenciadamente según la clasificación del toggle:
+
+| Clasificación según LIN-ARQ-000 | Plazo y Obligación de Retiro |
+|---|---|
+| **Release Toggle** | **Corto plazo (Mandatorio):** Se elimina en el sprint inmediatamente posterior al go-live (plazo máximo: **1 sprint / 14 días calendario**). |
+| **Experiment Toggle** | **Medio plazo (Mandatorio):** Se elimina una vez concluido el experimento previsional o la validación A/B (plazo máximo según definición del experimento, típicamente **1 sprint / 14 días calendario** tras el veredicto). |
+| **Ops Toggle** | **Largo plazo (Exento de borrado automático):** Permanece en el código mientras el caso de uso se considere crítico para la resiliencia operativa o degradación controlada. Sujeto a auditoría periódica. |
+| **Permission Toggle** | **Largo plazo o Permanente (Exento de borrado automático):** Controla características reservadas a roles, suscripciones o segmentos especiales (en coordinación con SAA). |
+
+Para los toggles de caducidad obligatoria (*Release* y *Experiment*), su existencia añade complejidad ciclomática y ramas condicionales que deben limpiarse rigurosamente:
+
+| Fase del Toggle | Acción Obligatoria (*Release* y *Experiment*) |
+|---|---|
+| **Creación (Desarrollo / MR)** | Todo toggle debe declararse con un propósito claro, un ticket asociado y una **fecha máxima de caducidad proyectada** en los comentarios o en el catálogo de variables/toggles del proyecto. |
+| **Estabilización (Go-Live / PROD)** | Una vez que la funcionalidad asociada ha sido desplegada en Producción (`PUBLISHED`), estabilizada y verificada por el negocio, el toggle entra en estado de expiración. |
+| **Retiro / Limpieza (Gate PA14)** | Es **obligatorio** crear una tarea técnica en el sprint inmediatamente posterior al go-live (plazo máximo: **1 sprint / 14 días calendario**) para eliminar completamente las ramas condicionales del código, remover la configuración del toggle y eliminar la funcionalidad obsoleta o reemplazada. |
+
+#### 14.6.3 Verificación en Pull Request (Gate de Revisión)
+Durante la revisión de código (Sección 14.2), el revisor y el líder técnico deben hacer cumplir las siguientes reglas incompatibles con la aprobación del PR:
+1. **Rechazar toggles sin fecha de retiro:** Todo nuevo PR que introduzca un *Release Toggle* o *Experiment Toggle* debe indicar en la descripción del PR y en el código cuándo y cómo se eliminará.
+2. **Rechazar toggles anidados:** Se prohíbe anidar condicionales de múltiples *Feature Toggles* dentro del mismo bloque de lógica de dominio (ej. `if (featureA.isEnabled()) { if (featureB.isEnabled()) { ... } }`).
+3. **Auditoría periódica de código muerto:** No se aprobarán nuevos PRs de características a equipos o módulos que acumulen *Release/Experiment Toggles* expirados y no retirados del código fuente, haciendo efectiva la contención de deuda técnica institucional.
+
 ---
 
 ## sección 15 Proceso de excepción a este estándar
+
+> **Importante:** **Gobernanza y Supremacía de LIN-ARQ-000:** En estricta coherencia con la supremacía jerárquica del marco rector de **Nivel 2**, ningún ADR podrá ser aprobado ni será válido si contraviene los principios arquitectónicos fundamentales (PR01–PR08) o mandatos rectores de **LIN-ARQ-000**, salvo autorización expresa y excepcional de la Dirección de Arquitectura de la OTI.
 
 Toda desviación de las reglas establecidas en este documento requiere un ADR (Architecture Decision Record) aprobado formalmente por el equipo de Arquitectura de la OTI antes de implementarse.
 
@@ -2612,9 +3006,12 @@ Archivo `checkstyle-onp.xml` a colocar en la raíz del proyecto o en un módulo 
 | Sufijo | Tipo | Anotación Spring | Capa | Ejemplo |
 |--------|------|-----------------|------|---------|
 | `Controller` | Controlador REST | `@RestController` | Web | `ExpedienteController` |
-| `Service` | Interfaz de servicio | — | Aplicación | `ExpedienteService` |
-| `ServiceImpl` | Implementación de servicio | `@Service` | Aplicación | `ExpedienteServiceImpl` |
-| `Repository` | Repositorio de datos | `@Repository` | Infraestructura | `ExpedienteRepository` |
+| `Service` | Interfaz de servicio (Application Service) | — | Aplicación | `ExpedienteService`, `SolicitudPensionService` |
+| `ServiceImpl` | Implementación de servicio (Application Service) | `@Service` | Aplicación | `ExpedienteServiceImpl`, `SolicitudPensionServiceImpl` |
+| `DomainService` | Servicio de dominio puro (POJO) | — (`@Bean` en Config) | Dominio | `CalculoPensionVitaliciaDomainService` |
+| `Repository` | Puerto de repositorio (Dominio) | — | Dominio | `ExpedienteRepository`, `AportanteRepository` |
+| `JpaRepository` | Adaptador JPA (Infraestructura) | `@Repository` | Infraestructura | `ExpedienteJpaRepository` |
+| `JdbcRepository` / `OracleRepository` | Adaptador JDBC/Oracle (Infraestructura) | `@Repository` | Infraestructura | `AportanteJdbcRepository` |
 | *(sin sufijo)* | Entidad de dominio | `@Entity` | Dominio | `Expediente` |
 | *(sin sufijo)* | Objeto de valor | — | Dominio | `Monto`, `Periodo` |
 | `Request` | DTO de entrada | — | Web | `CrearExpedienteRequest` |
@@ -2778,5 +3175,5 @@ public class NotificacionEntity extends AuditoriaBase {
 
 ---
 
-*Estándar de Desarrollo Java — ONP v0.1.1*
+*Estándar de Desarrollo Java — ONP v0.1.2*
 *OTI — Oficina de Tecnologías de la Información*

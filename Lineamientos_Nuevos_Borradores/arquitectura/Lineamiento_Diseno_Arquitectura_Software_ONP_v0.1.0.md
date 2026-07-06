@@ -1,8 +1,8 @@
 # Lineamiento de Diseño y Arquitectura de Software ONP
 
 **Código:** LIN-ARQ-000  
-**Versión:** 0.1.17  
-**Fecha:** 2026-07-03  
+**Versión:** 0.1.18  
+**Fecha:** 2026-07-06  
 **Autor:** Oficina de Tecnologías de la Información — ONP  
 **Estado:** Borrador de trabajo interno  
 **Clasificación:** Marco rector interno. No es un entregable oficial de la lista de documentos de arquitectura; es el documento normativo base que guía la redacción de todos los lineamientos técnicos formales. Todo lineamiento derivado debe ser consistente con las decisiones de este documento.
@@ -31,6 +31,7 @@
 | 0.1.15 | 2026-07-02 | Revisión exhaustiva de congruencia interna: sincroniza referencias y títulos en la tabla introductoria de §3 con las subsecciones §3.8 y §3.9 actualizadas, y complementa el glosario del Apéndice B con los términos Feature Toggle y Published Language |
 | 0.1.16 | 2026-07-02 | Auditoría de cierre: numera §5.3 y §5.4 (headings sin número), corrige referencia §9.3 al formato §12, añade aviso "pendiente de redacción" en §2.2.1 para LIN-DEV-JAVA-001 §14, agrega ADR-014 (Feature Toggle/Unleash) en Apéndice A, amplía Apéndice B con CQRS y CDC, y refuerza obligatoriedad de Circuit Breaker en §3.8.4 para proveedores SOA de alta volumetría |
 | 0.1.17 | 2026-07-03 | Revisión estructural de §3, §5, §8 y §10: elimina separadores visuales redundantes de §3 (sustituidos por tabla introductoria); restructura §8 en 4 grupos (GoF Estructurales/Creacionales/Comportamiento + Capas y DDD) añadiendo 5 patrones nuevos (Strategy, Observer, Command, State, Decorator); declara formalmente PRA09 en §3.11 y cierra el deferral en §3.9.3; numera §5.1–§5.2 (Oracle y BD no relacional); actualiza §10.1 con EDA y DDD desglosado en Value Object y Aggregate Root |
+| 0.1.18 | 2026-07-06 | Auditoría de citas cruzadas con los 14 lineamientos de Nivel 3: agrega referencia a LIN-VER-001 §6.1 en las dos menciones de Trunk-Based Development (§2.2.1 y ADR-014); agrega referencia a LIN-API-REST-001 en la intro de §3.8; agrega referencia a LIN-IaC-001 en §11.1 para el aprovisionamiento declarativo de infraestructura |
 
 ---
 
@@ -132,7 +133,7 @@ Mientras que el patrón *Strangler Fig* gestiona el enrutamiento perimetral en e
 
 | Categoría | Propósito en ONP | Dinamismo | Vida Útil Permitida |
 |---|---|---|---|
-| **Release Toggle** | Habilitar *Trunk-Based Development*. Permite integrar código incompleto a la rama `main` a diario sin activar el flujo en producción hasta terminar la funcionalidad. | Estático / Archivo de configuración | **Corto plazo** (máximo 2 a 4 semanas; se borra inmediatamente al liberar el *release*). |
+| **Release Toggle** | Habilitar *Trunk-Based Development* (ver **LIN-VER-001 §6.1**). Permite integrar código incompleto a la rama `main` a diario sin activar el flujo en producción hasta terminar la funcionalidad. | Estático / Archivo de configuración | **Corto plazo** (máximo 2 a 4 semanas; se borra inmediatamente al liberar el *release*). |
 | **Ops Toggle** | Mecanismo de *Kill-Switch* / Degradación elegante. Permite apagar un algoritmo pesado o una nueva integración en **< 1 segundo** ante una alerta de sobrecarga sin reiniciar pods en Kubernetes. | Dinámico — **Unleash** (self-hosted, estándar ONP) o **Spring Cloud Config** + flags en YAML (alternativa ligera sin infraestructura adicional). LaunchDarkly y otros SaaS solo con ADR aprobado por Arquitectura OTI + Seguridad (requieren salida de red externa, incompatible con entorno on-premise sin autorización). | **Largo plazo** (mientras el caso de uso se considere crítico operativamente). |
 | **Experiment Toggle** | Pruebas A/B o *Canary Launching* interno (ej. enrutar al 5% de usuarios al nuevo motor de cálculo de reserva matemática para comparar precisión). | Dinámico por petición / usuario | **Medio plazo** (dura lo que dure la fase de evaluación y validación actuarial). |
 | **Permission Toggle** | Habilitar funcionalidades beta o administrativas únicamente a ciertos roles de usuario (ej. auditores o supervisores ONP). | Dinámico por contexto de seguridad (JWT) | **Largo plazo** o permanente en control de accesos. |
@@ -679,7 +680,7 @@ public DatosPersonaReniec consultarDni(String dni) { ... }
 
 ### 3.8 Patrones de Integración, Agregación, Fachada e Interoperabilidad SOA
 
-Para gestionar eficientemente la comunicación entre los canales de consumo (SPAs, aplicaciones móviles, interoperabilidad PIDE) y los backends institucionales (parque heredado y Monolitos Modulares nuevos), son oficiales y de aplicación regulada los siguientes cuatro patrones:
+Para gestionar eficientemente la comunicación entre los canales de consumo (SPAs, aplicaciones móviles, interoperabilidad PIDE) y los backends institucionales (parque heredado y Monolitos Modulares nuevos), son oficiales y de aplicación regulada los siguientes cuatro patrones. Esta sección cubre el estilo de integración e interoperabilidad; el contrato REST concreto que exponen estos patrones (naming, versionado, paginación, manejo de errores, WSO2, OpenAPI 3.0) se rige por **LIN-API-REST-001 — Estándar de APIs REST**.
 
 #### 3.8.1 Facade Arquitectónico de Integración
 
@@ -2537,6 +2538,8 @@ SISTEMA LEGACY                         SISTEMA NUEVO
 
 **Nota sobre el runtime en K8s:** el clúster ONP usa **containerd** como container runtime, no Docker. El `Dockerfile` sigue siendo el estándar de construcción de imágenes — produce imágenes OCI compatibles con containerd. La diferencia aplica en operación: para inspeccionar contenedores en los nodos se usa `crictl`, no `docker`. Docker Engine solo existe en la etapa de Transición (Docker Compose) y en los entornos de desarrollo local.
 
+**Aprovisionamiento de la infraestructura:** los tres contextos de esta tabla (Legacy, Transición, Target) describen el destino de ejecución; cómo se aprovisiona esa infraestructura de forma declarativa y reproducible (clústeres K8s, redes, cuentas de servicio) se rige por **LIN-IaC-001 — Infraestructura como Código**, con Terraform/Ansible como estándar on-premise.
+
 ### 11.2 Estándar de contenedores
 
 Todo sistema nuevo (Estadio 2 en adelante) debe entregarse con Dockerfile. El estándar es:
@@ -2686,7 +2689,7 @@ Independientemente del estilo, todo proveedor o profesional contratado debe demo
 | ADR-011 | K8s es el destino por defecto; el uso de VM requiere criterio documentado en ADR | 2026-05-21 | Aceptada |
 | ADR-012 | LIN-BUS-001 formaliza y reemplaza la regla transitoria de mensajería; Apache Kafka es el broker institucional aprobado; toda adopción de EDA debe cumplir LIN-BUS-001 | 2026-06-05 | Aceptada |
 | ADR-013 | CloudEvents v1.0 (CNCF) como estándar institucional de estructura para todos los eventos del bus; habilita interoperabilidad con instituciones del Estado y ecosistema cloud-native | 2026-06-08 | Aceptada |
-| ADR-014 | Feature Toggle (PA14) con Unleash (self-hosted) como plataforma estándar on-premise para Trunk-Based Development; LaunchDarkly y otros SaaS requieren ADR adicional aprobado por Arquitectura OTI + Seguridad | 2026-07-02 | Aceptada |
+| ADR-014 | Feature Toggle (PA14) con Unleash (self-hosted) como plataforma estándar on-premise para Trunk-Based Development (ver LIN-VER-001 §6.1); LaunchDarkly y otros SaaS requieren ADR adicional aprobado por Arquitectura OTI + Seguridad | 2026-07-02 | Aceptada |
 
 ---
 

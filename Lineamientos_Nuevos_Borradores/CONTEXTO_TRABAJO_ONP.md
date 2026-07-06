@@ -52,7 +52,7 @@ Si el tema involucra un dominio técnico específico, lee también el lineamient
 | LIN-FE-ANG-001 | `Lineamientos_Nuevos_Borradores/Web/Lineamiento_Estandar_Diseno_Web_Frontend_ONP_v0.1.0.md` | Frontend Angular | Estructura de módulos, consumo de APIs REST, manejo de sesión SAA, accesibilidad |
 | LIN-VER-001 | `Lineamientos_Nuevos_Borradores/versionamiento/Lineamiento_Versionamiento_Control_Cambios_ONP_v0.1.1.md` | Versionamiento y Control de Cambios | SemVer, GitFlow simplificado (feature/release/hotfix), convención de commits, MR templates GitLab |
 | LIN-TEST-001 | `Lineamientos_Nuevos_Borradores/pruebas/Lineamiento_Estandar_Pruebas_ONP_v0.1.0.md` | Pruebas de Software | Pirámide de pruebas, JUnit 5 + Mockito, pruebas de integración, cobertura mínima, gates de calidad |
-| LIN-TEST-PERF-001 | `Lineamientos_Nuevos_Borradores/pruebas/Lineamiento_Pruebas_Rendimiento_Carga_Estres_ONP_v0.1.0.md` | Pruebas de Rendimiento | JMeter / Gatling, SLA, pruebas de carga y estrés, criterios de aceptación de rendimiento |
+| LIN-PERF-001 | `Lineamientos_Nuevos_Borradores/pruebas/Lineamiento_Pruebas_Rendimiento_Carga_Estres_ONP_v0.1.0.md` | Pruebas de Rendimiento | JMeter / Gatling, SLA, pruebas de carga y estrés, criterios de aceptación de rendimiento |
 | LIN-CICD-001 | `Lineamientos_Nuevos_Borradores/CICD/Lineamiento_Integracion_Entrega_Continua_ONP_v0.1.0.md` | CI/CD | Pipelines GitLab CI, stages (build/test/scan/deploy), gates de calidad automáticos, artefactos |
 | LIN-IaC-001 | `Lineamientos_Nuevos_Borradores/Infraestructura/Lineamiento_Infraestructura_Código_ONP_v0.1.0.md` | Infraestructura como Código | Terraform / Ansible para K8s on-premise, gestión de secretos, provisioning reproducible |
 | LIN-BI-001 | `Lineamientos_Nuevos_Borradores/Datos/Lineamiento_Explotacion_Analitica_Datos_BI_ONP_v0.1.0.md` | Business Intelligence / Analítica | Medallion architecture, Parquet, Nessie, OpenMetadata, pipelines de datos analíticos |
@@ -195,7 +195,7 @@ Cada uno cubre un dominio técnico específico y debe alinearse tanto a LIN-ARQ-
 | LIN-FE-ANG-001 | Frontend Angular — módulos, consumo REST, sesión SAA, accesibilidad | Borrador |
 | LIN-VER-001 | Versionamiento y Control de Cambios — SemVer, GitFlow, commits, MR templates | Borrador |
 | LIN-TEST-001 | Pruebas de Software — pirámide, JUnit 5, Mockito, integración, cobertura mínima | Borrador |
-| LIN-TEST-PERF-001 | Pruebas de Rendimiento — JMeter/Gatling, SLA, carga y estrés | Borrador |
+| LIN-PERF-001 | Pruebas de Rendimiento — JMeter/Gatling, SLA, carga y estrés | Borrador |
 | LIN-CICD-001 | CI/CD — pipelines GitLab CI, stages, gates de calidad, artefactos | Borrador |
 | LIN-IaC-001 | Infraestructura como Código — Terraform/Ansible para K8s on-premise | Borrador |
 | LIN-BI-001 | Business Intelligence / Analítica — Medallion, Parquet, Nessie, OpenMetadata | Borrador |
@@ -318,11 +318,12 @@ Tras cerrar los bloques tácticos de DDD (`PD01` Agregados, `PD02` Entidades y V
 2. **`PA14` (Feature Toggle — Complemento de Strangler Fig):** ✅ **CUBIERTO en LIN-ARQ-000 §2.2.1**. Se normaron los 4 tipos de toggles (*Release*, *Ops*, *Experiment*, *Permission*), el mandato de Deuda Técnica Cero para borrarlos tras liberar la migración y la integración con *Branch by Abstraction*. Se oficializó Unleash / Spring Cloud Config como estándar on-premise.
 3. **`E07` (SOA — Interoperabilidad Gubernamental: PIDE, RENIEC, SUNAT):** ✅ **CUBIERTO en LIN-ARQ-000 §3.8.4**. Se normó el modelo G2G/B2G para consumo del Estado, delegando los umbrales a la Matriz de Timeouts (§3.7.1) y exigiendo aislamiento por Anti-Corruption Layer (`PT11`) y resiliencia en WSO2.
 
-#### Fase 2: Descenso Normativo al Nivel 3 (`LIN-DEV-JAVA-001`) — EN CURSO
+#### Fase 2: Descenso Normativo al Nivel 3 (`LIN-DEV-JAVA-001`) — ✅ COMPLETADA (v0.1.2)
 4. **Cierre al 100% de Principios de Código (`PR01–PR08`) y Patrones Tácticos DDD (`PD04–PD06`):**
-   - **`PR01–PR05` (SOLID en Spring Boot 3 / Java 21):** Inyección obligatoria por constructor (Inversión de Dependencias), SRP en controladores y repositorios.
-   - **`PR06–PR08` (DRY, KISS, YAGNI):** Criterios pragmáticos de reutilización vs. acoplamiento indeseado.
-   - **`PD04–PD06` (Repository, Domain Service, Application Service):** Plantillas concretas en Spring Boot separando orquestación transaccional (`@Service`) de lógica pura de dominio.
+   - **`PR01–PR05` (SOLID en Spring Boot 3 / Java 21):** ✅ **CUBIERTO en LIN-DEV-JAVA-001 §10.4.1**. Se normó la aplicación práctica de cada principio (S/O/L/I/D) con ejemplos ONP — patrón Estrategia inyectado por Spring para OCP/DIP — y su anti-patrón prohibido correspondiente.
+   - **`PR06–PR08` (DRY, KISS, YAGNI):** ✅ **CUBIERTO en LIN-DEV-JAVA-001 §10.4.2–§10.4.4**. Se normó el límite arquitectónico de DRY (duplicación de conocimiento de negocio vs. acoplamiento entre módulos), el uso de Records/Sealed Classes de Java 21 para KISS, y la prohibición de abstracciones especulativas para YAGNI.
+   - **`PD04–PD06` (Repository, Domain Service, Application Service):** ✅ **CUBIERTO en LIN-DEV-JAVA-001 §11.5**. Se normaron los tres building blocks tácticos con plantillas Spring Boot concretas: Repository (puerto en dominio + adaptador `JpaRepository`/`JdbcRepository` en infraestructura), Domain Service (POJO puro registrado vía `@Configuration`/`@Bean` para preservar la pureza hexagonal) y Application Service (orquestador transaccional `@Service` que delega en el dominio y publica eventos).
+   - **Cierre adicional no planificado en el punto 4 original:** se normó también la sanción de deuda técnica de Feature Toggles que había quedado pendiente desde `LIN-ARQ-000 §2.2.1` (referenciada como "§14 pendiente de redacción"), ahora cubierta en **LIN-DEV-JAVA-001 §14.6** con retiro diferenciado por tipo de toggle (Release/Experiment obligatorio a 1 sprint; Ops/Permission exentos por diseño).
 
 ---
 
@@ -350,3 +351,4 @@ Tras cerrar los bloques tácticos de DDD (`PD01` Agregados, `PD02` Entidades y V
 | 2026-07-02 | §5 actualizado — se marca como cubierto el Paso 3 de la Fase 1 (`E07` SOA Gubernamental) tras normarse en LIN-ARQ-000 §3.8.4 con resiliencia extrema y ACL obligatorios |
 | 2026-07-02 | §5 actualizado — se registra el cierre definitivo y auditoría de congruencia interna al 100% de la **Fase 1 (`LIN-ARQ-000 v0.1.16`)** y el inicio formal de la **Fase 2 (`LIN-DEV-JAVA-001`)** |
 | 2026-07-03 | LIN-ARQ-000 bumpeado a v0.1.17 — revisión estructural: §8 restructurado en 4 grupos GoF con 5 patrones nuevos (Strategy, Observer, Command, State, Decorator); PRA09 declarado formalmente en §3.11; §5 numerado (5.1–5.4); §10.1 actualizado con EDA y DDD desglosado |
+| 2026-07-06 | §5 actualizado — se registra el cierre definitivo de la **Fase 2 (`LIN-DEV-JAVA-001 v0.1.2`)**: PR01–PR05 (SOLID) y PR06–PR08 (DRY/KISS/YAGNI) en §10.4, PD04–PD06 (Repository/Domain Service/Application Service) en §11.5, y cierre adicional de la sanción de deuda técnica de Feature Toggles en §14.6 (resuelve la referencia pendiente de LIN-ARQ-000 §2.2.1). `Brecha_Framework_Arquitectura_ONP_v0.1.0.md` bumpeado a v0.1.4 reflejando estos cierres y actualizando PG01–PG03 (patrones GoF) de ❌ Pendiente a ⚠️ Parcial tras verificar cobertura parcial en LIN-ARQ-000 §8 |
