@@ -1,10 +1,11 @@
 # Lineamiento de Seguridad en Aplicaciones ONP
 **Código:** LIN-SEC-APP-001
-**Versión:** v0.1.1
+**Versión:** v0.1.2
 **Estado:** Borrador
-**Fecha:** 2026-05-28
+**Fecha:** 2026-07-06
 **Propietario:** Arquitectura de Software — OTI
 **Revisores:** Seguridad de la Información, Arquitectura, Desarrollo
+**Marco rector:** LIN-ARQ-000 — Marco Rector de Diseño y Arquitectura de Software
 
 ---
 
@@ -14,6 +15,7 @@
 |---|---|---|---|
 | v0.1.0 | 2026-05-25 | Arquitectura OTI | Borrador inicial |
 | v0.1.1 | 2026-05-28 | Arquitectura OTI | Alinea la configuración a YAML, documenta el comportamiento del filtro SAA ante fallos y referencia la transición gobernada hacia WSO2 |
+| v0.1.2 | 2026-07-06 | Arquitectura OTI | Declara a LIN-ARQ-000 como marco rector (encabezado y §2), único lineamiento de Nivel 3 que no lo citaba. Corrige mención de Circuit Breaker: el patrón oficial es PT06, no PT07 (PT07 es Bulkhead); actualiza la referencia obsoleta "pendiente LIN-BUS-001" a LIN-ARQ-000 §3.7.3, donde Circuit Breaker ya está normado |
 
 ---
 
@@ -77,6 +79,7 @@ Aplica a:
 
 | Documento | Código | Relevancia |
 |---|---|---|
+| Marco Rector de Diseño y Arquitectura de Software | LIN-ARQ-000 | Documento rector de Nivel 2 — define Design for Failure (§3.7), Circuit Breaker/Resilience4j (§3.7.3) y el marco general que este lineamiento opera en materia de seguridad |
 | Lineamiento de Estándar APIs REST | LIN-API-REST-001 | HTTPS, headers, CORS, WSO2 |
 | Lineamiento Estándar Desarrollo Java | LIN-DEV-JAVA-001 | Estructura de proyecto, secrets |
 | Lineamiento Log, Trazabilidad y Observabilidad | LIN-OBS-001 | No PII en logs, propagación user.id |
@@ -513,7 +516,7 @@ El SAA es una dependencia crítica. Si no responde:
 - Retornar `503 Service Unavailable` con mensaje genérico (no técnico)
 - Registrar el evento como `log.error` con contexto de traza
 - No cachear el último resultado como sustituto de validación
-- Aplicar Circuit Breaker si el servicio tiene alta concurrencia (ver patrón PT07 — pendiente LIN-BUS-001)
+- Aplicar Circuit Breaker si el servicio tiene alta concurrencia (ver patrón PT06 — normado en LIN-ARQ-000 §3.7.3)
 
 #### 8.7.1 Comportamiento del filtro ante error
 
@@ -1086,7 +1089,7 @@ Cualquier desviación a las reglas de este lineamiento requiere un ADR (Architec
 | **CAPTCHA** | Prueba de verificación humana para acceso externo |
 | **SEGURITYSYS** | Esquema Oracle del SAA que contiene usuarios, roles y permisos |
 | **LDAP** | Lightweight Directory Access Protocol — protocolo de directorio |
-| **Circuit Breaker** | Patrón de resiliencia que corta llamadas a servicio no disponible (PT07) |
+| **Circuit Breaker** | Patrón de resiliencia que corta llamadas a servicio no disponible (PT06) |
 | **ADR** | Architecture Decision Record — registro de decisión de arquitectura |
 
 ---

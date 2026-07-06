@@ -1,7 +1,7 @@
 # LIN-PERF-001 — Lineamiento de Pruebas de Rendimiento, Carga y Estrés ONP
 
 **Código:** LIN-PERF-001  
-**Versión:** v0.1.0  
+**Versión:** v0.1.1  
 **Estado:** Borrador  
 **Fecha:** 2026-05-28  
 **Propietario documental:** Arquitectura de Software — OTI  
@@ -16,6 +16,7 @@
 | Versión | Fecha | Autor | Descripción |
 |---|---|---|---|
 | v0.1.0 | 2026-05-28 | Arquitectura OTI | Borrador inicial del lineamiento de pruebas de rendimiento, carga y estrés |
+| v0.1.1 | 2026-07-06 | Arquitectura OTI | §12.1 separa el ambiente `PQA` (etapa de rama legado de `LIN-VER-001 §5`, sin clúster propio) del ambiente `Preproducción`/`UAT` (ambiente real opcional, requiere ADR según `LIN-K8S-001 §4.4`) — antes se listaban como si fueran equivalentes. Actualiza §13 (evidencia mínima del informe) para reflejar el mismo cambio |
 
 ---
 
@@ -530,10 +531,11 @@ Los scripts de prueba no deben contener:
 | Ambiente | Uso |
 |---|---|
 | DEV | Pruebas exploratorias o smoke performance |
-| PQA | Pruebas preliminares de carga si existe |
 | QA | Pruebas formales de carga y aceptación |
-| Preproducción | Pruebas cercanas a producción, si existe |
+| Preproducción / UAT (si existe — ver `LIN-K8S-001 §4.4`) | Pruebas cercanas a producción. Es, de hecho, el detonador de ADR más frecuente para justificar la adopción de este ambiente opcional |
 | Producción | Solo con autorización expresa y alcance controlado |
+
+> **Nota sobre `PQA`:** el ambiente `PQA` del modelo vigente de ramas de `LIN-VER-001 §5` (`ONP_DESA → ONP_PQA → ONP_QA → master`) es una etapa de precalidad/estabilización de código, **no un ambiente de despliegue independiente con clúster propio**. No debe confundirse con Preproducción/UAT. Las pruebas de rendimiento durante la etapa `PQA` se ejecutan en el ambiente real donde esa rama despliega (típicamente DEV o QA), no en un ambiente separado para efectos de esta norma.
 
 ### 12.2 Condiciones mínimas del ambiente
 
@@ -574,7 +576,7 @@ Todo informe debe incluir:
 | Resumen ejecutivo | Cumple / no cumple / observaciones |
 | Objetivo | Qué se buscó validar |
 | Sistema y versión | Componente, tag, commit o release |
-| Ambiente | DEV, PQA, QA, preproducción |
+| Ambiente | DEV, QA, Preproducción/UAT (si existe) |
 | Fecha y hora | Momento de ejecución |
 | Escenarios | Operaciones probadas |
 | Configuración de carga | Usuarios, ramp-up, duración, throughput |

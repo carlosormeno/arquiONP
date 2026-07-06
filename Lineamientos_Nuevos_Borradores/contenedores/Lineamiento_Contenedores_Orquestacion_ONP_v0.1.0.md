@@ -1,7 +1,7 @@
 # LIN-K8S-001 — Lineamiento de Contenedores y Orquestación ONP
 
 **Código:** LIN-K8S-001  
-**Versión:** v0.1.3  
+**Versión:** v0.1.8  
 **Estado:** Borrador  
 **Fecha:** 2026-07-06  
 **Propietario documental:** Arquitectura de Software — OTI  
@@ -19,6 +19,11 @@
 | v0.1.1 | 2026-05-28 | Arquitectura OTI | Normaliza el lenguaje de despliegue hacia plan de reversa y elimina ambigüedad con rollback de base de datos |
 | v0.1.2 | 2026-07-06 | Arquitectura OTI | Incorpora sección 4.3 (Runtime de contenedores: containerd/crictl) para reconciliar con LIN-ARQ-000 §11.1 y ADR-009, que ya establecían containerd como runtime de producción sin que este lineamiento lo reflejara operativamente. Añade términos al glosario. |
 | v0.1.3 | 2026-07-06 | Arquitectura OTI | Incorpora sección 4.4 (Convención de nombres de namespace: `<sistema>-<componente>`, sin sufijo de ambiente, confirmado un clúster K8s por ambiente). Cierra el vacío señalado en `Matriz_Propiedad_Documental` donde este lineamiento figuraba como dueño de la política de namespaces sin haberla definido. Señala como pendiente de verificación con Plataforma la posible inconsistencia de sufijos de ambiente en namespaces de infraestructura compartida (`otel-{env}` en LIN-OBS-001, `kafka-{env}` en LIN-BUS-001) |
+| v0.1.4 | 2026-07-06 | Arquitectura OTI | Incorpora sección 9.4 normando los Patrones Multi-Contenedor en el Pod: Sidecar (PA12) y Ambassador (PA13), reconciliando su uso con LIN-OBS-001 (OTEL Collector centralizado) y LIN-ARQ-000 §2.2/§3.7 (resiliencia nativa en JVM vs. migración Strangler Fig de sistemas legacy no-Java). |
+| v0.1.5 | 2026-07-06 | Arquitectura OTI | Reconcilia gobierno de Secrets (§8.1) asumiendo la propiedad normativa definitiva según la Matriz de Propiedad Documental. Resuelve observación sobre sufijos de ambiente en namespaces compartidos (§4.4) como transición operativa. Incorpora blindaje de supremacía jerárquica de LIN-ARQ-000 en §2 y §20. |
+| v0.1.6 | 2026-07-06 | Arquitectura OTI | Corrige el manifiesto de ejemplo de la Excepción 1 de Sidecar (§9.4): reemplaza el registro `registry.gitlab.com` (incorrecto) por `registry.gitlab.onp.gob.pe` (institucional, ya definido en §6.1); alinea namespace, labels y nombres al sistema de referencia `past` y a la convención `<sistema>-<componente>` de §4.4. Suaviza la nota de §4.4 sobre namespaces compartidos: ya no asume que el sufijo de ambiente en `otel-{env}`/`kafka-{env}` responde a una transición operativa — queda explícitamente pendiente de confirmación con Plataforma |
+| v0.1.7 | 2026-07-06 | Arquitectura OTI | Incorpora en §4.4 un ambiente UAT/Preproducción opcional por proyecto (entre QA y PROD), reconciliando con `LIN-PERF-001 §12` y `LIN-SEC-APP-001` que ya lo asumían informalmente, y con la Plantilla de Documento de Arquitectura que ya lo permite condicionalmente. Distingue explícitamente este ambiente del `PQA` legado de `LIN-VER-001` (etapa de rama, no ambiente de despliegue). Actualiza §10.3 (réplicas mínimas) y §16 (documentación por ambiente) para contemplarlo cuando exista |
+| v0.1.8 | 2026-07-06 | Arquitectura OTI | Exige ADR aprobado por Arquitectura y Plataforma para adoptar el ambiente opcional UAT/Preproducción (§4.4), en coherencia con el mismo patrón de gate ya usado para CQRS y BD no relacional en LIN-ARQ-000; agrega detonadores válidos y no válidos, y contenido mínimo del ADR. Añade el caso a la lista de §20.1 |
 
 ---
 
@@ -117,6 +122,9 @@ Aplica a:
 
 ## 2. Normativa y documentos relacionados
 
+> **Importante:** **Supremacía Jerárquica del Marco Rector (LIN-ARQ-000):**  
+> `LIN-ARQ-000` es el **documento rector de jerarquía superior (Nivel 2)** que rige de manera absoluta sobre todos los estándares y lineamientos técnicos específicos de **Nivel 3** (incluyendo el presente documento, `LIN-DEV-JAVA-001`, `LIN-OBS-001`, `LIN-SEC-APP-001`, etc.). Este lineamiento implementa de forma táctica y operativa en Kubernetes y contenedores los principios arquitectónicos (PR01–PR08) y patrones de despliegue (PA12, PA13, PT08) definidos en `LIN-ARQ-000`. **Ante cualquier vacío, conflicto o presunta discrepancia de interpretación entre este documento y el marco rector, prevalecerán siempre y en todo momento los mandatos, patrones y directivas de LIN-ARQ-000.**
+
 | Documento | Código | Relación |
 |---|---|---|
 | Marco Rector de Diseño y Arquitectura de Software | LIN-ARQ-000 | Define Kubernetes como destino objetivo y estilos de despliegue |
@@ -200,7 +208,22 @@ El clúster de Kubernetes de la ONP usa **containerd** como container runtime de
 
 ### 4.4 Convención de nombres de namespace
 
-ONP opera **un clúster Kubernetes independiente por ambiente** (DEV, QA, PROD). El ambiente **nunca** forma parte del nombre del namespace de aplicación — ya está implícito en a qué clúster pertenece.
+ONP opera **un clúster Kubernetes independiente por ambiente**. El modelo base para todo sistema nuevo es **DEV → QA → PROD**.
+
+**Ambiente adicional opcional — UAT / Preproducción:** se admite un cuarto ambiente entre QA y PROD, nombrado **UAT** o **Preproducción** según lo defina el proyecto, siguiendo el mismo principio de aislamiento (clúster independiente, misma convención de namespace de esta sección). No es un estándar universal — es una excepción al modelo base de 3 ambientes y, como toda excepción en este lineamiento (ver sección 20), **requiere ADR aprobado por Arquitectura y Plataforma antes de aprovisionarse**.
+
+*Detonadores válidos* (al menos uno, con evidencia concreta del proyecto):
+- Requisito regulatorio o contractual de un ambiente formal de aceptación de usuario (UAT) previo a Producción.
+- Necesidad de pruebas de rendimiento/carga en condiciones equivalentes a PROD que QA no puede proveer por volumen de datos, topología de red o recursos (ver `LIN-PERF-001 §12`).
+- Ventana de validación final pre-lanzamiento para sistemas de alta criticidad (ej. cálculo de pensiones) donde un defecto en PROD tiene consecuencia legal o financiera severa.
+
+*Lo que NO es un detonador válido:* "por si acaso", costumbre de otros proyectos, o preferencia del equipo sin evidencia de una necesidad concreta — igual que se exige en la adopción de BD no relacional (§5.2 de LIN-ARQ-000).
+
+El ADR debe declarar: el detonador que lo justifica; si el ambiente es permanente para el sistema o temporal (ej. solo durante una migración), y en ese caso su criterio de retiro; y quién lo opera (Plataforma aprovisiona el clúster, Desarrollo lo usa). Una vez aprobado, el ambiente se documenta en la ficha de despliegue del sistema (ver sección 16), igual que ya lo contempla la Plantilla de Documento de Arquitectura ("si existe UAT también debe incluirse").
+
+> **Distinción con el modelo legado `PQA`:** el ambiente UAT/Preproducción aquí descrito **no es lo mismo** que `ONP_PQA` del modelo vigente de ramas Git (`LIN-VER-001 §5`) — aquel es una etapa de precalidad/estabilización *entre DEV y QA*, ligada a una rama, no un ambiente de despliegue con clúster propio. No deben confundirse ni fusionarse.
+
+El ambiente **nunca** forma parte del nombre del namespace de aplicación — ya está implícito en a qué clúster pertenece, sin importar cuántos ambientes tenga el proyecto.
 
 **Estructura:**
 
@@ -228,7 +251,7 @@ notificacion_electronica-worker
 - La creación, cuotas (`ResourceQuota`/`LimitRange`) y políticas del namespace son responsabilidad de Plataforma (ver RACI en §4.2). Desarrollo **declara** el namespace en sus manifiestos versionados (Kustomize/Helm, ver Anexo A) pero no lo crea ni administra directamente en el clúster.
 - Todo namespace debe quedar documentado en la ficha de despliegue del sistema (ver sección 16).
 
-> **Inconsistencia detectada, pendiente de verificar con Plataforma:** los namespaces de infraestructura compartida ya documentados en `LIN-OBS-001` (`otel-dev`, `otel-qa`, `otel`) y `LIN-BUS-001` (`kafka-dev`, `kafka-qa`, `kafka`) sí llevan sufijo de ambiente. Si cada ambiente es un clúster independiente, ese sufijo sería redundante — salvo que esos componentes de plataforma vivan en un clúster compartido distinto al de las aplicaciones de negocio. Este lineamiento no asume una respuesta; se recomienda que Arquitectura confirme con Plataforma si esos dos documentos deben corregirse para alinearse a la convención sin sufijo, o si existe en efecto un clúster de plataforma compartido que justifica la excepción.
+> **Nota de Gobernanza — Namespaces Compartidos Pendientes de Verificar:** Al existir un clúster independiente por ambiente, incluir el sufijo de ambiente en namespaces de negocio es un anti-patrón redundante — así se norma en esta sección. Para los namespaces de infraestructura compartida ya documentados en `LIN-OBS-001` (`otel-dev`, `otel-qa`, `otel`) y `LIN-BUS-001` (`kafka-dev`, `kafka-qa`, `kafka`), este lineamiento **no asume** la razón del sufijo: se recomienda que Plataforma confirme si esos componentes viven en un clúster de plataforma compartido o híbrido distinto al de las aplicaciones. Si ese es el caso, el sufijo está justificado y debe mantenerse; si no, esos dos documentos deberían normalizarse a `otel` y `kafka` sin sufijo, sin afectar a las aplicaciones consumidoras (que resuelven por DNS interno o configuración de ambiente en `LIN-OBS-001 §10.2`).
 
 ---
 
@@ -495,6 +518,8 @@ stringData:
 
 ### 8.1 Reglas obligatorias
 
+> **Mandato de Propiedad Documental:** En cumplimiento con la Matriz de Propiedad Documental, `LIN-K8S-001` asume la **propiedad normativa definitiva** sobre la provisión, inyección y ciclo de vida operativo de los Kubernetes Secrets en todos los clústeres ONP, siendo `LIN-SEC-APP-001 §12` el consumidor normativo que rige las políticas de cifrado, rotación y complejidad. Toda variable sensible de runtime (credenciales de BD, tokens SAA, llaves privadas) se inyectará obligatoriamente a través de Secrets y nunca mediante ConfigMaps, variables en duro o variables de pipeline CI/CD.
+
 | Regla | Estado |
 |---|---|
 | No guardar secretos en Dockerfile | Obligatorio |
@@ -616,6 +641,86 @@ app.kubernetes.io/component: <api|frontend|worker|job>
 app.kubernetes.io/managed-by: <equipo-o-herramienta>
 ```
 
+### 9.4 Patrones Multi-Contenedor en el Pod: Sidecar (PA12) y Ambassador (PA13)
+
+En Kubernetes, la unidad atómica de despliegue es el **Pod**. Por regla general y en estricta coherencia con el principio de separación de responsabilidades (§4.2), **un pod en la ONP debe contener un único contenedor de negocio (estilo 1 Pod = 1 Contenedor)**.
+
+No obstante, el marco rector de arquitectura (**LIN-ARQ-000**) contempla dos patrones tácticos de despliegue multi-contenedor (*Multi-Container Pod Patterns*): **Sidecar (PA12)** y **Ambassador (PA13)**. Para prevenir sobre-ingeniería, desperdicio de recursos computacionales (CPU/RAM) y colisiones con otros lineamientos del framework institucional, su adopción se rige por las siguientes reglas binarias de aplicación:
+
+#### A. Patrón Sidecar (PA12) — Co-procesos de Apoyo y Observabilidad
+
+El patrón **Sidecar** adjunta un contenedor secundario al contenedor principal del pod para extender sus capacidades (recolección de logs, proxying, sincronización de secretos o monitoreo) sin modificar el código de la aplicación principal.
+
+1. **Regla General en ONP (Prohibido para Java / Spring Boot 3):** Para aplicaciones construidas en Java 21 / Spring Boot 3 según `LIN-DEV-JAVA-001` y `LIN-OBS-001`, **queda terminantemente prohibido** desplegar contenedores sidecar para observabilidad o envío de logs/trazas. El SDK de OpenTelemetry integrado en la aplicación emite telemetría directamente vía red (OTLP) hacia el **OTEL Collector centralizado y compartido** operado por Plataforma en el namespace `otel` / `otel-{env}` (`LIN-OBS-001 §9.1`). Introducir un sidecar por pod en servicios nativos es un anti-patrón que duplica consumo de memoria y saturación de red.
+2. **Excepción Legítima 1 (Cajas Negras / COTS / Sistemas Legacy):** El patrón Sidecar se autoriza *únicamente* cuando se contenerizan aplicaciones comerciales de terceros (COTS) o sistemas legacy (no-Java o sin acceso al código fuente) que no soportan el protocolo OTLP ni escriben en estándar `stdout`/`stderr`, sino en archivos locales de bitácora. En este escenario, se desplegará un contenedor sidecar ligero (ej. Fluent Bit) compartiendo un volumen `emptyDir` con el contenedor principal para leer la bitácora y reenviarla al OTEL Collector centralizado.
+3. **Excepción Legítima 2 (mTLS y Service Mesh):** Se reserva el uso institucional del patrón Sidecar para cuando la Plataforma habilite formalmente una malla de servicios (*Service Mesh*, ej. Envoy/Istio), donde la infraestructura inyectará proxies de red de forma transparente para terminación mTLS y seguridad cero-confianza (*Zero Trust*) entre pods.
+
+**Ejemplo de Manifiesto para Excepción de Logs en Caja Negra (Sidecar + emptyDir):**
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: past-legado-adapter
+  namespace: past-adapter
+  labels:
+    app.kubernetes.io/name: past-legado-adapter
+    app.kubernetes.io/part-of: past
+    app.kubernetes.io/component: adapter
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: past-legado-adapter
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: past-legado-adapter
+        app.kubernetes.io/part-of: past
+        app.kubernetes.io/component: adapter
+    spec:
+      containers:
+        # 1. Contenedor Principal (Caja Negra / Legacy que escribe en archivo)
+        - name: app-legacy
+          image: registry.gitlab.onp.gob.pe/aplicaciones/past/legado-adapter:1.0.0
+          volumeMounts:
+            - name: logs-vol
+              mountPath: /var/log/app
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "250m"
+            limits:
+              memory: "1Gi"
+              cpu: "500m"
+        # 2. Contenedor Sidecar (PA12 - Agente de reenvío de logs hacia OTEL Collector)
+        - name: log-collector-sidecar
+          image: registry.gitlab.onp.gob.pe/plataforma/infra/fluent-bit:2.2.0
+          volumeMounts:
+            - name: logs-vol
+              mountPath: /var/log/app
+              readOnly: true
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "50m"
+            limits:
+              memory: "128Mi"
+              cpu: "100m"
+      volumes:
+        - name: logs-vol
+          emptyDir: {}
+```
+
+#### B. Patrón Ambassador (PA13) — Proxy de Salida para Resiliencia e Integración
+
+El patrón **Ambassador** actúa como un proxy de red local dentro del pod que media y blinda todo el tráfico saliente (*outbound traffic*) desde la aplicación hacia sistemas externos, APIs, bases de datos o servicios heredados.
+
+1. **Regla General en ONP (Prohibido para Java / Spring Boot 3):** En coherencia con **LIN-ARQ-000 §3.7 y §3.8.4**, para aplicaciones construidas en Java 21 / Spring Boot 3, **está estrictamente prohibido utilizar un Ambassador sidecar para gestionar resiliencia o conectividad saliente**. Toda la resiliencia de integración hacia sistemas externos (RENIEC, SUNAT, PIDE) o servicios WSO2 debe resolverse **dentro de la JVM** en la capa de infraestructura del software (`pe.gob.onp.<sistema>.<modulo>.infrastructure.client.*`):
+   - *Timeouts y Bulkhead (PI08 / PI09):* Mediante configuración nativa de **Apache HttpClient 5** (`setMaxConnPerRoute`).
+   - *Circuit Breaker y Reintentos (PI06 / PI07):* Mediante anotaciones y máquinas de estado de **Resilience4j** en el cliente Java.  
+   Ningún desarrollador Java debe delegar, duplicar ni configurar políticas de reintento o circuit breaker en un proxy de red externo.
+2. **Única Excepción Legítima (Strangler Fig sobre Monolitos Legacy No-Java):** En el marco de la hoja de ruta de modernización institucional (**LIN-ARQ-000 §2.2 Strangler Fig** y **§3.3 Monolito Puro**), cuando se contenericen sistemas heredados (ej. monolitos en JBoss, WebLogic, C++ o frameworks antiguos) cuyo código fuente no puede ser refactorizado o modificado para incorporar políticas de resiliencia o seguridad moderna, se autoriza el despliegue de un **Ambassador sidecar** (ej. Envoy, Envoy-based Proxy o WSO2 Microgateway ligero) en el pod. En este escenario —y solo en este—, el Ambassador asumirá la terminación mTLS, rotación de cabeceras, timeouts y reintentos hacia el exterior, protegiendo al monolito heredado sin necesidad de reescribir su lógica interna.
+
 ---
 
 ## 10. Recursos: requests, limits y escalamiento
@@ -678,6 +783,7 @@ spec:
 |---|---:|
 | DEV | 1 |
 | QA | 1 o 2 según pruebas |
+| UAT / Preproducción (si existe) | 2 — debe reflejar el comportamiento real de PROD |
 | PROD | 2 para servicios críticos |
 
 Los servicios críticos no deben operar con una sola réplica en Producción salvo excepción aprobada.
@@ -926,6 +1032,8 @@ Cada solución contenerizada debe documentar por ambiente:
 | Ingress/API Manager | Según caso | Según caso | Según caso |
 | Responsable técnico | Sí | Sí | Sí |
 
+> Si el proyecto usa un ambiente adicional de **UAT / Preproducción** (ver §4.4), debe documentarse con los mismos campos de esta tabla.
+
 ---
 
 ## 17. Relación con CI/CD e IaC
@@ -1015,6 +1123,8 @@ Mientras `LIN-IAC-001` no esté oficializado:
 
 ## 20. Proceso ADR para desviaciones
 
+> **Importante:** **Gobernanza y Supremacía de LIN-ARQ-000:** En estricta coherencia con la supremacía jerárquica del marco rector de **Nivel 2**, ningún ADR podrá ser aprobado ni será válido si contraviene los principios arquitectónicos fundamentales (PR01–PR08), patrones de resiliencia (PI06–PI09) o mandatos rectores de **LIN-ARQ-000**, salvo autorización expresa y excepcional de la Dirección de Arquitectura de la OTI.
+
 Toda desviación relevante requiere ADR aprobado por Arquitectura. Si afecta seguridad, requiere además validación de Seguridad Digital conforme a la Directiva de Desarrollo de Software Seguro.
 
 ### 20.1 Casos que requieren ADR
@@ -1029,6 +1139,7 @@ Toda desviación relevante requiere ADR aprobado por Arquitectura. Si afecta seg
 - Exponer API sin WSO2/API Manager cuando debería estar gestionada.
 - No escanear imagen antes de QA/PROD.
 - Usar tag `latest` fuera de desarrollo local.
+- Adoptar un ambiente adicional de UAT/Preproducción para el proyecto (ver §4.4).
 
 ### 20.2 Formato mínimo
 
