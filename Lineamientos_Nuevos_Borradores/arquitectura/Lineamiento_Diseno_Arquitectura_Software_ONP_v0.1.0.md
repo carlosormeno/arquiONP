@@ -1,8 +1,8 @@
-# Lineamiento de Diseño y Arquitectura de Software ONP
+# Lineamiento para el Diseño y Arquitectura de Software en la ONP
 
 **Código:** LIN-ARQ-000  
-**Versión:** 0.1.18  
-**Fecha:** 2026-07-06  
+**Versión:** 0.1.19  
+**Fecha:** 2026-07-07  
 **Autor:** Oficina de Tecnologías de la Información — ONP  
 **Estado:** Borrador de trabajo interno  
 **Clasificación:** Marco rector interno. No es un entregable oficial de la lista de documentos de arquitectura; es el documento normativo base que guía la redacción de todos los lineamientos técnicos formales. Todo lineamiento derivado debe ser consistente con las decisiones de este documento.
@@ -32,6 +32,7 @@
 | 0.1.16 | 2026-07-02 | Auditoría de cierre: numera §5.3 y §5.4 (headings sin número), corrige referencia §9.3 al formato §12, añade aviso "pendiente de redacción" en §2.2.1 para LIN-DEV-JAVA-001 §14, agrega ADR-014 (Feature Toggle/Unleash) en Apéndice A, amplía Apéndice B con CQRS y CDC, y refuerza obligatoriedad de Circuit Breaker en §3.8.4 para proveedores SOA de alta volumetría |
 | 0.1.17 | 2026-07-03 | Revisión estructural de §3, §5, §8 y §10: elimina separadores visuales redundantes de §3 (sustituidos por tabla introductoria); restructura §8 en 4 grupos (GoF Estructurales/Creacionales/Comportamiento + Capas y DDD) añadiendo 5 patrones nuevos (Strategy, Observer, Command, State, Decorator); declara formalmente PRA09 en §3.11 y cierra el deferral en §3.9.3; numera §5.1–§5.2 (Oracle y BD no relacional); actualiza §10.1 con EDA y DDD desglosado en Value Object y Aggregate Root |
 | 0.1.18 | 2026-07-06 | Auditoría de citas cruzadas con los 14 lineamientos de Nivel 3: agrega referencia a LIN-VER-001 §6.1 en las dos menciones de Trunk-Based Development (§2.2.1 y ADR-014); agrega referencia a LIN-API-REST-001 en la intro de §3.8; agrega referencia a LIN-IaC-001 en §11.1 para el aprovisionamiento declarativo de infraestructura |
+| 0.1.19 | 2026-07-07 | Revisión integral de calidad arquitectónica y retroalimentación técnica: ajusta título para Arquitectos de TI (§1 y portada); refina tabla y estándares en Feature Toggles (§2.2.1); incorpora Comunicación Sincrónica REST (§3); estandariza gramática y gobernanza del Event Bus institucional Kafka (§3.6); añade justificación conceptual en ACL (§3.8.4) y Shared Kernel (§3.9.2); clasifica Core Web Vitals vs Métricas Complementarias Lighthouse (§4); desarrolla marco conceptual para Active Record y Table Module (§6); explicita justificación normativa de pruebas (§10) y perfiles de contratación (§12); y ordena alfabéticamente el Glosario (§Apéndice B) incorporando 2PC, Saga, Outbox, BFF, Core Web Vitals, ACID y CAP |
 
 ---
 
@@ -56,9 +57,11 @@
 
 ### 1.1 Propósito
 
-Este documento establece el marco de diseño y arquitectura de software que rige el desarrollo de sistemas en la Oficina de Normalización Previsional (ONP). Define los estilos arquitectónicos permitidos, los principios de diseño obligatorios, los patrones de código aprobados y la hoja de ruta de evolución de los sistemas.
+Este documento establece el marco rector para el diseño y la arquitectura de software que rige el desarrollo de sistemas en la Oficina de Normalización Previsional (ONP). Orienta activamente a los Arquitectos de TI en la toma de decisiones técnicas y define los estilos arquitectónicos permitidos, los principios de diseño obligatorios, los patrones de código aprobados y la hoja de ruta de evolución de los sistemas.
 
-No es un documento de gobierno aprobado formalmente. Es la referencia técnica interna que el equipo de arquitectura usa para redactar los lineamientos oficiales de forma coherente y alineada.
+No es un documento de gobierno aprobado formalmente. Es la referencia técnica y metodológica interna que el equipo de arquitectura usa para orientar sus diseños y para redactar los lineamientos oficiales de Nivel 3 de forma coherente, alineada y exenta de ambigüedades técnicas.
+
+> **Nota sobre profundidad técnica:** Dado que en la ONP el desarrollo es ejecutado en su totalidad a través de terceros y empresas contratistas (ver [sección 12](#12-perfil-del-contratista-por-estilo-arquitectónico)), este documento desciende deliberadamente hasta el nivel de patrones de diseño finos, contratos de interfaces Java y estructuras de módulos Maven. Esta especificidad es indispensable para evitar interpretaciones divergentes y garantizar que el software entregado cumpla con los estándares de mantenibilidad y resiliencia de la institución.
 
 **Todo lineamiento técnico formal que se redacte debe ser consistente con las decisiones de este documento.**
 
@@ -134,15 +137,23 @@ Mientras que el patrón *Strangler Fig* gestiona el enrutamiento perimetral en e
 | Categoría | Propósito en ONP | Dinamismo | Vida Útil Permitida |
 |---|---|---|---|
 | **Release Toggle** | Habilitar *Trunk-Based Development* (ver **LIN-VER-001 §6.1**). Permite integrar código incompleto a la rama `main` a diario sin activar el flujo en producción hasta terminar la funcionalidad. | Estático / Archivo de configuración | **Corto plazo** (máximo 2 a 4 semanas; se borra inmediatamente al liberar el *release*). |
-| **Ops Toggle** | Mecanismo de *Kill-Switch* / Degradación elegante. Permite apagar un algoritmo pesado o una nueva integración en **< 1 segundo** ante una alerta de sobrecarga sin reiniciar pods en Kubernetes. | Dinámico — **Unleash** (self-hosted, estándar ONP) o **Spring Cloud Config** + flags en YAML (alternativa ligera sin infraestructura adicional). LaunchDarkly y otros SaaS solo con ADR aprobado por Arquitectura OTI + Seguridad (requieren salida de red externa, incompatible con entorno on-premise sin autorización). | **Largo plazo** (mientras el caso de uso se considere crítico operativamente). |
+| **Ops Toggle** | Mecanismo de *Kill-Switch* / Degradación elegante. Permite apagar un algoritmo pesado o una nueva integración en **< 1 segundo** ante una alerta de sobrecarga sin reiniciar pods en Kubernetes. | Dinámico por estado operacional / métricas (tiempo de ejecución sub-segundo) | **Largo plazo** (mientras el caso de uso se considere crítico operativamente). |
 | **Experiment Toggle** | Pruebas A/B o *Canary Launching* interno (ej. enrutar al 5% de usuarios al nuevo motor de cálculo de reserva matemática para comparar precisión). | Dinámico por petición / usuario | **Medio plazo** (dura lo que dure la fase de evaluación y validación actuarial). |
 | **Permission Toggle** | Habilitar funcionalidades beta o administrativas únicamente a ciertos roles de usuario (ej. auditores o supervisores ONP). | Dinámico por contexto de seguridad (JWT) | **Largo plazo** o permanente en control de accesos. |
 
-##### B. Regla Antideuda Técnica de Toggles
+##### B. Herramientas y Estándares de Implementación de Toggles
+
+Para operacionalizar el dinamismo requerido sin introducir riesgos de seguridad o acoplamiento a infraestructura externa no autorizada, la ONP adopta las siguientes reglas de herramientas:
+
+- **Estándar Institucional On-Premise:** **Unleash** (self-hosted en infraestructura propia) es la plataforma de gestión centralizada obligatoria para *Ops Toggles*, *Experiment Toggles* y *Permission Toggles*.
+- **Alternativa Ligera:** Para servicios simples o *Release Toggles*, se permite el uso de **Spring Cloud Config** + flags condicionales en YAML, siempre que no se requieran cambios en tiempo sub-segundo sin recarga de contexto.
+- **Servicios SaaS Externos:** El uso de plataformas en la nube como LaunchDarkly está **restringido** y requiere un ADR aprobado por Arquitectura OTI conjuntamente con la Oficina de Seguridad de la Información, ya que implican salida de red externa e intercambio de telemetría incompatible con entornos on-premise cerrados.
+
+##### C. Regla Antideuda Técnica de Toggles
 
 > **Mandato de Deuda Técnica Cero:** Todo *Release Toggle* o *Experiment Toggle* creado en el código fuente conlleva una **deuda técnica temporal programada**. Al finalizar la migración o validación de la funcionalidad, el equipo de desarrollo está **obligado a eliminar el toggle, sus condicionales (`if/else`) y el código legado asociado** en el sprint inmediatamente posterior. Mantener *toggles* muertos en el código se considera un anti-patrón de mantenibilidad sancionable en revisión de código (`LIN-DEV-JAVA-001 §14` *(pendiente de redacción)*).
 
-##### C. Integración con Branch by Abstraction
+##### D. Integración con Branch by Abstraction
 
 Para migraciones profundas dentro del Monolito Modular donde no interviene la red (ej. reemplazar una librería de acceso a datos o un conector SOAP hacia SUNAT por un cliente REST), se combina el Feature Toggle con el patrón **Branch by Abstraction**: se define una interfaz Java común en `domain.port.out` y una factoría o *Router* en la capa de infraestructura que evalúa el estado del *toggle* para inyectar la implementación antigua o la moderna sin alterar la lógica de negocio.
 
@@ -156,7 +167,7 @@ Esta sección organiza los estilos y patrones de arquitectura adoptados por ONP 
 |---|---|---|
 | **Organización del código** | ¿Cómo organizo el código dentro de un módulo? | Arquitectura en capas (Layered) [3.1](#31-arquitectura-en-capas-layered), Arquitectura Hexagonal (Ports & Adapters) [3.2](#32-arquitectura-hexagonal-ports--adapters) |
 | **Estructura del sistema** | ¿Cómo estructuro y despliego el sistema completo? | Monolito puro [3.3](#33-monolito-puro), Monolito Modular [3.4](#34-monolito-modular), Microservicios [3.5](#35-microservicios) |
-| **Comunicación** | ¿Cómo se comunican los componentes o servicios? | Arquitectura Orientada a Eventos (EDA) [3.6](#36-arquitectura-orientada-a-eventos-eda) |
+| **Comunicación** | ¿Cómo se comunican los componentes o servicios? | Comunicación Sincrónica REST ([3.6.1](#361-comunicación-sincrónica-rest--openapi-30)), Arquitectura Orientada a Eventos (EDA) ([3.6.2](#362-arquitectura-orientada-a-eventos-eda)) |
 | **Resiliencia, integración e interoperabilidad** | ¿Cómo protejo las llamadas a sistemas externos, gestiono canales de consumo e integro con entidades del Estado? | Resiliencia y Tolerancia a Fallos (Design for Failure) [3.7](#37-resiliencia-y-tolerancia-a-fallos-design-for-failure), Patrones de Integración, Agregación, Fachada e Interoperabilidad SOA [3.8](#38-patrones-de-integración-agregación-fachada-e-interoperabilidad-soa-e07) |
 | **Fronteras entre módulos** | ¿Cómo relaciono los bounded contexts dentro del Monolito Modular? | Patrones de Dominio y Relación entre Contextos en el Monolito Modular [3.9](#39-patrones-de-dominio-y-relación-entre-contextos-en-el-monolito-modular-pd08-pd09-pd10) |
 | **Consistencia y proyecciones** | ¿Cuándo y cómo separo escritura de lectura con CQRS? | CQRS — Separación de Modelos de Escritura y Lectura [3.10](#310-cqrs--separación-de-modelos-de-escritura-y-lectura-pa07) |
@@ -467,11 +478,35 @@ Reservado para módulos del Monolito Modular maduro ([3.4](#34-monolito-modular)
 
 **Regla — sin ACID entre microservicios:** coordinar dos BDs distintas requeriría Two-Phase Commit (2PC), que introduce bloqueos distribuidos, acoplamiento fuerte y puntos únicos de falla — exactamente lo opuesto de lo que se busca con microservicios. La alternativa correcta es el patrón **Saga** con **Transactional Outbox**. El detalle de implementación está en **LIN-BUS-001 sección 9**.
 
-### 3.6 Arquitectura Orientada a Eventos (EDA)
+### 3.6 Estilos de Comunicación: REST Sincrónico y EDA Asíncrono
+
+En los sistemas de la ONP, los componentes y servicios interactúan mediante dos estilos fundamentales de comunicación: **llamadas directas sincrónicas (REST)** y **mensajería asíncrona basada en eventos (EDA)**. La elección entre ambos no es una cuestión de preferencia o moda, sino de acoplamiento, tiempo de respuesta y garantías de consistencia.
+
+#### 3.6.1 Comunicación Sincrónica (REST / OpenAPI 3.0)
+
+Es el estilo de comunicación por defecto para interacciones directas donde el cliente o consumidor requiere un resultado inmediato para poder continuar su flujo de negocio.
+
+##### Diagrama
+```
+[Cliente / Consumidor] ── HTTP GET/POST (Request) ──► [API REST / Proveedor]
+                       ◄── HTTP 200 OK (Response) ───
+```
+
+##### Cuándo usar
+- Cuando el flujo de negocio requiere **consistencia inmediata** y respuesta confirmada en tiempo real (ej. consulta de saldo de pensionista, validación interactiva de identidad).
+- En la comunicación entre el frontend (SPA Angular) y el backend (Monolito Modular), o al consumir APIs públicas de otros módulos o servicios.
+- Cuando una operación fallida debe ser informada al usuario de inmediato en la interfaz.
+
+##### Reglas ONP para REST Sincrónico
+- **Contrato explícito:** Toda API REST debe estar formalmente documentada utilizando **OpenAPI 3.0 (Swagger)**, actuando como contrato inmutable (*Published Language*, [3.9.3](#393-lenguaje-publicado-published-language--pd10)).
+- **Resiliencia obligatoria:** Ninguna llamada REST externa o entre servicios debe realizarse sin configurar timeouts estrictos de conexión y lectura, acompañados de Circuit Breakers en puntos críticos (ver [sección 3.7](#37-resiliencia-y-tolerancia-a-fallos-design-for-failure)).
+- **Cumplimiento normativo:** Todo diseño e implementación de endpoints debe acogerse al estándar institucional **LIN-API-REST-001**.
+
+#### 3.6.2 Arquitectura Orientada a Eventos (EDA)
 
 Estilo donde los componentes se comunican a través de **eventos** en lugar de llamadas directas. Un productor registra que algo ocurrió; los consumidores reaccionan de forma asíncrona y desacoplada a través de un broker. EDA no reemplaza a REST — es el estilo correcto solo en los contextos específicos descritos más abajo.
 
-#### Diagrama
+##### Diagrama
 
 ```
 [Productor]  ──► evento ──►  [Broker]  ──► evento ──►  [Consumidor A]
@@ -487,19 +522,19 @@ La diferencia fundamental con REST:
 | Acoplamiento | Alto — el productor conoce la API del consumidor | Bajo — solo comparten el contrato del evento |
 | Consistencia | Fuerte (el resultado es inmediato) | Eventual (el consumidor procesa en su tiempo) |
 
-#### Cuándo usar
+##### Cuándo usar
 
 EDA es el estilo correcto cuando:
 
-- la acción del productor está completa sin importar cuándo reacciona el consumidor (notificaciones, auditoría, reporte);
-- el sistema necesita desacoplar dos contextos sin crear una dependencia directa de ciclo de despliegue;
-- la consistencia eventual es aceptable para ese flujo de negocio;
-- el patrón Saga coordina una transacción distribuida entre sistemas con BD propia — sean microservicios o aplicativos monolíticos;
-- el Monolito Modular necesita notificar a sistemas externos (auditoría, reportes, otros aplicativos) sin acoplarse directamente a ellos.
+- La acción del productor está completa sin importar cuándo reacciona el consumidor (notificaciones, auditoría, reporte).
+- El sistema necesita desacoplar dos contextos sin crear una dependencia directa de ciclo de despliegue.
+- La consistencia eventual es aceptable para ese flujo de negocio.
+- El patrón Saga coordina una transacción distribuida entre sistemas con BD propia — sean microservicios o aplicativos monolíticos.
+- El Monolito Modular necesita notificar a sistemas externos (auditoría, reportes, otros aplicativos) sin acoplarse directamente a ellos.
 
 EDA requiere la infraestructura de un broker. ONP adopta **Apache Kafka** como broker institucional (ver **LIN-BUS-001 sección 4**). Los criterios detallados de cuándo usar, están en **LIN-BUS-001 sección 4.3**. Todo sistema que adopte EDA debe cumplir con **LIN-BUS-001**.
 
-#### Cuándo NO usar
+##### Cuándo NO usar
 
 | Situación | Por qué EDA no corresponde |
 |---|---|
@@ -508,7 +543,7 @@ EDA requiere la infraestructura de un broker. ONP adopta **Apache Kafka** como b
 | Desacoplar por desacoplar sin análisis de consistencia | El diseño del evento, el esquema de compensación y la operabilidad del broker tienen un costo real. Desacoplar sin justificación no es una mejora arquitectónica. |
 | Equipo sin observabilidad para sistemas asíncronos | EDA es opaco sin trazas distribuidas que conecten el trace del productor con el del consumidor. Si el stack de observabilidad (LIN-OBS-001) no está maduro, EDA es difícil de operar. LIN-BUS-001 eleva esta condición a prerequisito formal: ningún flujo EDA entra a producción sin trazabilidad completa. |
 
-#### Patrones EDA aplicables en ONP
+##### Patrones EDA aplicables en ONP
 
 | Patrón | Propósito | Cuándo usar |
 |---|---|---|
@@ -519,7 +554,7 @@ EDA requiere la infraestructura de un broker. ONP adopta **Apache Kafka** como b
 
 > **Event Sourcing** no está en la lista. Almacenar el estado como secuencia de eventos introduce complejidad operativa (versionado de esquemas de eventos, proyecciones, replay) que supera el beneficio en los sistemas actuales de ONP. Su adopción requiere ADR aprobado por Arquitectura OTI.
 
-##### Saga por orquestación — variante ONP sobre aplicativos monolíticos (Kafka + REST)
+###### Saga por orquestación — variante ONP sobre aplicativos monolíticos (Kafka + REST)
 
 El patrón Saga no requiere microservicios. En ONP, donde el parque de aplicativos está compuesto mayoritariamente por monolitos con BD propia, Saga se podría implementar combinando **Kafka como canal de transporte** y **REST como mecanismo de ejecución** en cada participante.
 
@@ -576,11 +611,11 @@ SAGA_INSTANCIA
 
 > El detalle de la convención de tópicos Saga y la estructura de CloudEvents extendido está en **LIN-BUS-001 sección 9.4**.
 
-#### Reglas ONP
+##### Reglas ONP para EDA
 
 **Prerequisito arquitectónico:** todo sistema que adopte EDA — independientemente de si es un Monolito Modular o un microservicio — debe tener definidos explícitamente sus **ports y adapters** (Arquitectura Hexagonal, [3.2](#32-arquitectura-hexagonal-ports--adapters) de modo que Kafka sea un adaptador de infraestructura, no una dependencia interna del dominio. El broker no es un atajo para omitir esa frontera (ver **LIN-BUS-001 sección 1.3**). EDA no requiere microservicios: el Monolito Modular puede adoptar EDA para comunicarse con sistemas externos o coordinar flujos Saga con otros aplicativos.
 
-**Broker institucional:** ONP opera un único broker Kafka institucional. No se aprueban brokers paralelos por proyecto sin ADR aprobado por Arquitectura OTI (ver **LIN-BUS-001 sección 4.1**, principio P1).
+**Plataforma / Bus de Eventos Institucional:** ONP opera y gestiona de forma centralizada una única plataforma o clúster institucional de Apache Kafka como **Event Bus Transversal**. Esta norma no prohíbe el despliegue técnico en clúster de alta disponibilidad por entornos, sino que **prohíbe terminantemente la creación de clústeres, servidores o brokers paralelos aislados por proyecto, contratista o fábrica de software ("silos de mensajería")**, salvo autorización explícita mediante ADR aprobado por Arquitectura OTI (ver **LIN-BUS-001 sección 4.1**, principio P1). La centralización garantiza el gobierno de esquemas (Schema Registry), seguridad perimetral y observabilidad distribuida en toda la institución.
 
 **Estándar de estructura de evento — CloudEvents v1.0:** la estructura de todos los eventos publicados en el bus institucional cumple **CloudEvents v1.0** (especificación CNCF). Garantiza interoperabilidad con otras instituciones del Estado y el ecosistema cloud-native. El detalle de la estructura de CloudEvents (campos, tipos, formato `traceparent` W3C TraceContext) está en **LIN-BUS-001 sección 5.2**. La decisión de adopción está documentada en **ADR-CLOUDEVENTS-001**.
 
@@ -733,6 +768,8 @@ public class GobiernoIntegracionFacadeAdapter implements VerificacionCiudadanoPo
 
 La **Arquitectura Orientada a Servicios (SOA)** no es el estilo arquitectónico interno de construcción de software en ONP (donde rigen el Monolito Modular y Microservicios), sino el **estilo mandatorio e institucional de interoperabilidad G2G (Gobierno a Gobierno)** para el intercambio de información con otras entidades del Estado Peruano (RENIEC, SUNAT, ESSALUD, MIDIS, Poder Judicial) a través de la **Plataforma de Interoperabilidad del Estado (PIDE - PCM)** o canales B2G directos.
 
+> **Justificación Arquitectónica del Aislamiento y Resiliencia en SOA:** En el contexto de la ONP, los servicios gubernamentales externos operan fuera del control técnico y operacional de la institución. Frecuentemente presentan contratos heredados (SOAP/XML antiguo), esquemas verbosos o latencias impredecibles. Por ello, es una exigencia arquitectónica innegociable implementar barreras de aislamiento (**Anti-Corruption Layer - ACL**) y patrones de resiliencia extrema (**Circuit Breakers y Timeouts**). El objetivo no es solo integrar, sino **blindar el modelo de dominio soberano y los hilos de ejecución de la ONP** para que las inestabilidades o deudas técnicas de entidades externas no corrompan la lógica previsional ni provoquen caídas en cascada en los servidores institucionales.
+
 ##### A. Reglas Mandatorias de Consumo SOA / PIDE
 
 1. **Aislamiento Estricto vía Anti-Corruption Layer (ACL):**
@@ -814,6 +851,8 @@ El *Context Map* es el contrato formal y arquitectónico que gobierna cómo inte
 4. **Caminos Separados (*Separate Ways*):** Si dos subdominios no tienen relación de negocio coherente (ej. Mesa de Partes Virtual y Cálculo de Reserva Matemática), está **terminantemente prohibido** acoplarlos en código. Deben operar de forma completamente independiente o comunicarse vía eventos de dominio asíncronos en el Bus de Kafka ([3.6](#36-kafka-como-canal-de-transporte)).
 
 #### 3.9.2 Núcleo Compartido (*Shared Kernel*)
+
+> **Justificación Arquitectónica del Núcleo Compartido:** En un Monolito Modular, el principio general es la soberanía y aislamiento absoluto de cada módulo o subdominio (*Bounded Context*). Sin embargo, existen conceptos universales y estrictamente inmutables transversales a toda la institución (como los tipos de datos DNI, RUC, o excepciones raíz) que carecería de sentido duplicar y mantener por separado en cada módulo. El **Shared Kernel (Núcleo Compartido)** resuelve esta tensión estableciendo una excepción estrictamente regulada: un módulo común en memoria que elimina duplicidad de código en conceptos universales, pero prohibiendo categóricamente incluir entidades JPA o lógica de negocio que introduciría acoplamiento fuerte oculto entre módulos.
 
 El *Shared Kernel* representa el subconjunto estrictamente acotado de código que se comparte libremente en memoria entre todos los *Bounded Contexts* del Monolito Modular (típicamente encapsulado en el módulo Maven `onp-common-domain`).
 
@@ -1081,21 +1120,21 @@ Cuando se usa React o Vue, los estándares de **LIN-FE-ANG-001** aplican igualme
 - La autenticación usa **SAA** (token institucional): el token se gestiona en el SPA, el backend lo valida en cada request vía `SaaTokenValidationFilter`. El objetivo futuro es OAuth2/OIDC con WSO2 (ver LIN-SEC-APP-001)
 - CORS configurado explícitamente en el backend — no se usa `*` en producción
 
-### Métricas de performance obligatorias (Core Web Vitals)
+### Métricas de performance frontend obligatorias (Core Web Vitals y Métricas Complementarias Lighthouse)
 
-ONP adopta **Core Web Vitals** como el framework de medición de performance frontend. Los siguientes umbrales son obligatorios y medibles con Lighthouse:
+ONP adopta **Core Web Vitals** y las métricas complementarias de Lighthouse como el framework integral de medición de performance y experiencia de usuario en frontend. Los siguientes umbrales son obligatorios para toda aplicación institucional:
 
-| Métrica | Qué mide | Umbral mínimo ONP |
-|---|---|---|
-| **LCP** (Largest Contentful Paint) | Tiempo hasta que el contenido principal es visible | < 2.5s |
-| **INP** (Interaction to Next Paint) | Tiempo de respuesta a interacciones del usuario | < 200ms |
-| **CLS** (Cumulative Layout Shift) | Estabilidad visual — elementos que no saltan | < 0.1 |
-| **FCP** (First Contentful Paint) | Primer elemento visible en pantalla | < 1.8s |
-| **TTI** (Time to Interactive) | Cuando la página responde completamente | < 3.5s |
-| **TBT** (Total Blocking Time) | Tiempo que el hilo principal está bloqueado | < 200ms |
-| **FPS** en animaciones | Fluidez de transiciones y animaciones | ≥ 60fps |
+| Categoría | Métrica | Qué mide | Umbral mínimo ONP |
+|---|---|---|---|
+| **Core Web Vitals (Google)** | **LCP** (Largest Contentful Paint) | Tiempo hasta que el contenido principal y más grande es visible en pantalla | < 2.5s |
+| **Core Web Vitals (Google)** | **INP** (Interaction to Next Paint) | Latencia y tiempo de respuesta del sistema ante las interacciones del usuario | < 200ms |
+| **Core Web Vitals (Google)** | **CLS** (Cumulative Layout Shift) | Estabilidad visual — evita cambios bruscos o saltos inesperados en los elementos | < 0.1 |
+| **Métricas Complementarias (Lighthouse / UX)** | **FCP** (First Contentful Paint) | Tiempo hasta que el primer elemento DOM o texto es visible en la pantalla | < 1.8s |
+| **Métricas Complementarias (Lighthouse / UX)** | **TTI** (Time to Interactive) | Tiempo transcurrido hasta que la página es completamente interactiva | < 3.5s |
+| **Métricas Complementarias (Lighthouse / UX)** | **TBT** (Total Blocking Time) | Tiempo acumulado en que el hilo principal del navegador estuvo bloqueado | < 200ms |
+| **Métricas Complementarias (Lighthouse / UX)** | **FPS** en animaciones | Fluidez visual de transiciones, desplazamientos y micro-animaciones | ≥ 60fps |
 
-Estas métricas son **gates de calidad en CI/CD** — un build que no las cumple no pasa a producción. Ver **LIN-CICD-001** (en borrador) para la integración de Lighthouse en el pipeline.
+Estas métricas actúan como **gates de calidad mandatorios en CI/CD** — un build de frontend que no cumple con estos umbrales no es promovido a producción. Ver **LIN-CICD-001** (en borrador) para el detalle de la automatización de pruebas con Lighthouse en el pipeline.
 
 ### Técnicas obligatorias para cumplir los umbrales
 
@@ -1282,7 +1321,9 @@ public class RegistrarPagoService {
 
 ### 6.2 Active Record
 
-**Cuándo usar:** Entidades con lógica de validación propia que no involucra otros agregados. Conveniente con Spring Data JPA cuando las entidades son simples.
+**Concepto y Justificación:** En el patrón *Active Record*, una entidad que representa una fila de una tabla de base de datos encapsula tanto sus datos (atributos) como el acceso y modificación de los mismos, incorporando además operaciones simples de validación y estado. A diferencia de un *Anemic Domain Model* (donde la entidad es un simple contenedor de getters/setters), el *Active Record* enriquece la entidad dotándola de comportamiento propio y coherencia interna.
+
+**Cuándo usar:** Entidades con lógica de validación propia que no involucra otros agregados ni servicios externos. En el ecosistema ONP, es muy conveniente cuando se usa Spring Data JPA sobre modelos relacionales relativamente simples, permitiendo que la propia clase entidad proteja sus invariantes sin requerir una arquitectura de dominio compleja.
 
 ```java
 @Entity
@@ -1313,7 +1354,9 @@ public class Pensionista {
 
 ### 6.3 Table Module
 
-**Cuándo usar:** Lógica que opera sobre colecciones de registros (reportes, cálculos agregados, reglas que aplican a grupos de entidades). Común en módulos de cálculo de pensiones.
+**Concepto y Justificación:** A diferencia del *Domain Model* (que instancia un objeto por cada registro individual) o de un *Active Record* (donde cada objeto opera sobre su propia fila), el patrón *Table Module* organiza la lógica de negocio alrededor de **toda una tabla o colección de registros como una unidad**. En lugar de invocar métodos sobre miles de instancias individuales en un bucle, un único objeto de módulo gestiona, procesa y calcula reglas sobre una estructura de datos tabular o colección de resultados.
+
+**Cuándo usar:** Lógica que opera masivamente sobre colecciones de registros, como generación de reportes actuariales, proyecciones previsionales, cálculos agregados de planillas o reglas por lotes (*batch*) que aplican a grupos enteros de entidades. En ONP es común en módulos de cálculo de pensiones o devengados masivos, donde instanciar miles de agregados individuales de DDD degradaría el rendimiento de la memoria JVM innecesariamente.
 
 ```java
 @Service
@@ -2436,6 +2479,8 @@ onp-modulo/
 
 ## 10. Estrategia de pruebas
 
+> **Justificación de la Estrategia de Pruebas dentro de la Arquitectura ONP:** La arquitectura de software no es un ejercicio puramente estructural o de diagramas; **una arquitectura que no es evaluada ni verificada automatizadamente en un pipeline se degrada en semanas**. En una organización como la ONP, donde el desarrollo se realiza 100% a través de terceros y contratistas (ver [sección 12](#12-perfil-del-contratista-por-estilo-arquitectónico)), la estrategia de pruebas actúa como el **mecanismo de gobierno de calidad en código**. Esta sección no busca reemplazar los lineamientos de QA, sino definir normativamente cómo se distribuyen y construyen las pruebas automáticas según el estilo arquitectónico elegido (Monolito Modular, Hexagonal o Microservicios) para garantizar que los contratos e invariantes de diseño se respeten continuamente en CI/CD.
+
 ### 10.1 Pirámide de pruebas por estilo arquitectónico
 
 La distribución de la pirámide de pruebas la determina el **estilo arquitectónico** — no la estrategia de lógica de dominio. Son dos dimensiones distintas:
@@ -2635,6 +2680,8 @@ El dashboard de Grafana obligatorio definido en **LIN-OBS-001 sección 9.3** est
 
 ## 12. Perfil del contratista por estilo arquitectónico
 
+> **Justificación del Perfil Técnico dentro de los Lineamientos de Arquitectura:** El éxito de una arquitectura modular o distribuida depende intrínsecamente de las competencias técnicas de quienes la programan. En la ONP, al carecer de una fábrica de desarrollo interna de planta y operar con **100% de software construido por empresas contratistas**, la separación entre "diseño arquitectónico" y "requisitos de contratación" crearía un vacío de ejecución mortal: se diseñarían arquitecturas avanzadas (como DDD o Hexagonal) implementadas por perfiles sin la fluidez técnica en Java 21, Spring Boot 3 o concurrencia que dichas arquitecturas exigen. Por ello, este apartado se incluye formalmente aquí como **anexo normativo de gobernanza técnica para la redacción de Términos de Referencia (TDRs)** y evaluaciones de ingreso de personal externo.
+
 ONP no tiene desarrolladores propios de planta. Todo el desarrollo es contratado. Este perfil define qué debe validarse en un proceso de contratación según el estilo arquitectónico del sistema a desarrollar.
 
 ### 12.1 Perfil base (obligatorio para cualquier contratación)
@@ -2697,16 +2744,23 @@ Independientemente del estilo, todo proveedor o profesional contratado debe demo
 
 | Término | Definición en el contexto ONP |
 |---|---|
-| **Monolito Modular** | Sistema único desplegable organizado en módulos Maven con fronteras explícitas y sin dependencias circulares |
-| **Port** | `interface` Java que define el contrato entre el dominio y el mundo exterior — dice QUÉ puede hacer o necesitar el sistema, sin decir CÓMO. **Port de entrada:** lo que el exterior puede hacer con el dominio (ej. `RegistrarAporteUseCase`). **Port de salida:** lo que el dominio necesita del exterior (ej. `PensionistaRepository`). |
-| **Adapter** | Implementación concreta de un port que conecta el dominio con un sistema externo o mecanismo de infraestructura |
-| **ACL (Anti-Corruption Layer)** | Mapper o conjunto de mappers que traduce el modelo de un sistema externo al modelo de dominio de ONP |
-| **Bounded Context** | Límite explícito dentro del cual un modelo de dominio es coherente y tiene significado único |
-| **Strangler Fig** | Patrón de migración donde el sistema nuevo reemplaza progresivamente funcionalidades del legacy sin reescritura total |
-| **Transaction Script** | Estrategia de lógica de dominio donde cada operación de negocio es un procedimiento secuencial en un servicio |
-| **Feature Toggle** | Mecanismo que permite habilitar o deshabilitar fragmentos de código en tiempo de ejecución sin redespliegue (`PA14`) |
-| **Published Language** | Estándar de contrato explícito (CloudEvents v1.0 o OpenAPI 3.0) para el intercambio de datos entre Bounded Contexts sin exponer modelos internos (`PD10`) |
-| **CQRS** | Command Query Responsibility Segregation — patrón que separa el modelo de escritura (comandos) del modelo de lectura (queries) en modelos físicamente distintos para optimizar cada operación de forma independiente (`PA07`) |
-| **CDC (Change Data Capture)** | Técnica que captura cambios en la base de datos a nivel de log binario (ej. Debezium + Oracle LogMiner/XStream) para propagar modificaciones al read model sin polling activo — variante B del patrón CQRS en ONP |
-| **ADR** | Architecture Decision Record — registro formal de una decisión de arquitectura con contexto, decisión y consecuencias |
-| **SLO** | Service Level Objective — objetivo cuantitativo de confiabilidad de un servicio (ej. 99.5% de disponibilidad mensual) |
+| **2PC (Two-Phase Commit)** | Protocolo de consenso para transacciones distribuidas que coordina el compromiso de dos o más bases de datos. En ONP está prohibido entre microservicios debido a los bloqueos y latencia que introduce; se reemplaza por el patrón Saga con Outbox |
+| **ACID** | Acrónimo de Atomicidad, Consistencia, Aislamiento y Durabilidad. Conjunto de propiedades transaccionales garantizadas por bases de datos relacionales en operaciones locales (`@Transactional` en un solo módulo/BD) |
+| **ACL (Anti-Corruption Layer)** | Mapper o conjunto de mappers que traduce el modelo de un sistema externo al modelo de dominio de ONP (`§3.8.4` y `§8.4.3`) |
+| **Adapter** | Implementación concreta de un port que conecta el dominio con un sistema externo o mecanismo de infraestructura (`§3.2`) |
+| **ADR (Architecture Decision Record)** | Registro formal de una decisión de arquitectura con contexto, decisión y consecuencias (`Apéndice A`) |
+| **BFF (Backend-For-Frontend)** | Patrón arquitectónico que crea un servicio backend o fachada de presentación especializada y a medida para cada tipo de interfaz de usuario o canal de consumo (ej. SPA Angular vs App Móvil) (`§3.8.3`) |
+| **Bounded Context** | Límite explícito dentro del cual un modelo de dominio es coherente y tiene significado único (`§3.9` y `§6.4`) |
+| **CAP (Teorema CAP)** | Teorema que establece que un sistema distribuido solo puede garantizar simultáneamente dos de tres propiedades: Consistencia (C), Disponibilidad (A) y Tolerancia a Particiones (P). En ONP todo microservicio debe declarar en su ADR si es CP o AP (`§3.5`) |
+| **CDC (Change Data Capture)** | Técnica que captura cambios en la base de datos a nivel de log binario (ej. Debezium + Oracle LogMiner/XStream) para propagar modificaciones al read model sin polling activo — variante B del patrón CQRS en ONP (`§3.10`) |
+| **Core Web Vitals** | Conjunto de métricas estandarizadas por Google (LCP, INP, CLS) para evaluar la experiencia de usuario y rendimiento en aplicaciones web frontend, adoptadas en ONP como gates de calidad obligatorios en CI/CD (`§4`) |
+| **CQRS (Command Query Responsibility Segregation)** | Patrón que separa el modelo de escritura (comandos) del modelo de lectura (queries) en modelos físicamente distintos para optimizar cada operación de forma independiente (`PA07`, `§3.10`) |
+| **Feature Toggle** | Mecanismo que permite habilitar o deshabilitar fragmentos de código en tiempo de ejecución sin redespliegue (`PA14`, `§2.2.1`) |
+| **Monolito Modular** | Sistema único desplegable organizado en módulos Maven con fronteras explícitas y sin dependencias circulares (`§3.4`) |
+| **Port** | `interface` Java que define el contrato entre el dominio y el mundo exterior — dice QUÉ puede hacer o necesitar el sistema, sin decir CÓMO. **Port de entrada:** lo que el exterior puede hacer con el dominio (ej. `RegistrarAporteUseCase`). **Port de salida:** lo que el dominio necesita del exterior (ej. `PensionistaRepository`) (`§3.2`) |
+| **Published Language** | Estándar de contrato explícito (CloudEvents v1.0 o OpenAPI 3.0) para el intercambio de datos entre Bounded Contexts sin exponer modelos internos (`PD10`, `§3.9.3`) |
+| **Saga** | Patrón arquitectónico para gestionar transacciones distribuidas entre servicios independientes de manera asíncrona y eventual, ejecutando transacciones locales secuenciales con operaciones de compensación en caso de fallo (`§3.6.2`) |
+| **SLO (Service Level Objective)** | Objetivo cuantitativo de confiabilidad de un servicio (ej. 99.5% de disponibilidad mensual) |
+| **Strangler Fig** | Patrón de migración donde el sistema nuevo reemplaza progresivamente funcionalidades del legacy sin reescritura total (`§5.2`, `ADR-004`) |
+| **Transaction Script** | Estrategia de lógica de dominio donde cada operación de negocio es un procedimiento secuencial en un servicio (`§6.1`) |
+| **Transactional Outbox** | Patrón donde los eventos o mensajes a emitir se guardan primero en una tabla de base de datos local como parte de la misma transacción ACID de negocio, garantizando la publicación sin pérdida ni duplicación (`§3.6.2`) |
