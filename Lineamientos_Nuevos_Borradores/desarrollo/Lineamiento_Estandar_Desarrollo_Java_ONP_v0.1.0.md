@@ -23,15 +23,17 @@
 - [sección 4 Convenciones de nomenclatura](#4-convenciones-de-nomenclatura)
 - [sección 5 Estructura interna de clases](#5-estructura-interna-de-clases)
 - [sección 6 Convenciones de codificación](#6-convenciones-de-codificación)
-- [sección 7 Documentación del código](#7-documentación-del-código)
-- [sección 8 Logging estructurado](#8-logging-estructurado)
-- [sección 9 Manejo de excepciones en la capa REST](#9-manejo-de-excepciones-en-la-capa-rest)
-- [sección 10 Calidad de código](#10-calidad-de-código)
-- [sección 11 Convenciones Spring Boot](#11-convenciones-spring-boot)
-- [sección 12 Estructura de proyecto y gestión de dependencias Maven](#12-estructura-de-proyecto-y-gestión-de-dependencias-maven)
-- [sección 13 Pruebas](#13-pruebas)
-- [sección 14 Revisión de código](#14-revisión-de-código)
-- [sección 15 Proceso de excepción a este estándar](#15-proceso-de-excepción-a-este-estándar)
+- [sección 7 Principios SOLID aplicados a clases y métodos Java 21](#7-principios-solid-aplicados-a-clases-y-métodos-java-21)
+- [sección 8 Patrones de diseño de código (GoF) en Spring Boot 3](#8-patrones-de-diseño-de-código-gof-en-spring-boot-3)
+- [sección 9 Documentación del código](#9-documentación-del-código)
+- [sección 10 Logging estructurado](#10-logging-estructurado)
+- [sección 11 Manejo de excepciones en la capa REST](#11-manejo-de-excepciones-en-la-capa-rest)
+- [sección 12 Calidad de código](#12-calidad-de-código)
+- [sección 13 Convenciones Spring Boot](#13-convenciones-spring-boot)
+- [sección 14 Estructura de proyecto y gestión de dependencias Maven](#14-estructura-de-proyecto-y-gestión-de-dependencias-maven)
+- [sección 15 Pruebas](#15-pruebas)
+- [sección 16 Revisión de código](#16-revisión-de-código)
+- [sección 17 Proceso de excepción a este estándar](#17-proceso-de-excepción-a-este-estándar)
 - [Anexo A: Plantilla Javadoc estándar ONP](#anexo-a-plantilla-javadoc-estándar-onp)
 - [Anexo B: Configuración Checkstyle recomendada](#anexo-b-configuración-checkstyle-recomendada)
 - [Anexo C: Tabla completa de sufijos de clase](#anexo-c-tabla-completa-de-sufijos-de-clase)
@@ -913,9 +915,226 @@ List<String> resumen = expedientes.stream()
 
 ---
 
-## sección 7 Documentación del código
+## sección 7 Principios SOLID aplicados a clases y métodos Java 21
 
-### 7.1 Cuándo escribir Javadoc
+Los principios **SOLID** orientan el diseño granular de clases, interfaces y métodos para evitar la degradación estructural (*Big Ball of Mud*). Su cumplimiento en Java 21 y Spring Boot 3 es obligatorio para toda fábrica de software o equipo interno.
+
+### 7.1 Single Responsibility Principle (SRP) en Servicios Spring
+
+Cada clase, servicio o componente Spring (`@Service`, `@Component`, `@Repository`) debe tener una **única razón para cambiar**. Un servicio transaccional no debe mezclar lógica previsional con envío de correos SMTP, formateo de PDFs o invocaciones directas a sistemas REST de terceros.
+
+```java
+// MAL — El servicio asume responsabilidades divergentes que evolucionan a ritmos distintos
+@Service
+public class ExpedienteMonoliticoService {
+    public void aprobar(Expediente exp) { /* lógica de aprobación previsional */ }
+    public void enviarCorreoSmtp(Expediente exp) { /* conexión e integracion con servidor de correo */ }
+    public byte[] generarResolucionPdf(Expediente exp) { /* renderizado y maquetación PDF con iText */ }
+}
+
+// BIEN — Segregación de responsabilidades mediante puertos de salida y servicios especializados
+@Service
+@RequiredArgsConstructor
+public class AprobarExpedienteService {
+    private final ExpedienteRepository repository;
+    private final NotificacionPort notificacionPort;
+    private final GeneradorResolucionPort generadorPort;
+
+    @Transactional
+    public Resolucion aprobar(Long expedienteId) {
+        Expediente exp = repository.obtenerPorId(expedienteId);
+        exp.aprobar();
+        repository.guardar(exp);
+        notificacionPort.notificarAprobacion(exp);
+        return generadorPort.generarResolucion(exp);
+    }
+}
+```
+
+### 7.2 Open/Closed Principle (OCP) mediante Polimorfismo e Interfaces
+
+El código debe estar **abierto a la extensión y cerrado a la modificación**. Cuando la normativa de la ONP introduzca una variación en el cálculo o una nueva regla (ej. nuevo régimen previsional o nueva tabla de beneficio), queda **terminantemente prohibido** encadenar condicionales (`if/else` o `switch`) gigantes dentro de la misma clase. Se debe implementar el polimorfismo mediante interfaces y la inyección en listas de Spring.
+
+```java
+// Puerto o Estrategia de cálculo previsional
+public interface CalculadorRentaStrategy {
+    boolean soporta(TipoRegimen regimen);
+    BigDecimal calcular(Pensionista pensionista, HistorialAportes historial);
+}
+
+@Service
+@RequiredArgsConstructor
+public class CalculadoraPensionService {
+    // Spring inyecta automáticamente TODOS los beans que implementen la interfaz
+    private final List<CalculadorRentaStrategy> estrategias;
+
+    public BigDecimal calcularPension(Pensionista p, HistorialAportes h) {
+        return estrategias.stream()
+            .filter(e -> e.soporta(p.getRegimen()))
+            .findFirst()
+            .orElseThrow(() -> new ReglaPrevisionalException("Régimen no soportado: " + p.getRegimen()))
+            .calcular(p, h);
+    }
+}
+```
+
+### 7.3 Liskov Substitution Principle (LSP) en Jerarquías de Dominio
+
+Las clases o implementaciones derivadas deben poder sustituir a su abstracción base sin romper las garantías transaccionales ni los contratos precondición/postcondición.
+- Prohibido lanzar `UnsupportedOperationException` en métodos heredados de una interfaz o clase base.
+- Prohibido retornar `null` cuando la interfaz base promete un `Optional<T>` o un objeto válido.
+
+### 7.4 Interface Segregation Principle (ISP) en Puertos y Contratos
+
+Es preferible contar con múltiples interfaces específicas orientadas al cliente o caso de uso en lugar de una interfaz monolítica.
+
+```java
+// MAL — Interfaz gigante que obliga al consumidor a depender de métodos que jamás invoca
+public interface ExpedienteRepository {
+    void guardar(Expediente exp);
+    void eliminar(ExpedienteId id);
+    List<ExpedienteReporte> generarReporteAnualActuarial();
+    void purgarHistorialAntiguo();
+}
+
+// BIEN — Segregación según responsabilidad operacional y analítica
+public interface ExpedienteCommandRepository {
+    void guardar(Expediente exp);
+}
+
+public interface ExpedienteQueryRepository {
+    Optional<Expediente> obtenerPorId(ExpedienteId id);
+}
+
+public interface ExpedienteReporteRepository {
+    List<ExpedienteReporte> generarReporteAnualActuarial();
+}
+```
+
+### 7.5 Dependency Inversion Principle (DIP) e Inyección por Constructor
+
+Los módulos de alto nivel (`domain/`) no deben depender de módulos de bajo nivel (`infrastructure/in/out`, `jpa`, `rest`); ambos deben depender de abstracciones (interfaces o puertos).
+- **Mandato en Spring Boot 3:** La inyección de dependencias debe realizarse **exclusivamente por constructor** (`@RequiredArgsConstructor` de Lombok con atributos `private final` o constructor explícito).
+- Queda **prohibido** el uso de `@Autowired` sobre campos (`field injection`) o métodos setter.
+
+---
+
+## sección 8 Patrones de diseño de código (GoF) en Spring Boot 3
+
+La implementación de patrones *Gang of Four* (GoF) en la ONP aprovecha el contenedor de inversión de control (IoC) de Spring Boot 3 para mantener un código limpio, extensible y testeable.
+
+### 8.1 Patrones Estructurales en Spring
+
+#### 8.1.1 Decorator (`@Primary` para Funcionalidades Transversales)
+Permite añadir comportamientos ortogonales (auditoría en memoria, caché multinivel, métricas personalizadas) sobre un adaptador o puerto sin tocar la lógica de negocio base ni el consumidor.
+
+```java
+@Repository
+@RequiredArgsConstructor
+public class PensionistaJpaAdapter implements PensionistaRepository {
+    private final SpringDataPensionistaRepository jpaRepo;
+    @Override
+    public Optional<Pensionista> obtenerPorDni(String dni) { return jpaRepo.findByDni(dni); }
+}
+
+@Component
+@Primary
+@RequiredArgsConstructor
+public class CachedPensionistaRepositoryDecorator implements PensionistaRepository {
+    private final PensionistaJpaAdapter delegado;
+    private final Cache<String, Pensionista> cacheMemoria;
+
+    @Override
+    public Optional<Pensionista> obtenerPorDni(String dni) {
+        Pensionista cached = cacheMemoria.getIfPresent(dni);
+        if (cached != null) return Optional.of(cached);
+        Optional<Pensionista> resultado = delegado.obtenerPorDni(dni);
+        resultado.ifPresent(p -> cacheMemoria.put(dni, p));
+        return resultado;
+    }
+}
+```
+
+#### 8.1.2 Facade de Subsistema Interno (`@Component`)
+Provee una interfaz unificada y simple hacia un conjunto de servicios de aplicación o puertos dentro de un mismo módulo complejo, reduciendo el acoplamiento de los controladores REST.
+
+```java
+@Component
+@RequiredArgsConstructor
+public class TramiteJubilacionFacade {
+    private final ExpedienteService expedienteService;
+    private final CalculoPensionService calculoService;
+    private final NotificacionPort notificacionPort;
+
+    @Transactional
+    public TramiteCompletadoResponse iniciarTramiteJubilacion(SolicitudJubilacionCommand command) {
+        Expediente exp = expedienteService.crearExpediente(command);
+        BigDecimal monto = calculoService.calcularRentaVitalicia(exp.getId());
+        exp.asignarMontoCalculado(monto);
+        notificacionPort.notificarInicioTramite(exp);
+        return new TramiteCompletadoResponse(exp.getId(), monto, exp.getEstado());
+    }
+}
+```
+
+### 8.2 Patrones Creacionales en Java 21 y Spring
+
+#### 8.2.1 Factory Method con Pattern Matching de Java 21
+Centraliza la instanciación de agregados o entidades pre-configuradas según el tipo de régimen o solicitud previsional.
+
+```java
+@Component
+public class LiquidacionFactory {
+    public Liquidacion crearLiquidacionInicial(Expediente expediente) {
+        return switch (expediente.getRegimen()) {
+            case REGIMEN_19990 -> new LiquidacionRegimen19990(LiquidacionId.nuevo(), expediente.getId());
+            case REGIMEN_20530 -> new LiquidacionRegimen20530(LiquidacionId.nuevo(), expediente.getId());
+        };
+    }
+}
+```
+
+#### 8.2.2 Builder (Lombok `@Builder`)
+Obligatorio para la construcción de DTOs, comandos o registros inmutables que poseen más de 4 atributos o campos de configuración opcionales.
+
+### 8.3 Patrones de Comportamiento para Reemplazo de Bifurcaciones
+
+#### 8.3.1 Observer mediante Eventos de Spring (`ApplicationEventPublisher` + `@EventListener`)
+Desacopla totalmente la ejecución transaccional principal de procesos reactivos secundarios (auditoría asíncrona, envío de notificaciones al ciudadano o actualización de reportes).
+
+```java
+// 1. Evento inmutable (Record Java 21)
+public record ResolucionEmitidaEvent(String numeroResolucion, String dniPensionista, Instant fechaEmision) {}
+
+// 2. Emisor en el Servicio de Aplicación
+@Service
+@RequiredArgsConstructor
+public class EmisionResolucionService {
+    private final ApplicationEventPublisher eventPublisher;
+    @Transactional
+    public void emitir(Long resolucionId) {
+        // ... persistir resolucion en Oracle ...
+        eventPublisher.publishEvent(new ResolucionEmitidaEvent("RES-2026-9918", "08241578", Instant.now()));
+    }
+}
+
+// 3. Receptores (Listeners independientes)
+@Component
+public class NotificacionResolucionListener {
+    @EventListener
+    @Async
+    public void enviarSmsAlCiudadano(ResolucionEmitidaEvent event) { /* envío SMS / Correo */ }
+}
+```
+
+#### 8.3.2 State mediante Enums con Comportamiento
+Gestiona el ciclo de vida transaccional de entidades con estados finitos (`BORRADOR`, `EN_REVISION`, `OBSERVADO`, `APROBADO`) delegando en el propio estado las transiciones permitidas.
+
+---
+
+## sección 9 Documentación del código
+
+### 9.1 Cuándo escribir Javadoc
 
 | Elemento | Javadoc obligatorio | Observación |
 |----------|--------------------|-|
@@ -929,7 +1148,7 @@ List<String> resumen = expedientes.stream()
 | Métodos triviales (getters/setters) | No | El nombre ya dice todo |
 | Métodos privados | Solo si el algoritmo no es obvio | Comentario de bloque, no Javadoc |
 
-### 7.2 Formato de Javadoc
+### 9.2 Formato de Javadoc
 
 **Cabecera de clase o interfaz:**
 
@@ -970,7 +1189,7 @@ Optional<ExpedienteResponse> obtenerPorDni(String dni);
 BigDecimal calcularMontoPension(Long expedienteId);
 ```
 
-### 7.3 Comentarios internos (no Javadoc)
+### 9.3 Comentarios internos (no Javadoc)
 
 Un comentario interno solo justifica **por qué**, nunca explica **qué** (el código ya lo dice). Si necesitas explicar qué hace el código, es señal de que el código debe refactorizarse para ser más legible.
 
@@ -995,11 +1214,11 @@ BigDecimal montoReajustado = monto.multiply(new BigDecimal("1.03"));
 
 ---
 
-## sección 8 Logging estructurado
+## sección 10 Logging estructurado
 
-> **Fuente autoritativa:** Las normas de logging, trazabilidad y observabilidad están definidas en **LIN-OBS-001** (Lineamiento de Log Centralizado, Trazabilidad y Observabilidad). Este sección 8 es un resumen orientado a la implementación Java; ante cualquier conflicto, prevalece LIN-OBS-001. La configuración completa de `logback-spring.xml`, `Mask.java`, `CanonicalRequestLogFilter.java`, `RequestIdFilter.java`, política No PII y campos ECS se encuentran en LIN-OBS-001 secciones 4.6–4.10 y sección 6.
+> **Fuente autoritativa:** Las normas de logging, trazabilidad y observabilidad están definidas en **LIN-OBS-001** (Lineamiento de Log Centralizado, Trazabilidad y Observabilidad). Este sección 10 es un resumen orientado a la implementación Java; ante cualquier conflicto, prevalece LIN-OBS-001. La configuración completa de `logback-spring.xml`, `Mask.java`, `CanonicalRequestLogFilter.java`, `RequestIdFilter.java`, política No PII y campos ECS se encuentran en LIN-OBS-001 secciones 4.6–4.10 y sección 6.
 
-### 8.1 Framework mandatorio
+### 10.1 Framework mandatorio
 
 | Usar | No usar |
 |------|---------|
@@ -1034,7 +1253,7 @@ public class ExpedienteServiceImpl {
 }
 ```
 
-### 8.2 Niveles de log y criterio de uso
+### 10.2 Niveles de log y criterio de uso
 
 | Nivel | Prioridad | Cuándo usarlo | Ejemplo |
 |-------|-----------|---------------|---------|
@@ -1052,7 +1271,7 @@ public class ExpedienteServiceImpl {
 
 Subir `pe.gob.onp.*` a `DEBUG` solo para diagnóstico puntual y de forma temporal; revertir al terminar.
 
-### 8.3 Formato de mensajes de log
+### 10.3 Formato de mensajes de log
 
 Usar siempre los **parámetros `{}`** de SLF4J; nunca concatenar con `+`. SLF4J evalúa el mensaje solo si el nivel está habilitado, evitando el costo de construcción del string innecesariamente.
 
@@ -1083,7 +1302,7 @@ try {
 }
 ```
 
-### 8.4 Qué NO registrar (Política No PII)
+### 10.4 Qué NO registrar (Política No PII)
 
 > **Ver LIN-OBS-001 sección 6.2** para la tabla completa y los métodos de enmascaramiento. El incumplimiento viola la **Ley N.° 29733** de Protección de Datos Personales.
 
@@ -1107,9 +1326,9 @@ log.info("Consulta para DNI: {}", Mask.dni(dni));   // Mask de LIN-OBS-001 secci
 
 ---
 
-## sección 9 Manejo de excepciones en la capa REST
+## sección 11 Manejo de excepciones en la capa REST
 
-### 9.1 Handler global centralizado
+### 11.1 Handler global centralizado
 
 Toda excepción no controlada debe ser capturada por un `@RestControllerAdvice` global que la convierta en una respuesta HTTP estándar. Los controladores **no** deben tener bloques `try/catch` para excepciones de negocio.
 
@@ -1159,7 +1378,7 @@ public class GlobalExceptionHandler {
 
 > Se utiliza `ApiResponseWrapper` (definido en [sección 11.4.4](#1144-estructura-de-respuesta-estandar-apiresponsewrapper)) como envoltorio estándar de todas las respuestas de error en cumplimiento con **LIN-API-REST-001**. Esto garantiza homogeneidad en el formato devuelto por las APIs de la institución.
 
-### 9.2 Tabla de HTTP status codes
+### 11.2 Tabla de HTTP status codes
 
 | Situación | HTTP Status |
 |-----------|------------|
@@ -1171,7 +1390,7 @@ public class GlobalExceptionHandler {
 | Error interno del servidor | 500 Internal Server Error |
 | Error en integración con sistema externo | 502 Bad Gateway |
 
-### 9.3 PROHIBIDO
+### 11.3 PROHIBIDO
 
 - Exponer stack traces en respuestas al cliente
 - Retornar `200 OK` con un campo `error` en el cuerpo
@@ -1179,9 +1398,9 @@ public class GlobalExceptionHandler {
 
 ---
 
-## sección 10 Calidad de código
+## sección 12 Calidad de código
 
-### 10.1 Métricas mínimas obligatorias
+### 12.1 Métricas mínimas obligatorias
 
 | Métrica | Umbral | Herramienta |
 |---------|--------|-------------|
@@ -1192,7 +1411,7 @@ public class GlobalExceptionHandler {
 | Cobertura de pruebas — clases de utilidad | ≥ 90% | JaCoCo |
 | Cobertura de pruebas — controladores REST | ≥ 70% | JaCoCo |
 
-### 10.2 Tabla de antipatrones prohibidos
+### 12.2 Tabla de antipatrones prohibidos
 
 | Antipatrón | Alternativa correcta |
 |------------|---------------------|
@@ -1213,7 +1432,7 @@ public class GlobalExceptionHandler {
 | Prefijo húngaro en variables (`strNombre`) | Solo nombre descriptivo sin prefijo |
 
 
-### 10.3 Análisis estático de código (PMD)
+### 12.3 Análisis estático de código (PMD)
 
 El análisis estático con PMD es **obligatorio para proyectos nuevos** y se adopta de forma gradual en proyectos existentes. Su objetivo es detectar problemas de diseño, rendimiento, seguridad y cumplimiento de estándares de forma automática, sin necesidad de ejecutar el programa.
 
@@ -1358,11 +1577,13 @@ El archivo `onp-pmd-ruleset.xml` debe estar en la raíz de cada repositorio. Con
 </ruleset>
 ```
 
-### 10.4 Principios de Diseño (SOLID, DRY, KISS, YAGNI)
+### 12.4 Principios de Diseño Transversales (DRY, KISS, YAGNI)
+
+> **Nota:** Los principios **SOLID** orientados a clases y métodos Java se desarrollan en la [sección 7](#7-principios-solid-aplicados-a-clases-y-métodos-java-21), mientras que los patrones **GoF** se definen en la [sección 8](#8-patrones-de-diseño-de-código-gof-en-spring-boot-3). A continuación se resumen las pautas de diseño arquitectónico y metodológico que complementan a SOLID.
 
 Todo desarrollo en Java 21 y Spring Boot 3 dentro de la ONP debe regirse estrictamente por los principios fundamentales de ingeniería de software. Estos principios orientan la toma de decisiones técnicas para garantizar que el código sea mantenible, testeable y resistente a la degradación arquitectónica en el largo plazo.
 
-#### 10.4.1 Principios SOLID en el Ecosistema ONP
+#### 12.4.1 Resumen de Principios SOLID en el Ecosistema ONP
 
 | Principio | Aplicación Práctica en Spring Boot 3 / Java 21 | Anti-patrón Prohibido |
 |---|---|---|
@@ -1431,7 +1652,7 @@ public class CalculadoraPensionService {
 }
 ```
 
-#### 10.4.2 DRY (Don't Repeat Yourself) — Reutilización Responsable
+#### 12.4.2 DRY (Don't Repeat Yourself) — Reutilización Responsable
 
 El principio DRY establece que toda pieza de conocimiento o lógica de negocio debe tener una representación única y autoritativa en el sistema.
 - **Aplicación correcta:** Centralizar validaciones previsionales, algoritmos actuariales y transformaciones de datos en servicios de dominio o librerías institucionales aprobadas (`core-common`).
@@ -1459,7 +1680,7 @@ public void validarRequisitosJubilacion(int mesesAporte, int edadAños) {
 }
 ```
 
-#### 10.4.3 KISS (Keep It Simple, Stupid) — Simplicidad y Legibilidad
+#### 12.4.3 KISS (Keep It Simple, Stupid) — Simplicidad y Legibilidad
 
 La simplicidad es un objetivo arquitectónico de primer nivel. El código debe ser directo, legible y fácil de entender para cualquier desarrollador que se incorpore al equipo.
 - Aprovechar las características nativas de Java 21: preferir `Records` para DTOs inmutables, `Pattern Matching` y `Sealed Classes` en lugar de jerarquías complejas de herencia.
@@ -1492,7 +1713,7 @@ public record AportanteResumenDto(
 ) {}
 ```
 
-#### 10.4.4 YAGNI (You Aren't Gonna Need It) — Cero Esfuerzo Especulativo
+#### 12.4.4 YAGNI (You Aren't Gonna Need It) — Cero Esfuerzo Especulativo
 
 No se debe escribir código, interfaces ni abstracciones basándose en suposiciones de necesidades futuras no confirmadas en el alcance actual del requerimiento o ticket funcional.
 - **Regla estricta:** Si una abstracción o interfaz tiene una única implementación y no existe evidencia arquitectónica ni requerimiento formal de múltiples implementaciones futuras, se debe implementar de forma directa (o con una interfaz simple sin capas de indirección vacías).
@@ -1500,9 +1721,9 @@ No se debe escribir código, interfaces ni abstracciones basándose en suposicio
 
 ---
 
-## sección 11 Convenciones Spring Boot
+## sección 13 Convenciones Spring Boot
 
-### 11.1 Configuración
+### 13.1 Configuración
 
 - Usar `application.yml` (preferido sobre `.properties`) por legibilidad y soporte de jerarquía
 - Separar configuración por perfil: `application-dev.yml`, `application-prod.yml`
@@ -1526,7 +1747,7 @@ onp:
 
 **Secretos y credenciales:** nunca en archivos de configuración del repositorio. En runtime de aplicación usar Kubernetes Secrets (ver **LIN-K8S-001 sección 8**); en el contexto de pipeline CI/CD usar variables protegidas de GitLab (ver **LIN-CICD-001 sección 13.4**). La política de secretos se rige por **LIN-SEC-APP-001 sección 12**.
 
-### 11.2 Validación de datos de entrada
+### 13.2 Validación de datos de entrada
 
 Validar en la **capa de controlador** con Bean Validation. La capa de servicio asume datos válidos.
 
@@ -1549,7 +1770,7 @@ public record CrearExpedienteRequest(
 
 El `GlobalExceptionHandler` ([sección 9.1](#91-handler-global-centralizado)) captura `MethodArgumentNotValidException` automáticamente.
 
-### 11.3 Transacciones
+### 13.3 Transacciones
 
 - `@Transactional` solo en la **capa de servicio** (implementación, no interfaz)
 - En repositorios: Spring Data JPA ya gestiona transacciones en sus métodos
@@ -1605,7 +1826,7 @@ Agregar en `pom.xml`:
 </dependency>
 ```
 
-#### 11.4.2 Bean de configuración OpenAPI
+#### 13.4.2 Bean de configuración OpenAPI
 
 Crear una sola vez por proyecto en `src/main/java/<paquete-base>/config/OpenApiConfig.java`. Puedes [descargar la plantilla OpenApiConfig.java](file:///home/carlos/Documentos/Telemetria-traza-swagger/Lineamientos_Nuevos_Borradores/desarrollo/plantillas/OpenApiConfig.java) directamente.
 
@@ -1643,7 +1864,7 @@ public class OpenApiConfig {
 }
 ```
 
-#### 11.4.3 Configuración por entorno
+#### 13.4.3 Configuración por entorno
 
 **`application-dev.yml` y `application-qa.yml`** — Swagger habilitado en entornos no productivos:
 
@@ -1682,7 +1903,7 @@ env:
 
 > **ADVERTENCIA:** La exposición permanente del API spec en producción es un riesgo de seguridad. Deshabilitar (`SWAGGER_ENABLED=false`) inmediatamente después de la actividad.
 
-#### 11.4.4 Estructura de respuesta estándar — ApiResponseWrapper
+#### 13.4.4 Estructura de respuesta estándar — ApiResponseWrapper
 
 > **Fuente autoritativa:** el contrato de `ApiResponseWrapper<T>` está definido en **LIN-API-REST-001**. Esta sección documenta únicamente la implementación Java. Cualquier cambio al contrato debe hacerse en LIN-API-REST-001 y reflejarse aquí.
 
@@ -1790,7 +2011,7 @@ public ResponseEntity<ApiResponseWrapper<ExpedienteResponse>> obtener(@PathVaria
 
 **Tabla de códigos `codDetRespuesta`:** la tabla completa y autoritativa de códigos está en **LIN-API-REST-001 sección 4.1**. No se duplica aquí para evitar desincronización. Ante cualquier duda sobre qué código usar en una situación específica, consultar ese documento.
 
-#### 11.4.5 Filtro de correlación — RequestIdFilter
+#### 13.4.5 Filtro de correlación — RequestIdFilter
 
 Crear una sola vez por proyecto en `src/main/java/<paquete-base>/filter/RequestIdFilter.java`. Habilita el campo `meta.requestId` en todas las respuestas y lo propaga al MDC para correlacionar peticiones entre servicios en los logs. Puedes [descargar la plantilla RequestIdFilter.java](file:///home/carlos/Documentos/Telemetria-traza-swagger/Lineamientos_Nuevos_Borradores/desarrollo/plantillas/RequestIdFilter.java) directamente.
 
@@ -1835,7 +2056,7 @@ public class RequestIdFilter extends OncePerRequestFilter {
 
 **Comportamiento:** lee `X-Request-ID` de la petición; si el cliente no lo envía, genera un UUID propio. Añade el valor al MDC (visible en logs estructurados) y lo devuelve en el header de la respuesta para que el cliente pueda correlacionarlo.
 
-#### 11.4.6 Anotaciones Swagger en Controllers
+#### 13.4.6 Anotaciones Swagger en Controllers
 
 **`@Tag` a nivel de clase** — agrupa los endpoints bajo un nombre de dominio en Swagger UI:
 
@@ -1980,7 +2201,7 @@ public ResponseEntity<Void> eliminar(@PathVariable Long id) { ... }
 | `description` | Cuándo ocurre esa respuesta. Terminar con punto. |
 | `content` | Siempre `ApiResponseWrapper.class`. Omitir únicamente en 204. |
 
-#### 11.4.7 Anotaciones @Schema en DTOs
+#### 13.4.7 Anotaciones @Schema en DTOs
 
 Agregar `@Schema` en las clases DTO para que Swagger UI muestre descripciones y ejemplos en el formulario de prueba:
 
@@ -2004,7 +2225,7 @@ public record CrearExpedienteRequest(
 ) {}
 ```
 
-#### 11.4.8 Propagación de MDC en entornos asíncronos y multihilo
+#### 13.4.8 Propagación de MDC en entornos asíncronos y multihilo
 
 Dado que MDC (`Mapped Diagnostic Context`) utiliza internamente almacenamiento a nivel de hilo (`ThreadLocal`), el contexto de correlación (`http.request.id` y `user.id`) se pierde cuando se delega el trabajo a hilos secundarios, incluyendo llamadas `@Async`, tareas programadas `@Scheduled` o hilos virtuales.
 
@@ -2045,11 +2266,11 @@ public class AsyncMdcConfig {
 }
 ```
 
-### 11.5 Patrones Tácticos de Dominio (Repository, Domain Service, Application Service)
+### 13.5 Patrones Tácticos de Dominio (Repository, Domain Service, Application Service)
 
 En coherencia con los estilos arquitectónicos de Monolito Modular y Arquitectura Hexagonal / Limpia promovidos por **LIN-ARQ-000**, el diseño interno de los componentes en Spring Boot 3 debe segregar claramente las responsabilidades en tres patrones tácticos fundamentales.
 
-#### 11.5.1 Application Service (Servicios de Aplicación / Orquestadores)
+#### 13.5.1 Application Service (Servicios de Aplicación / Orquestadores)
 
 Los servicios de aplicación son el punto de entrada transaccional para los casos de uso del sistema. Su rol es coordinar la ejecución del flujo, delegar las decisiones al dominio y conectar con la infraestructura, sin contener reglas de negocio puras.
 
@@ -2106,7 +2327,7 @@ public class SolicitudPensionServiceImpl implements SolicitudPensionService {
 }
 ```
 
-#### 11.5.2 Domain Service (Servicios de Dominio) — Pureza Hexagonal y Registro DI
+#### 13.5.2 Domain Service (Servicios de Dominio) — Pureza Hexagonal y Registro DI
 
 Los servicios de dominio encapsulan la lógica de negocio pura, reglas previsionales, cálculos actuariales o invariantes que no pertenecen de forma natural a una sola entidad o que requieren coordinar múltiples agregados del dominio.
 
@@ -2153,7 +2374,7 @@ public class DomainServiceConfig {
 }
 ```
 
-#### 11.5.3 Repository (Repositorios de Dominio vs. Adaptadores de Persistencia)
+#### 13.5.3 Repository (Repositorios de Dominio vs. Adaptadores de Persistencia)
 
 El patrón Repositorio media entre el dominio y las capas de mapeo de datos, actuando como una colección en memoria de entidades de dominio.
 
@@ -2215,11 +2436,11 @@ public class AportanteJdbcRepository implements AportanteRepository {
 
 ---
 
-## sección 12 Estructura de proyecto y gestión de dependencias Maven
+## sección 14 Estructura de proyecto y gestión de dependencias Maven
 
-> Este sección 12 es la referencia de implementación para las estructuras definidas conceptualmente en el **Lineamiento de Arquitectura sección 7**.
+> Este sección 14 es la referencia de implementación para las estructuras definidas conceptualmente en el **Lineamiento de Arquitectura sección 7**.
 
-### 12.1 Estructura de proyecto por estilo arquitectónico
+### 14.1 Estructura de proyecto por estilo arquitectónico
 
 La elección de estructura sigue directamente del estilo arquitectónico declarado — no es libre.
 
@@ -2405,7 +2626,7 @@ public class PensionistaJpaRepository implements PensionistaRepository {
 | `infrastructure/web` | Interface Adapters (Controllers) | UI / Infrastructure |
 | `infrastructure/persistence` | Interface Adapters (Gateways) | Infrastructure |
 
-### 12.2 Convenciones de nomenclatura Maven
+### 14.2 Convenciones de nomenclatura Maven
 
 | Elemento | Convención | Ejemplo |
 |---|---|---|
@@ -2420,7 +2641,7 @@ public class PensionistaJpaRepository implements PensionistaRepository {
 | Servicio de aplicación | `{Accion}{Recurso}Service` | `AprobarExpedienteService` |
 | Adapter de infraestructura | `{Sistema}HttpAdapter` | `ReniecHttpAdapter` |
 
-### 12.3 Configuración del POM por estilo
+### 14.3 Configuración del POM por estilo
 
 La estructura del POM varía según el estilo arquitectónico. El punto de decisión clave es si el sistema produce **un único artefacto desplegable** (un solo módulo Maven) o **varios artefactos independientes** (multi-módulo con POM padre).
 
@@ -2532,7 +2753,7 @@ La separación en hexagonal es de **paquetes Java** (`domain`, `infrastructure`)
 | Monolito Modular | Sí | N (uno por capa/dominio funcional) |
 | Hexagonal / Clean | No — Spring Boot parent directo | 1 |
 
-### 12.4 Reglas de dependencias de librerías
+### 14.4 Reglas de dependencias de librerías
 
 - Las versiones se definen en el **POM padre** o en un BOM importado; los módulos hijo no especifican versiones.
 - Usar el scope correcto:
@@ -2542,7 +2763,7 @@ La separación en hexagonal es de **paquetes Java** (`domain`, `infrastructure`)
 - No declarar dependencias transitivas explícitamente salvo que haya conflicto de versión documentado.
 - Verificar la licencia de toda dependencia de terceros antes de incluirla.
 
-### 12.5 Plugins estándar obligatorios en CI
+### 14.5 Plugins estándar obligatorios en CI
 
 ```xml
 <!-- Compilación y procesamiento de anotaciones (Lombok + MapStruct) -->
@@ -2643,11 +2864,11 @@ La separación en hexagonal es de **paquetes Java** (`domain`, `infrastructure`)
 
 ---
 
-## sección 13 Pruebas
+## sección 15 Pruebas
 
 > Para la estrategia completa de pruebas (pirámide por estilo arquitectónico, proporción unitaria/integración/e2e) ver **sección 8 del Lineamiento de Arquitectura** (doc. interno).
 
-### 13.1 Nomenclatura de tests
+### 15.1 Nomenclatura de tests
 
 | Elemento | Convención | Ejemplo |
 |----------|-----------|---------|
@@ -2655,7 +2876,7 @@ La separación en hexagonal es de **paquetes Java** (`domain`, `infrastructure`)
 | Clase de test de integración | `<ClaseTesteada>IT` | `ExpedienteControllerIT` |
 | Método de test | `deberia<Resultado>Cuando<Condicion>` | `deberiaLanzarExcepcionCuandoExpedienteNoExiste` |
 
-### 13.2 Estructura de test (AAA)
+### 15.2 Estructura de test (AAA)
 
 Todo test debe seguir la estructura **Arrange → Act → Assert**, con una línea en blanco entre secciones:
 
@@ -2689,7 +2910,7 @@ void deberiaRetornarExpedienteCuandoIdExiste() {
 }
 ```
 
-### 13.3 Cobertura mínima por capa
+### 15.3 Cobertura mínima por capa
 
 | Capa | Cobertura mínima | Tipo de prueba |
 |------|-----------------|---------------|
@@ -2699,7 +2920,7 @@ void deberiaRetornarExpedienteCuandoIdExiste() {
 | Clases de utilidad | 90% | Unitarias |
 | Mappers (MapStruct) | No obligatorio | MapStruct genera código verificado |
 
-### 13.4 Testcontainers para repositorios
+### 15.4 Testcontainers para repositorios
 
 Las pruebas de repositorio no usan H2 ni base de datos en memoria: usan la **misma base de datos** que producción vía Testcontainers. ONP usa **Oracle 19c** en producción — las pruebas deben usar `OracleContainer` para garantizar que el SQL, las funciones de fecha, las secuencias y el comportamiento de NULL sean idénticos al entorno real.
 
@@ -2744,13 +2965,13 @@ class ExpedienteRepositoryTest {
 
 ---
 
-## sección 14 Revisión de código
+## sección 16 Revisión de código
 
-### 14.1 Pull Request como gate obligatorio
+### 16.1 Pull Request como gate obligatorio
 
 **Ningún cambio se integra a la rama principal sin Pull Request aprobado.** La autoaprobación está prohibida. Todo PR requiere al menos un revisor técnico distinto al autor.
 
-### 14.2 Condiciones mínimas para aprobar un PR
+### 16.2 Condiciones mínimas para aprobar un PR
 
 Un PR no puede aprobarse si alguna de las siguientes condiciones no se cumple:
 
@@ -2763,22 +2984,22 @@ Un PR no puede aprobarse si alguna de las siguientes condiciones no se cumple:
 | Sin código comentado | Ver [sección 7.3](#73-comentarios-internos-no-javadoc) — el código comentado no llega a rama principal |
 | Descripción del PR completa | Contexto del cambio, qué se modificó y cómo probarlo |
 
-### 14.3 Responsabilidades del revisor
+### 16.3 Responsabilidades del revisor
 
 - Verificar que la lógica de negocio implementada coincide con el requerimiento
 - Verificar que la estructura de paquetes sigue el estilo arquitectónico declarado (sección 3)
 - Verificar que los tests cubren los casos de borde relevantes
 - No aprobar un PR que no entienda completamente — preguntar es parte del proceso
 
-### 14.4 Tamaño máximo de PR
+### 16.4 Tamaño máximo de PR
 
 Un PR que modifica más de **400 líneas** de código productivo (excluidos tests y configuración) es señal de que debe dividirse. PRs grandes reducen la calidad de la revisión y aumentan el riesgo de integración.
 
-### 14.5 Proceso de excepción
+### 16.5 Proceso de excepción
 
-Cualquier desviación de este estándar — incluyendo omitir la revisión por urgencia — requiere **ADR aprobado por Arquitectura** con: contexto, decisión, consecuencias, vigencia de la excepción y fecha de revisión. Ver sección 15.
+Cualquier desviación de este estándar — incluyendo omitir la revisión por urgencia — requiere **ADR aprobado por Arquitectura** con: contexto, decisión, consecuencias, vigencia de la excepción y fecha de revisión. Ver sección 17.
 
-### 14.6 Patrón Feature Toggle y Deuda Técnica Cero (PA14)
+### 16.6 Patrón Feature Toggle y Deuda Técnica Cero (PA14)
 
 En alineación con el patrón arquitectónico **PA14 (Feature Toggle)** de **LIN-ARQ-000** y las directivas de control de cambios de **LIN-VER-001**, el uso de *Feature Toggles* (o banderas de funcionalidad) es un mecanismo permitido para el despliegue continuo y la entrega progresiva, pero está sujeto a un riguroso control de ciclo de vida para garantizar la **deuda técnica cero**.
 
@@ -2857,7 +3078,7 @@ Durante la revisión de código (Sección 14.2), el revisor y el líder técnico
 
 ---
 
-## sección 15 Proceso de excepción a este estándar
+## sección 17 Proceso de excepción a este estándar
 
 > **Importante:** **Gobernanza y Supremacía de LIN-ARQ-000:** En estricta coherencia con la supremacía jerárquica del marco rector de **Nivel 2**, ningún ADR podrá ser aprobado ni será válido si contraviene los principios arquitectónicos fundamentales (PR01–PR08) o mandatos rectores de **LIN-ARQ-000**, salvo autorización expresa y excepcional de la Dirección de Arquitectura de la OTI.
 

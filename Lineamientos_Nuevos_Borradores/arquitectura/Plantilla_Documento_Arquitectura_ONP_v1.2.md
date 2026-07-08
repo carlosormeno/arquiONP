@@ -6,7 +6,7 @@
 | Campo | Valor |
 |---|---|
 | **Proyecto / Aplicación** | [Nombre del Sistema] |
-| **Versión** | v0.1 |
+| **Versión** | v2.0 |
 | **Fecha** | [DD/MM/AAAA] |
 | **Estado** | Borrador / En revisión / Aprobado |
 | **Elaborado por** | [Nombre del Arquitecto] |
@@ -19,7 +19,8 @@
 
 | Versión | Descripción del Cambio | Autor | Fecha |
 |---|---|---|---|
-| v0.1 | Versión inicial | | |
+| v0.1 – v1.2 | Versiones iniciales y refinamientos pedagógicos de la plantilla | OTI | |
+| v2.0 | Alineación normativa total con los 3 Niveles de Arquitectura ONP (`LIN-ARQ-001`, `LIN-DIS-001`, `LIN-DEV-JAVA-001`), mandatos K8s/containerd, SRE Four Golden Signals y Política de Deuda Técnica Cero / Excepciones ADR | OTI / Arquitectura | [DD/MM/AAAA] |
 
 ---
 
@@ -179,29 +180,37 @@ A continuación se presenta la Vista General de la arquitectura de **[Nombre del
 
 > 📋 **Orientación para el arquitecto**
 >
-> Describe los componentes de aplicación del sistema. Para el Frontend indica el tipo de aplicación (SPA, MPA, aplicación móvil) y la estrategia de despliegue. Para el Backend lista cada servicio con su nombre y responsabilidad principal en una línea. Si hay un API Gateway, descríbelo como punto de entrada.
+> Describe los componentes de aplicación del sistema alineados a **LIN-DIS-001 (Patrones Tácticos de Diseño)**.
+> - **Estilo Táctico Seleccionado:** Declara explícitamente si el sistema adopta *Monolito Modular* o *Arquitectura Hexagonal / Limpia* (por defecto en nuevos proyectos, según LIN-ARQ-000/LIN-DIS-001) o *Capas Clásica* (solo mantenimiento/legacy).
+> - **Frontend:** Indica el tipo de aplicación (SPA, MPA, aplicación móvil) y la estrategia de despliegue.
+> - **Backend / Contextos Delimitados (Bounded Contexts):** Lista cada servicio o módulo táctico de dominio con su nombre oficial y responsabilidad principal en una línea. Si el sistema expone un **API Gateway**, **BFF (Backend for Frontend)** o **Facade Arquitectónico**, descríbelo como punto de entrada perimetral.
+> - **Integraciones con Legados:** Si el Backend interactúa con sistemas core legacy de la institución (Estadio 0), declara si implementa el patrón **Anti-Corruption Layer (ACL)** o **Strangler Fig** (`LIN-DIS-001 §6`).
 >
-> Para las integraciones con sistemas internos de la ONP, lista los sistemas con los que interactúa el Backend y en qué sentido fluye la información. Para las integraciones con entidades externas, menciona el servicio de fachada o integración y las entidades que encapsula.
->
-> **Lo que NO va aquí:** protocolos de comunicación en detalle, contratos de API, formatos de mensajes, lógica interna de cada servicio.
+> **Lo que NO va aquí:** protocolos de comunicación en detalle, contratos de API, formatos de mensajes, lógica interna de métodos.
 
-[Describir los componentes del Frontend y Backend con sus responsabilidades principales.]
+[Describir el estilo arquitectónico seleccionado, los componentes del Frontend y Backend con sus responsabilidades y Bounded Contexts.]
 
+- **Estilo Arquitectónico Táctico:** [Monolito Modular / Arquitectura Hexagonal / Capas Clásica]
 - **Frontend:** [Tipo de aplicación, responsabilidad principal y estrategia de despliegue]
-- **Backend:** [Lista de servicios con responsabilidad de cada uno]
-- **Integraciones internas:** [Sistemas de la ONP con los que interactúa]
-- **Integraciones externas:** [Servicio de fachada y entidades que encapsula]
+- **Backend (Bounded Contexts / Servicios):** [Lista de módulos o microservicios con su responsabilidad de dominio]
+- **Perímetro de Exposición:** [API Gateway / BFF / Facade que gestiona la entrada al sistema]
+- **Integraciones internas (y ACL si aplica):** [Sistemas de la ONP con los que interactúa y dirección de datos]
+- **Integraciones externas:** [Servicio de fachada de Entidades Externas y entidades que encapsula]
 
 ### D. CAPA DE SERVICIOS
 
 > 📋 **Orientación para el arquitecto**
 >
-> Lista los servicios transversales que el sistema consume o que son compartidos con otros sistemas de la ONP. Para cada uno indica: nombre del servicio, si es existente o nuevo a implementar, y cuál es su función dentro de este sistema específicamente. Diferencia claramente los servicios que ya existen y solo se consumen de los que deben implementarse como parte de este proyecto.
+> Lista los servicios transversales que el sistema consume o que son compartidos con otros sistemas de la ONP. Para cada uno indica: nombre del servicio, si es existente o nuevo a implementar, y cuál es su función dentro de este sistema específicamente.
 >
-> **Servicios transversales comunes en la ONP:** centralización de logs, telemetría, servicio SMTP, gestor documental, servicio de SMS.
+> **Servicios transversales obligatorios o comunes en la ONP (según LIN-ARQ-001 y LIN-OBS-001):**
+> - **Observabilidad y Logs:** Centralización de logs estructurados con `trace_id` y telemetría (OpenTelemetry / Elastic ECS).
+> - **Seguridad y Autenticación:** SAA / Token institucional para APIs internas, WAF y VPN para externos.
+> - **Comunes y Notificaciones:** Gestor documental, servicio SMTP de correos, servicio de SMS.
+> - **Patrones de Integración Asíncrona (si aplica):** Eventos de dominio vía **CloudEvents over Apache Kafka** o conectores **CDC Debezium / Transactional Outbox** (`LIN-DIS-001 §5`).
 
-- **Servicios a implementar:** [Nombre y función específica en este sistema]
-- **Servicios existentes a consumir:** [Nombre y función específica en este sistema]
+- **Servicios transversales a implementar:** [Nombre y función específica en este sistema]
+- **Servicios transversales existentes a consumir:** [Nombre y función específica en este sistema]
 
 ### E. CAPA DE DATOS
 
@@ -279,7 +288,12 @@ Cualquier modificación en los requisitos funcionales o no funcionales podrá re
 
 ### 5.2 Otros documentos de referencia
 
-- [Documento normativo o institucional de referencia]
+- **`LIN-ARQ-001`**: Lineamiento Marco Rector de Arquitectura de Software ONP (Estadios de Topología, Gobernanza y K8s)
+- **`LIN-DIS-001`**: Lineamiento de Diseño de Software y Patrones Tácticos ONP (Hexagonal, DDD, CQRS, Resiliencia)
+- **`LIN-DEV-JAVA-001`**: Lineamiento Estándar de Desarrollo Java / GoF / SOLID ONP
+- **`LIN-OBS-001`**: Lineamiento de Log Centralizado, Trazabilidad y Observabilidad
+- **`LIN-API-REST-001`**: Lineamiento de Diseño de APIs RESTful y Contratos OpenAPI
+- **`LIN-SEC-APP-001`**: Lineamiento de Seguridad en Aplicaciones de TI
 
 ---
 ---
@@ -313,7 +327,7 @@ Mostrar el sistema como una unidad y su relación con los actores externos (usua
 > **Elementos que debes incluir:**
 > - El sistema como un solo bloque con su nombre oficial
 > - Los tipos de usuario que lo usan (no personas específicas, sino roles)
-> - Los sistemas externos con los que se integra, agrupados por entidad si son varios
+> - Los sistemas externos e internos con los que se integra, declarando explícitamente a qué estadio de la topología institucional pertenecen (`Estadio 0 Legacy`, `Estadio 1 Transición/Strangler Fig` o `Estadio 2 Cloud-Native`, según `LIN-ARQ-001 §6`)
 > - Una relación por cada interacción relevante, con una etiqueta que indique qué hace (ej. "consulta datos", "recibe notificación")
 >
 > **Lo que NO debe aparecer en esta vista:**
@@ -365,11 +379,12 @@ Mostrar los principales componentes de aplicación que componen el sistema, sus 
 >
 > **Elementos que debes incluir:**
 > - Todos los componentes desplegables del sistema (frontend, servicios de backend, gateway, servicios de integración)
-> - Las interfaces o APIs expuestas por cada componente
-> - Las bases de datos propias del sistema
-> - Los sistemas internos de la ONP con los que se integra (legados, servicios transversales)
-> - Los sistemas externos agrupados por entidad
-> - Las relaciones de comunicación entre componentes, indicando el protocolo si es relevante (REST, SFTP, SMTP)
+> - Declaración visual y conceptual de los **Bounded Contexts** (Contextos Delimitados de DDD) del sistema (`LIN-DIS-001 §3`)
+> - Las interfaces o APIs expuestas por cada componente (indicando si cuentan con contrato OpenAPI 3.0 Code-First según `LIN-API-REST-001`)
+> - Las bases de datos propias del sistema (Oracle 19c / PostgreSQL institucional)
+> - Los sistemas internos de la ONP con los que se integra (declarando si se intermedia con una Capa Anticorrupción **ACL** para legados Estadio 0)
+> - Los sistemas externos agrupados por entidad y comunicados vía Facade perimetral
+> - Las relaciones de comunicación entre componentes, indicando el protocolo si es relevante (REST sincrónico o CloudEvents asíncrono sobre Apache Kafka)
 > - Diferenciación visual entre componentes nuevos a implementar y componentes ya existentes (usar colores según leyenda)
 > - Leyenda de colores explicando el código visual utilizado
 >
@@ -482,13 +497,13 @@ Mostrar cómo los componentes del sistema son desplegados en la infraestructura 
 >
 > **Elementos que debes incluir:**
 > - Los ambientes del sistema (DEV, QA, UAT, PRD) como agrupadores
-> - Los nodos de cómputo: servidores virtuales, nodos del orquestador de contenedores
-> - El orquestador de contenedores con su nombre y versión (ej. Kubernetes / K3s)
-> - Los artefactos desplegables: imágenes de contenedor por cada componente
-> - Las redes y zonas de seguridad: DMZ, red interna, red externa
-> - Los mecanismos de acceso externo: WAF, balanceadores de carga, reverse proxy
-> - Las relaciones de despliegue: qué artefacto se despliega en qué nodo
-> - La estrategia de escalamiento: cuántas réplicas por servicio en cada ambiente
+> - Los nodos de cómputo: servidores virtuales y nodos workers del cluster institucional
+> - El orquestador de contenedores institucional obligatorio: **Kubernetes (K8s) con motor de runtime CRI `containerd`** y contenedores inmutables (`LIN-ARQ-001 §7`)
+> - Los artefactos desplegables: imágenes de contenedor por cada componente o Bounded Context, asignadas a sus respectivos *Namespaces* (ej. `past-frontend`, `past-backend`)
+> - Las redes y zonas de seguridad de la OTI: DMZ (acceso público), Red Interna de Aplicaciones (K8s pods), y Red de Datos (Oracle/BD)
+> - Los mecanismos de acceso perimetral externo: WAF institucional, Balanceador de Carga e Ingress Controller
+> - Las relaciones de despliegue: qué artefacto se despliega en qué nodo o pod
+> - La estrategia de escalamiento horizontal y resiliencia: número mínimo y máximo de réplicas por servicio (HPA) y sondas de salud (*Liveness / Readiness / Startup Probes*)
 >
 > **Lo que NO debe aparecer en esta vista:**
 > - Configuraciones internas de los contenedores (variables de entorno, puertos específicos)
@@ -591,6 +606,7 @@ Este anexo registra las decisiones arquitectónicas significativas tomadas duran
 | **Título** | [Título descriptivo que identifique claramente la decisión] |
 | **Estado** | Propuesto / En revisión / Aprobado / Descartado |
 | **Fecha** | [DD/MM/AAAA] |
+| **Alineación Normativa ONP / ¿Es Excepción?** | [Declara explícitamente: **"Alineado a LIN-ARQ-001 / LIN-DIS-001"** o **"EXCEPCIÓN a LIN-XXX"**. Si es una excepción que contraviene un lineamiento institucional (ej. no usar Java 21 o no desplegar en K8s), requiere justificación de fuerza mayor y la firma expresa de la **Dirección de Arquitectura de la OTI** para su validez técnica.] |
 | **Contexto** | [Describir la situación concreta que motivó esta decisión: qué problema existía, qué necesidad había que cubrir, qué restricciones o fuerzas estaban en juego. Debe ser comprensible para alguien que no estuvo en las reuniones.] |
 | **Alternativas evaluadas** | **Alternativa 1:** [Descripción y razón por la que fue descartada] / **Alternativa 2:** [Descripción y razón por la que fue descartada] |
 | **Decisión adoptada** | [La opción elegida, expresada en una o dos oraciones claras y concretas.] |
@@ -628,13 +644,13 @@ Este anexo describe los atributos de calidad relevantes para el sistema y cómo 
 
 | Atributo | Requisito / Expectativa | Decisión arquitectónica que lo aborda |
 |---|---|---|
-| **Disponibilidad** | [ej. 99.5% uptime en horario hábil] | [ej. Despliegue en orquestador con réplicas y health checks — Ver AD-00X] |
-| **Seguridad** | [ej. Autenticación obligatoria en todas las APIs públicas] | [ej. WAF + JWT vía SAA/token para APIs internas; autenticación SBS para EAF] |
-| **Escalabilidad** | [ej. Soporte para N usuarios concurrentes en pico electoral] | [ej. Contenedorización con autoescalado horizontal en orquestador — Ver AD-00X] |
-| **Observabilidad** | [ej. Trazabilidad distribuida end-to-end entre todos los servicios] | [ej. OpenTelemetry + centralización de logs estructurados con trace_id — Ver AD-00X] |
-| **Mantenibilidad** | [ej. Capacidad de actualizar o reemplazar un servicio sin afectar los demás] | [ej. Servicios de backend independientes con contratos de API versionados] |
-| **Interoperabilidad** | [ej. Integración con 10+ entidades externas del Estado] | [ej. Servicio de fachada de Entidades Externas que encapsula todas las integraciones] |
-| **Recuperabilidad** | [ej. RTO máximo de X horas, RPO máximo de Y horas] | [ej. Estrategia de backup y recuperación coordinada con equipo de infraestructura] |
+| **Disponibilidad y Resiliencia** | [ej. 99.5% uptime en horario hábil y tolerancia a fallos transaccionales] | [ej. Despliegue en K8s con réplicas/probes, timeouts mandatorios (2s conn / 3-5s read) y patrones **Circuit Breaker / Bulkhead** de Resilience4j (`LIN-DIS-001 §8`) — Ver AD-00X] |
+| **Seguridad** | [ej. Autenticación obligatoria en todas las APIs públicas y Zero Trust] | [ej. WAF + JWT vía SAA/token para APIs internas (`LIN-SEC-APP-001`); autenticación SBS para EAF] |
+| **Escalabilidad** | [ej. Soporte para N usuarios concurrentes en pico electoral] | [ej. Contenedorización inmutable en K8s con autoescalado horizontal (HPA) — Ver AD-00X] |
+| **Observabilidad (Google SRE 4 Golden Signals)** | [ej. Monitoreo obligatorio de las 4 Señales Doradas: Latencia, Tráfico, Errores y Saturación (`LIN-ARQ-001 §9`)] | [ej. OpenTelemetry + centralización de logs ECS con `trace_id` y propagación de headers `X-Request-ID` / `CodDetRespuesta` (`LIN-API-REST-001`) — Ver AD-00X] |
+| **Mantenibilidad** | [ej. Capacidad de actualizar o reemplazar un servicio sin afectar los demás] | [ej. Bounded Contexts independientes con contratos OpenAPI 3.0 Code-First (`LIN-API-REST-001`)] |
+| **Interoperabilidad** | [ej. Integración con 10+ entidades externas del Estado y legados internos] | [ej. Servicio de fachada para Entidades Externas y Capa Anticorrupción (**ACL**) para legados ONP] |
+| **Recuperabilidad** | [ej. RTO máximo de X horas, RPO máximo de Y horas] | [ej. Estrategia de backup inmutable y recuperación coordinada sobre Oracle 19c / K8s PV] |
 
 ---
 ---
@@ -684,12 +700,16 @@ Este anexo registra los riesgos arquitectónicos identificados y la deuda técni
 >
 > Lista las decisiones subóptimas que se tomaron conscientemente. Para cada una indica qué se hizo, por qué no se hizo de la forma ideal (tiempo, información incompleta, dependencia de otro equipo) y cuándo o cómo se planea resolver.
 >
-> **Error frecuente:** no registrar nada porque "todo se hizo bien". En proyectos reales siempre hay compromisos. Si no encuentras nada que registrar, revisa si hubo decisiones tomadas "por ahora" o "temporalmente" durante el diseño: esas son deuda técnica.
+> **MANDATO INSTITUCIONAL DE DEUDA TÉCNICA CERO (`LIN-ARQ-000 / LIN-DEV-JAVA-001 §16.6`):**
+> Toda deuda técnica admitida por compromisos de cronograma o dependencias externas debe:
+> 1. Estar asociada obligatoriamente a un **Ticket de Refactorización registrado en el Backlog** oficial de GitLab / Jira del proyecto.
+> 2. Contar con una **estrategia de mitigación de bajo riesgo**, como el uso de **Feature Toggles (PA14)** para encender/apagar el comportamiento temporal sin re-despliegues complejos.
+> 3. Tener un **horizonte de remediación acotado en Sprints** (prioridad alta/media) pactado formalmente antes de obtener la conformidad de paso a Producción.
 
-| ID | Descripción | Prioridad | Plan de resolución |
+| ID | Descripción | Prioridad | Plan de resolución (y Ticket en Backlog) |
 |---|---|---|---|
-| DT-001 | [Qué se hizo de forma subóptima, por qué se tomó esa decisión y cuál es el impacto de no resolverlo] | Alta / Media / Baja | [Acción concreta y horizonte de tiempo estimado para resolverlo] |
-| DT-002 | [Descripción de la deuda técnica] | Alta / Media / Baja | [Plan de resolución] |
+| DT-001 | [Qué se hizo de forma subóptima, por qué se tomó esa decisión y cuál es el impacto de no resolverlo] | Alta / Media / Baja | [Acción concreta, Ticket en Jira/GitLab (`ONP-XXXX`) y horizonte de tiempo en Sprints para resolverlo] |
+| DT-002 | [Descripción de la deuda técnica] | Alta / Media / Baja | [Plan de resolución con Ticket e Hito de remediación] |
 
 ---
 

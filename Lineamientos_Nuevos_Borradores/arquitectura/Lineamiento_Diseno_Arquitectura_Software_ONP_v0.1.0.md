@@ -1,11 +1,19 @@
 # Lineamiento para el Diseño y Arquitectura de Software en la ONP
 
-**Código:** LIN-ARQ-000  
-**Versión:** 0.1.19  
+> [!WARNING]
+> **ESTADO: CONGELADO / CANTERA HISTÓRICA (v0.1.19)**  
+> *Este documento representa la base de conocimiento y cantera técnica original (`v0.1.19`) que dio origen al modelo jerárquico en 3 niveles de la OTI (C4 Model / DDD). Su contenido ha sido redistribuido y refinado sin pérdida de información en los siguientes lineamientos vigentes:*  
+> *• **Nivel 1 (Macro / Arquitectura):** [LIN-ARQ-001 — Marco Rector de Arquitectura de Software](file:///home/carlos/Documentos/Telemetria-traza-swagger/Lineamientos_Nuevos_Borradores/arquitectura/Lineamiento_Marco_Rector_Arquitectura_ONP_v0.1.0.md)*  
+> *• **Nivel 2 (Táctico / Diseño):** [LIN-DIS-001 — Estándar de Diseño de Software y Patrones Tácticos](file:///home/carlos/Documentos/Telemetria-traza-swagger/Lineamientos_Nuevos_Borradores/arquitectura/Lineamiento_Diseno_Software_Patrones_Tacticos_ONP_v0.1.0.md)*  
+> *• **Nivel 3 (Micro / Código):** [LIN-DEV-JAVA-001 — Estándar de Desarrollo Java ONP](file:///home/carlos/Documentos/Telemetria-traza-swagger/Lineamientos_Nuevos_Borradores/desarrollo/Lineamiento_Estandar_Desarrollo_Java_ONP_v0.1.0.md)*  
+> *Por tanto, este documento se conserva para fines de auditoría, trazabilidad e investigación histórica. Para el desarrollo y licitación de nuevos proyectos, remitirse a los lineamientos de los niveles 1, 2 y 3 indicados arriba.*
+
+**Código:** LIN-ARQ-000 (Histórico)  
+**Versión:** 0.1.19 (Congelada)  
 **Fecha:** 2026-07-07  
 **Autor:** Oficina de Tecnologías de la Información — ONP  
-**Estado:** Borrador de trabajo interno  
-**Clasificación:** Marco rector interno. No es un entregable oficial de la lista de documentos de arquitectura; es el documento normativo base que guía la redacción de todos los lineamientos técnicos formales. Todo lineamiento derivado debe ser consistente con las decisiones de este documento.
+**Estado:** Congelado / Cantera técnica histórica  
+**Clasificación:** Marco rector histórico v0.1.19. Base documental de los lineamientos jerárquicos Nivel 1, Nivel 2 y Nivel 3.
 
 ---
 
