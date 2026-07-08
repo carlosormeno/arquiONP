@@ -47,11 +47,60 @@ Todo diseño modular interno y estructuración de clases en los sistemas ONP deb
 
 ---
 
-## 2. Arquitectura Táctica de Módulos y Capas
+## 2. Árbol de Decisión Táctico y Estilos Arquitectónicos de Módulo
 
-La estructura de carpetas y dependencias internas de un módulo Java se rige por uno de los dos estilos tácticos oficiales, cuya elección no es estética sino que depende de la complejidad funcional del componente.
+La estructura de carpetas, dependencias y patrones de un módulo Java no se elige por estética ni moda, sino por la complejidad funcional y transaccional de su requerimiento.
 
-### 2.1 Arquitectura en Capas (*Layered Architecture*)
+### 2.1 Árbol de Decisión Táctico ("¿Cuándo aplicar qué concepto?")
+
+Antes de crear un nuevo paquete, clase o servicio, el Arquitecto y el Tech Lead deben responder estas **5 preguntas diagnósticas de Sí/No** para determinar las piezas exactas del diseño:
+
+```
+┌────────────────────────────────────────────────────────────────────────────────────────────┐
+│ PREGUNTA 1: ¿Qué Estilo Arquitectónico Interno necesita mi Módulo (`§2.2 / §2.3`)?        │
+│                                                                                            │
+│  ¿Es un CRUD de soporte simple, catálogo auxiliar o pantalla plana sin reglas complejas?    │
+│    ├── SÍ ──► ARQUITECTURA EN CAPAS CLÁSICA (`api -> service -> repository`).              │
+│    └── NO ──► (Es Core Previsional, tiene 3+ integraciones o se separará a Microservicio)  │
+│               └──► ARQUITECTURA HEXAGONAL + DOMINIO PURO (`§2.3`).                         │
+└─────────────────────────────────────────────┬──────────────────────────────────────────────┘
+                                              ▼
+┌────────────────────────────────────────────────────────────────────────────────────────────┐
+│ PREGUNTA 2: ¿Cómo modelar las Entidades y Lógica en Memoria (`§4.1`)?                      │
+│                                                                                            │
+│  • Flujo lineal sin estado mutante (exportar Excel, validar texto) ──► TRANSACTION SCRIPT  │
+│  • Tabla referencial independiente por registro ─────────────────────► ACTIVE RECORD / JPA  │
+│  • Proceso masivo o cálculo actuarial por lotes (Batch 50k+ reg.) ───► TABLE MODULE         │
+│  • Core transaccional previsional con invariantes ACID locales ──────► DOMAIN MODEL (DDD)   │
+└─────────────────────────────────────────────┬──────────────────────────────────────────────┘
+                                              ▼
+┌────────────────────────────────────────────────────────────────────────────────────────────┐
+│ PREGUNTA 3: ¿Qué Patrón de Interfaz e Integración Exterior aplico (`§5`)?                  │
+│                                                                                            │
+│  • ¿Consumo un legacy JBoss / PL-SQL o una entidad externa (SUNAT/RENIEC)? ──► ACL (`§5.4`)│
+│  • ¿Una pantalla web/móvil llama a 4 APIs y necesita un payload unificado? ──► BFF (`§5.1`)│
+│  • ¿El servicio recopila datos estáticos de 5 tablas internas para DTO? ─────► GATEWAY AGG.│
+│  • ¿Me comunico asíncronamente con otros Bounded Contexts? ──────────────────► KAFKA / EVT │
+└─────────────────────────────────────────────┬──────────────────────────────────────────────┘
+                                              ▼
+┌────────────────────────────────────────────────────────────────────────────────────────────┐
+│ PREGUNTA 4: ¿Necesito CQRS o Sincronización de Lectura (`§4.2`)?                          │
+│                                                                                            │
+│  ¿Las búsquedas ciudadanas requieren texto difuso, o documentos 360° no viables en Oracle? │
+│    ├── SÍ ──► CQRS + OUTBOX / DEBEZIUM hacia MongoDB (360°), Redis (<2ms) o ElasticSearch. │
+│    └── NO ──► MODELO RELACIONAL TRADICIONAL ÚNICO EN ORACLE (No aplicar CQRS).             │
+└─────────────────────────────────────────────┬──────────────────────────────────────────────┘
+                                              ▼
+┌────────────────────────────────────────────────────────────────────────────────────────────┐
+│ PREGUNTA 5: ¿Qué umbrales de Resiliencia Táctica enciendo (`§6`)?                          │
+│                                                                                            │
+│  ¿Llamo a un servicio por red (RENIEC, SUNAT, pasarela, WS externo)?                       │
+│    ├── SÍ ──► MANDATORIO RESILIENCE4J: Timeouts (2s/3s), Circuit Breaker y Bulkhead (`§6`).│
+│    └── NO ──► (Llamada interna en memoria o BD local) -> No aplica Circuit Breaker.        │
+└────────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+### 2.2 Arquitectura en Capas (*Layered Architecture*)
 
 **Cuándo usar en la ONP:** Módulos de soporte, cruds administrativos simples, catálogos auxiliares o flujos lineales que no encierran reglas previsionales ni validaciones de negocio complejas.
 
@@ -73,7 +122,7 @@ La estructura de carpetas y dependencias internas de un módulo Java se rige por
 
 - **Regla de Dependencia en Capas:** La dependencia fluye unidireccionalmente hacia abajo: `api -> service -> repository`. Queda prohibido que un `Controller` en `api` acceda directamente a un `Repository` saltándose la capa `service`.
 
-### 2.2 Arquitectura Hexagonal (*Ports & Adapters*)
+### 2.3 Arquitectura Hexagonal (*Ports & Adapters*)
 
 **Cuándo usar en la ONP:** **Obligatorio** para todos los módulos del *Core Previsional* (Aportes, Pensiones, Expedientes, Liquidaciones, Tesorería), módulos con tres o más integraciones externas y cualquier módulo candidato a extraerse en el futuro como un microservicio independiente (*Estadio 3*).
 
@@ -281,14 +330,29 @@ Para evitar que una interfaz de usuario SPA (Angular) realice 10 peticiones REST
 └───────────────────────────────────────────────────────────────────────────────────┘
 ```
 
-- **Regla Táctica:** El BFF es una capa de **presentación y agregación pura**. Prohibido que un BFF contenga reglas de cálculo previsional, acceso directo a bases de datos Oracle, o transacciones ACID locales de negocio.
+- **Propósito:** Desacoplar la experiencia de usuario (UI web/móvil) de la complejidad interna del ecosistema de microservicios o módulos, ofreciendo una API construida a la medida exacta de las vistas.
+- **Cuándo usar en la ONP:** Cuando una interfaz SPA Angular (`Mesa de Partes Web`) o una aplicación móvil necesita consolidar en una sola pantalla información que internamente proviene de 3 o más módulos/microservicios (ej. Expedientes, Aportes y Datos Personales), o cuando los DTOs del core devuelven 80 campos pesados y el frontend solo requiere 10.
+- **Cuándo NO usar (Antipatrón):** Prohibido usar el BFF cuando existe una relación 1:1 simple donde la UI consume exactamente el mismo DTO que expone el servicio de dominio (crear un BFF pasamanos es sobreingeniería innecesaria). Prohibido absolutamente meter reglas transaccionales ACID o acceso a bases de datos Oracle dentro de un BFF.
+- **Ubicación en Capas Java:** Se implementa en un proyecto o contenedor independiente de la capa externa (`pe.gob.onp.bff.*`), o en el módulo de presentación pública del Monolito Modular.
+- **Antipatrón que previene:** El *Frontend Chatterness & Overfetching*, que degrada el tiempo de carga en navegadores y expone metadatos sensibles del dominio en la red pública.
 
-### 5.2 Patrón Gateway-Aggregation (*PT10*) y Facade Arquitectónico (*PT12*)
+### 5.2 Patrón Gateway-Aggregation (*PT10*)
 
-- **Gateway-Aggregation (`PT10`):** Cuando una operación interna requiere recopilar datos estáticos desde múltiples repositorios independientes para armar un payload consolidado, se encapsula la lógica de dispersión y agregación en una clase `GatewayAggregator` dentro de la capa `application/service/`, evitando exponer el *chatterness* hacia el controlador REST o al consumidor externo.
-- **Facade Arquitectónico de Integración (`PT12`):** Ubicado estrictamente en la capa de infraestructura (`infrastructure/adapter/out/`), un Facade Arquitectónico encapsula la heterogeneidad, autenticación criptográfica (`WS-Security / mTLS`) y los detalles de protocolo de un ecosistema externo complejo, presentando un puerto limpio hacia la capa de aplicación del módulo.
+- **Propósito:** Combinar llamadas y recopilar datos estáticos desde múltiples repositorios, servicios internos o puertos independientes para construir y devolver un único payload consolidado.
+- **Cuándo usar en la ONP:** Cuando una operación interna (ej. *Cargar Datos del Ciudadano para Solicitud*) necesita consultar el maestro de afiliados, el historial de aportes recientes y el estado del último expediente para armar un DTO compuesto sin hacer que la UI o el consumidor realicen peticiones dispersas.
+- **Cuándo NO usar (Antipatrón):** Prohibido usar `GatewayAggregator` como un "escondite" para mezclar lógica transaccional y mutaciones transaccionales complejas de varios agregados. Su única responsabilidad es consultar, agregar y transformar en un DTO.
+- **Ubicación en Capas Java:** Se implementa dentro de `application/service/aggregator/` (o en la capa `service` del Monolito Modular) como un componente sin estado (`@Service`).
+- **Antipatrón que previene:** El *Chatter API / N+1 Calls*, donde el consumidor de la API debe hacer 5 peticiones por red y pegar los JSON localmente para obtener una sola vista del dato.
 
-### 5.3 Patrón Anti-Corruption Layer (*ACL — PT11*) en Integraciones
+### 5.3 Patrón Facade Arquitectónico de Integración (*PT12*)
+
+- **Propósito:** Ocultar la complejidad, heterogeneidad técnica, protocolos de seguridad y verbosidad de un sistema externo o ecosistema heredado detrás de una interfaz Java limpia y orientada a la intención del caso de uso.
+- **Cuándo usar en la ONP:** Al consumir servicios con protocolos pesados o antiguos (`SOAP / XML / mTLS / WS-Security` como PIDE, SUNAT o JBoss legacy) donde se requiere autenticación por sobre XML, manejo de sesiones, o una secuencia de 3 peticiones SOAP previas antes de obtener el dato final.
+- **Cuándo NO usar (Antipatrón):** Prohibido crear un Facade para llamadas simples REST que ya devuelven JSON limpio y no requieren transformación ni orquestación de protocolo ajeno (en cuyo caso basta un `RestClientAdapter` directo).
+- **Ubicación en Capas Java:** Se ubica estrictamente dentro de la capa de infraestructura externa: `infrastructure/adapter/out/facade/`.
+- **Antipatrón que previene:** El *Leaky Abstraction (Fuga de Abstracción)*, donde los detalles técnicos y librerías XML del tercero invaden la capa de aplicación y contaminan los servicios del negocio de la ONP.
+
+### 5.4 Patrón Anti-Corruption Layer (*ACL — PT11*) en Integraciones
 
 En toda integración con sistemas legados o externos, la Capa Anticorrupción (ACL) se implementa de forma obligatoria mediante tres componentes coordinados dentro de `infrastructure/adapter/out/`:
 

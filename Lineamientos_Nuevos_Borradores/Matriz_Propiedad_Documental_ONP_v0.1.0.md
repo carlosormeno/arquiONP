@@ -1,10 +1,10 @@
 # Matriz de Propiedad Documental — ONP
 
 **Código:** GOB-MAT-001  
-**Versión:** 0.1.2  
-**Fecha:** 2026-05-28  
+**Versión:** 0.2.0 (Alineación a 3 Niveles de Arquitectura)  
+**Fecha:** 2026-07-08  
 **Autor:** OTI — Oficina de Tecnologías de la Información  
-**Estado:** Borrador de trabajo interno  
+**Estado:** Vigente / Operativo  
 
 ---
 
@@ -24,7 +24,10 @@ Este documento define qué lineamiento es la **fuente autoritativa** de cada tem
 
 | Código | Documento | Estado | Archivo |
 |---|---|---|---|
-| `LIN-ARQ-000` | Marco Rector de Diseño y Arquitectura de Software | Borrador | `arquitectura/Lineamiento_Diseno_Arquitectura_Software_ONP_v0.1.0.md` |
+| `LIN-ARQ-000` | Cantera Histórica Congelada de Arquitectura | Congelado v0.1.19 | `arquitectura/Lineamiento_Diseno_Arquitectura_Software_ONP_v0.1.0.md` |
+| `LIN-ARQ-001` | Marco Rector de Arquitectura de Software (Nivel 1) | **Vigente v0.1.0** | `arquitectura/Lineamiento_Marco_Rector_Arquitectura_ONP_v0.1.0.md` |
+| `LIN-DIS-001` | Estándar de Diseño de Software y Patrones Tácticos (Nivel 2) | **Vigente v0.1.0** | `arquitectura/Lineamiento_Diseno_Software_Patrones_Tacticos_ONP_v0.1.0.md` |
+| `LIN-PAT-001` | Catálogo Oficial de Patrones y Fichas Técnicas de Decisión | **Vigente v0.1.0** | `arquitectura/Lineamiento_Catalogo_Patrones_Fichas_ONP_v0.1.0.md` |
 | `LIN-API-REST-001` | Estándar de Servicios Web y APIs REST | Borrador | `Web/Lineamiento_Estandar_APIs_REST_ONP_v0.1.0.md` |
 | `LIN-DEV-JAVA-001` | Estándar de Desarrollo Java | Borrador | `desarrollo/Lineamiento_Estandar_Desarrollo_Java_ONP_v0.1.0.md` |
 | `LIN-BD-ORA-001` | Estándar de Base de Datos Oracle | Borrador | `Datos/Lineamiento_Estandar_Base_de_Datos_ONP_v0.1.0.md` |
@@ -83,7 +86,7 @@ Este documento define qué lineamiento es la **fuente autoritativa** de cada tem
 | Paginación — campos y estructura del response | `LIN-API-REST-001` | `LIN-FE-ANG-001` | Resuelto | `LIN-FE-ANG-001` corregido: `pagina`/`tamanio` alineados con contrato REST |
 | Operaciones no CRUD (verbos en URL) | `LIN-API-REST-001` | `LIN-DEV-JAVA-001` | Conforme | — |
 | Rate limiting y throttling | `LIN-API-REST-001` | `LIN-K8S-001`, `LIN-SEC-APP-001` | En borrador | Definición en `LIN-SEC-APP-001` y `LIN-K8S-001` (ambos en borrador) |
-| API Gateway y API Manager — plataforma WSO2 | `LIN-API-REST-001` | `LIN-ARQ-000`, `LIN-K8S-001`, `LIN-SEC-APP-001` | En borrador | `LIN-API-REST-001` secciones 2.5 y 10.3 definen plataforma y gate de publicación. La transición se documenta además en `arquitectura/ADR-WSO2-001.md` |
+| API Gateway y API Manager — plataforma WSO2 | `LIN-API-REST-001` | `LIN-ARQ-001`, `LIN-K8S-001`, `LIN-SEC-APP-001` | En borrador | `LIN-API-REST-001` secciones 2.5 y 10.3 definen plataforma y gate de publicación. La transición se documenta además en `arquitectura/ADR-WSO2-001.md` |
 
 ---
 
@@ -102,7 +105,7 @@ Este documento define qué lineamiento es la **fuente autoritativa** de cada tem
 
 | Tema | Dueño | Consumidores | Estado | Observación |
 |---|---|---|---|---|
-| Observabilidad como requisito obligatorio de producción | `LIN-ARQ-000` | Todos | Conforme | — |
+| Observabilidad como requisito obligatorio de producción (SRE 4 Golden Signals) | `LIN-ARQ-001` | Todos | Conforme | — |
 | Formato de log JSON, campos mínimos obligatorios (ECS) | `LIN-OBS-001` | `LIN-DEV-JAVA-001`, `LIN-API-REST-001`, `LIN-K8S-001` | Resuelto | `LIN-OBS-001` sección 6 y Apéndice B son la fuente oficial |
 | Implementación Java: `logback-spring.xml`, `LogstashEncoder`, `OpenTelemetryLogbackConfig` | `LIN-OBS-001` | `LIN-DEV-JAVA-001` | Resuelto | `LIN-OBS-001` secciones 4.6–4.7; `LIN-DEV-JAVA-001` sección 8 referencia `LIN-OBS-001` |
 | `traceId`, `spanId`, OpenTelemetry, Micrometer Tracing | `LIN-OBS-001` | `LIN-DEV-JAVA-001`, `LIN-API-REST-001` | Resuelto | `LIN-OBS-001` sección 5 absorbe Guía v0.1.1 sección 1 |
@@ -123,12 +126,12 @@ Este documento define qué lineamiento es la **fuente autoritativa** de cada tem
 
 | Tema | Dueño | Consumidores | Estado | Observación |
 |---|---|---|---|---|
-| Modelo de seguridad institucional (SAA + AD + transición WSO2/OIDC) | `LIN-SEC-APP-001` | `LIN-ARQ-000`, `LIN-API-REST-001`, `LIN-FE-ANG-001` | En borrador | `LIN-SEC-APP-001` sección 3 define estado actual (SAA), modelo objetivo (WSO2 PoC) y tipos de usuario. La transición formal está respaldada por `arquitectura/ADR-WSO2-001.md` |
+| Modelo de seguridad institucional (SAA + AD + transición WSO2/OIDC) | `LIN-SEC-APP-001` | `LIN-ARQ-001`, `LIN-API-REST-001`, `LIN-FE-ANG-001` | En borrador | `LIN-SEC-APP-001` sección 3 define estado actual (SAA), modelo objetivo (WSO2 PoC) y tipos de usuario. La transición formal está respaldada por `arquitectura/ADR-WSO2-001.md` |
 | Autenticación — delegación al SAA | `LIN-SEC-APP-001` | `LIN-DEV-JAVA-001`, `LIN-FE-ANG-001` | En borrador | `LIN-SEC-APP-001` sección 4 — prohíbe autenticación propia por aplicación |
 | Autorización — token válido ≠ permiso implícito | `LIN-SEC-APP-001` | `LIN-DEV-JAVA-001`, `LIN-API-REST-001` | En borrador | `LIN-SEC-APP-001` sección 5 — la app valida permisos SAA por endpoint |
 | Tokens SAA — emisión, validación, renovación, prohibiciones | `LIN-SEC-APP-001` | `LIN-DEV-JAVA-001`, `LIN-API-REST-001` | En borrador | `LIN-SEC-APP-001` sección 6 — prohíbe exponer claves criptográficas y crear tokens paralelos |
 | Integración SAA en apps Spring Boot — patrón `SaaTokenValidationFilter` | `LIN-SEC-APP-001` | `LIN-DEV-JAVA-001` | En borrador | `LIN-SEC-APP-001` sección 8 — flujo, filtro, cliente, prohibiciones, manejo de indisponibilidad |
-| OAuth2/OIDC — flujo y decisión de arquitectura | `LIN-ARQ-000` | `LIN-API-REST-001`, `LIN-SEC-APP-001`, `LIN-FE-ANG-001` | En borrador | `LIN-SEC-APP-001` sección 3.2 documenta el modelo objetivo; la decisión de adopción requiere ADR cuando WSO2 esté operativo |
+| OAuth2/OIDC — flujo y decisión de arquitectura | `LIN-ARQ-001` | `LIN-API-REST-001`, `LIN-SEC-APP-001`, `LIN-FE-ANG-001` | En borrador | `LIN-SEC-APP-001` sección 3.2 documenta el modelo objetivo; la decisión de adopción requiere ADR cuando WSO2 esté operativo |
 | Configuración Spring Security | `LIN-SEC-APP-001` | `LIN-DEV-JAVA-001` | En borrador | `LIN-SEC-APP-001` sección 9.1 define configuración mínima obligatoria; validar en siguiente pasada si `LIN-DEV-JAVA-001` ya referencia esta sección explícitamente |
 | Headers de seguridad HTTP obligatorios | `LIN-SEC-APP-001` | `LIN-API-REST-001`, `LIN-DEV-JAVA-001` | En borrador | `LIN-SEC-APP-001` sección 7.3 — `X-Content-Type-Options`, `X-Frame-Options`, `HSTS`, etc. |
 | Prohibición de credenciales en código o repositorio | `LIN-SEC-APP-001` | `LIN-DEV-JAVA-001`, `LIN-CICD-001` | En borrador | `LIN-SEC-APP-001` sección 12.2 — prohibición absoluta, incluyendo `environment.ts` Angular |
@@ -137,7 +140,7 @@ Este documento define qué lineamiento es la **fuente autoritativa** de cada tem
 | CORS en producción (sin `*`) | `LIN-API-REST-001` | `LIN-DEV-JAVA-001`, `LIN-SEC-APP-001` | Conforme | `LIN-SEC-APP-001` sección 7.4 agrega implementación Spring Boot; `LIN-API-REST-001` es el dueño de la regla |
 | Seguridad frontend (XSS, token storage, guards, CSP) | `LIN-SEC-APP-001` | `LIN-FE-ANG-001` | En borrador | `LIN-SEC-APP-001` sección 10 define reglas base; `LIN-FE-ANG-001` las aplica en su contexto Angular |
 | OWASP Top 10 como baseline y herramientas de escaneo | `LIN-SEC-APP-001` | Todos | En borrador | `LIN-SEC-APP-001` sección 13 — SonarQube, Snyk/Dependency-Check, Trivy; gates de calidad en CI/CD |
-| Controles de seguridad para sistemas legacy | `LIN-SEC-APP-001` | `LIN-BD-ORA-001`, `LIN-ARQ-000` | En borrador | `LIN-SEC-APP-001` sección 14 — tabla de 6 escenarios con obligación diferenciada; SAA como capacidad legacy crítica |
+| Controles de seguridad para sistemas legacy | `LIN-SEC-APP-001` | `LIN-BD-ORA-001`, `LIN-ARQ-001` | En borrador | `LIN-SEC-APP-001` sección 14 — tabla de 6 escenarios con obligación diferenciada; SAA como capacidad legacy crítica |
 
 ---
 
@@ -145,7 +148,7 @@ Este documento define qué lineamiento es la **fuente autoritativa** de cada tem
 
 | Tema | Dueño | Consumidores | Estado | Observación |
 |---|---|---|---|---|
-| Decisión de estilo arquitectónico (Monolito Simple / Modular / Hexagonal) | `LIN-ARQ-000` | `LIN-DEV-JAVA-001` | Conforme | — |
+| Decisión de estilo arquitectónico táctico (Monolito Simple / Modular / Hexagonal) | `LIN-DIS-001` | `LIN-DEV-JAVA-001`, `LIN-ARQ-001` | Conforme | — |
 | Estructura de paquetes Maven por estilo | `LIN-DEV-JAVA-001` | — | Resuelto | `LIN-DEV-JAVA-001` sección 3.1 separado en tres secciones: Estilo 1 (Monolito Simple), Estilo 2 (Modular), Estilo 3 (Hexagonal) |
 | Regla de dependencia entre módulos Maven | `LIN-DEV-JAVA-001` | — | Conforme | — |
 | Convenciones de nomenclatura Java | `LIN-DEV-JAVA-001` | — | Conforme | — |
@@ -165,8 +168,8 @@ Este documento define qué lineamiento es la **fuente autoritativa** de cada tem
 
 | Tema | Dueño | Consumidores | Estado | Observación |
 |---|---|---|---|---|
-| Pirámide de pruebas y distribución por estilo | `LIN-ARQ-000` | `LIN-TEST-001`, `LIN-DEV-JAVA-001` | Conforme | — |
-| Tipos de prueba y pirámide por estilo arquitectónico | `LIN-TEST-001` | `LIN-ARQ-000`, `LIN-DEV-JAVA-001`, `LIN-FE-ANG-001` | En borrador | `LIN-TEST-001` secciones 3–4 definen clasificación y distribución por estilo (Simple, Modular, Hexagonal) |
+| Pirámide de pruebas y distribución por estilo | `LIN-DIS-001` | `LIN-TEST-001`, `LIN-DEV-JAVA-001` | Conforme | — |
+| Tipos de prueba y pirámide por estilo arquitectónico | `LIN-TEST-001` | `LIN-DIS-001`, `LIN-DEV-JAVA-001`, `LIN-FE-ANG-001` | En borrador | `LIN-TEST-001` secciones 3–4 definen clasificación y distribución por estilo (Simple, Modular, Hexagonal) |
 | Cobertura mínima por capa y estilo (umbrales) | `LIN-TEST-001` | `LIN-DEV-JAVA-001`, `LIN-FE-ANG-001`, `LIN-CICD-001` | En borrador | `LIN-TEST-001` sección 5 — Java: ≥65–70% global; capa negocio ≥75–85%; Angular: ≥70% statements |
 | Herramientas: JUnit 5, Mockito, Testcontainers, JaCoCo | `LIN-TEST-001` | `LIN-DEV-JAVA-001` | En borrador | `LIN-TEST-001` sección 11.1 — OracleContainer `gvenzl/oracle-xe:21-slim-faststart` |
 | Pruebas de contrato — obligatoriedad y herramientas | `LIN-TEST-001` | `LIN-API-REST-001`, `LIN-DEV-JAVA-001` | En borrador | `LIN-TEST-001` sección 6 — tabla de casos obligatorio/recomendado; OpenAPI validation como mínimo siempre |
@@ -187,15 +190,15 @@ Este documento define qué lineamiento es la **fuente autoritativa** de cada tem
 
 | Tema | Dueño | Consumidores | Estado | Observación |
 |---|---|---|---|---|
-| Motores permitidos (Oracle 19c estándar, 11g restringido) | `LIN-BD-ORA-001` | `LIN-ARQ-000` | Conforme | — |
+| Motores permitidos (Oracle 19c estándar, 11g restringido) | `LIN-BD-ORA-001` | `LIN-ARQ-001` | Conforme | — |
 | Convenciones de nomenclatura BD | `LIN-BD-ORA-001` | — | Conforme | — |
-| Esquemas por dominio funcional | `LIN-BD-ORA-001` | `LIN-ARQ-000` | Conforme | — |
+| Esquemas por dominio funcional | `LIN-BD-ORA-001` | `LIN-ARQ-001` | Conforme | — |
 | Política de migraciones versionadas (Flyway/Liquibase) | `LIN-BD-ORA-001` | `LIN-CICD-001` | Conforme | — |
 | PL/SQL técnico permitido (constraints, vistas, auditoría) | `LIN-BD-ORA-001` | — | Conforme | — |
-| Gobierno de PL/SQL legacy con lógica de negocio | `LIN-BD-ORA-001` | `LIN-DEV-JAVA-001`, `LIN-ARQ-000` | Resuelto | `LIN-BD-ORA-001` sección 6.0: categorías, inventario, adapter Java, pruebas de caracterización y checklist |
-| Restricción de nueva lógica de negocio en PL/SQL | `LIN-BD-ORA-001` | `LIN-ARQ-000` | Resuelto | `LIN-BD-ORA-001` sección 6.0 define categorías restrictivas y proceso ADR para excepciones |
+| Gobierno de PL/SQL legacy con lógica de negocio | `LIN-BD-ORA-001` | `LIN-DEV-JAVA-001`, `LIN-DIS-001` | Resuelto | `LIN-BD-ORA-001` sección 6.0: categorías, inventario, adapter Java, pruebas de caracterización y checklist |
+| Restricción de nueva lógica de negocio en PL/SQL | `LIN-BD-ORA-001` | `LIN-ARQ-001`, `LIN-DIS-001` | Resuelto | `LIN-BD-ORA-001` sección 6.0 define categorías restrictivas y proceso ADR para excepciones |
 | Adapter Java para invocar PL/SQL legacy | `LIN-DEV-JAVA-001` | `LIN-BD-ORA-001` | Resuelto | `LIN-BD-ORA-001` sección 6.0 define el patrón `SimpleJdbcCall`; referenciado en `LIN-DEV-JAVA-001` sección 8 |
-| Prohibición de acceso directo entre dominios BD | `LIN-BD-ORA-001` | `LIN-ARQ-000` | Conforme | — |
+| Prohibición de acceso directo entre dominios BD | `LIN-BD-ORA-001` | `LIN-ARQ-001`, `LIN-DIS-001` | Conforme | — |
 
 ---
 
@@ -203,8 +206,8 @@ Este documento define qué lineamiento es la **fuente autoritativa** de cada tem
 
 | Tema | Dueño | Consumidores | Estado | Observación |
 |---|---|---|---|---|
-| Arquitectura Medallion (Bronze, Silver, Gold) | `LIN-BI-001` | `LIN-ARQ-000`, `LIN-BD-ORA-001` | En borrador | Define las capas de datos, formatos (Iceberg/Parquet) e ingestas. |
-| Stack tecnológico homologado para analítica | `LIN-BI-001` | `LIN-ARQ-000` | En borrador | Basado en Sección 9 de Estándares de Tecnología v2.0 (MinIO, Spark, Airflow, Trino, Nessie, etc.). |
+| Arquitectura Medallion (Bronze, Silver, Gold) | `LIN-BI-001` | `LIN-ARQ-001`, `LIN-BD-ORA-001` | En borrador | Define las capas de datos, formatos (Iceberg/Parquet) e ingestas. |
+| Stack tecnológico homologado para analítica | `LIN-BI-001` | `LIN-ARQ-001` | En borrador | Basado en Sección 9 de Estándares de Tecnología v2.0 (MinIO, Spark, Airflow, Trino, Nessie, etc.). |
 | Control de Versiones de Datos (Nessie Branching) | `LIN-BI-001` | `LIN-VER-001` | En borrador | Estrategia de ramas (`main`, `dev`, `feature/*`) para desarrollo de pipelines aislados. |
 | Calidad, Gobernanza y Linaje de Datos | `LIN-BI-001` | `LIN-OBS-001` | En borrador | Great Expectations para validaciones, OpenMetadata para glosario y PII, y OpenLineage para trazabilidad. |
 | Seguridad y Control de Acceso analítico | `LIN-BI-001` | `LIN-SEC-APP-001` | En borrador | Roles en Trino, políticas en MinIO, variables de secretos en Vault y enmascaramiento PII. |
@@ -215,10 +218,10 @@ Este documento define qué lineamiento es la **fuente autoritativa** de cada tem
 
 | Tema | Dueño | Consumidores | Estado | Observación |
 |---|---|---|---|---|
-| Angular como framework SPA primario | `LIN-ARQ-000` | `LIN-FE-ANG-001` | Conforme | — |
+| Angular como framework SPA primario | `LIN-ARQ-001` | `LIN-FE-ANG-001` | Conforme | — |
 | Estructura de proyecto Angular | `LIN-FE-ANG-001` | — | Conforme | — |
 | Standalone components | `LIN-FE-ANG-001` | — | Conforme | — |
-| Core Web Vitals — umbrales obligatorios | `LIN-ARQ-000` | `LIN-FE-ANG-001`, `LIN-CICD-001` | Conforme | — |
+| Core Web Vitals — umbrales obligatorios | `LIN-ARQ-001` | `LIN-FE-ANG-001`, `LIN-CICD-001` | Conforme | — |
 | Interceptores HTTP (auth, errores, request ID) | `LIN-FE-ANG-001` | — | Conforme | — |
 | Modelos TypeScript de respuesta API | `LIN-FE-ANG-001` | — | Resuelto | `LIN-FE-ANG-001` corregido: `ApiMeta` completo con `timestamp`, `requestId`, `version`; errores con `campo`/`mensaje` |
 | Estrategia de estado (Signals, store global) | `LIN-FE-ANG-001` | — | Pendiente | Pendiente de desarrollar en `LIN-FE-ANG-001` |
@@ -230,21 +233,21 @@ Este documento define qué lineamiento es la **fuente autoritativa** de cada tem
 
 | Tema | Dueño | Consumidores | Estado | Observación |
 |---|---|---|---|---|
-| K8s como destino por defecto | `LIN-ARQ-000` | `LIN-K8S-001`, `LIN-CICD-001` | Conforme | — |
-| Dockerfile estándar (multi-stage, Alpine, no root) | `LIN-K8S-001` | `LIN-CICD-001` | En borrador | `LIN-ARQ-000` tiene referencia transitoria; dueño definitivo `LIN-K8S-001` |
+| K8s como destino por defecto (`containerd`) | `LIN-ARQ-001` | `LIN-K8S-001`, `LIN-CICD-001` | Conforme | — |
+| Dockerfile estándar (multi-stage, Alpine, no root) | `LIN-K8S-001` | `LIN-CICD-001` | En borrador | `LIN-ARQ-001` tiene referencia transitoria; dueño definitivo `LIN-K8S-001` |
 | Política de namespaces, tagging de imágenes | `LIN-K8S-001` | `LIN-CICD-001` | En borrador | Dueño `LIN-K8S-001` |
 | Variables de entorno vs Secrets K8s | `LIN-K8S-001` | `LIN-DEV-JAVA-001`, `LIN-SEC-APP-001` | En borrador | Dueño `LIN-K8S-001` |
 | IaC — herramienta y estructura de repositorio | `LIN-IAC-001` | `LIN-CICD-001`, `LIN-K8S-001` | En borrador | `LIN-IAC-001` en borrador; define Terraform, repositorio dedicado `oti-plataforma/infrastructure-iac`, fases de madurez y pipeline de validación |
 
 ---
 
-### 11. Gobierno arquitectónico
+### 11. Gobierno arquitectónico en 3 Niveles
 
 | Tema | Dueño | Consumidores | Estado | Observación |
 |---|---|---|---|---|
-| Formato y proceso de ADR | `LIN-ARQ-000` | Todos | Resuelto | Proceso de excepción (ADR) agregado en todos los lineamientos existentes: `LIN-DEV-JAVA-001` sección 15, `LIN-API-REST-001`, `LIN-BD-ORA-001`, `LIN-FE-ANG-001`, `LIN-OBS-001` sección 13 |
-| Proceso de excepción a estándares | `LIN-ARQ-000` | Todos | Conforme | — |
-| Cuándo es obligatoria revisión de arquitectura | `LIN-ARQ-000` | — | Conforme | — |
+| Formato y proceso de ADR | `LIN-ARQ-001` | Todos | Resuelto | Proceso de excepción (ADR) agregado en todos los lineamientos existentes (`LIN-DEV-JAVA-001 §17`) |
+| Proceso de excepción a estándares (Supremacía Normativa) | `LIN-ARQ-001` | Todos | Conforme | — |
+| Cuándo es obligatoria revisión de arquitectura | `LIN-ARQ-001` | — | Conforme | — |
 | Guía v0.1.2 — archivada | — | `LIN-OBS-001`, `LIN-API-REST-001`, `LIN-DEV-JAVA-001` | **Archivado** | secciones 1–2 absorbidos por `LIN-OBS-001`; sección 3 absorbido por `LIN-DEV-JAVA-001` y `LIN-API-REST-001`. La guía está marcada como archivada. El valor de "orden de inicio" se preserva en `LIN-DEV-JAVA-001 sección 1.3 — Configuración inicial de un proyecto nuevo`. No actualizar la guía. |
 
 ---
@@ -302,18 +305,18 @@ Deliverable separado de los lineamientos. Los lineamientos referencian las ficha
 | PT01 | Publisher/Subscriber | ❌ Sin ficha | LIN-BUS-001 |
 | PT02 | Dead Letter Queue | ⚠️ Citado en LIN-ARQ-000 sección 3.4 | LIN-BUS-001 |
 | PT03 | Event Sourcing | ❌ Sin ficha | LIN-BUS-001 |
-| PT04 | CQRS | ⚠️ Mencionado en LIN-ARQ-000 sección 3.4 | LIN-BUS-001 / LIN-ARQ-000 |
-| PT05 | API Gateway | ⚠️ Diagrama en LIN-ARQ-000 sección 2.2; sección en LIN-API-REST-001 sección 2.5 | LIN-API-REST-001 |
+| PT04 | CQRS | ✅ Sección normada en LIN-DIS-001 §5 | LIN-DIS-001 / LIN-BUS-001 |
+| PT05 | API Gateway | ✅ Normado en LIN-DIS-001 y LIN-API-REST-001 | LIN-DIS-001 / LIN-API-REST-001 |
 | PT06 | Retry | ❌ Sin ficha | LIN-API-REST-001 / LIN-BUS-001 |
-| PT07 | Circuit Breaker | ⚠️ Citado como habilidad en LIN-ARQ-000 sección 10 | LIN-API-REST-001 |
-| PT08 | Bulkhead | ❌ Sin ficha | LIN-K8S-001 |
-| PT09 | Saga | ⚠️ Citado en LIN-ARQ-000 sección 3.4, delegado a LIN-BUS-001 | LIN-BUS-001 |
-| PT10 | Strangler Fig | ✅ Sección sección 2.2 en LIN-ARQ-000 — falta formato ficha | LIN-ARQ-000 |
-| PT11 | Backend for Frontend | ❌ Sin ficha | LIN-ARQ-000 |
-| PT12 | Gateway Aggregation | ❌ Sin ficha | LIN-API-REST-001 / LIN-ARQ-000 |
-| PT13 | Anti-Corruption Layer | ✅ Sección sección 6.3 en LIN-ARQ-000 — falta formato ficha | LIN-ARQ-000 |
-| PT14 | Adapter | ✅ Sección sección 6.2 en LIN-ARQ-000 — falta formato ficha | LIN-ARQ-000 |
-| PT15 | Facade | ❌ Sin ficha | LIN-ARQ-000 |
+| PT07 | Circuit Breaker | ✅ Normado con Resilience4j en LIN-DIS-001 §8 | LIN-DIS-001 / LIN-API-REST-001 |
+| PT08 | Bulkhead | ✅ Normado con aislamiento de hilos en LIN-DIS-001 §8 | LIN-DIS-001 / LIN-K8S-001 |
+| PT09 | Saga | ✅ Citado y normado en LIN-ARQ-001 §6.2 | LIN-ARQ-001 / LIN-BUS-001 |
+| PT10 | Strangler Fig | ✅ Normado en LIN-ARQ-001 §6.1 | LIN-ARQ-001 |
+| PT11 | Backend for Frontend (BFF) | ✅ Normado en LIN-DIS-001 §5.2 | LIN-DIS-001 |
+| PT12 | Gateway Aggregation | ✅ Normado en LIN-DIS-001 §5.3 | LIN-DIS-001 / LIN-API-REST-001 |
+| PT13 | Anti-Corruption Layer (ACL) | ✅ Normado en LIN-DIS-001 §6 | LIN-DIS-001 |
+| PT14 | Adapter / Decorator / Facade (GoF) | ✅ Normados en LIN-DEV-JAVA-001 §8 | LIN-DEV-JAVA-001 / LIN-DIS-001 |
+| PT15 | Facade Arquitectónico | ✅ Normado en LIN-DIS-001 §5.4 | LIN-DIS-001 |
 | PT16 | Medallón | ❌ Sin ficha | LIN-BI-001 |
 
 **Formato de cada ficha:** problema que resuelve · solución · cuándo usar en ONP · cuándo NO usar · estructura / diagrama · consecuencias y trade-offs · patrones relacionados · ejemplo de referencia.

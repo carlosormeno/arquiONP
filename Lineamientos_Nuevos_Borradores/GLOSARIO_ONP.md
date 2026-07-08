@@ -1,9 +1,9 @@
 # GLOSARIO ONP — Términos Transversales
 
-**Versión:** 0.1.0  
-**Fecha:** 2026-05-28  
-**Estado:** Borrador operativo  
-**Propósito:** consolidar términos de uso recurrente en los lineamientos ONP para reducir ambigüedad entre arquitectura, desarrollo, seguridad, base de datos, pruebas y plataforma.
+**Versión:** 0.2.0 (Alineación a 3 Niveles de Arquitectura)  
+**Fecha:** 2026-07-08  
+**Estado:** Vigente / Operativo  
+**Propósito:** consolidar términos de uso recurrente en los lineamientos ONP para reducir ambigüedad entre arquitectura, diseño táctico, desarrollo, seguridad, base de datos, pruebas y plataforma en su jerarquía de 3 niveles.
 
 ---
 
@@ -27,9 +27,11 @@ Si un lineamiento necesita una definición más específica para su dominio, deb
 | **Documento dueño** | Lineamiento o documento que es fuente autoritativa de un tema. Los demás pueden consumirlo o referenciarlo, pero no redefinirlo. |
 | **Documento consumidor** | Documento que implementa, aplica o referencia una regla definida por otro documento dueño. |
 | **Corpus documental** | Conjunto completo de lineamientos, matrices, ADR, plantillas y documentos de apoyo vigentes para desarrollar software en ONP. |
+| **Modelo en 3 Niveles** | Estructura federada del gobierno arquitectónico de la OTI dividida en: **Nivel 1 Macro** (`LIN-ARQ-001`), **Nivel 2 Táctico** (`LIN-DIS-001`) y **Nivel 3 Micro/Código** (`LIN-DEV-JAVA-001`). |
+| **Cantera Histórica** | Documento o especificación técnica anterior (ej. `LIN-ARQ-000`) preservado con fines de trazabilidad evolutiva e invariable (`Congelado`), que ya no rige como norma de diseño en nuevos proyectos. |
 | **Baseline** | Punto de partida institucional reutilizable. Puede ser documental, técnico o de pipeline. |
 | **ADR** | Architecture Decision Record. Registro formal de una decisión de arquitectura, su contexto, alternativas, consecuencias, vigencia y responsables. |
-| **Excepción** | Desviación aprobada respecto de un lineamiento. Debe quedar documentada y trazable, normalmente mediante ADR. |
+| **Excepción** | Desviación aprobada respecto de un lineamiento. Debe quedar documentada y trazable, normalmente mediante ADR y firma de la Dirección de Arquitectura. |
 | **Vigente** | Documento o decisión que debe usarse operativamente en proyectos nuevos o cambios relevantes. |
 | **Borrador** | Documento existente pero todavía sujeto a ajustes antes de declararse operativo o vigente. |
 | **Conforme** | Estado usado en la matriz cuando dueño y consumidores están alineados en la versión revisada. |
@@ -60,14 +62,15 @@ Si un lineamiento necesita una definición más específica para su dominio, deb
 | Término | Definición ONP |
 |---|---|
 | **Monolito simple** | Aplicación desplegable única con estructura básica en capas y complejidad moderada. |
-| **Monolito modular** | Aplicación desplegable única organizada en módulos explícitos con fronteras claras y dependencias controladas. |
-| **Hexagonal** | Estilo donde dominio y casos de uso se aíslan de frameworks mediante puertos y adaptadores. |
+| **Monolito modular** | Aplicación desplegable única organizada en módulos explícitos con fronteras claras y dependencias controladas (`LIN-DIS-001 §3.1`). |
+| **Hexagonal** | Estilo donde dominio y casos de uso se aíslan de frameworks mediante puertos y adaptadores (`LIN-DIS-001 §3.2`). |
 | **Dominio** | Modelo del problema de negocio que el software resuelve, con sus reglas, conceptos y restricciones. |
 | **Bounded Context** | Límite explícito dentro del cual un modelo de dominio es consistente y tiene significado unívoco. |
+| **Estadios de Topología** | Clasificación evolutiva de sistemas ONP según `LIN-ARQ-001 §6`: Estadio 0 (Legacy/On-Premise), Estadio 1 (Transición/Strangler Fig) y Estadio 2 (Cloud-Native/K8s). |
 | **Port** | Interfaz que expresa una capacidad requerida o expuesta por el dominio o la aplicación. |
-| **Adapter** | Implementación concreta que conecta puertos con infraestructura o sistemas externos. |
-| **ACL (Anti-Corruption Layer)** | Capa o conjunto de mappers que traduce entre modelos externos y el modelo de ONP. |
-| **Contrato API** | Acuerdo observable de una API: rutas, métodos, payloads, códigos, headers, semántica y restricciones. |
+| **Adapter** | Implementación concreta que conecta puertos con infraestructura o sistemas externos (`LIN-DEV-JAVA-001 §8`). |
+| **ACL (Anti-Corruption Layer)** | Capa o conjunto de mappers que traduce y aísla entre modelos externos/legacy y el modelo limpio de ONP (`LIN-DIS-001 §6`). |
+| **Contrato API** | Acuerdo observable de una API: rutas, métodos, payloads, códigos, headers, semántica y restricciones (`LIN-API-REST-001`). |
 | **Contrato de respuesta** | Estructura estándar de respuesta usada por los servicios, por ejemplo `ApiResponseWrapper`. |
 | **Catálogo normativo** | Lista oficial de valores o reglas aprobadas por documento dueño. Puede existir con o sin persistencia física. |
 
@@ -85,8 +88,9 @@ Si un lineamiento necesita una definición más específica para su dominio, deb
 | **`requestId`** | Valor de correlación expuesto en el contrato de respuesta y alineado al `X-Request-ID`. |
 | **`traceId`** | Identificador de la traza distribuida. |
 | **`spanId`** | Identificador de una unidad de trabajo dentro de la traza. |
+| **Four Golden Signals** | Las 4 métricas doradas de Google SRE de monitoreo mandatorio para producción: Latencia, Tráfico, Errores y Saturación (`LIN-ARQ-001 §9`). |
 | **Override operativo** | Valor inyectado por plataforma u operación para ajustar comportamiento por ambiente sin modificar la configuración base versionada. |
-| **Health check** | Señal técnica para determinar si una aplicación está viva, lista o en condiciones de recibir tráfico. |
+| **Health check** | Señal técnica para determinar si una aplicación está viva, lista o en condiciones de recibir tráfico (`Liveness/Readiness Probes`). |
 
 ---
 

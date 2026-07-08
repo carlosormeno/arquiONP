@@ -1,21 +1,24 @@
 # START HERE — Proyecto Java ONP
 
-**Versión:** 0.1.1  
-**Fecha:** 2026-05-28  
-**Estado:** Borrador operativo  
-**Propósito:** punto de entrada para iniciar un proyecto Java/Spring Boot bajo los lineamientos ONP.
+**Versión:** 0.2.0 (Alineado a 3 Niveles de Arquitectura)  
+**Fecha:** 2026-07-08  
+**Estado:** Vigente / Operativo  
+**Propósito:** punto de entrada para iniciar un proyecto Java/Spring Boot bajo los lineamientos ONP federados en 3 niveles de abstracción.
 
 ## 1. Orden de lectura recomendado
 
-1. `LIN-ARQ-000` — marco rector y decisiones base.
-2. `LIN-DEV-JAVA-001` — estructura del proyecto y componentes obligatorios.
-3. `LIN-API-REST-001` — contrato REST, OpenAPI y `ApiResponseWrapper`.
-4. `LIN-SEC-APP-001` — integración SAA y seguridad base.
-5. `LIN-OBS-001` — trazas, logs estructurados, métricas y correlación.
-6. `LIN-BD-ORA-001` — si el proyecto usa Oracle o PL/SQL.
-7. `LIN-VER-001` — modelo de repositorio, ramas y control de cambios.
-8. `LIN-CICD-001` — pipeline mínimo y capacidades activas.
-9. `LIN-K8S-001` / `LIN-IAC-001` — despliegue e infraestructura, cuando aplique.
+1. `LIN-ARQ-001` — Nivel 1: Marco Rector de Arquitectura de Software (topología K8s/containerd, estadios, gobierno y SRE).
+2. `LIN-DIS-001` — Nivel 2: Estándar de Diseño de Software y Patrones Tácticos (Hexagonal, Monolito Modular, DDD, CQRS, Resiliencia).
+3. `LIN-DEV-JAVA-001` — Nivel 3: Estándar de Desarrollo Java / GoF / SOLID y estructura de proyecto en Spring Boot 3.
+4. `LIN-API-REST-001` — contrato REST, OpenAPI y `ApiResponseWrapper`.
+5. `LIN-SEC-APP-001` — integración SAA, Zero Trust y seguridad base.
+6. `LIN-OBS-001` — trazas, logs estructurados ECS, métricas Four Golden Signals y correlación.
+7. `LIN-BD-ORA-001` — si el proyecto usa Oracle 19c o PL/SQL.
+8. `LIN-VER-001` — modelo de repositorio, ramas y control de cambios (GitLab Flow simplificado).
+9. `LIN-CICD-001` — pipeline mínimo y capacidades activas.
+10. `LIN-K8S-001` / `LIN-IAC-001` — despliegue sobre cluster containerd e infraestructura como código.
+
+> **Nota institucional:** El antiguo documento `LIN-ARQ-000` ha sido congelado como **Cantera Histórica (`v0.1.19`)** y no se utiliza como referencia de diseño para nuevos proyectos. Su contenido rige ahora desglosado en `LIN-ARQ-001`, `LIN-DIS-001` y `LIN-DEV-JAVA-001`.
 
 ## 2. Mínimo para primer pase a DEV
 
@@ -39,8 +42,10 @@ Un proyecto backend nuevo debe tener como mínimo:
 
 | Tema | Documento dueño |
 |---|---|
-| Arquitectura base | `LIN-ARQ-000` |
-| Desarrollo Java | `LIN-DEV-JAVA-001` |
+| Arquitectura (Macro / Gobierno / K8s) | `LIN-ARQ-001` |
+| Diseño Táctico (Capas / Hexagonal / DDD) | `LIN-DIS-001` |
+| **Catálogo de Patrones y Fichas con Criterio de Selección** | `LIN-PAT-001` |
+| Desarrollo Java / GoF / SOLID | `LIN-DEV-JAVA-001` |
 | Contrato REST / OpenAPI | `LIN-API-REST-001` |
 | Seguridad / SAA | `LIN-SEC-APP-001` |
 | Observabilidad | `LIN-OBS-001` |
@@ -54,10 +59,12 @@ Un proyecto backend nuevo debe tener como mínimo:
 
 ## 4. Decisiones ya cerradas para proyectos nuevos
 
-- Formato oficial de configuración Spring Boot: YAML.
-- Modelo primario de observabilidad: configuración versionada por perfil.
+- Estilo arquitectónico por defecto en nuevos proyectos: **Monolito Modular** o **Arquitectura Hexagonal / Limpia** (`LIN-DIS-001`).
+- Plataforma de despliegue inmutable: **Kubernetes (K8s) con CRI `containerd`** (`LIN-ARQ-001 §7`).
+- Formato oficial de configuración Spring Boot: YAML (`application.yml`, perfiles `-dev`, `-qa`, `-prod`).
+- Modelo primario de observabilidad: OpenTelemetry con correlación canónica (`traceId`, `X-Request-ID`, Four Golden Signals).
 - Variables OTEL en K8s: solo override operativo administrado por Plataforma.
-- Modelo de repositorio para proyectos nuevos: GitLab Flow simplificado, salvo ADR.
+- Modelo de repositorio para proyectos nuevos: GitLab Flow simplificado con MR obligatorio (`LIN-VER-001`), salvo ADR aprobado.
 
 ## 5. Punto de arranque técnico
 
