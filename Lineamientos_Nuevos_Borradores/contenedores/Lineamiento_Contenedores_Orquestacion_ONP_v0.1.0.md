@@ -1,9 +1,9 @@
 # LIN-K8S-001 — Lineamiento de Contenedores y Orquestación ONP
 
 **Código:** LIN-K8S-001  
-**Versión:** v0.1.10  
+**Versión:** v0.1.11  
 **Estado:** Borrador  
-**Fecha:** 2026-07-09  
+**Fecha:** 2026-07-10  
 **Propietario documental:** Arquitectura de Software — OTI  
 **Revisores sugeridos:** Plataforma/Infraestructura, Seguridad Digital, Desarrollo, Arquitectura  
 **Marco rector:** LIN-ARQ-001 — Marco Rector de Arquitectura de Software  
@@ -26,6 +26,7 @@
 | v0.1.8 | 2026-07-06 | Arquitectura OTI | Exige ADR aprobado por Arquitectura y Plataforma para adoptar el ambiente opcional UAT/Preproducción (§4.4), en coherencia con el mismo patrón de gate ya usado para CQRS y BD no relacional en LIN-ARQ-000; agrega detonadores válidos y no válidos, y contenido mínimo del ADR. Añade el caso a la lista de §20.1 |
 | v0.1.9 | 2026-07-09 | Arquitectura OTI | Corrige las citas colgantes hacia el documento congelado `LIN-ARQ-000 §11.1`: el estadio de Transición (Docker Compose) y el runtime containerd de producción ahora citan `LIN-ARQ-001 §5.2` (Marco Rector vigente) |
 | v0.1.10 | 2026-07-09 | Arquitectura OTI | Añade en §10.3 la diferenciación de réplicas mínimas y SLO por estilo arquitectónico (Monolito Modular 99.0% / Microservicio 99.5%), que solo existía en el documento congelado |
+| v0.1.11 | 2026-07-10 | Arquitectura OTI | Corrige el ejemplo de imagen frontend en §5.4 y el Anexo D: reemplaza `nginx:stable-alpine` en puerto 80 (root) por `nginxinc/nginx-unprivileged:1.27-alpine` en puerto 8080 con directorios temporales en `/tmp`, alineando con `LIN-FE-ANG-001 §16` y con la propia regla de este documento (§14.1, `runAsNonRoot: true`) — el ejemplo previo violaba su propia norma y contradecía el anti-patrón explícito de §16.5 |
 
 ---
 
@@ -330,9 +331,11 @@ ENTRYPOINT ["java", "-jar", "/app/app.jar"]
 
 ### 5.4 Reglas para imágenes Frontend Angular
 
-Las aplicaciones Angular se construyen como artefacto estático y se sirven mediante un contenedor web.
+Las aplicaciones Angular se construyen como artefacto estático y se sirven mediante un contenedor web. **Fuente autoritativa:** la especificación completa de la imagen, el `nginx.conf` y los manifiestos Kubernetes está en `LIN-FE-ANG-001 §16`. Esta sección resume únicamente la regla que aplica de forma transversal a todo contenedor del clúster (§14.1: `runAsNonRoot: true`) y el ejemplo mínimo consistente con ella.
 
-Ejemplo referencial:
+**Regla obligatoria:** ejecutar Nginx en el puerto 80 requiere privilegios de root, lo que viola directamente `runAsNonRoot: true` (§14.1) e impide el arranque del pod en el clúster corporativo. La imagen base debe ser `nginxinc/nginx-unprivileged`, nunca `nginx`/`nginx:alpine` oficial.
+
+Ejemplo referencial (coincide con `LIN-FE-ANG-001 §16.3`):
 
 ```dockerfile
 # Build Angular
@@ -345,17 +348,17 @@ RUN npm ci
 COPY . .
 RUN npm run build
 
-# Runtime web
-FROM nginx:stable-alpine
-COPY --from=build /workspace/dist/ /usr/share/nginx/html
+# Runtime web — imagen no root, puerto no privilegiado
+FROM nginxinc/nginx-unprivileged:1.27-alpine
+COPY --from=build /workspace/dist/<nombre-proyecto>/browser /usr/share/nginx/html
 
 # Configuración nginx para SPA Angular (ver Anexo D)
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY nginx.conf /etc/nginx/nginx.conf
 
-EXPOSE 80
-
-CMD ["nginx", "-g", "daemon off;"]
+EXPOSE 8080
 ```
+
+> La imagen `nginx-unprivileged` ya ejecuta Nginx como `uid 101`; no se declara `USER` explícitamente. El Service/Deployment deben referenciar el puerto `8080` (`targetPort: 8080`) y el `securityContext` debe fijar `runAsUser: 101` — ver `LIN-FE-ANG-001 §16.4`.
 
 > **Importante:** Sin una configuración nginx apropiada, cualquier recarga directa de una ruta Angular (`/pensiones/consulta`) devuelve 404 porque Nginx busca el archivo físico. El Anexo D incluye la configuración mínima obligatoria.
 
@@ -1258,39 +1261,64 @@ trivy image --severity CRITICAL,HIGH registry.gitlab.onp.gob.pe/aplicaciones/pas
 
 Las aplicaciones Angular son Single Page Applications. Nginx debe redirigir cualquier ruta al `index.html` para que el router de Angular tome el control. Sin esta configuración, las recargas directas de rutas devuelven 404.
 
-```nginx
-# nginx.conf — configuración mínima para Angular SPA
-server {
-    listen 80;
-    server_name _;
+**Puerto y usuario no root:** la imagen base es `nginxinc/nginx-unprivileged` (§5.4), que ejecuta como `uid 101` y no puede bindear puertos privilegiados (`<1024`). Por eso este `nginx.conf` escucha en `8080`, no en `80`, y redirige los directorios temporales de trabajo (`client_body_temp_path` y similares) a `/tmp`, que sí es escribible por un usuario no root. Configuración completa y autoritativa en `LIN-FE-ANG-001 §16.2`.
 
-    root /usr/share/nginx/html;
-    index index.html;
+```nginx
+# nginx.conf — configuración mínima para Angular SPA (usuario no root, puerto 8080)
+worker_processes auto;
+error_log  /var/log/nginx/error.log warn;
+pid        /tmp/nginx.pid;
+
+events {
+    worker_connections 1024;
+}
+
+http {
+    include      /etc/nginx/mime.types;
+    default_type application/octet-stream;
+
+    # Directorios temporales fuera de /var/run — accesibles por uid 101
+    client_body_temp_path /tmp/client_temp;
+    proxy_temp_path       /tmp/proxy_temp_path;
+    fastcgi_temp_path     /tmp/fastcgi_temp;
+    uwsgi_temp_path       /tmp/uwsgi_temp;
+    scgi_temp_path        /tmp/scgi_temp;
+
+    sendfile       on;
+    keepalive_timeout 65;
 
     # Compresión
     gzip on;
     gzip_types text/plain text/css application/json application/javascript text/xml application/xml;
 
-    # Seguridad — headers básicos (ver LIN-SEC-APP-001 para apps web)
-    add_header X-Content-Type-Options "nosniff" always;
-    add_header X-Frame-Options "SAMEORIGIN" always;
-    add_header Cache-Control "no-store" always;
+    server {
+        listen 8080;
+        server_name _;
 
-    location / {
-        # Regla crítica para SPA: si el archivo o directorio no existe,
-        # redirigir a index.html para que Angular Router maneje la ruta
-        try_files $uri $uri/ /index.html;
-    }
+        root /usr/share/nginx/html;
+        index index.html;
 
-    # Archivos estáticos con cache agresivo (hash en nombre de archivo por Angular CLI)
-    location ~* \.(js|css|png|jpg|gif|ico|woff2?)$ {
-        expires 1y;
-        add_header Cache-Control "public, immutable";
-    }
+        # Seguridad — headers básicos (ver LIN-SEC-APP-001 para apps web)
+        add_header X-Content-Type-Options "nosniff" always;
+        add_header X-Frame-Options "SAMEORIGIN" always;
+        add_header Cache-Control "no-store" always;
 
-    # No exponer archivos de configuración
-    location ~ /\. {
-        deny all;
+        location / {
+            # Regla crítica para SPA: si el archivo o directorio no existe,
+            # redirigir a index.html para que Angular Router maneje la ruta
+            try_files $uri $uri/ /index.html;
+        }
+
+        # Archivos estáticos con cache agresivo (hash en nombre de archivo por Angular CLI)
+        location ~* \.(js|css|png|jpg|gif|ico|woff2?)$ {
+            expires 1y;
+            add_header Cache-Control "public, immutable";
+        }
+
+        # No exponer archivos de configuración
+        location ~ /\. {
+            deny all;
+        }
     }
 }
 ```
@@ -1298,7 +1326,7 @@ server {
 Este archivo debe copiarse en el Dockerfile de Angular:
 
 ```dockerfile
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY nginx.conf /etc/nginx/nginx.conf
 ```
 
 ### Anexo E — NetworkPolicy mínima para servicio backend

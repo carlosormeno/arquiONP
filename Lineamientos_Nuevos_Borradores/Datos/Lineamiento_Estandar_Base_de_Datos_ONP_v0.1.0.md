@@ -1,6 +1,6 @@
 # LIN-BD-ORA-001 — Estándar de Base de Datos Oracle ONP
 ## Oficina de Normalización Previsional — OTI
-### Código: LIN-BD-ORA-001 | Versión 0.1.7 | Estado: Borrador | Marco rector: LIN-ARQ-000
+### Código: LIN-BD-ORA-001 | Versión 0.1.8 | Estado: Borrador | Marco rector: LIN-ARQ-000
 
 ---
 
@@ -16,6 +16,7 @@
 | 0.1.5 | 2026-05-29 | OTI | Incorpora mejoras técnicas: control de longitud de constraints, CLIENT_IDENTIFIER para pools, restricciones TDE en columnas, indexación de FKs, optimización de búsquedas y soporte EBR |
 | 0.1.6 | 2026-05-29 | OTI | Refuerza consistencia para desarrollo de software: tipado canónico de claves e indicadores, estrategia de PK/FK, borrado lógico, manejo robusto de errores, auditoría consistente con pools, precisión en planes de ejecución y reglas de uso de sinónimos |
 | 0.1.7 | 2026-05-29 | OTI | Agrega DDL de catálogos centralizados (BD [sección 2.3](#23-catalogo-centralizado-de-bases-de-datos), DBLinks [sección 4.9.1](#491-condiciones-para-el-uso-de-dblinks), Jobs [sección 4.12](#412-jobs-de-dbms_scheduler)), tablespace LOB y sección [sección 3.8](#38-tipos-de-datos-lob) Tipos de datos LOB, [sección 7.6](#76-sentencia-merge-upsert) Sentencia MERGE con manejo de auditoría, [sección 9.5](#95-estadisticas-del-optimizador-dbms_stats) Estadísticas del optimizador DBMS_STATS, documenta excepción canónica de prefijo ID_ para campos de auditoría ([sección 3.4](#34-prefijos-de-columnas)), corrige tipo en borrado lógico Anexo C.2 |
+| 0.1.8 | 2026-07-10 | OTI | Agrega el prefijo técnico `EVT_` ([sección 3.3](#33-tipos-de-tablas--prefijos)) y la [sección 3.10](#310-tabla-técnica-transversal-evt_outbox-transactional-outbox) con el nombre canónico y DDL de `EVT_OUTBOX`, cerrando la brecha donde este documento —dueño normativo de tablas Oracle— no definía la tabla del patrón Transactional Outbox pese a que `LIN-ARQ-001`, `LIN-DIS-001`, `LIN-BUS-001` y `LIN-PAT-001` ya la referenciaban con tres nombres distintos (`OUTBOX`, `TB_OUTBOX`, `EVT_OUTBOX`) |
 
 ---
 
@@ -198,6 +199,7 @@ Toda tabla debe llevar un prefijo que identifica su naturaleza dentro del modelo
 | `HIS_` | Histórico | Tablas de datos históricos o archivados |
 | `TMP_` | Temporal | Tablas temporales de sesión (GTT) |
 | `TRX_` | Transacción externa | Datos recibidos de sistemas externos |
+| `EVT_` | Evento | Tablas técnicas de staging de eventos para publicación asíncrona garantizada (patrón Transactional Outbox, ver §3.10) |
 
 ### 3.4 Prefijos de columnas
 
@@ -302,6 +304,30 @@ Oracle soporta dos niveles de aislamiento estándar:
 | `SERIALIZABLE` | La transacción ve solo datos confirmados hasta el inicio de la transacción completa, no de cada sentencia individual. Detecta conflictos de escritura concurrente. | Procesos de cálculo crítico donde la consistencia de lectura durante toda la transacción es obligatoria (ej. liquidaciones, cierre de período). Requiere análisis de impacto en concurrencia antes de aplicar. |
 
 > Oracle **no soporta** `READ UNCOMMITTED` ni `REPEATABLE READ` como niveles explícitos. El `SERIALIZABLE` de Oracle usa MVCC, no bloqueos de tabla, por lo que no degrada la concurrencia de lectores.
+
+### 3.10 Tabla técnica transversal — `EVT_OUTBOX` (Transactional Outbox)
+
+El patrón **Transactional Outbox** (`LIN-DIS-001 §4.2`, `LIN-BUS-001 §7.3`, ficha `PAT-DAT-02` de `LIN-PAT-001`) depende de las garantías ACID de esta sección: el evento de dominio se inserta en una tabla local **dentro de la misma transacción** que modifica el dato de negocio, para que ambas operaciones confirmen o ninguna lo haga. Esta sección fija el nombre canónico y el DDL mínimo de esa tabla, ya que es una tabla técnica transversal (no pertenece a un dominio funcional específico) y su ausencia de este documento generaba tres nombres distintos en el framework (`OUTBOX`, `TB_OUTBOX`, `EVT_OUTBOX`).
+
+**Nombre canónico:** `EVT_OUTBOX`, con el prefijo técnico `EVT_` (§3.3). Todo lineamiento o proyecto que mencione esta tabla debe usar este nombre.
+
+```sql
+CREATE TABLE EVT_OUTBOX (
+    ID              VARCHAR2(36)    NOT NULL,
+    EVENTO_TIPO     VARCHAR2(200)   NOT NULL,
+    EVENTO_VERSION  VARCHAR2(10)    NOT NULL,
+    PAYLOAD         CLOB            NOT NULL,
+    ESTADO          VARCHAR2(20)    DEFAULT 'PENDIENTE',
+    CREADO_EN       TIMESTAMP       DEFAULT SYSTIMESTAMP,
+    ENVIADO_EN      TIMESTAMP,
+    INTENTOS        NUMBER(2)       DEFAULT 0,
+    CONSTRAINT PK_EVT_OUTBOX PRIMARY KEY (ID)
+);
+
+CREATE INDEX IDX_EVT_OUTBOX_ESTADO ON EVT_OUTBOX (ESTADO, CREADO_EN);
+```
+
+`ESTADO` transita entre `PENDIENTE` y `ENVIADO` (ver también `PROCESADO` como sinónimo aceptado si un proyecto ya lo adoptó antes de esta sección — no requiere migración retroactiva). La lógica del proceso de relevo (*Outbox Relay*, `@Scheduled` o CDC/Debezium) y su integración con Apache Kafka es responsabilidad de `LIN-BUS-001 §7.3`, que es la fuente autoritativa para esa parte; esta sección solo fija el nombre y el DDL de la tabla en Oracle.
 
 #### Implicancia arquitectónica
 

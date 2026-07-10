@@ -1,8 +1,8 @@
 # Lineamiento de Seguridad en Aplicaciones ONP
 **Código:** LIN-SEC-APP-001
-**Versión:** v0.1.2
+**Versión:** v0.1.3
 **Estado:** Borrador
-**Fecha:** 2026-07-06
+**Fecha:** 2026-07-10
 **Propietario:** Arquitectura de Software — OTI
 **Revisores:** Seguridad de la Información, Arquitectura, Desarrollo
 **Marco rector:** LIN-ARQ-000 — Marco Rector de Diseño y Arquitectura de Software
@@ -16,6 +16,7 @@
 | v0.1.0 | 2026-05-25 | Arquitectura OTI | Borrador inicial |
 | v0.1.1 | 2026-05-28 | Arquitectura OTI | Alinea la configuración a YAML, documenta el comportamiento del filtro SAA ante fallos y referencia la transición gobernada hacia WSO2 |
 | v0.1.2 | 2026-07-06 | Arquitectura OTI | Declara a LIN-ARQ-000 como marco rector (encabezado y §2), único lineamiento de Nivel 3 que no lo citaba. Corrige mención de Circuit Breaker: el patrón oficial es PT06, no PT07 (PT07 es Bulkhead); actualiza la referencia obsoleta "pendiente LIN-BUS-001" a LIN-ARQ-000 §3.7.3, donde Circuit Breaker ya está normado |
+| v0.1.3 | 2026-07-10 | Arquitectura OTI | Revierte la corrección de v0.1.2: el código correcto de Circuit Breaker es **PT07**, no PT06 — PT06 es Retry y PT08 es Bulkhead, según el catálogo autoritativo `LIN-PAT-001` (fichas PAT-RES-01/02) y `Matriz_Propiedad_Documental_ONP`. Actualiza §8.7 y el glosario. Redirige además la referencia de Circuit Breaker desde el documento congelado `LIN-ARQ-000 §3.7.3` hacia `LIN-DIS-001 §6.2`, donde vive el contenido vigente |
 
 ---
 
@@ -516,7 +517,7 @@ El SAA es una dependencia crítica. Si no responde:
 - Retornar `503 Service Unavailable` con mensaje genérico (no técnico)
 - Registrar el evento como `log.error` con contexto de traza
 - No cachear el último resultado como sustituto de validación
-- Aplicar Circuit Breaker si el servicio tiene alta concurrencia (ver patrón PT06 — normado en LIN-ARQ-000 §3.7.3)
+- Aplicar Circuit Breaker si el servicio tiene alta concurrencia (ver patrón PT07 — normado en LIN-DIS-001 §6.2)
 
 #### 8.7.1 Comportamiento del filtro ante error
 
@@ -1089,7 +1090,7 @@ Cualquier desviación a las reglas de este lineamiento requiere un ADR (Architec
 | **CAPTCHA** | Prueba de verificación humana para acceso externo |
 | **SEGURITYSYS** | Esquema Oracle del SAA que contiene usuarios, roles y permisos |
 | **LDAP** | Lightweight Directory Access Protocol — protocolo de directorio |
-| **Circuit Breaker** | Patrón de resiliencia que corta llamadas a servicio no disponible (PT06) |
+| **Circuit Breaker** | Patrón de resiliencia que corta llamadas a servicio no disponible (PT07) |
 | **ADR** | Architecture Decision Record — registro de decisión de arquitectura |
 
 ---

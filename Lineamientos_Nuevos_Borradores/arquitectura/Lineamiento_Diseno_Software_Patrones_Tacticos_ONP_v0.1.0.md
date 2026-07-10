@@ -1,7 +1,7 @@
 # Lineamiento de Estándar de Diseño de Software y Patrones Tácticos en la ONP
 
 **Código:** LIN-DIS-001  
-**Versión:** 0.1.3  
+**Versión:** 0.1.4  
 **Fecha:** 2026-07-09  
 **Autor:** Oficina de Tecnologías de la Información — ONP  
 **Estado:** Vigente / Estándar de Nivel 2  
@@ -318,7 +318,7 @@ El patrón **CQRS (*Command Query Responsibility Segregation*)** se adopta manda
 ```
 
 #### Variantes Aprobadas de Sincronización en CQRS
-1. **Variante A — Transactional Outbox + Kafka (Estándar Primario):** Dentro de la misma transacción ACID de Oracle donde se modifica la tabla del negocio, se inserta un registro de evento en la tabla `TB_OUTBOX`. Un proceso asíncrono o *relay* publica el evento en Apache Kafka y un consumidor proyecta la vista en el motor de lectura NoSQL.
+1. **Variante A — Transactional Outbox + Kafka (Estándar Primario):** Dentro de la misma transacción ACID de Oracle donde se modifica la tabla del negocio, se inserta un registro de evento en la tabla `EVT_OUTBOX` (DDL canónico en `LIN-BD-ORA-001 §3.10`). Un proceso asíncrono o *relay* publica el evento en Apache Kafka y un consumidor proyecta la vista en el motor de lectura NoSQL.
 2. **Variante B — CDC (*Change Data Capture*) + Kafka (Agnóstico al Código):** Se utiliza una herramienta a nivel de motor de base de datos (**Debezium + Kafka Connect**) que captura los cambios en tiempo real leyendo directamente los logs binarios transaccionales — cero código en la aplicación, requiere Kafka Connect como infraestructura adicional. Implicaciones por motor:
 
    | Motor | Mecanismo CDC | Consideraciones en ONP |
@@ -340,7 +340,7 @@ El patrón **CQRS (*Command Query Responsibility Segregation*)** se adopta manda
 
 ## 5. Patrones Tácticos de Interfaz, Agregación e Integración
 
-### 5.1 Patrón BFF (*Backend for Frontend — PT09*)
+### 5.1 Patrón BFF (*Backend for Frontend — PT11*)
 
 Para evitar que una interfaz de usuario SPA (Angular) realice 10 peticiones REST secuenciales desde el navegador para armar una sola pantalla, o que reciba DTOs genéricos con 80 campos innecesarios, se prescribe el patrón **BFF (*Backend for Frontend*)**.
 
@@ -374,7 +374,7 @@ El BFF es el punto donde se implementa el patrón **Token Handler** frente al AP
 
 **Cuándo adoptarlo:** cuando el sistema presta servicios a dos o más canales de consumo diferenciados (ej. Portal Web Angular + App Móvil nativa) con requisitos de seguridad distintos, o cuando un canal requiere mediación especializada frente al API Manager. Si el proyecto tiene un único canal estándar y no hay mediación SSO externa, la propia capa `controller/` del Monolito Modular sirve el contrato directamente — no se construye un BFF Token Handler separado.
 
-### 5.2 Patrón Gateway-Aggregation (*PT10*)
+### 5.2 Patrón Gateway-Aggregation (*PT12*)
 
 - **Propósito:** Combinar llamadas y recopilar datos estáticos desde múltiples repositorios, servicios internos o puertos independientes para construir y devolver un único payload consolidado.
 - **Cuándo usar en la ONP:** Cuando una operación interna (ej. *Cargar Datos del Ciudadano para Solicitud*) necesita consultar el maestro de afiliados, el historial de aportes recientes y el estado del último expediente para armar un DTO compuesto sin hacer que la UI o el consumidor realicen peticiones dispersas.
@@ -382,7 +382,7 @@ El BFF es el punto donde se implementa el patrón **Token Handler** frente al AP
 - **Ubicación en Capas Java:** Se implementa dentro de `application/service/aggregator/` (o en la capa `service` del Monolito Modular) como un componente sin estado (`@Service`).
 - **Antipatrón que previene:** El *Chatter API / N+1 Calls*, donde el consumidor de la API debe hacer 5 peticiones por red y pegar los JSON localmente para obtener una sola vista del dato.
 
-### 5.3 Patrón Facade Arquitectónico de Integración (*PT12*)
+### 5.3 Patrón Facade Arquitectónico de Integración (*PT15*)
 
 - **Propósito:** Ocultar la complejidad, heterogeneidad técnica, protocolos de seguridad y verbosidad de un sistema externo o ecosistema heredado detrás de una interfaz Java limpia y orientada a la intención del caso de uso.
 - **Cuándo usar en la ONP:** Al consumir servicios con protocolos pesados o antiguos (`SOAP / XML / mTLS / WS-Security` como PIDE, SUNAT o JBoss legacy) donde se requiere autenticación por sobre XML, manejo de sesiones, o una secuencia de 3 peticiones SOAP previas antes de obtener el dato final.
@@ -390,7 +390,7 @@ El BFF es el punto donde se implementa el patrón **Token Handler** frente al AP
 - **Ubicación en Capas Java:** Se ubica estrictamente dentro de la capa de infraestructura externa: `infrastructure/adapter/out/facade/`.
 - **Antipatrón que previene:** El *Leaky Abstraction (Fuga de Abstracción)*, donde los detalles técnicos y librerías XML del tercero invaden la capa de aplicación y contaminan los servicios del negocio de la ONP.
 
-### 5.4 Patrón Anti-Corruption Layer (*ACL — PT11*) en Integraciones
+### 5.4 Patrón Anti-Corruption Layer (*ACL — PT13*) en Integraciones
 
 En toda integración con sistemas legados o externos, la Capa Anticorrupción (ACL) se implementa de forma obligatoria mediante tres componentes coordinados dentro de `infrastructure/adapter/out/`:
 

@@ -1,9 +1,9 @@
 # LIN-CICD-001 — Lineamiento de Integración y Entrega Continua ONP
 
 **Código:** LIN-CICD-001  
-**Versión:** v0.1.2  
+**Versión:** v0.1.3  
 **Estado:** Borrador  
-**Fecha:** 2026-05-28  
+**Fecha:** 2026-07-10  
 **Propietario documental:** Arquitectura de Software — OTI  
 **Revisores sugeridos:** Desarrollo, QA, Plataforma/Infraestructura, Seguridad Digital, Arquitectura  
 **Marco rector:** LIN-ARQ-000 — Marco Rector de Diseño y Arquitectura de Software  
@@ -18,6 +18,7 @@
 | v0.1.0 | 2026-05-28 | Arquitectura OTI | Borrador inicial del lineamiento de integración y entrega continua |
 | v0.1.1 | 2026-05-28 | Arquitectura OTI | Declara el estado operacional actual de las capacidades CI/CD para adopción progresiva en GitLab Ultimate |
 | v0.1.2 | 2026-05-28 | Arquitectura OTI | Normaliza el lenguaje operativo hacia plan de reversa en despliegues y elimina ambigüedad terminológica con reversa BD Oracle |
+| v0.1.3 | 2026-07-10 | Arquitectura OTI | Corrige el Anexo F: reemplaza la variable sugerida `TERRAFORM_WORKSPACE` por `ENV_NAME`, que es la que realmente usa el pipeline referencial de `LIN-IAC-001` (Anexo B) para seleccionar el directorio de ambiente. La variable anterior sugería implícitamente el uso de Terraform Workspaces, práctica que `LIN-IAC-001 §6.2`/§13/§14.1 prohíbe expresamente para separar ambientes |
 
 ---
 
@@ -1268,8 +1269,10 @@ SONAR_TOKEN
 TRIVY_SEVERITY
 OPENAPI_FILE
 JMETER_SCENARIO
-TERRAFORM_WORKSPACE
+ENV_NAME
 ```
+
+> **Nota (pipeline Terraform/IaC):** `ENV_NAME` selecciona el directorio de ambiente (`environments/dev|qa|prod/`) que ejecuta el pipeline referencial de `LIN-IAC-001` — **no** un Terraform Workspace. `LIN-IAC-001 §6.2` prohíbe expresamente el uso de `terraform workspace` para separar ambientes (riesgo de `apply` en el ambiente incorrecto); la separación es siempre por directorios independientes. Además, recordar que ese pipeline vive únicamente en el repositorio dedicado `oti-plataforma/infrastructure-iac` (`LIN-IAC-001 §18.1`) — los equipos de aplicación no agregan jobs de Terraform en su propio `.gitlab-ci.yml`.
 
 ### Anexo G — Estructura sugerida de proyecto automatizable
 

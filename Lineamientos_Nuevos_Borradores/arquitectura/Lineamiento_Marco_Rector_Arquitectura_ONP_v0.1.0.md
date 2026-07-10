@@ -1,7 +1,7 @@
 # Lineamiento Marco Rector de Arquitectura de Software en la ONP
 
 **Código:** LIN-ARQ-001  
-**Versión:** 0.1.4  
+**Versión:** 0.1.5  
 **Fecha:** 2026-07-09  
 **Autor:** Oficina de Tecnologías de la Información — ONP  
 **Estado:** Vigente / Estándar de Nivel 1  
@@ -201,11 +201,11 @@ Queda **terminantemente prohibido** el uso de transacciones distribuidas con pro
 
 ### 3.3 Patrón Saga con Transactional Outbox (Consistencia Eventual)
 
-Para mantener coherencia de negocio entre dos o más dominios autónomos o microservicios sin violar la prohibición de 2PC, se establece como norma obligatoria la adopción del **Patrón Saga (oquestado o coreografiado)** respaldado por el patrón **Transactional Outbox (*§3.6.2 LIN-DIS-001*)**.
+Para mantener coherencia de negocio entre dos o más dominios autónomos o microservicios sin violar la prohibición de 2PC, se establece como norma obligatoria la adopción del **Patrón Saga (oquestado o coreografiado)** respaldado por el patrón **Transactional Outbox (*LIN-DIS-001 §4.2*, DDL en *LIN-BD-ORA-001 §3.10*, relevo en *LIN-BUS-001 §7.3*)**.
 
 1. **Transacciones Locales ACID:** Cada servicio participante ejecuta su modificación de estado exclusivamente sobre su base de datos local dentro de una transacción ACID propia.
-2. **Tabla Outbox:** En la misma transacción local del negocio, se inserta el evento del cambio en una tabla `OUTBOX` de la base de datos local.
-3. **Publicación Asíncrona:** Un proceso de relevo (*Relay* / Debezium / Kafka Connect) lee la tabla `OUTBOX` y publica de forma garantizada (*At-Least-Once*) el evento hacia el bus de mensajería (Apache Kafka).
+2. **Tabla Outbox:** En la misma transacción local del negocio, se inserta el evento del cambio en la tabla `EVT_OUTBOX` de la base de datos local.
+3. **Publicación Asíncrona:** Un proceso de relevo (*Relay* / Debezium / Kafka Connect) lee la tabla `EVT_OUTBOX` y publica de forma garantizada (*At-Least-Once*) el evento hacia el bus de mensajería (Apache Kafka).
 4. **Compensación ante Fallos:** Si una etapa posterior del flujo de negocio falla, el Saga orquestador o la coreografía emite **Eventos de Compensación** que instruyen a los servicios previos a ejecutar transacciones locales inversas para anular el efecto de la operación.
 
 #### 3.3.1 Variante ONP: Saga por orquestación sobre aplicativos monolíticos (Kafka + REST)
@@ -309,7 +309,7 @@ La comunicación asíncrona mediante paso de mensajes es el mecanismo mandatorio
 Las integraciones con entidades externas del Estado Peruano (Plataforma de Interoperabilidad del Estado - PIDE, RENIEC, SUNAT) operan frecuentemente bajo protocolos heredados o específicos (**SOAP / XML / WS-Security / mTLS**).
 
 1. **Aislamiento de Seguridad (Zero Trust):** Toda comunicación con terceros gubernamentales debe transitar obligatoriamente a través de la pasarela de seguridad perimetral (**WSO2 API Gateway / mTLS mutual proxy**), nunca directamente desde un contenedor de aplicación de backend.
-2. **Capa Anticorrupción (ACL Mandatoria):** Según el principio de protección de fronteras (*ADR-005* y *PT11 en LIN-DIS-001*), el módulo que consume un servicio PIDE o RENIEC no puede propagar los DTOs XML o estructuras de terceros al interior de su lógica de negocio. Debe implementar un `Adapter` de infraestructura que traduzca de forma quirúrgica la respuesta exterior hacia el modelo inmutable de la ONP (`DatosPersona`, `Dni`).
+2. **Capa Anticorrupción (ACL Mandatoria):** Según el principio de protección de fronteras (*ADR-005* y *PT13 en LIN-DIS-001*), el módulo que consume un servicio PIDE o RENIEC no puede propagar los DTOs XML o estructuras de terceros al interior de su lógica de negocio. Debe implementar un `Adapter` de infraestructura que traduzca de forma quirúrgica la respuesta exterior hacia el modelo inmutable de la ONP (`DatosPersona`, `Dni`).
 3. **Aislamiento ante Caídas Exteriores:** Dado que los servicios externos del Estado experimentan caídas impredecibles, es mandatorio que el cliente HTTP/SOAP tenga configurados **Timeouts estrictos (máx. 3 a 5 segundos)**, **Circuit Breakers (Resilience4j)** y estrategias de contingencia o *degraded mode* (por ejemplo, permitir registro manual provisorio con validación diferida si RENIEC está caído).
 
 ---

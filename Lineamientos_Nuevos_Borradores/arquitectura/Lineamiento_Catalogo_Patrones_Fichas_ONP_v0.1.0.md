@@ -1,8 +1,8 @@
 # Catálogo Oficial de Patrones y Fichas Técnicas de Arquitectura, Diseño Táctico y Programación en la ONP
 
 **Código:** LIN-PAT-001  
-**Versión:** 0.1.2  
-**Fecha:** 2026-07-09  
+**Versión:** 0.1.3  
+**Fecha:** 2026-07-10  
 **Autor:** Oficina de Tecnologías de la Información — ONP  
 **Estado:** Vigente / Catálogo Institucional Transversal  
 **Clasificación:** Catálogo normativo de toma de decisiones. Articula y consolida los criterios de selección para las decisiones de Nivel 1 (`LIN-ARQ-001`), Nivel 2 (`LIN-DIS-001`), Nivel 3 (`LIN-DEV-JAVA-001`) y dominios transversales (`LIN-BD-ORA-001`, `LIN-API-REST-001`, `LIN-BI-001`, `LIN-BUS-001`). De uso diario obligatorio para Arquitectos, Tech Leads y Desarrolladores.
@@ -48,7 +48,7 @@ Cada vez que un Arquitecto de Software, Diseñador/Tech Lead o Desarrollador ana
 | **`PAT-DEV-01`** | Patrones GoF Tácticos (*PT14 — Adapter / Decorator / Strategy*) | Nivel 3 — Programación Java | `LIN-DEV-JAVA-001` / `LIN-DIS-001` |
 | **`PAT-DEV-02`** | Filtro de Seguridad y Token SAA (`SaaTokenValidationFilter`) | Nivel 3 / Seguridad — Autenticación | `LIN-SEC-APP-001` / `LIN-DEV-JAVA-001` |
 | **`PAT-DAT-01`** | Adapter Java para PL/SQL Legacy (`SimpleJdbcCall`) | Nivel 3 / BD — Acceso a Datos | `LIN-DEV-JAVA-001` / `LIN-BD-ORA-001` |
-| **`PAT-DAT-02`** | Transactional Outbox Table (`TB_OUTBOX`) | Transversal — Persistencia / Bus | `LIN-BD-ORA-001` / `LIN-BUS-001` |
+| **`PAT-DAT-02`** | Transactional Outbox Table (`EVT_OUTBOX`) | Transversal — Persistencia / Bus | `LIN-BD-ORA-001` / `LIN-BUS-001` |
 | **`PAT-DAT-03`** | Change Data Capture (*CDC* Debezium / LogMiner) | Transversal — Integración de Datos | `LIN-BD-ORA-001` / `LIN-BUS-001` |
 | **`PAT-BI-01`** | Arquitectura Medallón (*PT16* — Bronze, Silver, Gold) | Transversal — Explotación / BI | `LIN-BI-001` |
 
@@ -297,8 +297,8 @@ Cada vez que un Arquitecto de Software, Diseñador/Tech Lead o Desarrollador ana
 | **Descripción** | Tópico o cola secundaria especializada de retención en Apache Kafka hacia la cual son desviados automáticamente los eventos que un servicio consumidor no logró procesar exitosamente después de agotar su política finita de reintentos (*Retries*), preservando la secuencia del tópico principal sin bloquear el procesamiento del resto de mensajes de otros ciudadanos. |
 | **✅ Criterio de Selección<br>*(¿Cuándo usar en ONP?)*** | **Se DEBE usar obligatoriamente si el análisis de requisitos determina:**<br>• **Todo consumidor asíncrono (*Kafka Consumer/Listener*)** en sistemas de la ONP que procese eventos financieros, previsionales o de expedientes donde un registro defectuoso o una indisponibilidad temporal de Oracle no debe descartar el dato ni paralizar el hilo del *Consumer Group*. |
 | **❌ Criterio de Exclusión<br>*(¿Cuándo NO usar?)*** | **NO usar cuando:**<br>• Se consumen flujos de telemetría, logs efímeros o métricas de corto plazo donde la pérdida de un paquete individual no altera la contabilidad ni la legalidad institucional. |
-| **🛠️ Stack / Herramienta<br>Homologada en ONP** | Spring Kafka `DeadLetterPublishingRecoverer` + Tópico con sufijo institucional `.DLQ` (ej. `onp.aportes.registrado.v1.DLQ`) monitoreado con alertas de SRE en Kibana/Grafana. |
-| **📖 Referencia Oficial** | `LIN-BUS-001` |
+| **🛠️ Stack / Herramienta<br>Homologada en ONP** | Spring Kafka `DeadLetterPublishingRecoverer` + Tópico con sufijo institucional `.dlq` en minúscula (ej. `aportes.cuenta.actualizada.dlq`, siguiendo la convención de nomenclatura de tópicos de dominio `LIN-BUS-001 §6.1` — sin el prefijo `onp.`, reservado exclusivamente a tópicos Saga en `LIN-BUS-001 §9.4`) monitoreado con alertas de SRE en Kibana/Grafana. |
+| **📖 Referencia Oficial** | `LIN-BUS-001 §6.1, §8.5–8.7` |
 
 ---
 
@@ -364,18 +364,18 @@ Cada vez que un Arquitecto de Software, Diseñador/Tech Lead o Desarrollador ana
 
 ---
 
-### Ficha PAT-DAT-02: Transactional Outbox Table (`TB_OUTBOX`)
+### Ficha PAT-DAT-02: Transactional Outbox Table (`EVT_OUTBOX`)
 
 | Campo | Especificación Normativa ONP |
 |---|---|
 | **Código** | `PAT-DAT-02` (Transversal — Persistencia / Bus de Eventos) |
 | **Nombre** | **Transactional Outbox Table (*Bandeja de Salida Transaccional*)** |
 | **Capa / Dominio** | Garantía de Entrega de Eventos y Consistencia ACID (`LIN-BD-ORA-001 / LIN-BUS-001`) |
-| **Descripción** | Patrón arquitectónico que previene la pérdida o la condición de carrera al publicar eventos asíncronos hacia Apache Kafka. En lugar de enviar el mensaje a Kafka por red directamente desde el servicio Java (lo cual falla si la transacción de base de datos luego hace *rollback*), el servicio inserta el evento en una tabla relacional local `TB_OUTBOX` **dentro de la misma transacción ACID de Oracle** que modifica el dato del negocio. Un proceso *Relay/CDC* posterior lee la tabla y lo publica de forma segura al bus con garantía *At-Least-Once*. |
+| **Descripción** | Patrón arquitectónico que previene la pérdida o la condición de carrera al publicar eventos asíncronos hacia Apache Kafka. En lugar de enviar el mensaje a Kafka por red directamente desde el servicio Java (lo cual falla si la transacción de base de datos luego hace *rollback*), el servicio inserta el evento en la tabla relacional local `EVT_OUTBOX` **dentro de la misma transacción ACID de Oracle** que modifica el dato del negocio. Un proceso *Relay/CDC* posterior lee la tabla y lo publica de forma segura al bus con garantía *At-Least-Once*. |
 | **✅ Criterio de Selección<br>*(¿Cuándo usar en ONP?)*** | **Se DEBE usar obligatoriamente si el análisis de requisitos determina:**<br>• **Todo caso de uso transaccional en Oracle (`@Transactional`)** que como consecuencia de su éxito deba publicar o emitir un evento hacia Apache Kafka o el bus de servicios para notificar a otros subdominios (ej. *Aporte Registrado*, *Expediente Aprobado*, *Resolución Emitida*). |
 | **❌ Criterio de Exclusión<br>*(¿Cuándo NO usar?)*** | **NO usar cuando:**<br>• El servicio actúa únicamente como un <i>proxy</i> o pasarela sin persistencia local de datos en Oracle (ej. un servicio de pasarela que solo recibe un REST y publica un evento directo en Kafka sin transacción local previa). |
-| **🛠️ Stack / Herramienta<br>Homologada en ONP** | Oracle 19c (`TB_OUTBOX` con índices por estado `PENDIENTE/PROCESADO`) + Spring Boot JPA/JdbcTemplate + **Debezium CDC o Polling Scheduled Relay**. |
-| **📖 Referencia Oficial** | `LIN-BD-ORA-001`, `LIN-BUS-001` y `LIN-DIS-001 §4.2` |
+| **🛠️ Stack / Herramienta<br>Homologada en ONP** | Oracle 19c (`EVT_OUTBOX` con índices por estado `PENDIENTE/ENVIADO`) + Spring Boot JPA/JdbcTemplate + **Debezium CDC o Polling Scheduled Relay**. |
+| **📖 Referencia Oficial** | `LIN-BD-ORA-001 §3.10` (DDL canónico), `LIN-BUS-001 §7.3` (relevo) y `LIN-DIS-001 §4.2` |
 
 ---
 
