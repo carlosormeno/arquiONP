@@ -1,12 +1,12 @@
 # LIN-IAC-001 — Lineamiento de Infraestructura como Código ONP
 
 **Código:** LIN-IAC-001  
-**Versión:** v0.1.0  
+**Versión:** v0.1.1  
 **Estado:** Borrador  
-**Fecha:** 2026-05-28  
+**Fecha:** 2026-07-09  
 **Propietario documental:** Arquitectura de Software — OTI  
 **Revisores sugeridos:** Plataforma/Infraestructura, Seguridad Digital, Arquitectura, Desarrollo  
-**Marco rector:** LIN-ARQ-000 — Marco Rector de Diseño y Arquitectura de Software  
+**Marco rector:** LIN-ARQ-001 — Marco Rector de Arquitectura de Software  
 **Herramienta institucional:** Terraform + GitLab Ultimate  
 
 ---
@@ -16,6 +16,7 @@
 | Versión | Fecha | Autor | Descripción |
 |---|---|---|---|
 | v0.1.0 | 2026-05-28 | Arquitectura OTI | Borrador inicial del lineamiento de infraestructura como código |
+| v0.1.1 | 2026-07-09 | Arquitectura OTI | Corrige la referencia al Marco Rector: `LIN-ARQ-000` (congelado) → `LIN-ARQ-001` (vigente) en encabezado y §2 |
 
 ---
 
@@ -83,7 +84,7 @@ Aplica a todo recurso de infraestructura aprovisionado o gestionado por el equip
 
 | Documento | Código | Relación |
 |---|---|---|
-| Marco Rector de Diseño y Arquitectura de Software | LIN-ARQ-000 | Define modelo arquitectónico general |
+| Marco Rector de Arquitectura de Software | LIN-ARQ-001 | Define modelo arquitectónico general |
 | Versionamiento y Control de Cambios | LIN-VER-001 | Define ramas, MR, tags y trazabilidad aplicables al repo de IaC |
 | Integración y Entrega Continua | LIN-CICD-001 | Define pipeline de validación y gates; LIN-IAC-001 es el dueño del estándar IaC |
 | Contenedores y Orquestación | LIN-K8S-001 | Clústeres K8s cuya infraestructura se aprovisiona con Terraform |

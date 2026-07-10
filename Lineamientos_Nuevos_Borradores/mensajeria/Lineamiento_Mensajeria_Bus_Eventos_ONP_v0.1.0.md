@@ -3,9 +3,9 @@
 ---
 
 **Código:** LIN-BUS-001  
-**Marco rector:** LIN-ARQ-000  
-**Versión:** v0.1.0  
-**Fecha:** 2026-06-05  
+**Marco rector:** LIN-ARQ-001  
+**Versión:** v0.1.4  
+**Fecha:** 2026-07-09  
 **Propietario documental:** OTI / Arquitectura  
 **Clasificación:** Uso Interno (Técnico)  
 **Dirigido a:** Equipos de Desarrollo, Plataforma/Infraestructura, Arquitectura  
@@ -18,6 +18,10 @@
 | Versión | Fecha | Autor | Descripción |
 |---------|-------|-------|-------------|
 | v0.1.0 | 2026-06-05 | Arquitectura OTI | Versión inicial. Formaliza la regla transitoria de LIN-ARQ-000 sección 3.7 y establece el estándar de uso de Kafka como broker institucional |
+| v0.1.1 | 2026-07-09 | Arquitectura OTI | Corrige la cita colgante de §9.4 hacia el documento congelado `LIN-ARQ-000 §3.6`: el patrón completo de la variante Saga sobre monolitos ahora vive en `LIN-ARQ-001 §3.3.1` (Marco Rector vigente) |
+| v0.1.2 | 2026-07-09 | Arquitectura OTI | Nombra explícitamente el patrón DDD Lenguaje Publicado (*Published Language*) en §5, del cual el envelope CloudEvents y sus reglas de evolución son la implementación institucional |
+| v0.1.3 | 2026-07-09 | Arquitectura OTI | Completa §4.3 con las 2 situaciones faltantes de "cuándo NO usar el bus" (desacoplar sin análisis, observabilidad inmadura) y añade advertencias sobre Event Sourcing (no está en la lista de patrones, no es CQRS), ausentes en todo el ecosistema tras la redistribución del documento congelado |
+| v0.1.4 | 2026-07-09 | Arquitectura OTI | Corrige §8.6: `ExponentialBackOffWithMaxRetries` fue retirada de Spring Framework 6.x — el ejemplo no compilaba contra el stack vigente (Spring Boot 3.x). Se reemplaza por `ExponentialBackOff.setMaxAttempts(int)`, validado con build real de Maven en `template-backend-java-modular` |
 
 ---
 
@@ -170,10 +174,16 @@ El bus **no** es el canal correcto cuando:
 | Lógica core que requiere ACID (cálculo de pensión, liquidación, aportes) | `@Transactional` en el Monolito Modular |
 | El productor necesita la respuesta del consumidor para continuar | REST sincrónico — LIN-API-REST-001 |
 | Comunicación interna dentro de un mismo módulo o proceso | Llamada directa en memoria |
+| Desacoplar por desacoplar, sin análisis de consistencia | El diseño del evento, el esquema de compensación y la operabilidad del broker tienen un costo real — desacoplar sin justificación no es una mejora arquitectónica |
+| Equipo sin observabilidad madura para sistemas asíncronos | EDA es opaco sin trazas distribuidas que conecten el trace del productor con el del consumidor. Ningún flujo entra a producción sin trazabilidad completa (`LIN-OBS-001`) |
+
+**Event Sourcing no está en la lista de patrones aplicables.** Almacenar el estado como secuencia de eventos introduce complejidad operativa (versionado de esquemas, proyecciones, *replay*) que supera el beneficio en los sistemas actuales de ONP. Su adopción requiere ADR aprobado por Arquitectura OTI. **Event Sourcing tampoco es CQRS** — son patrones distintos y no intercambiables; CQRS (`LIN-DIS-001 §4`) separa modelos de lectura/escritura sin cambiar cómo se persiste el estado de escritura.
 
 ---
 
 ## 5. Diseño de eventos
+
+Este envelope y sus reglas de evolución (§5.5) son la implementación institucional del patrón DDD **Lenguaje Publicado (*Published Language*)**: un contrato de datos explícito y versionado que un productor expone a sus consumidores, de forma que ningún consumidor dependa de la estructura interna del productor. Para comunicación síncrona, el Lenguaje Publicado equivalente es el contrato OpenAPI (`LIN-API-REST-001`).
 
 ### 5.1 Qué es un evento
 
@@ -479,14 +489,17 @@ public class KafkaConsumerConfig {
                 //                                                         ↑ -1 → Kafka elige la partición
 
         // Backoff exponencial: 3 intentos, espera inicial 1s, multiplicador 2 (1s → 2s → 4s)
-        ExponentialBackOffWithMaxRetries backOff = new ExponentialBackOffWithMaxRetries(3);
+        ExponentialBackOff backOff = new ExponentialBackOff();
         backOff.setInitialInterval(1_000);
         backOff.setMultiplier(2.0);
+        backOff.setMaxAttempts(3);
 
         return new DefaultErrorHandler(recoverer, backOff);
     }
 }
 ```
+
+> **Nota de compatibilidad:** la clase `ExponentialBackOffWithMaxRetries` (usada en versiones anteriores de Spring Framework) fue retirada — `setMaxAttempts(int)` se fusionó directamente en `ExponentialBackOff`. Si el proyecto compila contra Spring Framework 6.x (Spring Boot 3.x), usar `ExponentialBackOff` como en el ejemplo de arriba.
 
 `DefaultErrorHandler` gestiona automáticamente el `acknowledge` tras agotar los reintentos y delega en el `recoverer` — el método `enviarADlq` del ejemplo 8.3 queda cubierto por este bean sin necesidad de implementarlo manualmente.
 
@@ -585,9 +598,9 @@ Orquestador
 
 ### 9.4 Variante: Saga por orquestación sobre aplicativos monolíticos
 
-Esta sección documenta la implementación Kafka de la variante Saga definida en **LIN-ARQ-000 §3.6**. Aplica cuando los participantes son aplicativos monolíticos que exponen servicios REST — no microservicios puros.
+Esta sección documenta la implementación Kafka de la variante Saga definida en **`LIN-ARQ-001` §3.3.1**. Aplica cuando los participantes son aplicativos monolíticos que exponen servicios REST — no microservicios puros.
 
-El patrón completo (diagrama, roles, tabla de estado, garantías de cada participante) está en **LIN-ARQ-000 §3.6**. Esta sección cubre únicamente la parte Kafka: convención de tópicos y envelope.
+El patrón completo (diagrama, roles, tabla de estado `SAGA_INSTANCIA`, garantías de cada participante) está en **`LIN-ARQ-001` §3.3.1**. Esta sección cubre únicamente la parte Kafka: convención de tópicos y envelope.
 
 #### Nomenclatura de tópicos Saga
 

@@ -1,6 +1,6 @@
 # Lineamiento Estándar de Pruebas ONP
 **Código:** LIN-TEST-001
-**Versión:** v0.1.0
+**Versión:** v0.1.2
 **Estado:** Borrador
 **Fecha:** 2026-05-26
 **Propietario:** Arquitectura de Software — OTI
@@ -13,6 +13,8 @@
 | Versión | Fecha | Autor | Descripción |
 |---|---|---|---|
 | v0.1.0 | 2026-05-26 | Arquitectura OTI | Borrador inicial |
+| v0.1.1 | 2026-07-09 | Arquitectura OTI | Completa la sección 4 con los estilos Microservicio y EDA (Consumidor Kafka), que quedaron sin cubrir tras la redistribución del documento congelado `LIN-ARQ-000 §10.1` |
+| v0.1.2 | 2026-07-09 | Arquitectura OTI | Añade §4.6 (Efecto de la Estrategia de Dominio sobre las Pruebas Unitarias), ausente en todo el ecosistema documental tras la redistribución |
 
 ---
 
@@ -236,6 +238,56 @@ La pirámide define la distribución relativa de esfuerzo de prueba según el es
 | Puertos de entrada (interfaces) | Integración | 1 test por contrato de puerto |
 | Adaptadores de salida (BD, HTTP, MQ) | Integración | 1 test por adaptador |
 
+### 4.4 Microservicio
+
+```
+        ▲ E2E (mínimo — solo contratos críticos de negocio)
+       ███
+      █████  Integración (obligatorio — contrato con dependencias externas)
+     ███████
+    █████████ Unitaria (obligatorio — dominio y casos de uso aislados)
+```
+
+| Componente | Tipo prioritario | Cobertura mínima |
+|---|---|---|
+| Dominio / casos de uso | Unitaria | ≥85% instrucción |
+| Cliente HTTP/gRPC saliente | Integración (WireMock / Testcontainers) | 1 test por endpoint consumido |
+| Adaptador de persistencia propio | Integración (Testcontainers) | 1 test por método personalizado |
+| Contrato expuesto (API propia) | Prueba de contrato (ver [sección 6](#6-pruebas-de-contrato)) | Obligatorio en todo endpoint publicado |
+
+> El E2E cruza límites de red entre servicios — se reserva a flujos de negocio críticos. La verificación de compatibilidad entre consumidor y proveedor se resuelve con pruebas de contrato, no con más E2E.
+
+### 4.5 EDA (Consumidor Kafka)
+
+```
+        ▲ E2E (mínimo — solo flujos de negocio con impacto crítico)
+       ████
+      ██████  Integración (obligatorio — broker embebido/Testcontainers Kafka)
+     ████████
+    ██████████ Unitaria (obligatorio — lógica de manejo de mensaje aislada del broker)
+```
+
+| Componente | Tipo prioritario | Cobertura mínima |
+|---|---|---|
+| Handler / lógica de procesamiento del mensaje | Unitaria (sin broker) | ≥80% instrucción |
+| Deserialización y validación de esquema (CloudEvents) | Unitaria | 1 test por tipo de evento consumido |
+| Consumer end-to-end contra broker | Integración (`Testcontainers` Kafka) | 1 test por topic consumido, incluyendo escenario de mensaje inválido → DLQ |
+| Idempotencia del consumidor | Integración | Obligatorio — reprocesar el mismo mensaje no debe duplicar el efecto de negocio |
+
+> La proporción se desplaza hacia integración porque el riesgo dominante en EDA no es la lógica de negocio en sí, sino la deserialización, el versionado de esquema y el comportamiento ante reintentos/duplicados del broker.
+
+### 4.6 Efecto de la Estrategia de Dominio sobre las Pruebas Unitarias
+
+La distribución de la pirámide (4.1-4.5) la determina el **estilo arquitectónico** — no la estrategia de lógica de dominio (`LIN-DIS-001 §4.1`). Son dos dimensiones distintas: el estilo define la *proporción* entre unitarias/integración/E2E; la estrategia de dominio define el *foco y la complejidad* de las pruebas unitarias.
+
+| Estrategia de dominio | Efecto en las pruebas unitarias |
+|---|---|
+| Transaction Script | Unitarias sobre el Service — requieren mocks de repositorios |
+| Active Record | Unitarias sobre la entidad — lógica en el modelo, fáciles de aislar |
+| Table Module | Unitarias sobre el módulo con colecciones en memoria |
+| DDD — Value Object | Pruebas sobre `record` Java puro — sin Spring, sin mocks; validan invariantes del constructor compacto |
+| DDD — Aggregate Root | Pruebas sobre el agregado completo — sin Spring, sin mocks de infraestructura; verifican transiciones de estado y eventos de dominio emitidos |
+
 ---
 
 ## 5. Cobertura mínima obligatoria
@@ -249,6 +301,8 @@ La cobertura se mide con JaCoCo (backend Java). Para Angular, la cobertura de st
 | Monolito Simple | ≥65% instrucción | Service: ≥75%; Domain/Model: ≥80% |
 | Monolito Modular | ≥70% instrucción | domain: ≥85%; application: ≥80% |
 | Hexagonal | ≥70% instrucción | Casos de uso: ≥85%; Dominio: ≥85% |
+| Microservicio | ≥70% instrucción | Dominio / casos de uso: ≥85% |
+| EDA (Consumidor Kafka) | ≥65% instrucción | Handler de procesamiento: ≥80% |
 
 > **Qué NO medir con umbrales duros:** Controllers (mejor cubiertos con integración), adaptadores de infraestructura, clases de configuración y clases generadas.
 

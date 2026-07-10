@@ -1,6 +1,6 @@
 # LIN-DEV-JAVA-001 — Estándar de Desarrollo Java ONP
 ## Oficina de Normalización Previsional — OTI
-### Código: LIN-DEV-JAVA-001 | Versión 0.1.2 | Estado: Borrador | Marco rector: LIN-ARQ-000
+### Código: LIN-DEV-JAVA-001 | Versión 0.1.8 | Estado: Borrador | Marco rector: LIN-ARQ-001
 
 ---
 
@@ -11,29 +11,56 @@
 | 0.1.0 | 2026-05-22 | OTI | Versión inicial |
 | 0.1.1 | 2026-05-28 | OTI | Alinea la configuración institucional a YAML, corrige el árbol de proyecto y adopta Checkstyle junto a PMD |
 | 0.1.2 | 2026-07-06 | OTI | Cierre de brechas Nivel 3 (PR01-PR08, PD04-PD06, PA14): Inclusión de secciones 10.4, 11.5, 14.6, catálogo de plantillas Java y reconciliación total con LIN-ARQ-000 y LIN-BD-ORA-001 |
+| 0.1.3 | 2026-07-09 | OTI | Completa el catálogo GoF de la sección 8 con los patrones que quedaron sin sede formal tras la redistribución del documento congelado (`Lineamiento_Diseno_Arquitectura_Software_ONP_v0.1.19`): Adapter (8.1.1), Singleton (8.2.3), Strategy (8.3.1), Command (8.3.3) y Mapper (8.4.1) |
+| 0.1.4 | 2026-07-09 | OTI | Corrige la referencia rota de §15 hacia `LIN-TEST-001 §4-5`; restaura la tabla de concerns transversales (§3.1); corrige "Marco rector: LIN-ARQ-000" → `LIN-ARQ-001` en el encabezado |
+| 0.1.5 | 2026-07-09 | OTI | Añade en §12.4 la referencia cruzada a Separación de Responsabilidades (`PR09`, `LIN-DIS-001 §1.2`) para reconstituir el conjunto de 4 principios transversales (DRY/KISS/YAGNI/SoC) del documento congelado |
+| 0.1.6 | 2026-07-09 | OTI | Revisión de §14: (1) el umbral de cobertura JaCoCo en §14.5 deja de estar hardcodeado en 80% — ahora usa `${jacoco.coverage.minimum}` y remite a `LIN-TEST-001 §5.1` para el valor por estilo, reconciliando la contradicción con Marco Rector §8.3; (2) corrige la regla de gobernanza #2 de §14.1: la comunicación intra-JVM entre módulos del Monolito Modular pasa por `-domain` (`port.in`), no por `-api` (evita arrastrar dependencias HTTP/Spring MVC ajenas al módulo consumidor); (3) reemplaza las citas informales "PD08"/"PD09" (sin ficha en el Catálogo) por referencias directas a `LIN-DIS-001 §3.1` y `§3.4` |
+| 0.1.7 | 2026-07-09 | OTI | Reordena la Tabla de Contenidos en 6 bloques temáticos (Alcance/stack, Estructura del proyecto, Conceptos y principios, Convenciones del día a día, Cross-cutting, Gobernanza) como guía de lectura para desarrolladores nuevos. No renumera secciones — las citas existentes desde LIN-ARQ-001/LIN-DIS-001/LIN-TEST-001/Catálogo siguen siendo válidas. Separa 12.4 (DRY/KISS/YAGNI, conceptual) de 12.1-12.3 (métricas/antipatrones/PMD, gobernanza de herramientas) como entradas independientes en la tabla |
+| 0.1.8 | 2026-07-09 | OTI | Corrige §12.1: eliminaba las 3 filas de cobertura de pruebas (servicios ≥80%, utilidades ≥90%, controladores REST ≥70%) — la de controladores contradecía directamente `LIN-TEST-001 §5.1`, que exige explícitamente NO medir Controllers con umbral duro de cobertura. Ahora §12.1 remite a `LIN-TEST-001 §5.1` como única fuente, igual que ya se hizo en §14.5 y en Marco Rector §8.3 |
 
 ---
 
 ## Tabla de contenidos
 
-- [sección 1 Alcance y vigencia](#1-alcance-y-vigencia)
-  - [sección 1.3 Configuración inicial de un proyecto nuevo — orden recomendado](#13-configuración-inicial-de-un-proyecto-nuevo--orden-recomendado)
-- [sección 2 Stack tecnológico mandatorio](#2-stack-tecnológico-mandatorio)
-- [sección 3 Organización del código fuente](#3-organización-del-código-fuente)
-- [sección 4 Convenciones de nomenclatura](#4-convenciones-de-nomenclatura)
-- [sección 5 Estructura interna de clases](#5-estructura-interna-de-clases)
-- [sección 6 Convenciones de codificación](#6-convenciones-de-codificación)
-- [sección 7 Principios SOLID aplicados a clases y métodos Java 21](#7-principios-solid-aplicados-a-clases-y-métodos-java-21)
-- [sección 8 Patrones de diseño de código (GoF) en Spring Boot 3](#8-patrones-de-diseño-de-código-gof-en-spring-boot-3)
-- [sección 9 Documentación del código](#9-documentación-del-código)
-- [sección 10 Logging estructurado](#10-logging-estructurado)
-- [sección 11 Manejo de excepciones en la capa REST](#11-manejo-de-excepciones-en-la-capa-rest)
-- [sección 12 Calidad de código](#12-calidad-de-código)
-- [sección 13 Convenciones Spring Boot](#13-convenciones-spring-boot)
-- [sección 14 Estructura de proyecto y gestión de dependencias Maven](#14-estructura-de-proyecto-y-gestión-de-dependencias-maven)
-- [sección 15 Pruebas](#15-pruebas)
-- [sección 16 Revisión de código](#16-revisión-de-código)
-- [sección 17 Proceso de excepción a este estándar](#17-proceso-de-excepción-a-este-estándar)
+> Guía de lectura agrupada por tema. Los números de sección **no cambian** — siguen siendo los mismos que citan `LIN-ARQ-001`, `LIN-DIS-001`, `LIN-TEST-001` y el Catálogo de Fichas. Esta tabla solo reordena el *camino de lectura* recomendado para un programador nuevo; no reordena el documento físico.
+
+**1. Alcance y stack**
+- [1. Alcance y vigencia](#1-alcance-y-vigencia)
+  - [1.3 Configuración inicial de un proyecto nuevo — orden recomendado](#13-configuración-inicial-de-un-proyecto-nuevo--orden-recomendado)
+- [2. Stack tecnológico mandatorio](#2-stack-tecnológico-mandatorio)
+
+**2. Estructura del proyecto**
+- [14. Estructura de proyecto y gestión de dependencias Maven](#14-estructura-de-proyecto-y-gestión-de-dependencias-maven)
+- [3. Organización del código fuente](#3-organización-del-código-fuente)
+- [13. Convenciones Spring Boot](#13-convenciones-spring-boot)
+
+**3. Conceptos y principios**
+- [7. Principios SOLID aplicados a clases y métodos Java 21](#7-principios-solid-aplicados-a-clases-y-métodos-java-21)
+- [8. Patrones de diseño de código (GoF) en Spring Boot 3](#8-patrones-de-diseño-de-código-gof-en-spring-boot-3)
+- [12.4 Principios de Diseño Transversales (DRY, KISS, YAGNI)](#124-principios-de-diseño-transversales-dry-kiss-yagni)
+  - [12.4.1 Resumen de Principios SOLID en el Ecosistema ONP](#1241-resumen-de-principios-solid-en-el-ecosistema-onp)
+  - [12.4.2 DRY (Don't Repeat Yourself) — Reutilización Responsable](#1242-dry-dont-repeat-yourself--reutilización-responsable)
+  - [12.4.3 KISS (Keep It Simple, Stupid) — Simplicidad y Legibilidad](#1243-kiss-keep-it-simple-stupid--simplicidad-y-legibilidad)
+  - [12.4.4 YAGNI (You Aren't Gonna Need It) — Cero Esfuerzo Especulativo](#1244-yagni-you-arent-gonna-need-it--cero-esfuerzo-especulativo)
+
+**4. Convenciones del día a día**
+- [4. Convenciones de nomenclatura](#4-convenciones-de-nomenclatura)
+- [5. Estructura interna de clases](#5-estructura-interna-de-clases)
+- [6. Convenciones de codificación](#6-convenciones-de-codificación)
+- [9. Documentación del código](#9-documentación-del-código)
+
+**5. Cross-cutting**
+- [10. Logging estructurado](#10-logging-estructurado)
+- [11. Manejo de excepciones en la capa REST](#11-manejo-de-excepciones-en-la-capa-rest)
+- [15. Pruebas](#15-pruebas)
+- [16. Revisión de código](#16-revisión-de-código)
+
+**6. Gobernanza y herramientas**
+- [12. Calidad de código](#12-calidad-de-código)
+  - [12.1 Métricas mínimas obligatorias](#121-métricas-mínimas-obligatorias)
+  - [12.2 Tabla de antipatrones prohibidos](#122-tabla-de-antipatrones-prohibidos)
+  - [12.3 Análisis estático de código (PMD)](#123-análisis-estático-de-código-pmd)
+- [17. Proceso de excepción a este estándar](#17-proceso-de-excepción-a-este-estándar)
 - [Anexo A: Plantilla Javadoc estándar ONP](#anexo-a-plantilla-javadoc-estándar-onp)
 - [Anexo B: Configuración Checkstyle recomendada](#anexo-b-configuración-checkstyle-recomendada)
 - [Anexo C: Tabla completa de sufijos de clase](#anexo-c-tabla-completa-de-sufijos-de-clase)
@@ -41,7 +68,7 @@
 
 ---
 
-## sección 1 Alcance y vigencia
+## 1. Alcance y vigencia
 
 ### 1.1 Propósito
 
@@ -69,30 +96,30 @@ Al iniciar un proyecto Spring Boot en ONP, configurar los siguientes componentes
 | Paso | Qué configurar | Sección | Descripción |
 |---|---|---|---|
 | 1 | Dependencias OTEL en `pom.xml` | LIN-OBS-001 sección 4 | Habilita trazas distribuidas, logs estructurados y métricas |
-| 2 | `RequestIdFilter` `@Order(1)` | [sección 11.4.5](#1145-filtro-de-correlacion-requestidfilter) | Genera o propaga `X-Request-ID` y lo pone en el MDC para correlacionar todas las líneas de log de una petición |
+| 2 | `RequestIdFilter` `@Order(1)` | [sección 13.4.5](#1345-filtro-de-correlacion--requestidfilter) | Genera o propaga `X-Request-ID` y lo pone en el MDC para correlacionar todas las líneas de log de una petición |
 | 3 | `SaaTokenValidationFilter` `@Order(2)` | LIN-SEC-APP-001 sección 8.3 | Valida el token SAA llamando al endpoint institucional y pone `user.id` en el MDC |
 | 4 | `CanonicalRequestLogFilter` `@Order(3)` | LIN-OBS-001 sección 7 | Emite el log canónico al finalizar cada petición leyendo `user.id` del MDC |
-| 5 | `ApiResponseWrapper` + `GlobalExceptionHandler` | [sección 11.4.4](#1144-estructura-de-respuesta-estandar-apiresponsewrapper), sección 9 | Contrato estándar de respuesta para todos los endpoints |
-| 6 | `OpenApiConfig` + anotaciones Swagger | LIN-API-REST-001 sección 6, [sección 11.4.1](#1141-dependencia-maven)–11.4.3 | Contrato OpenAPI publicado desde el arranque del servicio |
+| 5 | `ApiResponseWrapper` + `GlobalExceptionHandler` | [sección 13.4.4](#1344-estructura-de-respuesta-estandar--apiresponsewrapper), sección 11 | Contrato estándar de respuesta para todos los endpoints |
+| 6 | `OpenApiConfig` + anotaciones Swagger | LIN-API-REST-001 sección 6, [sección 13.4.1](#1341-dependencia-maven)–13.4.3 | Contrato OpenAPI publicado desde el arranque del servicio |
 | 7 | `AuditoriaBase` extendida en entidades JPA | Anexo D | Pobla automáticamente los 6 campos de auditoría obligatorios (LIN-BD-ORA-001 sección 5) |
 
 > Los pasos 2, 3 y 4 forman la cadena de filtros obligatoria. El orden `@Order` es crítico: si se altera, `user.id` puede no estar disponible en el MDC cuando el log canónico lo necesita.
 
 ### 1.4 Relación con otros documentos
 
-> **Importante:** **Supremacía Jerárquica del Marco Rector (LIN-ARQ-000):**  
-> `LIN-ARQ-000` es el **documento rector de jerarquía superior (Nivel 2)** que rige de manera absoluta sobre todos los estándares y lineamientos técnicos específicos de **Nivel 3** (incluyendo el presente documento, `LIN-API-REST-001`, `LIN-BD-ORA-001`, `LIN-OBS-001`, etc.). Este estándar implementa de forma táctica y operativa en Java 21 / Spring Boot 3 los principios arquitectónicos (PR01–PR08), patrones de diseño (PD04–PD06) y lineamientos de contención de deuda técnica (PA14) definidos en `LIN-ARQ-000`. **Ante cualquier vacío, conflicto o presunta discrepancia de interpretación entre este documento y el marco rector, prevalecerán siempre y en todo momento los mandatos, patrones y directivas de LIN-ARQ-000.**
+> **Importante:** **Supremacía Jerárquica del Marco Rector (LIN-ARQ-001):**  
+> `LIN-ARQ-001` es el **documento rector de jerarquía superior (Nivel 2)** que rige de manera absoluta sobre todos los estándares y lineamientos técnicos específicos de **Nivel 3** (incluyendo el presente documento, `LIN-API-REST-001`, `LIN-BD-ORA-001`, `LIN-OBS-001`, etc.). Este estándar implementa de forma táctica y operativa en Java 21 / Spring Boot 3 los principios arquitectónicos (PR01–PR08), patrones de diseño (PD04–PD06) y lineamientos de contención de deuda técnica (PA14) definidos en `LIN-ARQ-001`. **Ante cualquier vacío, conflicto o presunta discrepancia de interpretación entre este documento y el marco rector, prevalecerán siempre y en todo momento los mandatos, patrones y directivas de LIN-ARQ-001.**
 
 | Documento | Relación |
 |-----------|----------|
-| **LIN-ARQ-000 — Marco Rector de Diseño y Arquitectura de Software** | **Documento Rector (Nivel 2) de supremacía jerárquica.** Rige y fundamenta todos los mandatos arquitectónicos de este estándar. |
-| LIN-API-REST-001 — Estándar de APIs REST | Complementa [sección 11.4](#114-api-rest-y-documentacion-openapi): convenciones REST detalladas |
-| LIN-BD-ORA-001 — Estándar de Base de Datos Oracle | Complementa [sección 11.3](#113-transacciones): convenciones de persistencia |
-| LIN-OBS-001 — Log, Trazabilidad y Observabilidad | Complementa sección 8: logging estructurado avanzado |
+| **LIN-ARQ-001 — Marco Rector de Diseño y Arquitectura de Software** | **Documento Rector (Nivel 2) de supremacía jerárquica.** Rige y fundamenta todos los mandatos arquitectónicos de este estándar. |
+| LIN-API-REST-001 — Estándar de APIs REST | Complementa [sección 13.4](#134-api-rest-y-documentacion-openapi): convenciones REST detalladas |
+| LIN-BD-ORA-001 — Estándar de Base de Datos Oracle | Complementa [sección 13.3](#133-transacciones): convenciones de persistencia |
+| LIN-OBS-001 — Log, Trazabilidad y Observabilidad | Complementa sección 10: logging estructurado avanzado |
 
 ---
 
-## sección 2 Stack tecnológico mandatorio
+## 2. Stack tecnológico mandatorio
 
 El stack siguiente es la base sobre la que aplica este estándar. Cualquier desviación requiere justificación en un ADR (Architecture Decision Record) y aprobación de la OTI.
 
@@ -104,6 +131,7 @@ El stack siguiente es la base sobre la que aplica este estándar. Cualquier desv
 | Lombok | última estable | Reducción de boilerplate |
 | MapStruct | última estable | Mapeo de objetos |
 | SLF4J + Logback | Spring Boot default | Logging |
+| Spring Kafka (Apache Kafka) | Spring Boot default | Mensajería asíncrona y bus de Eventos de Dominio (EDA / CloudEvents) |
 | JUnit 5 | Spring Boot default | Pruebas unitarias |
 | Mockito | Spring Boot default | Mocking en pruebas |
 | Testcontainers | última estable | Pruebas de integración con BD real |
@@ -115,7 +143,7 @@ El stack siguiente es la base sobre la que aplica este estándar. Cualquier desv
 
 ---
 
-## sección 3 Organización del código fuente
+## 3. Organización del código fuente
 
 ### 3.1 Estructura de paquetes
 
@@ -130,7 +158,7 @@ Donde:
 - `<módulo>` — funcionalidad de negocio (ej: `aportaciones`, `expedientes`, `pagos`)
 - `<capa>` — depende del estilo arquitectónico (ver tablas abajo)
 
-La estructura de paquetes **no es libre**: se deriva directamente del estilo arquitectónico declarado en el ADR del proyecto. La descripción detallada de estructuras Maven se encuentra en **[sección 12.1](#121-estructura-de-proyecto-por-estilo-arquitectonico)**; aquí se muestra la vista de paquetes Java para cada estilo.
+La estructura de paquetes **no es libre**: se deriva directamente del estilo arquitectónico declarado en el ADR del proyecto. La descripción detallada de estructuras Maven se encuentra en **[sección 14.1](#141-estructura-de-proyecto-por-estilo-arquitectonico)**; aquí se muestra la vista de paquetes Java para cada estilo.
 
 | Estilo | Cuándo aplica | Estructura de paquetes |
 |---|---|---|
@@ -172,7 +200,7 @@ pe.gob.onp.{sistema}.config
 
 #### Estilo 2 — Monolito Modular (multi-módulo Maven)
 
-Cinco módulos Maven con fronteras explícitas. Es el destino por defecto para todo sistema nuevo. Ver estructura Maven completa en **[sección 12.1](#121-estructura-de-proyecto-por-estilo-arquitectonico)**.
+Cinco módulos Maven con fronteras explícitas. Es el destino por defecto para todo sistema nuevo. Ver estructura Maven completa en **[sección 14.1](#141-estructura-de-proyecto-por-estilo-arquitectonico)**.
 
 | Módulo Maven | Paquetes internos | Dependencias del módulo |
 |---|---|---|
@@ -226,6 +254,20 @@ pe.gob.onp.{modulo}.infrastructure.config
 
 > `config` y `util` suelen vivir a nivel de sistema (no de módulo) cuando son compartidos. En Hexagonal, `util` solo puede contener utilidades puras sin dependencia de Spring.
 
+**Concerns transversales — dónde van.** Las carpetas que no son una capa (`auth/`, `util/`, `health/`, `common/`) no tienen lugar propio en la estructura — su contenido pertenece a alguna de las capas existentes:
+
+| Si tienes... | Va en... | Por qué |
+|---|---|---|
+| Filtros de seguridad, Spring Security config | `config/` | Es configuración de infraestructura |
+| Endpoints de login / logout / token | `controller/` (o `infrastructure.web`) | Son presentación como cualquier otro endpoint |
+| Spring Actuator, health checks | `config/` | Son beans de configuración |
+| Utilidades de dominio (formateos de RUC, DNI) | `domain/` | Pertenecen al dominio, no a una capa técnica |
+| Utilidades técnicas (parsers, conversores) | `config/` | Si no son dominio, son infraestructura técnica |
+| DTOs compartidos entre controllers | `controller/` (o `infrastructure.web`) | Los DTOs son presentación |
+| Constantes de negocio | `domain/` | Son parte del modelo de dominio |
+
+> **Señal de alerta:** si un proyecto tiene carpetas `util/`, `common/` o `shared/` como carpetas de primer nivel (hermanas de `domain/`, `application/`, `infrastructure/`), es síntoma de que esas clases no encontraron su lugar arquitectónico. La pregunta correcta no es "¿dónde pongo esto?" sino "¿a qué capa pertenece esto?".
+
 ### 3.2 Reglas de archivo
 
 | Regla | Detalle |
@@ -257,7 +299,7 @@ import pe.gob.onp.pensiones.expedientes.domain.Expediente;
 
 ---
 
-## sección 4 Convenciones de nomenclatura
+## 4. Convenciones de nomenclatura
 
 ### 4.1 Reglas generales
 
@@ -400,7 +442,7 @@ if (expediente.getEstado() == EstadoExpediente.ACTIVO) { ... }
 
 ---
 
-## sección 5 Estructura interna de clases
+## 5. Estructura interna de clases
 
 ### 5.1 Orden de declaración
 
@@ -526,7 +568,7 @@ public class Expediente {
 
 ---
 
-## sección 6 Convenciones de codificación
+## 6. Convenciones de codificación
 
 ### 6.1 Formato
 
@@ -915,7 +957,7 @@ List<String> resumen = expedientes.stream()
 
 ---
 
-## sección 7 Principios SOLID aplicados a clases y métodos Java 21
+## 7. Principios SOLID aplicados a clases y métodos Java 21
 
 Los principios **SOLID** orientan el diseño granular de clases, interfaces y métodos para evitar la degradación estructural (*Big Ball of Mud*). Su cumplimiento en Java 21 y Spring Boot 3 es obligatorio para toda fábrica de software o equipo interno.
 
@@ -1019,13 +1061,41 @@ Los módulos de alto nivel (`domain/`) no deben depender de módulos de bajo niv
 
 ---
 
-## sección 8 Patrones de diseño de código (GoF) en Spring Boot 3
+## 8. Patrones de diseño de código (GoF) en Spring Boot 3
 
 La implementación de patrones *Gang of Four* (GoF) en la ONP aprovecha el contenedor de inversión de control (IoC) de Spring Boot 3 para mantener un código limpio, extensible y testeable.
 
 ### 8.1 Patrones Estructurales en Spring
 
-#### 8.1.1 Decorator (`@Primary` para Funcionalidades Transversales)
+#### 8.1.1 Adapter (Traducción de Interfaces de Sistemas Externos)
+Convierte la interfaz de un sistema externo (RENIEC, SUNAT, PIDE, PLAME) a la interfaz que el dominio espera, aislando el modelo previsional de los contratos ajenos. Cuando además debe blindar al dominio de estructuras de datos ajenas (XML, campos con nomenclatura distinta), el Adapter se combina con un Mapper dedicado como Capa Anticorrupción — ver ACL en `LIN-DIS-001 §5.4`.
+
+```java
+// Port esperado por el dominio (LIN-DIS-001 §5.4)
+public interface ConsultaPersonaExternalPort {
+    DatosPersona consultarPorDni(Dni dni);
+}
+
+// Adapter que traduce la interfaz de RENIEC a la interfaz de dominio
+@Repository
+@RequiredArgsConstructor
+public class ReniecHttpAdapter implements ConsultaPersonaExternalPort {
+
+    private final RestClient reniecClient;
+    private final ReniecAclMapper aclMapper;
+
+    @Override
+    public DatosPersona consultarPorDni(Dni dni) {
+        ReniecPersonaResponseXml response = reniecClient.get()
+            .uri("/persona/{dni}", dni.valor())
+            .retrieve()
+            .body(ReniecPersonaResponseXml.class);
+        return aclMapper.toDomain(response);
+    }
+}
+```
+
+#### 8.1.2 Decorator (`@Primary` para Funcionalidades Transversales)
 Permite añadir comportamientos ortogonales (auditoría en memoria, caché multinivel, métricas personalizadas) sobre un adaptador o puerto sin tocar la lógica de negocio base ni el consumidor.
 
 ```java
@@ -1055,7 +1125,7 @@ public class CachedPensionistaRepositoryDecorator implements PensionistaReposito
 }
 ```
 
-#### 8.1.2 Facade de Subsistema Interno (`@Component`)
+#### 8.1.3 Facade de Subsistema Interno (`@Component`)
 Provee una interfaz unificada y simple hacia un conjunto de servicios de aplicación o puertos dentro de un mismo módulo complejo, reduciendo el acoplamiento de los controladores REST.
 
 ```java
@@ -1097,9 +1167,86 @@ public class LiquidacionFactory {
 #### 8.2.2 Builder (Lombok `@Builder`)
 Obligatorio para la construcción de DTOs, comandos o registros inmutables que poseen más de 4 atributos o campos de configuración opcionales.
 
+#### 8.2.3 Singleton (Instancia Única Gestionada por Spring)
+Spring gestiona el ciclo de vida singleton de forma automática: todo bean `@Service`, `@Repository` o `@Component` es una instancia única por defecto en el contenedor. **No se implementa Singleton manualmente** — declarar el bean con la anotación Spring correspondiente es la única forma aceptada en ONP.
+
+```java
+// PROHIBIDO: Singleton manual en un contexto Spring — no es thread-safe y duplica lo que el contenedor ya resuelve
+public class ConfiguracionSistema {
+    private static ConfiguracionSistema instancia;
+    private ConfiguracionSistema() {}
+    public static ConfiguracionSistema getInstance() {
+        if (instancia == null) instancia = new ConfiguracionSistema();
+        return instancia;
+    }
+}
+
+// CORRECTO: Spring gestiona la instancia única del bean
+@Configuration
+public class ConfiguracionSistema {
+    @Value("${onp.sistema.nombre}")
+    private String nombre;
+
+    @Bean
+    public SomeSharedComponent componenteCompartido() {
+        return new SomeSharedComponent(nombre);
+    }
+}
+```
+
+El Singleton manual solo se justifica en utilidades puras sin dependencias de Spring, usadas en contextos donde el contenedor no está disponible (por ejemplo, clases estáticas de prueba unitaria sin contexto Spring).
+
 ### 8.3 Patrones de Comportamiento para Reemplazo de Bifurcaciones
 
-#### 8.3.1 Observer mediante Eventos de Spring (`ApplicationEventPublisher` + `@EventListener`)
+#### 8.3.1 Strategy (Algoritmo Intercambiable)
+Encapsula una familia de algoritmos detrás de una interfaz común para eliminar bloques `if/switch` que crecen con cada nuevo régimen o variante de negocio. Spring inyecta automáticamente todas las implementaciones como `List<...>` — no se necesita un registro manual ni un `switch`.
+
+```java
+public interface CalculoPensionStrategy {
+    ResultadoCalculo calcular(HistorialAportes historial);
+    boolean aplica(TipoRegimen regimen);
+}
+
+@Component
+public class CalculoRegimen19990Strategy implements CalculoPensionStrategy {
+    @Override
+    public ResultadoCalculo calcular(HistorialAportes historial) {
+        BigDecimal monto = historial.getMesesAportados().multiply(FACTOR_MENSUAL_19990);
+        return new ResultadoCalculo(monto, TipoRegimen.REGIMEN_19990);
+    }
+    @Override
+    public boolean aplica(TipoRegimen regimen) { return TipoRegimen.REGIMEN_19990.equals(regimen); }
+}
+
+@Component
+public class CalculoRegimen20530Strategy implements CalculoPensionStrategy {
+    @Override
+    public ResultadoCalculo calcular(HistorialAportes historial) {
+        BigDecimal monto = historial.getRemuneracionReferencial().multiply(PORCENTAJE_CEDULA_VIVA);
+        return new ResultadoCalculo(monto, TipoRegimen.REGIMEN_20530);
+    }
+    @Override
+    public boolean aplica(TipoRegimen regimen) { return TipoRegimen.REGIMEN_20530.equals(regimen); }
+}
+
+// El contexto delega en la estrategia correcta — Spring inyecta todas las implementaciones
+@Service
+@RequiredArgsConstructor
+public class CalculoPensionService {
+
+    private final List<CalculoPensionStrategy> estrategias;
+
+    public ResultadoCalculo calcular(HistorialAportes historial, TipoRegimen regimen) {
+        return estrategias.stream()
+            .filter(e -> e.aplica(regimen))
+            .findFirst()
+            .orElseThrow(() -> new IllegalArgumentException("Sin estrategia para régimen: " + regimen))
+            .calcular(historial);
+    }
+}
+```
+
+#### 8.3.2 Observer mediante Eventos de Spring (`ApplicationEventPublisher` + `@EventListener`)
 Desacopla totalmente la ejecución transaccional principal de procesos reactivos secundarios (auditoría asíncrona, envío de notificaciones al ciudadano o actualización de reportes).
 
 ```java
@@ -1127,12 +1274,99 @@ public class NotificacionResolucionListener {
 }
 ```
 
-#### 8.3.2 State mediante Enums con Comportamiento
+#### 8.3.3 Command (Operación Encapsulada como Objeto)
+Encapsula una solicitud de negocio como un `record` inmutable de Java 21, separando a quien la invoca (Controller) de quien la ejecuta (Application Service). Es la representación estándar del lado de escritura en CQRS (`LIN-DIS-001 §4.2`).
+
+```java
+// Command — record inmutable con validación en el constructor compacto
+public record RegistrarAporteCommand(
+    String codigoPensionista,
+    BigDecimal monto,
+    YearMonth periodo,
+    String usuarioRegistrador
+) {
+    public RegistrarAporteCommand {
+        Objects.requireNonNull(codigoPensionista, "codigoPensionista requerido");
+        Objects.requireNonNull(monto, "monto requerido");
+        if (monto.compareTo(BigDecimal.ZERO) <= 0)
+            throw new IllegalArgumentException("monto debe ser positivo");
+    }
+}
+
+// El Controller construye el Command desde el DTO de entrada
+@RestController
+@RequiredArgsConstructor
+@RequestMapping("/api/v1/aportes")
+public class AporteController {
+
+    private final RegistrarAporteUseCase registrarAporte;
+
+    @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
+    public void registrar(@RequestBody @Valid RegistrarAporteRequest request,
+                          @AuthenticationPrincipal String usuario) {
+        registrarAporte.registrar(new RegistrarAporteCommand(
+            request.codigoPensionista(),
+            new BigDecimal(request.monto()),
+            YearMonth.of(request.anio(), request.mes()),
+            usuario
+        ));
+    }
+}
+```
+
+**Regla ONP:** los Commands son `record` de Java 21 — inmutables por construcción. La validación de negocio va en el constructor compacto del `record`, nunca en el Controller ni en el Application Service.
+
+#### 8.3.4 State mediante Enums con Comportamiento
 Gestiona el ciclo de vida transaccional de entidades con estados finitos (`BORRADOR`, `EN_REVISION`, `OBSERVADO`, `APROBADO`) delegando en el propio estado las transiciones permitidas.
 
 ---
 
-## sección 9 Documentación del código
+### 8.4 Patrones de Capas y Traducción
+
+Patrones que no son GoF pero son de uso obligatorio en la separación entre capas de la arquitectura hexagonal / en capas de ONP. El Repository se documenta en detalle en **[§13.5.3](#1353-repository-repositorios-de-dominio-vs-adaptadores-de-persistencia)** y la Anti-Corruption Layer (traducción de sistemas externos) en `LIN-DIS-001 §5.4` — esta sección cubre el Mapper para no fragmentar el catálogo de patrones de código.
+
+#### 8.4.1 Mapper (Transformación entre Capas)
+Traduce objetos entre capas (DTO ↔ Domain ↔ Entity) sin mezclar responsabilidades; ninguna capa expone directamente sus estructuras internas a otra.
+
+```java
+@Component
+public class PensionMapper {
+
+    public PensionResponseDto toDto(Pension pension) {
+        return new PensionResponseDto(
+            pension.getId(),
+            pension.getMonto().toPlainString(),
+            pension.getPeriodo().toString(),
+            pension.getEstado().name()
+        );
+    }
+
+    public Pension toDomain(RegistrarAporteCommand cmd) {
+        return new Pension(
+            null,
+            new Monto(new BigDecimal(cmd.monto())),
+            Periodo.of(cmd.anio(), cmd.mes()),
+            EstadoPension.BORRADOR
+        );
+    }
+
+    public PensionEntity toEntity(Pension pension) {
+        PensionEntity e = new PensionEntity();
+        e.setId(pension.getId());
+        e.setMonto(pension.getMonto().valor());
+        e.setPeriodo(pension.getPeriodo().toString());
+        e.setEstado(pension.getEstado().name());
+        return e;
+    }
+}
+```
+
+**Regla ONP:** un Mapper nunca contiene lógica de negocio ni decisiones condicionales de dominio — solo traduce campos entre representaciones. Si la traducción requiere reglas (validaciones, cálculos), esa lógica pertenece al dominio, no al Mapper.
+
+---
+
+## 9. Documentación del código
 
 ### 9.1 Cuándo escribir Javadoc
 
@@ -1214,7 +1448,7 @@ BigDecimal montoReajustado = monto.multiply(new BigDecimal("1.03"));
 
 ---
 
-## sección 10 Logging estructurado
+## 10. Logging estructurado
 
 > **Fuente autoritativa:** Las normas de logging, trazabilidad y observabilidad están definidas en **LIN-OBS-001** (Lineamiento de Log Centralizado, Trazabilidad y Observabilidad). Este sección 10 es un resumen orientado a la implementación Java; ante cualquier conflicto, prevalece LIN-OBS-001. La configuración completa de `logback-spring.xml`, `Mask.java`, `CanonicalRequestLogFilter.java`, `RequestIdFilter.java`, política No PII y campos ECS se encuentran en LIN-OBS-001 secciones 4.6–4.10 y sección 6.
 
@@ -1266,7 +1500,7 @@ public class ExpedienteServiceImpl {
 
 | Paquete | Nivel |
 |---|---|
-| `pe.gob.onp.*` | `INFO` — permite registrar eventos de negocio significativos exigidos por LIN-ARQ-000 sección 9.5 |
+| `pe.gob.onp.*` | `INFO` — permite registrar eventos de negocio significativos exigidos por LIN-ARQ-001 sección 9.5 |
 | `org.springframework.*`, `org.hibernate.*`, librerías de terceros | `WARN` — reduce ruido de frameworks |
 
 Subir `pe.gob.onp.*` a `DEBUG` solo para diagnóstico puntual y de forma temporal; revertir al terminar.
@@ -1326,7 +1560,7 @@ log.info("Consulta para DNI: {}", Mask.dni(dni));   // Mask de LIN-OBS-001 secci
 
 ---
 
-## sección 11 Manejo de excepciones en la capa REST
+## 11. Manejo de excepciones en la capa REST
 
 ### 11.1 Handler global centralizado
 
@@ -1376,7 +1610,7 @@ public class GlobalExceptionHandler {
 }
 ```
 
-> Se utiliza `ApiResponseWrapper` (definido en [sección 11.4.4](#1144-estructura-de-respuesta-estandar-apiresponsewrapper)) como envoltorio estándar de todas las respuestas de error en cumplimiento con **LIN-API-REST-001**. Esto garantiza homogeneidad en el formato devuelto por las APIs de la institución.
+> Se utiliza `ApiResponseWrapper` (definido en [sección 13.4.4](#1344-estructura-de-respuesta-estandar--apiresponsewrapper)) como envoltorio estándar de todas las respuestas de error en cumplimiento con **LIN-API-REST-001**. Esto garantiza homogeneidad en el formato devuelto por las APIs de la institución.
 
 ### 11.2 Tabla de HTTP status codes
 
@@ -1398,7 +1632,7 @@ public class GlobalExceptionHandler {
 
 ---
 
-## sección 12 Calidad de código
+## 12. Calidad de código
 
 ### 12.1 Métricas mínimas obligatorias
 
@@ -1407,9 +1641,8 @@ public class GlobalExceptionHandler {
 | Complejidad ciclomática por método | ≤ 10 | Checkstyle / PMD |
 | Longitud máxima de método | 30 líneas | Checkstyle |
 | Longitud máxima de clase | 500 líneas | Checkstyle |
-| Cobertura de pruebas — servicios de negocio | ≥ 80% | JaCoCo |
-| Cobertura de pruebas — clases de utilidad | ≥ 90% | JaCoCo |
-| Cobertura de pruebas — controladores REST | ≥ 70% | JaCoCo |
+
+**Cobertura de pruebas:** el umbral exacto por estilo arquitectónico y por capa (`domain`, `application`, etc.) es normado exclusivamente en **`LIN-TEST-001 §5.1`** (dueño de este tema) — no se duplica aquí para evitar que ambos documentos queden desalineados. Ver también §14.5 (gate JaCoCo por módulo). `LIN-TEST-001 §5.1` es explícito en que los **Controllers REST no se miden con umbral duro de cobertura de línea** — se verifican con pruebas de integración (`@WebMvcTest`, §15), no con JaCoCo.
 
 ### 12.2 Tabla de antipatrones prohibidos
 
@@ -1579,7 +1812,7 @@ El archivo `onp-pmd-ruleset.xml` debe estar en la raíz de cada repositorio. Con
 
 ### 12.4 Principios de Diseño Transversales (DRY, KISS, YAGNI)
 
-> **Nota:** Los principios **SOLID** orientados a clases y métodos Java se desarrollan en la [sección 7](#7-principios-solid-aplicados-a-clases-y-métodos-java-21), mientras que los patrones **GoF** se definen en la [sección 8](#8-patrones-de-diseño-de-código-gof-en-spring-boot-3). A continuación se resumen las pautas de diseño arquitectónico y metodológico que complementan a SOLID.
+> **Nota:** Los principios **SOLID** orientados a clases y métodos Java se desarrollan en la [sección 7](#7-principios-solid-aplicados-a-clases-y-métodos-java-21), mientras que los patrones **GoF** se definen en la [sección 8](#8-patrones-de-diseño-de-código-gof-en-spring-boot-3). A continuación se resumen las pautas de diseño arquitectónico y metodológico que complementan a SOLID. Junto con DRY, KISS y YAGNI (§12.4.2-12.4.4), el cuarto principio transversal obligatorio es **Separación de Responsabilidades (`PR09` / *Separation of Concerns*)**, declarado formalmente en `LIN-DIS-001 §1.2` — las reglas de presentación, la orquestación transaccional, las reglas puras de negocio y la infraestructura de acceso a datos son capas ontológicamente distintas que nunca deben mezclarse en una misma clase.
 
 Todo desarrollo en Java 21 y Spring Boot 3 dentro de la ONP debe regirse estrictamente por los principios fundamentales de ingeniería de software. Estos principios orientan la toma de decisiones técnicas para garantizar que el código sea mantenible, testeable y resistente a la degradación arquitectónica en el largo plazo.
 
@@ -1721,7 +1954,7 @@ No se debe escribir código, interfaces ni abstracciones basándose en suposicio
 
 ---
 
-## sección 13 Convenciones Spring Boot
+## 13. Convenciones Spring Boot
 
 ### 13.1 Configuración
 
@@ -1768,7 +2001,7 @@ public record CrearExpedienteRequest(
 ) {}
 ```
 
-El `GlobalExceptionHandler` ([sección 9.1](#91-handler-global-centralizado)) captura `MethodArgumentNotValidException` automáticamente.
+El `GlobalExceptionHandler` ([sección 11.1](#111-handler-global-centralizado)) captura `MethodArgumentNotValidException` automáticamente.
 
 ### 13.3 Transacciones
 
@@ -1802,7 +2035,7 @@ public class ExpedienteServiceImpl implements ExpedienteService {
 
 > Ver sección 3.4 del Lineamiento de Arquitectura (doc. interno) para la discusión ACID/CAP y el rol de `@Transactional` en la estrategia de consistencia.
 
-### 11.4 API REST y documentación OpenAPI
+### 13.4 API REST y documentación OpenAPI
 
 Todo servicio que exponga endpoints HTTP debe seguir las convenciones de esta sección sin excepción. **La documentación Swagger es un requisito de entrega**: un servicio sin documentación no se considera completo y no debe pasar a revisión de código.
 
@@ -1810,10 +2043,10 @@ Todo servicio que exponga endpoints HTTP debe seguir las convenciones de esta se
 - URLs en `kebab-case`: `/expedientes-pension`, `/periodos-aportacion`
 - Un controlador por recurso de dominio
 - Métodos del controlador delegados íntegramente al servicio; sin lógica de negocio
-- Respuestas tipadas con `ApiResponseWrapper` ([sección 11.4.4](#1144-estructura-de-respuesta-estandar-apiresponsewrapper)); nunca retornar `Object` o `Map<String, Object>` sin tipado
+- Respuestas tipadas con `ApiResponseWrapper` ([sección 13.4.4](#1344-estructura-de-respuesta-estandar--apiresponsewrapper)); nunca retornar `Object` o `Map<String, Object>` sin tipado
 - Las anotaciones Swagger se colocan **únicamente** en los `@RestController`; no en Service ni Repository
 
-#### 11.4.1 Dependencia Maven
+#### 13.4.1 Dependencia Maven
 
 Agregar en `pom.xml`:
 
@@ -2268,7 +2501,7 @@ public class AsyncMdcConfig {
 
 ### 13.5 Patrones Tácticos de Dominio (Repository, Domain Service, Application Service)
 
-En coherencia con los estilos arquitectónicos de Monolito Modular y Arquitectura Hexagonal / Limpia promovidos por **LIN-ARQ-000**, el diseño interno de los componentes en Spring Boot 3 debe segregar claramente las responsabilidades en tres patrones tácticos fundamentales.
+En coherencia con los estilos arquitectónicos de Monolito Modular y Arquitectura Hexagonal / Limpia promovidos por **LIN-ARQ-001**, el diseño interno de los componentes en Spring Boot 3 debe segregar claramente las responsabilidades en tres patrones tácticos fundamentales.
 
 #### 13.5.1 Application Service (Servicios de Aplicación / Orquestadores)
 
@@ -2436,23 +2669,28 @@ public class AportanteJdbcRepository implements AportanteRepository {
 
 ---
 
-## sección 14 Estructura de proyecto y gestión de dependencias Maven
+## 14. Estructura de proyecto y gestión de dependencias Maven
 
-> Este sección 14 es la referencia de implementación para las estructuras definidas conceptualmente en el **Lineamiento de Arquitectura sección 7**.
+> Esta sección 14 es la referencia de implementación práctica y contractual para las estructuras e interacciones tácticas definidas conceptualmente en el **Marco Rector de Arquitectura (`LIN-ARQ-001 §2.1` y `§6.2`)** y en el **Estándar de Diseño de Software y Patrones Tácticos (`LIN-DIS-001 §2` y `§3`)**.
 
 ### 14.1 Estructura de proyecto por estilo arquitectónico
 
-La elección de estructura sigue directamente del estilo arquitectónico declarado — no es libre.
+En el ecosistema de la ONP, la modularización y estructura de carpetas de un proyecto se rige por dos dimensiones complementarias pero inconfundibles:
 
-| Estructura | Estilo | Cuándo usar |
+1. **Modularización Vertical por Subdominios (*Bounded Contexts — Estadio 2 Monolito Modular*):** Es la división macro del sistema en módulos estancos independientes orientados a capacidades de negocio (`onp-expedientes`, `onp-aportes`, `onp-pensionistas`), los cuales comparten un único núcleo de primitivas comunes (*Shared Kernel*: `onp-common-domain`) y se ensamblan en un único contenedor K8s (`onp-boot`).
+2. **Modularización Horizontal o Interna (*Diseño Táctico del Contenedor/Módulo*):** Es la organización de clases, paquetes e interfaces dentro de *cada uno* de los módulos verticales o dentro de un microservicio independiente (*Estadio 3*), aplicando Arquitectura en Capas (`PAT-DIS-02`) o Arquitectura Hexagonal (`PAT-DIS-01`).
+
+La elección de estructura en Maven no es libre ni es un estilo de codificación del proveedor; sigue directamente del estilo arquitectónico homologado para el proyecto:
+
+| Estructura Maven | Estilo / Topología | Cuándo usar en la ONP |
 |---|---|---|
-| **Monolito simple (capas)** | Layered | Sistema sin candidatura a microservicio; lógica Transaction Script o Active Record |
-| **Monolito Modular** | Modular | Punto de llegada por defecto para todo sistema nuevo |
-| **Hexagonal / Clean** | Hexagonal | Módulo que cumple los seis criterios de microservicio — obligatorio antes de extraer |
+| **Monolito simple (capas)** | Layered (`PAT-DIS-02`) | Sistema de soporte simple sin candidatura a microservicio ni múltiples subdominios; lógica *Transaction Script* o *Active Record* (`LIN-DIS-001 §2.2`). |
+| **Monolito Modular (Multi-Módulo Vertical por Bounded Contexts)** | Monolito Modular (`PAT-TOP-01`) | **Estándar por defecto (*Estadio 2*)** para todo sistema nuevo en la ONP. Divide la aplicación en subdominios funcionales (`onp-expedientes`, `onp-aportes`) y un *Shared Kernel (`onp-common-domain`)* (`LIN-ARQ-001 §2.1`, `LIN-DIS-001 §3`). |
+| **Hexagonal / Clean (Estructura Interna o Microservicio)** | Hexagonal (`PAT-DIS-01`) | **Obligatorio** dentro de cada Bounded Context del *Core Previsional*, en módulos con 3+ integraciones externas o al extraer un Microservicio (*Estadio 3*) validado por los 6 criterios de `LIN-ARQ-001 §2.1`. |
 
 #### Monolito simple (capas)
 
-Un único módulo Maven. Tres paquetes con responsabilidades diferenciadas.
+Un único módulo Maven. Tres paquetes horizontales con responsabilidades diferenciadas.
 
 ```
 onp-{sistema}/
@@ -2461,9 +2699,9 @@ onp-{sistema}/
     ├── main/
     │   ├── java/pe/gob/onp/{sistema}/
     │   │   ├── controller/      ← REST Controllers, DTOs de entrada/salida
-    │   │   ├── service/         ← Lógica de aplicación y negocio
+    │   │   ├── service/         ← Lógica de aplicación y negocio (@Service @Transactional)
     │   │   ├── repository/      ← Interfaces Spring Data JPA
-    │   │   ├── entity/          ← Entidades JPA
+    │   │   ├── entity/          ← Entidades JPA (@Entity)
     │   │   ├── dto/             ← DTOs de request y response
     │   │   ├── exception/       ← Excepciones y handler global
     │   │   └── config/          ← Configuración Spring, OpenAPI
@@ -2477,109 +2715,118 @@ onp-{sistema}/
             └── repository/      ← @DataJpaTest
 ```
 
-**Regla de dependencia:** `controller → service → repository`. Los controllers no acceden a repositorios directamente.
+**Regla de dependencia:** `controller → service → repository`. Los controladores jamás acceden a repositorios o entidades directamente saltándose la capa transaccional de servicio.
 
-#### Monolito Modular (multi-módulo Maven)
+#### Monolito Modular (Multi-Módulo Maven Jerárquico por Componentes de Negocio y Capas Hexagonales)
 
-Cinco módulos Maven con fronteras explícitas. Es el punto de destino por defecto para todo sistema nuevo en ONP.
-
-```
-onp-{sistema}/
-├── pom.xml                          ← POM padre (packaging: pom)
-│
-├── onp-{sistema}-domain/            ← Sin dependencias de framework
-│   ├── pom.xml
-│   └── src/main/java/pe/gob/onp/{sistema}/domain/
-│       ├── model/                   ← Entidades, agregados, value objects
-│       ├── port/
-│       │   ├── in/                  ← Ports de entrada (casos de uso)
-│       │   └── out/                 ← Ports de salida (repositorios, clientes)
-│       └── exception/               ← Excepciones de dominio
-│
-├── onp-{sistema}-application/       ← Depende solo de domain
-│   ├── pom.xml
-│   └── src/main/java/pe/gob/onp/{sistema}/application/
-│       ├── service/                 ← Implementaciones de ports de entrada
-│       ├── command/                 ← Objetos de comando (entrada)
-│       └── dto/                     ← DTOs de respuesta de casos de uso
-│
-├── onp-{sistema}-infrastructure/    ← Depende de domain y application
-│   ├── pom.xml
-│   └── src/main/java/pe/gob/onp/{sistema}/infrastructure/
-│       ├── persistence/             ← Entidades JPA, repositorios Spring Data
-│       ├── client/                  ← Clientes HTTP (RestClient, Feign)
-│       ├── messaging/               ← Productores/consumidores de eventos
-│       └── mapper/                  ← Mappers entre capas
-│
-├── onp-{sistema}-api/               ← Depende de application
-│   ├── pom.xml
-│   └── src/main/java/pe/gob/onp/{sistema}/api/
-│       ├── controller/              ← REST Controllers
-│       ├── dto/                     ← Request/Response DTOs de la API
-│       └── mapper/                  ← Mappers API DTO ↔ Application DTO
-│
-└── onp-{sistema}-boot/              ← Depende de todos los módulos
-    ├── pom.xml
-    └── src/main/java/pe/gob/onp/{sistema}/
-        ├── Application.java         ← @SpringBootApplication
-        └── src/main/resources/
-            ├── application.yml
-            ├── application-dev.yml
-            ├── application-qa.yml
-            ├── application-prod.yml
-            └── logback-spring.xml
-```
-
-**Regla de dependencia entre módulos:**
+Es el punto de destino mandatorio por defecto para todo sistema previsional nuevo en la ONP (`PAT-TOP-01 — Estadio 2`). Combina magistralmente la modularización vertical por subdominios (`LIN-DIS-001 §3.1`) con la segregación táctica interna hexagonal por submódulos Maven (`PAT-DIS-01`), logrando un desacoplamiento físico perfecto que permite extraer cualquier componente a microservicio (`Estadio 3`) en el futuro sin reescribir código ni desenredar dependencias:
 
 ```
-domain          ← no depende de ningún otro módulo del proyecto
-application     ← depende de domain
-infrastructure  ← depende de domain y application
-api             ← depende de application
-boot            ← depende de api e infrastructure (ensamblador)
+onp-{sistema}/                                ← Raíz del Proyecto General (POM Padre packaging: pom)
+├── pom.xml                                   ← Define los submódulos y versiones globales (<dependencyManagement>)
+│
+├── onp-{sistema}-boot/                       ← El ENSAMBLADOR (Solo este genera el .jar ejecutable desplegable en K8s)
+│   ├── pom.xml                               ← Depende de las capas "-api" e "-infrastructure" de TODOS los componentes
+│   └── src/main/java/pe/gob/onp/{sistema}/
+│       ├── Application.java                  ← Contiene el @SpringBootApplication (único punto de entrada de la JVM)
+│       └── src/main/resources/
+│           ├── application.yml               ← Configuración general e inyección de properties K8s
+│           ├── application-dev.yml
+│           ├── application-qa.yml
+│           ├── application-prod.yml
+│           └── logback-spring.xml            ← Observabilidad estructurada ECS/Logback (LIN-OBS-001)
+│
+├── comun/                                    ← Primitivas y transversales compartidos (Shared Kernel, LIN-DIS-001 §3.4)
+│   └── onp-common-domain/                    ← Cero dependencias transaccionales o de Spring Data JPA
+│       ├── pom.xml
+│       └── src/main/java/pe/gob/onp/common/domain/
+│           ├── model/                        ← Value Objects inmutables universales (Dni, Ruc, MontoMonetario, Periodo)
+│           └── exception/                    ← Jerarquía base (OnpDomainException, RecursoNoEncontradoException)
+│
+└── componentes/                              ← Carpeta física para segregar y aislar los negocios (Bounded Contexts)
+    │
+    ├── {modulo-1}/                           ← COMPONENTE DE NEGOCIO 1 (Ej. afiliacion, expedientes, aportes)
+    │   ├── onp-{modulo-1}-domain/            ← Reglas de negocio e interfaces puras (Anillo interior Hexagonal)
+    │   │   ├── pom.xml                       ← Depende únicamente de onp-common-domain
+    │   │   └── src/main/java/pe/gob/onp/{sistema}/{modulo-1}/domain/
+    │   │       ├── model/                    ← Entidades de dominio, Agregados y Value Objects del módulo
+    │   │       ├── port/
+    │   │       │   ├── in/                   ← Ports de entrada: interfaces de casos de uso del módulo
+    │   │       │   └── out/                  ← Ports de salida: interfaces de repositorios y clientes externos
+    │   │       └── exception/                ← Excepciones de negocio específicas del módulo (`{Modulo1}Exception`)
+    │   │
+    │   ├── onp-{modulo-1}-application/       ← Casos de uso transaccionales y orquestación
+    │   │   ├── pom.xml                       ← Depende de onp-{modulo-1}-domain y onp-common-domain (excepcionalmente, del -domain de otro módulo — ver regla de gobernanza #2)
+    │   │   └── src/main/java/pe/gob/onp/{sistema}/{modulo-1}/application/
+    │   │       ├── service/                  ← Implementaciones puras de ports de entrada (SIN @Service, instanciadas vía @Bean en infra)
+    │   │       ├── command/                  ← Objetos de comando de entrada para modificación de estado
+    │   │       └── dto/                      ← DTOs internos y de respuesta de los casos de uso
+    │   │
+    │   ├── onp-{modulo-1}-infrastructure/    ← Adaptadores técnicos: BD Oracle, colas Kafka y clientes REST externos
+    │   │   ├── pom.xml                       ← Depende de onp-{modulo-1}-application y onp-{modulo-1}-domain
+    │   │   └── src/main/java/pe/gob/onp/{sistema}/{modulo-1}/infrastructure/
+    │   │       ├── persistence/              ← Adapter JPA: Entidades (`*Entity`), Spring Data repos (`*JpaRepository`)
+    │   │       ├── client/                   ← Adapter REST/SOAP: Clientes HTTP hacia sistemas externos (RENIEC, SUNAT)
+    │   │       ├── messaging/                ← Adapter Kafka: Productores y consumidores CloudEvents v1.0
+    │   │       └── config/                   ← Configuración Spring (@Configuration), wiring de usecases y adapters con @Bean
+    │   │
+    │   └── onp-{modulo-1}-api/               ← Superficie HTTP EXCLUSIVA del módulo — nunca se importa desde otro módulo
+    │       ├── pom.xml                       ← Depende de onp-{modulo-1}-application
+    │       └── src/main/java/pe/gob/onp/{sistema}/{modulo-1}/api/
+    │           ├── controller/               ← Controladores HTTP (`@RestController`) y documentación OpenAPI
+    │           └── dto/                      ← DTOs contractuales de request y response REST del módulo (solo para el canal HTTP)
+    │
+    └── {modulo-2}/                           ← COMPONENTE DE NEGOCIO 2 (Ej. recaudacion, pensiones, bonos)
+        ├── onp-{modulo-2}-domain/            ← Estructura de paquetes idéntica al módulo 1 (-domain)
+        ├── onp-{modulo-2}-application/       ← Estructura de paquetes idéntica al módulo 1 (-application)
+        ├── onp-{modulo-2}-infrastructure/    ← Estructura de paquetes idéntica al módulo 1 (-infrastructure)
+        └── onp-{modulo-2}-api/               ← Estructura de paquetes idéntica al módulo 1 (-api)
 ```
 
-- `domain` no importa nada de `infrastructure`, `api` ni `boot`
-- `api` no accede a `infrastructure` directamente — siempre pasa por `application`
-- Prohibidas las dependencias circulares entre módulos
+**Reglas de gobernanza e interdependencia modular:**
 
-#### Hexagonal / Clean (candidato a microservicio)
+1. **El Rol del Ensamblador (`-boot`):** El módulo `onp-{sistema}-boot` es el único que posee el plugin `spring-boot-maven-plugin` y genera un archivo `.jar` ejecutable. En su `pom.xml` declara dependencias hacia las capas `-api` (para escanear los `@RestController` y exponer los endpoints OpenAPI) e `-infrastructure` (para instanciar los repositorios JPA `@Repository` y clientes externos) de todos los componentes activos (`onp-{modulo-1}-api`, `onp-{modulo-1}-infrastructure`, `onp-{modulo-2}-api`, `onp-{modulo-2}-infrastructure`).
+2. **Aislamiento Estricto entre Componentes de Negocio (*Context Map*, `LIN-DIS-001 §3.1`):** Queda **prohibido** que un sub-módulo de `{modulo-1}` importe o referencie en su `pom.xml` a un sub-módulo `application`, `infrastructure` o **`api`** de `{modulo-2}` — nunca se depende de la superficie HTTP ni de la orquestación transaccional de otro módulo. Si un caso de uso de `{modulo-1}` requiere consultar en memoria un dato de `{modulo-2}` dentro de la misma JVM, `onp-{modulo-1}-application` podrá importar **únicamente** `onp-{modulo-2}-domain` para consumir sus interfaces de caso de uso (`domain.port.in`) y los DTOs que ese puerto expone. `onp-{modulo-1}-domain` no depende, en cambio, de ningún otro módulo salvo `onp-common-domain` — el dominio de un módulo nunca conoce el dominio de otro. `onp-{modulo-2}-domain` no tiene dependencias de Spring ni JPA (ver árbol de directorio arriba), por lo que esta importación no arrastra infraestructura ajena a `{modulo-1}`; la implementación real del caso de uso (`onp-{modulo-2}-application`) se resuelve como bean de Spring en tiempo de ejecución dentro del contexto compartido de `-boot`. Alternativamente, se puede comunicar vía eventos en Kafka según `ADR-012`.
+3. **Preparación Inmediata para Extracción (*Evolución a Estadio 3*):** Gracias a que cada componente (`componentes/{modulo-1}/`) posee sus 4 sub-módulos hexagonales independientes y su propio esquema de base de datos (`TB_{MODULO_1}_*`), si la volumetría del módulo lo exige en el futuro, bastará con crear un módulo `onp-{modulo-1}-boot` y desplegarlo en un Pod de Kubernetes separado para convertirlo en un **Microservicio Hexagonal independiente (`Estadio 3`) sin tocar una sola línea de lógica de negocio o repositorios**.
 
-Obligatorio para todo módulo que cumpla los seis criterios de microservicio (Lineamiento de Arquitectura sección 3.4). Puede vivir dentro del Monolito Modular como un módulo más, o desplegado de forma independiente — la estructura interna es la misma en ambos casos.
+#### Hexagonal / Clean (Estructura interna de cada Bounded Context o Microservicio)
+
+En un Monolito Modular formal, cada componente físico (`componentes/{modulo-1}/`) materializa su arquitectura hexagonal separando físicamente sus capas en 4 sub-módulos Maven (`-domain`, `-application`, `-infrastructure`, `-api`). 
+
+Cuando se construye un **Microservicio independiente (`LIN-ARQ-001 §2.1 Estadio 3`)**, se puede optar por mantener esta misma estructura de 4 sub-módulos Maven bajo una raíz `onp-{microservicio}/` (con su propio `-boot`), o alternativamente, para microservicios acotados, concentrar el despliegue en un solo módulo Maven aplicando la separación estricta mediante paquetes Java estancos dentro de `src/main/java/pe/gob/onp/{modulo}/`:
 
 ```
-onp-{modulo}/                        ← puede ser un submódulo del Monolito Modular
+onp-{modulo}/                        ← Módulo de un Microservicio independiente en un solo JAR
 ├── pom.xml
 └── src/
     ├── main/
     │   └── java/pe/gob/onp/{modulo}/
-    │       ├── domain/              ← ANILLO INTERIOR — cero imports de framework
-    │       │   ├── model/           ← Entidades de dominio, Value Objects, Agregados
+    │       ├── domain/              ← ANILLO INTERIOR — cero imports de framework ni JPA
+    │       │   ├── model/           ← Entidades de dominio, Value Objects (Records), Agregados
     │       │   ├── port/
     │       │   │   ├── in/          ← Ports de entrada: casos de uso (interfaces)
     │       │   │   └── out/         ← Ports de salida: repositorios, clientes (interfaces)
-    │       │   └── exception/       ← Excepciones de dominio
-    │       ├── application/         ← CAPA DE APLICACIÓN
-    │       │   └── usecase/         ← Implementaciones de ports de entrada (casos de uso)
-    │       └── infrastructure/      ← ANILLO EXTERIOR — implementa los ports
-    │           ├── web/             ← Adapter de entrada: Controllers REST, DTOs HTTP
-    │           ├── persistence/     ← Adapter de salida: Entidades JPA, Spring Data repos
-    │           ├── client/          ← Adapter de salida: clientes HTTP externos (RENIEC, SUNAT)
-    │           ├── messaging/       ← Adapter de salida: productores/consumidores de eventos
-    │           └── config/          ← Configuración Spring, wiring de ports y adapters
+    │       │   └── exception/       ← Excepciones de dominio específicas
+    │       ├── application/         ← CAPA DE APLICACIÓN — cero estereotipos de Spring (@Service prohibido)
+    │       │   └── usecase/         ← Implementaciones puras de ports de entrada inyectadas por constructor
+    │       └── infrastructure/      ← ANILLO EXTERIOR — implementa los ports de salida / expone adaptadores
+    │           ├── web/             ← Adapter de entrada: Controllers REST (@RestController), DTOs HTTP
+    │           ├── persistence/     ← Adapter de salida: Entidades JPA (@Entity), Spring Data repos, Dao
+    │           ├── client/          ← Adapter de salida: clientes HTTP externos (RENIEC, SUNAT, WSO2)
+    │           ├── messaging/       ← Adapter de salida: productores/consumidores Kafka CloudEvents v1.0
+    │           └── config/          ← Configuración Spring (@Configuration), wiring de usecases con @Bean
     └── test/
         └── java/pe/gob/onp/{modulo}/
-            ├── domain/              ← Unitarias puras: JUnit 5 sin Spring, sin Mockito de infra
+            ├── domain/              ← Unitarias puras: JUnit 5 sin Spring Boot, sin Mockito de infra
             └── infrastructure/
                 ├── web/             ← @WebMvcTest
-                ├── persistence/     ← @DataJpaTest + Testcontainers
+                ├── persistence/     ← @DataJpaTest + Testcontainers Oracle
                 └── client/          ← WireMock
 ```
 
-**Regla de dependencia:** `infrastructure → domain`. El dominio no importa nada de `infrastructure`. Spring, JPA, RestClient — todo eso existe solo en `infrastructure`.
+**Regla de pureza hexagonal y desacoplamiento transaccional:** El dominio (`domain`) y la capa de aplicación (`application`) deben mantener una **pureza agnóstica de estereotipos del contenedor IoC**. Queda terminantemente **prohibido** utilizar `@Service`, `@Component` o `@Autowired` en `domain` y `application`. Las clases de caso de uso o servicios de aplicación (`*UseCaseImpl` / `*Service`) son POJOs puros que reciben los puertos de salida (`domain.port.out`) mediante **inyección por constructor**. El cableado (`wiring`) hacia el contexto de Spring se realiza exclusivamente en la capa exterior de infraestructura (`pe.gob.onp.{modulo}.infrastructure.config`) a través de clases `@Configuration` que declaran cada caso de uso con métodos **`@Bean`**. Asimismo, si el caso de uso requiere una transacción, la anotación `@Transactional` se aplica directamente sobre la definición del método `@Bean` en la clase de configuración, o en el adaptador de entrada/salida que invoca al caso de uso, garantizando que el núcleo aplicativo permanezca portátil y libre de dependencias de frameworks.
 
-El siguiente ejemplo muestra cómo se aplica esta regla con el concepto de **port/adapter**: el dominio define solo la interfaz que necesita (el port), sin saber cómo se implementa. La infraestructura implementa esa interfaz usando JPA, Spring Data u otra tecnología (el adapter). El dominio nunca ve ni importa ninguna clase de Spring o JPA.
+El siguiente ejemplo oficial ilustra la pureza de esta regla con el patrón de **Puerto y Adaptador (`Port/Adapter`)**: el dominio define la interfaz contractual que necesita (el *Port*), sin saber ni interesarle si los datos vienen de Oracle 19c, de un microservicio SOAP de RENIEC o de memoria cacheada. La infraestructura implementa dicha interfaz adaptando Spring Data JPA (el *Adapter*):
 
 ```java
 // ──────────────────────────────────────────────────────────────
@@ -2613,41 +2860,41 @@ public class PensionistaJpaRepository implements PensionistaRepository {
 }
 ```
 
-**Señal de alerta:** si una clase dentro de `domain/` importa `jakarta.persistence`, `org.springframework` o cualquier librería de infraestructura, la regla está rota y la arquitectura dejó de ser hexagonal.
+**Señal de alerta penalizable:** Si una clase dentro de `pe.gob.onp.{modulo}.domain` importa `jakarta.persistence.*`, `org.springframework.*` o `com.fasterxml.jackson.*`, la pureza hexagonal queda rota y el código incurre en deuda técnica bloqueante que impedirá el pase a QA en la revisión de código.
 
-**Correspondencia con Clean Architecture y Onion:**
+**Correspondencia de capas con Clean Architecture y Onion Architecture:**
 
-| Hexagonal (ONP) | Clean Architecture | Onion Architecture |
+| Hexagonal en ONP (`pe.gob.onp.{modulo}.*`) | Clean Architecture | Onion Architecture |
 |---|---|---|
-| `domain/model` | Entities | Domain Model |
-| `application/usecase` | Use Cases / Interactors | Application Services |
-| `domain/port/in` | Input Port | — |
-| `domain/port/out` | Output Port / Gateway | Repository interfaces |
-| `infrastructure/web` | Interface Adapters (Controllers) | UI / Infrastructure |
-| `infrastructure/persistence` | Interface Adapters (Gateways) | Infrastructure |
+| `domain.model` | Entities | Domain Model |
+| `application.usecase` | Use Cases / Interactors | Application Services |
+| `domain.port.in` | Input Port | — |
+| `domain.port.out` | Output Port / Gateway | Repository Interfaces |
+| `infrastructure.web` | Interface Adapters (Controllers) | UI / Infrastructure |
+| `infrastructure.persistence` | Interface Adapters (Gateways) | Infrastructure |
 
 ### 14.2 Convenciones de nomenclatura Maven
 
-| Elemento | Convención | Ejemplo |
+| Elemento | Convención Institucional | Ejemplo Práctico |
 |---|---|---|
-| Artifact ID del proyecto | `onp-{sistema}` | `onp-pensiones` |
-| Group ID | `pe.gob.onp.{sistema}` | `pe.gob.onp.pensiones` |
-| Módulo Maven | `onp-{sistema}-{capa}` | `onp-pensiones-domain` |
-| Paquete raíz | `pe.gob.onp.{sistema}.{capa}` | `pe.gob.onp.pensiones.domain` |
-| Clase de entidad JPA | `{Entidad}Entity` | `PensionistaEntity` |
-| Clase de dominio | `{Entidad}` | `Pensionista` |
-| DTO de request | `{Accion}{Recurso}Request` | `CrearExpedienteRequest` |
-| DTO de response | `{Recurso}Response` | `ExpedienteResponse` |
-| Servicio de aplicación | `{Accion}{Recurso}Service` | `AprobarExpedienteService` |
-| Adapter de infraestructura | `{Sistema}HttpAdapter` | `ReniecHttpAdapter` |
+| Artifact ID del proyecto previsional | `onp-{sistema}` | `onp-tramites` |
+| Group ID | `pe.gob.onp.{sistema}` | `pe.gob.onp.tramites` |
+| Módulo Maven Hexagonal de componente | `onp-{modulo}-{capa}` | `onp-afiliacion-domain` |
+| Paquete raíz | `pe.gob.onp.{sistema}.{modulo}.{capa}` | `pe.gob.onp.tramites.afiliacion.domain` |
+| Clase de entidad JPA | `{Entidad}Entity` | `AfiliadoEntity` |
+| Clase de dominio puro | `{Entidad}` / *Record VO* | `Afiliado` / `MontoMonetario` |
+| DTO de request | `{Accion}{Recurso}Request` | `RegistrarAfiliacionRequest` |
+| DTO de response | `{Recurso}Response` | `AfiliacionResponse` |
+| Servicio de aplicación | `{Accion}{Recurso}Service` | `RegistrarAfiliacionService` |
+| Adapter de infraestructura externa | `{Sistema}HttpAdapter` | `ReniecHttpAdapter` |
 
 ### 14.3 Configuración del POM por estilo
 
-La estructura del POM varía según el estilo arquitectónico. El punto de decisión clave es si el sistema produce **un único artefacto desplegable** (un solo módulo Maven) o **varios artefactos independientes** (multi-módulo con POM padre).
+La configuración de `pom.xml` varía según si el sistema se despliega como un **Monolito Modular multi-módulo jerárquico (`Estadio 2`)** o si se trata de un **Microservicio independiente (`Estadio 3`)** u aplicación modular simple de un solo JAR.
 
-#### Monolito simple — un solo módulo Maven
+#### Monolito simple o Microservicio Hexagonal en un solo JAR
 
-El POM declara directamente `spring-boot-starter-parent` como padre. No existe POM padre personalizado.
+Para microservicios extraídos en un solo módulo Maven o aplicaciones de soporte, el POM declara directamente `spring-boot-starter-parent` como padre. No existe POM padre personalizado del sistema.
 
 ```xml
 <parent>
@@ -2657,17 +2904,17 @@ El POM declara directamente `spring-boot-starter-parent` como padre. No existe P
     <relativePath/>
 </parent>
 
-<groupId>pe.gob.onp</groupId>
-<artifactId>onp-{sistema}</artifactId>
+<groupId>pe.gob.onp.{sistema}</groupId>
+<artifactId>onp-{modulo}</artifactId>
 <version>1.0.0</version>
 <packaging>jar</packaging>
 ```
 
-#### Monolito Modular — multi-módulo Maven
+#### Monolito Modular — Multi-Módulo Maven Jerárquico por Componentes
 
-Existe un POM padre personalizado que declara los módulos y centraliza versiones de dependencias internas. Los módulos hijo **no** especifican versión en dependencias propias del sistema.
+Existe un POM padre institucional del proyecto (`packaging: pom`) que declara en `<modules>` la ruta de cada sub-módulo y centraliza versiones de librerías en `<dependencyManagement>`. Los módulos hijo **no** especifican versión al referenciarse entre sí.
 
-**POM padre** (`pom.xml` en la raíz del repositorio):
+**POM padre del sistema** (`onp-{sistema}/pom.xml`):
 
 ```xml
 <groupId>pe.gob.onp.{sistema}</groupId>
@@ -2676,10 +2923,22 @@ Existe un POM padre personalizado que declara los módulos y centraliza versione
 <packaging>pom</packaging>
 
 <modules>
-    <module>onp-{sistema}-domain</module>
-    <module>onp-{sistema}-application</module>
-    <module>onp-{sistema}-infrastructure</module>
-    <module>onp-{sistema}-api</module>
+    <!-- Primitivas transaccionales compartidas -->
+    <module>comun/onp-common-domain</module>
+    
+    <!-- Componente de negocio 1 -->
+    <module>componentes/{modulo-1}/onp-{modulo-1}-domain</module>
+    <module>componentes/{modulo-1}/onp-{modulo-1}-application</module>
+    <module>componentes/{modulo-1}/onp-{modulo-1}-infrastructure</module>
+    <module>componentes/{modulo-1}/onp-{modulo-1}-api</module>
+    
+    <!-- Componente de negocio 2 -->
+    <module>componentes/{modulo-2}/onp-{modulo-2}-domain</module>
+    <module>componentes/{modulo-2}/onp-{modulo-2}-application</module>
+    <module>componentes/{modulo-2}/onp-{modulo-2}-infrastructure</module>
+    <module>componentes/{modulo-2}/onp-{modulo-2}-api</module>
+    
+    <!-- Ensamblador final y contenedor K8s -->
     <module>onp-{sistema}-boot</module>
 </modules>
 
@@ -2696,7 +2955,7 @@ Existe un POM padre personalizado que declara los módulos y centraliza versione
 </dependencyManagement>
 
 <dependencies>
-    <!-- Disponible en todos los módulos hijos -->
+    <!-- Dependencia base disponible para pruebas en todos los submódulos -->
     <dependency>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-test</artifactId>
@@ -2705,7 +2964,36 @@ Existe un POM padre personalizado que declara los módulos y centraliza versione
 </dependencies>
 ```
 
-**POM hijo** (ejemplo: `onp-{sistema}-application/pom.xml`):
+**POM de capa de un Componente de Negocio** (ejemplo: `componentes/{modulo-1}/onp-{modulo-1}-application/pom.xml`):
+
+```xml
+<parent>
+    <groupId>pe.gob.onp.{sistema}</groupId>
+    <artifactId>onp-{sistema}</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+    <relativePath>../../../pom.xml</relativePath>
+</parent>
+
+<artifactId>onp-{modulo-1}-application</artifactId>
+<packaging>jar</packaging>
+
+<dependencies>
+    <!-- Depende únicamente del dominio propio de este módulo -->
+    <dependency>
+        <groupId>pe.gob.onp.{sistema}</groupId>
+        <artifactId>onp-{modulo-1}-domain</artifactId>
+        <version>${project.version}</version>
+    </dependency>
+    <!-- Primitivas e IDs universales del Shared Kernel -->
+    <dependency>
+        <groupId>pe.gob.onp.{sistema}</groupId>
+        <artifactId>onp-common-domain</artifactId>
+        <version>${project.version}</version>
+    </dependency>
+</dependencies>
+```
+
+**POM del Ensamblador Desplegable** (`onp-{sistema}-boot/pom.xml`):
 
 ```xml
 <parent>
@@ -2715,43 +3003,58 @@ Existe un POM padre personalizado que declara los módulos y centraliza versione
     <relativePath>../pom.xml</relativePath>
 </parent>
 
-<artifactId>onp-{sistema}-application</artifactId>
+<artifactId>onp-{sistema}-boot</artifactId>
 <packaging>jar</packaging>
 
 <dependencies>
+    <!-- Ensamblaje del Módulo 1 (API e Infraestructura son los puntos de entrada tácticos) -->
     <dependency>
         <groupId>pe.gob.onp.{sistema}</groupId>
-        <artifactId>onp-{sistema}-domain</artifactId>
+        <artifactId>onp-{modulo-1}-api</artifactId>
         <version>${project.version}</version>
     </dependency>
+    <dependency>
+        <groupId>pe.gob.onp.{sistema}</groupId>
+        <artifactId>onp-{modulo-1}-infrastructure</artifactId>
+        <version>${project.version}</version>
+    </dependency>
+
+    <!-- Ensamblaje del Módulo 2 -->
+    <dependency>
+        <groupId>pe.gob.onp.{sistema}</groupId>
+        <artifactId>onp-{modulo-2}-api</artifactId>
+        <version>${project.version}</version>
+    </dependency>
+    <dependency>
+        <groupId>pe.gob.onp.{sistema}</groupId>
+        <artifactId>onp-{modulo-2}-infrastructure</artifactId>
+        <version>${project.version}</version>
+    </dependency>
+
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter</artifactId>
+    </dependency>
 </dependencies>
+
+<build>
+    <plugins>
+        <!-- Únicamente el módulo -boot emite el FAT-JAR ejecutable -->
+        <plugin>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-maven-plugin</artifactId>
+        </plugin>
+    </plugins>
+</build>
 ```
 
-#### Hexagonal / Clean — un solo módulo Maven
-
-La separación en hexagonal es de **paquetes Java** (`domain`, `infrastructure`), no de módulos Maven. El POM usa directamente `spring-boot-starter-parent`, igual que el monolito simple.
-
-```xml
-<parent>
-    <groupId>org.springframework.boot</groupId>
-    <artifactId>spring-boot-starter-parent</artifactId>
-    <version>3.5.X</version>
-    <relativePath/>
-</parent>
-
-<groupId>pe.gob.onp</groupId>
-<artifactId>onp-{modulo}</artifactId>
-<version>1.0.0</version>
-<packaging>jar</packaging>
-```
-
-**Resumen:**
+**Resumen comparativo de POMs y módulos por topología:**
 
 | Estilo arquitectónico | POM padre personalizado | Módulos Maven |
 |---|---|---|
-| Monolito simple | No — Spring Boot parent directo | 1 |
-| Monolito Modular | Sí | N (uno por capa/dominio funcional) |
-| Hexagonal / Clean | No — Spring Boot parent directo | 1 |
+| **Monolito simple (capas)** | No — `spring-boot-starter-parent` directo | 1 (`onp-{sistema}`) |
+| **Monolito Modular Jerárquico (*Estadio 2*)** | Sí (`packaging: pom`) | 4 × N componentes (`-domain`, `-application`, `-infra`, `-api`) + `onp-common-domain` + `onp-boot` |
+| **Hexagonal / Clean (*Microservicio Estadio 3*)** | No / Opcional según envergadura | 1 (`onp-{microservicio}`) en un JAR, o 4 sub-módulos para microservicios de alta complejidad |
 
 ### 14.4 Reglas de dependencias de librerías
 
@@ -2819,6 +3122,17 @@ La separación en hexagonal es de **paquetes Java** (`domain`, `infrastructure`)
 </plugin>
 
 <!-- Cobertura de pruebas -->
+<!--
+  El umbral mínimo NO es 80% fijo para todo proyecto: depende del estilo arquitectónico
+  y se define de forma normativa en LIN-TEST-001 §5.1 (backend Java):
+    Monolito Simple ≥65% · Monolito Modular ≥70% · Hexagonal ≥70% · Microservicio ≥70% · EDA ≥65%
+  El valor de ${jacoco.coverage.minimum} se fija en el pom.xml del proyecto según su estilo
+  (el ejemplo usa 0.70, el mínimo del estilo por defecto en ONP: Monolito Modular).
+-->
+<properties>
+    <jacoco.coverage.minimum>0.70</jacoco.coverage.minimum>
+</properties>
+
 <plugin>
     <groupId>org.jacoco</groupId>
     <artifactId>jacoco-maven-plugin</artifactId>
@@ -2851,7 +3165,7 @@ La separación en hexagonal es de **paquetes Java** (`domain`, `infrastructure`)
                             <limit>
                                 <counter>LINE</counter>
                                 <value>COVEREDRATIO</value>
-                                <minimum>0.80</minimum>
+                                <minimum>${jacoco.coverage.minimum}</minimum>
                             </limit>
                         </limits>
                     </rule>
@@ -2864,9 +3178,9 @@ La separación en hexagonal es de **paquetes Java** (`domain`, `infrastructure`)
 
 ---
 
-## sección 15 Pruebas
+## 15. Pruebas
 
-> Para la estrategia completa de pruebas (pirámide por estilo arquitectónico, proporción unitaria/integración/e2e) ver **sección 8 del Lineamiento de Arquitectura** (doc. interno).
+> Para la estrategia completa de pruebas (pirámide por estilo arquitectónico, proporción unitaria/integración/e2e) ver **`LIN-TEST-001` secciones 4 y 5** (Estándar de Pruebas ONP).
 
 ### 15.1 Nomenclatura de tests
 
@@ -2965,7 +3279,7 @@ class ExpedienteRepositoryTest {
 
 ---
 
-## sección 16 Revisión de código
+## 16. Revisión de código
 
 ### 16.1 Pull Request como gate obligatorio
 
@@ -2978,10 +3292,10 @@ Un PR no puede aprobarse si alguna de las siguientes condiciones no se cumple:
 | Condición | Verificación |
 |---|---|
 | Pipeline de CI verde | Build, tests y Checkstyle pasados sin errores |
-| Cobertura de pruebas dentro del umbral | JaCoCo no reporta degradación por debajo del mínimo del [sección 13.3](#133-cobertura-minima-por-capa) |
-| Sin antipatrones del [sección 10.2](#102-tabla-de-antipatrones-prohibidos) | El revisor verifica la tabla de antipatrones prohibidos |
+| Cobertura de pruebas dentro del umbral | JaCoCo no reporta degradación por debajo del mínimo del [sección 15.3](#153-cobertura-minima-por-capa) |
+| Sin antipatrones del [sección 12.2](#122-tabla-de-antipatrones-prohibidos) | El revisor verifica la tabla de antipatrones prohibidos |
 | Sin credenciales ni secretos en el código | Búsqueda manual o con herramienta de detección de secretos |
-| Sin código comentado | Ver [sección 7.3](#73-comentarios-internos-no-javadoc) — el código comentado no llega a rama principal |
+| Sin código comentado | Ver [sección 9.3](#93-comentarios-internos-no-javadoc) — el código comentado no llega a rama principal |
 | Descripción del PR completa | Contexto del cambio, qué se modificó y cómo probarlo |
 
 ### 16.3 Responsabilidades del revisor
@@ -3001,10 +3315,10 @@ Cualquier desviación de este estándar — incluyendo omitir la revisión por u
 
 ### 16.6 Patrón Feature Toggle y Deuda Técnica Cero (PA14)
 
-En alineación con el patrón arquitectónico **PA14 (Feature Toggle)** de **LIN-ARQ-000** y las directivas de control de cambios de **LIN-VER-001**, el uso de *Feature Toggles* (o banderas de funcionalidad) es un mecanismo permitido para el despliegue continuo y la entrega progresiva, pero está sujeto a un riguroso control de ciclo de vida para garantizar la **deuda técnica cero**.
+En alineación con el patrón arquitectónico **PA14 (Feature Toggle)** de **LIN-ARQ-001** y las directivas de control de cambios de **LIN-VER-001**, el uso de *Feature Toggles* (o banderas de funcionalidad) es un mecanismo permitido para el despliegue continuo y la entrega progresiva, pero está sujeto a un riguroso control de ciclo de vida para garantizar la **deuda técnica cero**.
 
 #### 14.6.1 Estrategia Tecnológica Oficial en Dos Niveles
-Para mantener un stack mínimo, homogéneo y eficiente en Spring Boot 3, la ONP estandariza la implementación de *Feature Toggles* en dos niveles operativos, en conformidad con **ADR-014 (LIN-ARQ-000 Apéndice A)**:
+Para mantener un stack mínimo, homogéneo y eficiente en Spring Boot 3, la ONP estandariza la implementación de *Feature Toggles* en dos niveles operativos, en conformidad con **ADR-014 (LIN-ARQ-001 Apéndice A)**:
 
 | Nivel Operativo | Tecnologías Estándar | Cuándo Utilizar |
 |---|---|---|
@@ -3053,9 +3367,9 @@ public class SolicitudPensionServiceImpl implements SolicitudPensionService {
 ```
 
 #### 14.6.2 Ciclo de Vida y Caducidad Acotada (Deuda Técnica Cero)
-En estricta coherencia con **LIN-ARQ-000 §2.2.1.A**, la obligación de caducidad y retiro del código fuente aplica diferenciadamente según la clasificación del toggle:
+En estricta coherencia con **LIN-ARQ-001 §2.2.1.A**, la obligación de caducidad y retiro del código fuente aplica diferenciadamente según la clasificación del toggle:
 
-| Clasificación según LIN-ARQ-000 | Plazo y Obligación de Retiro |
+| Clasificación según LIN-ARQ-001 | Plazo y Obligación de Retiro |
 |---|---|
 | **Release Toggle** | **Corto plazo (Mandatorio):** Se elimina en el sprint inmediatamente posterior al go-live (plazo máximo: **1 sprint / 14 días calendario**). |
 | **Experiment Toggle** | **Medio plazo (Mandatorio):** Se elimina una vez concluido el experimento previsional o la validación A/B (plazo máximo según definición del experimento, típicamente **1 sprint / 14 días calendario** tras el veredicto). |
@@ -3078,9 +3392,9 @@ Durante la revisión de código (Sección 14.2), el revisor y el líder técnico
 
 ---
 
-## sección 17 Proceso de excepción a este estándar
+## 17. Proceso de excepción a este estándar
 
-> **Importante:** **Gobernanza y Supremacía de LIN-ARQ-000:** En estricta coherencia con la supremacía jerárquica del marco rector de **Nivel 2**, ningún ADR podrá ser aprobado ni será válido si contraviene los principios arquitectónicos fundamentales (PR01–PR08) o mandatos rectores de **LIN-ARQ-000**, salvo autorización expresa y excepcional de la Dirección de Arquitectura de la OTI.
+> **Importante:** **Gobernanza y Supremacía de LIN-ARQ-001:** En estricta coherencia con la supremacía jerárquica del marco rector de **Nivel 2**, ningún ADR podrá ser aprobado ni será válido si contraviene los principios arquitectónicos fundamentales (PR01–PR08) o mandatos rectores de **LIN-ARQ-001**, salvo autorización expresa y excepcional de la Dirección de Arquitectura de la OTI.
 
 Toda desviación de las reglas establecidas en este documento requiere un ADR (Architecture Decision Record) aprobado formalmente por el equipo de Arquitectura de la OTI antes de implementarse.
 

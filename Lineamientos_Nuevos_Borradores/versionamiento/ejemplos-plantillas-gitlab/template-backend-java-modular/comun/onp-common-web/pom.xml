@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Shared kernel de PRESENTACIÓN (no de dominio): el contrato de respuesta HTTP
+  institucional (LIN-API-REST-001) que TODO módulo -api debe usar, y que -boot
+  también necesita en su GlobalExceptionHandler. Existe como módulo aparte de
+  onp-common-domain porque no es un concepto de negocio — es un contrato REST —
+  y así ningún módulo -api termina dependiendo de -boot (evita el ciclo
+  boot → api → boot). Cero dependencias de Spring: es un contrato serializable simple.
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>pe.gob.onp.template</groupId>
+        <artifactId>onp-template</artifactId>
+        <version>0.1.0-SNAPSHOT</version>
+        <relativePath>../../pom.xml</relativePath>
+    </parent>
+
+    <artifactId>onp-common-web</artifactId>
+    <packaging>jar</packaging>
+    <name>onp-common-web</name>
+</project>

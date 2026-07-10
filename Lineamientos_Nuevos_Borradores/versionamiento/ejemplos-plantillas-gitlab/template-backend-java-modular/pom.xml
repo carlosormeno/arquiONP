@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  EJEMPLO DE REFERENCIA — LIN-DEV-JAVA-001 §14.1/§14.3 (Monolito Modular — Estadio 2)
+  POM padre del sistema. Declara los sub-módulos y centraliza versiones en <dependencyManagement>.
+  Los módulos hijo NO especifican versión al referenciarse entre sí (usan ${project.version}).
+
+  Antes de usar en un proyecto real:
+  - Renombrar groupId/artifactId de "pe.gob.onp.template" / "onp-template" al sistema real.
+  - Renombrar el componente de negocio "afiliacion" (carpeta + paquetes) al primer subdominio real.
+  - Duplicar la carpeta componentes/afiliacion/ por cada Bounded Context adicional del sistema.
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>pe.gob.onp.template</groupId>
+    <artifactId>onp-template</artifactId>
+    <version>0.1.0-SNAPSHOT</version>
+    <packaging>pom</packaging>
+    <name>onp-template</name>
+    <description>Plantilla institucional ONP — Monolito Modular (Estadio 2)</description>
+
+    <properties>
+        <java.version>21</java.version>
+        <maven.compiler.source>21</maven.compiler.source>
+        <maven.compiler.target>21</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+
+        <spring-boot.version>3.5.0</spring-boot.version>
+        <springdoc.version>2.8.9</springdoc.version>
+        <logstash.logback.encoder.version>7.4</logstash.logback.encoder.version>
+        <opentelemetry.logback.appender.version>2.14.0-alpha</opentelemetry.logback.appender.version>
+        <checkstyle.plugin.version>3.4.0</checkstyle.plugin.version>
+        <jacoco.version>0.8.12</jacoco.version>
+
+        <!-- Monolito Modular: mínimo global normado en LIN-TEST-001 §5.1.
+             Las capas domain/application de cada componente exigen ≥85% por separado
+             (ver jacoco.coverage.minimum.domain en los pom.xml de -domain/-application). -->
+        <jacoco.coverage.minimum>0.70</jacoco.coverage.minimum>
+        <jacoco.coverage.minimum.domain>0.85</jacoco.coverage.minimum.domain>
+    </properties>
+
+    <modules>
+        <!-- Primitivas transaccionales compartidas (Shared Kernel, LIN-DIS-001 §3.4) -->
+        <module>comun/onp-common-domain</module>
+        <!-- Contrato de respuesta HTTP institucional (LIN-API-REST-001) — no es dominio,
+             por eso vive separado de onp-common-domain. Lo usan los -api y el -boot. -->
+        <module>comun/onp-common-web</module>
+
+        <!-- Componente de negocio de referencia (duplicar por cada Bounded Context) -->
+        <module>componentes/afiliacion/onp-afiliacion-domain</module>
+        <module>componentes/afiliacion/onp-afiliacion-application</module>
+        <module>componentes/afiliacion/onp-afiliacion-infrastructure</module>
+        <module>componentes/afiliacion/onp-afiliacion-api</module>
+        <!-- Adapter de entrada Kafka (driving, igual que -api pero por evento en vez de HTTP) -->
+        <module>componentes/afiliacion/onp-afiliacion-messaging</module>
+
+        <!-- Ensamblador final y contenedor K8s -->
+        <module>onp-template-boot</module>
+    </modules>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-dependencies</artifactId>
+                <version>${spring-boot.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <dependencies>
+        <!-- Disponible para pruebas en todos los submódulos -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <configuration>
+                        <release>${java.version}</release>
+                    </configuration>
+                </plugin>
+                <!-- El padre de este proyecto es "onp-template" (packaging pom), NO
+                     spring-boot-starter-parent — por eso la versión del plugin no se
+                     hereda automáticamente y debe declararse aquí explícitamente. -->
+                <plugin>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-maven-plugin</artifactId>
+                    <version>${spring-boot.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-checkstyle-plugin</artifactId>
+                    <version>${checkstyle.plugin.version}</version>
+                    <configuration>
+                        <!-- Ruta relativa al pom padre; cada módulo hijo la referencia con ${maven.multiModuleProjectDirectory} -->
+                        <configLocation>${maven.multiModuleProjectDirectory}/checkstyle-onp.xml</configLocation>
+                        <includeTestSourceDirectory>true</includeTestSourceDirectory>
+                        <failsOnError>true</failsOnError>
+                        <consoleOutput>true</consoleOutput>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <phase>verify</phase>
+                            <goals><goal>check</goal></goals>
+                        </execution>
+                    </executions>
+                </plugin>
+                <plugin>
+                    <groupId>org.jacoco</groupId>
+                    <artifactId>jacoco-maven-plugin</artifactId>
+                    <version>${jacoco.version}</version>
+                    <executions>
+                        <execution>
+                            <goals><goal>prepare-agent</goal></goals>
+                        </execution>
+                        <execution>
+                            <id>report</id>
+                            <phase>verify</phase>
+                            <goals><goal>report</goal></goals>
+                        </execution>
+                    </executions>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+        <plugins>
+            <!-- Checkstyle y JaCoCo (report) se activan en todos los módulos vía pluginManagement.
+                 El gate JaCoCo (check + minimum) se declara por módulo porque el umbral difiere
+                 entre domain/application (85%) e infrastructure/api (70%) — ver LIN-TEST-001 §5.1. -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-checkstyle-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
+</project>

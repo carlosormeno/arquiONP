@@ -1,0 +1,71 @@
+spring:
+  application:
+    name: onp-template-modular
+  datasource:
+    url: ${ORACLE_URL:jdbc:oracle:thin:@//localhost:1521/XEPDB1}
+    username: ${ORACLE_USER:onp_template}
+    password: ${ORACLE_PASSWORD:}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    consumer:
+      group-id: ${spring.application.name}-grp
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      auto-offset-reset: earliest
+      enable-auto-commit: false  # commit manual obligatorio — LIN-BUS-001 §8.1
+      properties:
+        spring.json.trusted.packages: "pe.gob.onp.template.*"
+        # El productor (otro servicio) no necesariamente setea las cabeceras de tipo
+        # propietarias de Spring — se ignoran y se usa siempre el tipo configurado abajo.
+        spring.json.use.type.headers: false
+        spring.json.value.default.type: pe.gob.onp.template.afiliacion.messaging.dto.AporteRegistradoEvent
+    listener:
+      ack-mode: MANUAL
+
+info:
+  app:
+    version: "@project.version@"
+
+app:
+  description: Plantilla institucional ONP — Monolito Modular (Estadio 2)
+
+onp:
+  security:
+    saa:
+      enabled: false
+
+management:
+  info:
+    env:
+      enabled: true
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: when-authorized
+    prometheus:
+      enabled: true
+  health:
+    livenessState:
+      enabled: true
+    readinessState:
+      enabled: true
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  otlp:
+    tracing:
+      export:
+        protocol: http/protobuf
+
+springdoc:
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui.html
+  api-docs:
+    enabled: true

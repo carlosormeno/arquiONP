@@ -1,12 +1,12 @@
 # LIN-K8S-001 — Lineamiento de Contenedores y Orquestación ONP
 
 **Código:** LIN-K8S-001  
-**Versión:** v0.1.8  
+**Versión:** v0.1.10  
 **Estado:** Borrador  
-**Fecha:** 2026-07-06  
+**Fecha:** 2026-07-09  
 **Propietario documental:** Arquitectura de Software — OTI  
 **Revisores sugeridos:** Plataforma/Infraestructura, Seguridad Digital, Desarrollo, Arquitectura  
-**Marco rector:** LIN-ARQ-000 — Marco Rector de Diseño y Arquitectura de Software  
+**Marco rector:** LIN-ARQ-001 — Marco Rector de Arquitectura de Software  
 **Antecedente institucional:** INFORME-000082-2023-OTI.ID — Lineamientos de contenedores y orquestador de contenedores  
 
 ---
@@ -24,6 +24,8 @@
 | v0.1.6 | 2026-07-06 | Arquitectura OTI | Corrige el manifiesto de ejemplo de la Excepción 1 de Sidecar (§9.4): reemplaza el registro `registry.gitlab.com` (incorrecto) por `registry.gitlab.onp.gob.pe` (institucional, ya definido en §6.1); alinea namespace, labels y nombres al sistema de referencia `past` y a la convención `<sistema>-<componente>` de §4.4. Suaviza la nota de §4.4 sobre namespaces compartidos: ya no asume que el sufijo de ambiente en `otel-{env}`/`kafka-{env}` responde a una transición operativa — queda explícitamente pendiente de confirmación con Plataforma |
 | v0.1.7 | 2026-07-06 | Arquitectura OTI | Incorpora en §4.4 un ambiente UAT/Preproducción opcional por proyecto (entre QA y PROD), reconciliando con `LIN-PERF-001 §12` y `LIN-SEC-APP-001` que ya lo asumían informalmente, y con la Plantilla de Documento de Arquitectura que ya lo permite condicionalmente. Distingue explícitamente este ambiente del `PQA` legado de `LIN-VER-001` (etapa de rama, no ambiente de despliegue). Actualiza §10.3 (réplicas mínimas) y §16 (documentación por ambiente) para contemplarlo cuando exista |
 | v0.1.8 | 2026-07-06 | Arquitectura OTI | Exige ADR aprobado por Arquitectura y Plataforma para adoptar el ambiente opcional UAT/Preproducción (§4.4), en coherencia con el mismo patrón de gate ya usado para CQRS y BD no relacional en LIN-ARQ-000; agrega detonadores válidos y no válidos, y contenido mínimo del ADR. Añade el caso a la lista de §20.1 |
+| v0.1.9 | 2026-07-09 | Arquitectura OTI | Corrige las citas colgantes hacia el documento congelado `LIN-ARQ-000 §11.1`: el estadio de Transición (Docker Compose) y el runtime containerd de producción ahora citan `LIN-ARQ-001 §5.2` (Marco Rector vigente) |
+| v0.1.10 | 2026-07-09 | Arquitectura OTI | Añade en §10.3 la diferenciación de réplicas mínimas y SLO por estilo arquitectónico (Monolito Modular 99.0% / Microservicio 99.5%), que solo existía en el documento congelado |
 
 ---
 
@@ -192,12 +194,12 @@ Leyenda: **R** responsable, **A** aprueba, **C** consulta.
 
 ### 4.3 Runtime de contenedores en el clúster ONP
 
-El clúster de Kubernetes de la ONP usa **containerd** como container runtime de producción — no Docker Engine. Esta decisión ya está sancionada en `LIN-ARQ-000 §11.1` (ADR-009) y se reproduce aquí porque afecta directamente cómo Desarrollo y Plataforma operan e inspeccionan contenedores.
+El clúster de Kubernetes de la ONP usa **containerd** como container runtime de producción — no Docker Engine. Esta decisión ya está sancionada en `LIN-ARQ-001 §5.2` (ADR-009) y se reproduce aquí porque afecta directamente cómo Desarrollo y Plataforma operan e inspeccionan contenedores.
 
 | Aspecto | Regla |
 |---|---|
 | Runtime en DEV local | Docker Engine (o Podman) — libre elección del desarrollador |
-| Runtime en Transición | Docker Engine + Docker Compose (ver LIN-ARQ-000 §11.1) — etapa temporal, no es destino final |
+| Runtime en Transición | Docker Engine + Docker Compose (ver `LIN-ARQ-001 §5.2`) — etapa temporal, no es destino final |
 | Runtime en QA y PROD (clúster K8s) | **containerd** — único runtime soportado por Plataforma |
 | Construcción de imágenes | El `Dockerfile` sigue siendo el estándar de construcción en todos los casos (ver sección 5). Produce imágenes OCI estándar, compatibles con containerd sin cambios |
 | Inspección de contenedores en nodos QA/PROD | `crictl`, no `docker`. El comando `docker` no existe ni aplica en los nodos del clúster |
@@ -787,6 +789,15 @@ spec:
 | PROD | 2 para servicios críticos |
 
 Los servicios críticos no deben operar con una sola réplica en Producción salvo excepción aprobada.
+
+La tabla anterior diferencia por **ambiente**. Adicionalmente, el **estilo arquitectónico** (`LIN-ARQ-001 §2`) fija el SLO mínimo exigible en Producción — un Microservicio, al depender de red entre servicios, tiene mayor riesgo de indisponibilidad parcial y exige un SLO más estricto que un Monolito Modular:
+
+| Estilo arquitectónico | Réplicas mínimas en PROD | SLO mínimo |
+|---|---:|---:|
+| Monolito Modular | 2 | 99.0% |
+| Microservicio | 2 | 99.5% |
+
+Los SLOs se definen y miden con el stack de observabilidad OTEL/Prometheus/Grafana — ver `LIN-OBS-001`.
 
 ---
 

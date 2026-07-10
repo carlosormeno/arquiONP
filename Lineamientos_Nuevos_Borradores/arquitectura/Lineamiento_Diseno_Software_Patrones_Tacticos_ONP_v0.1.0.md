@@ -1,8 +1,8 @@
 # Lineamiento de Estándar de Diseño de Software y Patrones Tácticos en la ONP
 
 **Código:** LIN-DIS-001  
-**Versión:** 0.1.0  
-**Fecha:** 2026-07-08  
+**Versión:** 0.1.3  
+**Fecha:** 2026-07-09  
 **Autor:** Oficina de Tecnologías de la Información — ONP  
 **Estado:** Vigente / Estándar de Nivel 2  
 **Clasificación:** Lineamiento táctico de diseño. Segundo nivel en la jerarquía arquitectónica institucional. Aterriza las decisiones macro dictadas en `LIN-ARQ-001` hacia el diseño interior de contenedores, módulos, capas, límites de dominio e interfaces. De cumplimiento obligatorio por Tech Leads, Arquitectos de Software y Desarrolladores Senior.
@@ -39,11 +39,12 @@ Mientras que el Marco Rector (`LIN-ARQ-001`) decide **cuáles** son los sistemas
 
 ### 1.2 Principios Rectores Tácticos
 
-Todo diseño modular interno y estructuración de clases en los sistemas ONP debe responder a tres principios innegociables:
+Todo diseño modular interno y estructuración de clases en los sistemas ONP debe responder a cuatro principios innegociables:
 
 1. **Alta Cohesión y Bajo Acoplamiento (`PRA07`):** Un paquete o módulo (`pe.gob.onp.core.expedientes`) debe agrupar elementos íntimamente relacionados por un único propósito de negocio (Alta Cohesión). A la vez, debe conocer y depender del menor número posible de otros paquetes institucionales (Bajo Acoplamiento).
-2. **Fuente Única de Verdad Táctica (`PRA10` / *Single Source of Truth*):** Dentro de un sistema, cada concepto previsional (ej. `Expediente`, `Pensionista`, `Liquidacion`) es soberano de una sola entidad o agregado. Prohibido duplicar el estado autoritativo de un mismo dato en múltiples tablas o módulos internos.
-3. **Separación de Responsabilidades (`PR09` / *Separation of Concerns*):** Las reglas de presentación (JSON/DTOs), la orquestación transaccional (`Use Cases`), las reglas puras del negocio (`Entities`/`Value Objects`) y la infraestructura de acceso a datos (`JPA`/`SQL`) son capas ontológicamente distintas que jamás deben mezclarse en una misma clase Java.
+2. **Inmutabilidad de Eventos (`PRA09` / *Event Immutability*):** Un evento publicado en el bus de mensajería es inmutable. Una vez publicado, su contenido no puede modificarse ni eliminarse — si la realidad de negocio cambia, se publica un nuevo evento que corrige o complementa al anterior. Gobierna el diseño de eventos de dominio, el `Transactional Outbox` (`LIN-ARQ-001 §3.3`) y la Política de Compatibilidad Total del Schema Registry (`LIN-ARQ-001 §4.2`). **Violación detectable:** actualizar el payload de un evento ya publicado, o reutilizar el mismo `id` de evento para dos publicaciones con contenido distinto.
+3. **Fuente Única de Verdad Táctica (`PRA10` / *Single Source of Truth*):** Dentro de un sistema, cada concepto previsional (ej. `Expediente`, `Pensionista`, `Liquidacion`) es soberano de una sola entidad o agregado. Prohibido duplicar el estado autoritativo de un mismo dato en múltiples tablas o módulos internos.
+4. **Separación de Responsabilidades (`PR09` / *Separation of Concerns*):** Las reglas de presentación (JSON/DTOs), la orquestación transaccional (`Use Cases`), las reglas puras del negocio (`Entities`/`Value Objects`) y la infraestructura de acceso a datos (`JPA`/`SQL`) son capas ontológicamente distintas que jamás deben mezclarse en una misma clase Java.
 
 ---
 
@@ -102,7 +103,7 @@ Antes de crear un nuevo paquete, clase o servicio, el Arquitecto y el Tech Lead 
 
 ### 2.2 Arquitectura en Capas (*Layered Architecture*)
 
-**Cuándo usar en la ONP:** Módulos de soporte, cruds administrativos simples, catálogos auxiliares o flujos lineales que no encierran reglas previsionales ni validaciones de negocio complejas.
+**Cuándo usar en la ONP:** Módulos de soporte, cruds administrativos simples, catálogos auxiliares o flujos lineales que no encierran reglas previsionales ni validaciones de negocio complejas. Adoptar cuando, simultáneamente: la lógica del módulo es simple o moderada (CRUD, Transaction Script o Active Record — `§4.1`); el módulo tiene **menos de 3 integraciones externas**; y no se prevé cambio de tecnología de persistencia ni de protocolo de entrada. Un módulo con esta arquitectura puede vivir indefinidamente en el Monolito Modular; si más adelante se convierte en candidato a microservicio, se evalúa contra los 6 criterios de `LIN-ARQ-001 §2.1`.
 
 ```
 ┌──────────────────────────────────────────────────────────┐
@@ -113,14 +114,22 @@ Antes de crear un nuevo paquete, clase o servicio, el Arquitecto y el Tech Lead 
 ┌──────────────────────────────────────────────────────────┐
 │ pe.gob.onp.soporte.catalogos.service (Aplicación)        │
 └────────────────────────────┬─────────────────────────────┘
-                             │ LLama directamente
+                             │ Orquesta y llama directamente
                              ▼
 ┌──────────────────────────────────────────────────────────┐
-│ pe.gob.onp.soporte.catalogos.repository (Persistencia/JPA│
+│ pe.gob.onp.soporte.catalogos.domain (Dominio)             │
+│ Entidades y reglas de negocio — sin anotaciones Spring/JPA│
+└────────────────────────────┬─────────────────────────────┘
+                             │ Usa interfaces que Infraestructura implementa
+                             ▼
+┌──────────────────────────────────────────────────────────┐
+│ pe.gob.onp.soporte.catalogos.repository (Infraestructura/ │
+│ Persistencia JPA, clientes HTTP, MQ)                      │
 └──────────────────────────────────────────────────────────┘
 ```
 
-- **Regla de Dependencia en Capas:** La dependencia fluye unidireccionalmente hacia abajo: `api -> service -> repository`. Queda prohibido que un `Controller` en `api` acceda directamente a un `Repository` saltándose la capa `service`.
+- **Regla de Dependencia en Capas:** La dependencia fluye unidireccionalmente hacia abajo: `api -> service -> domain -> repository`. Queda prohibido que un `Controller` en `api` acceda directamente a un `Repository` saltándose las capas `service`/`domain`. La capa `domain` no depende de `repository` — usa interfaces (puertos) que `repository` implementa.
+- **Nota de escala:** en módulos muy simples (CRUD sin reglas de negocio propias) la capa `domain` puede reducirse a las entidades JPA sin una clase de reglas separada — pero la capa sigue existiendo conceptualmente y las validaciones de negocio, si aparecen, van ahí, nunca en el `service` ni en el `Controller`.
 
 ### 2.3 Arquitectura Hexagonal (*Ports & Adapters*)
 
@@ -168,6 +177,21 @@ Antes de crear un nuevo paquete, clase o servicio, el Arquitecto y el Tech Lead 
 ## 3. Domain-Driven Design (DDD) en el Monolito Modular
 
 En sistemas construidos bajo el **Monolito Modular (*Estadio 2*)**, los límites de cada módulo corresponden exactamente a un **Subdominio o Bounded Context de DDD**.
+
+### 3.0 Criterios de Gobernanza — Cuándo Aplicar DDD
+
+DDD es la estrategia de mayor complejidad y overhead de las cuatro descritas en **[4.1](#41-comparativa-de-las-4-estrategias-de-lógica-de-dominio)**. En ONP **solo se aplica cuando se cumplen los seis criterios siguientes de forma simultánea**. Si alguno no se cumple, se usa Transaction Script o Active Record — DDD no se adopta por moda ni por preferencia del equipo.
+
+| # | Criterio obligatorio |
+|---|---|
+| 1 | El sistema es un **sistema core** de ONP (ej. cálculo de pensiones, gestión de aportes, liquidación). No aplica a sistemas de soporte administrativo. |
+| 2 | El dominio tiene **reglas de negocio complejas** que cambian frecuentemente y que los expertos del negocio no pueden expresar en términos simples. |
+| 3 | Existe un **experto de dominio disponible** (funcionario ONP con conocimiento profundo) que puede colaborar activamente durante el diseño. |
+| 4 | El equipo de desarrollo tiene **experiencia previa con DDD**. No se aplica DDD como experimento de aprendizaje en producción. |
+| 5 | El módulo tiene **vida útil larga** (más de 5 años) y se prevén cambios frecuentes en las reglas de negocio. |
+| 6 | El *bounded context* está **claramente delimitado** y no comparte lógica de dominio con otros contextos. |
+
+Cuando los seis criterios se cumplen, los conceptos DDD aplicables son los *Building Blocks Tácticos* descritos en **[3.2](#32-building-blocks-tácticos-del-dominio)**.
 
 ### 3.1 Mapa de Contextos (*Context Map*) y Relaciones Permitidas
 
@@ -295,7 +319,13 @@ El patrón **CQRS (*Command Query Responsibility Segregation*)** se adopta manda
 
 #### Variantes Aprobadas de Sincronización en CQRS
 1. **Variante A — Transactional Outbox + Kafka (Estándar Primario):** Dentro de la misma transacción ACID de Oracle donde se modifica la tabla del negocio, se inserta un registro de evento en la tabla `TB_OUTBOX`. Un proceso asíncrono o *relay* publica el evento en Apache Kafka y un consumidor proyecta la vista en el motor de lectura NoSQL.
-2. **Variante B — CDC (*Change Data Capture*) + Kafka (Agnóstico al Código):** Se utiliza una herramienta a nivel de motor de base de datos (**Debezium + Kafka Connect**) que captura los cambios en tiempo real leyendo directamente los logs binarios transaccionales (`LogMiner`/`XStream` en Oracle o `WAL` en PostgreSQL). **Requisito en ONP:** Toda implementación de Variante B sobre Oracle requiere validación previa con los Administradores de Base de Datos (DBA) para confirmar el licenciamiento de `LogMiner` y el impacto de *Supplemental Logging*.
+2. **Variante B — CDC (*Change Data Capture*) + Kafka (Agnóstico al Código):** Se utiliza una herramienta a nivel de motor de base de datos (**Debezium + Kafka Connect**) que captura los cambios en tiempo real leyendo directamente los logs binarios transaccionales — cero código en la aplicación, requiere Kafka Connect como infraestructura adicional. Implicaciones por motor:
+
+   | Motor | Mecanismo CDC | Consideraciones en ONP |
+   |---|---|---|
+   | **Oracle** (estándar ONP) | LogMiner o XStream | Requiere *Supplemental Logging* habilitado. Puede implicar revisión de licenciamiento Oracle. **Toda implementación sobre Oracle requiere validación previa con los DBA.** |
+   | PostgreSQL | WAL (*Write-Ahead Log*) | Sin costo de licencia adicional; habilitación simple (`wal_level = logical`). Referencia para el caso excepcional en que un ADR autorice un motor no-Oracle. |
+   | MySQL / MariaDB | Binlog | Configuración estándar, ampliamente soportado. Referencia para el mismo caso excepcional. |
 
 #### Elección del Store de Lectura (`Read Model`)
 | Patrón de Consulta Táctico en el Caso de Uso | Store de Lectura Asignado | Justificación Táctica |
@@ -303,6 +333,8 @@ El patrón **CQRS (*Command Query Responsibility Segregation*)** se adopta manda
 | **Búsqueda puntual por clave o ID** (`DNI`, `NumeroExpediente`). | **Redis / Key-Value** | Latencia sub-milisegundo (< 2ms). Proyección pre-cacheada en memoria de los datos del ciudadano. |
 | **Documento Agregado Complejo 360°** (Expediente completo con todos sus anexos, aportes y liquidaciones consolidados). | **MongoDB** | Estructura documental desnormalizada (`JSON / BSON`). Evita ejecutar *Queries* relacionales pesadas con 8+ *JOINs* sobre tablas históricas en Oracle durante el horario de atención ciudadana. |
 | **Búsqueda por Texto Libre difuso, filtros combinados y facetas.** | **Elasticsearch** | Índices invertidos y *scoring* de relevancia no viables de forma óptima en motores relacionales o documentales clásicos. |
+| **Consultas que requieren *joins* moderados y el modelo relacional sigue siendo el correcto.** | **Read replica relacional** | La complejidad relacional no desaparece al proyectar — forzar un store no relacional aquí solo añade traducción innecesaria. |
+| **Agregaciones analíticas, reportes, tendencias históricas.** | **Capa Gold del Medallion** (`LIN-ARQ-001 §6.3`, `LIN-BI-001`) | El read model operacional (Redis/MongoDB/Elasticsearch) no está pensado para agregaciones históricas masivas; ese rol lo cumple el Lakehouse. |
 
 ---
 
@@ -335,6 +367,12 @@ Para evitar que una interfaz de usuario SPA (Angular) realice 10 peticiones REST
 - **Cuándo NO usar (Antipatrón):** Prohibido usar el BFF cuando existe una relación 1:1 simple donde la UI consume exactamente el mismo DTO que expone el servicio de dominio (crear un BFF pasamanos es sobreingeniería innecesaria). Prohibido absolutamente meter reglas transaccionales ACID o acceso a bases de datos Oracle dentro de un BFF.
 - **Ubicación en Capas Java:** Se implementa en un proyecto o contenedor independiente de la capa externa (`pe.gob.onp.bff.*`), o en el módulo de presentación pública del Monolito Modular.
 - **Antipatrón que previene:** El *Frontend Chatterness & Overfetching*, que degrada el tiempo de carga en navegadores y expone metadatos sensibles del dominio en la red pública.
+
+#### 5.1.1 Mediación de Seguridad frente al API Manager (*Token Handler*)
+
+El BFF es el punto donde se implementa el patrón **Token Handler** frente al API Manager institucional (WSO2) y las políticas de SSO: el BFF gestiona sesiones ligeras o cookies seguras (`HttpOnly`) con la SPA o App Móvil, intercepta las peticiones e inyecta los tokens criptográficos institucionales (`Authorization: Bearer <token>`) al llamar al API Manager. Esto protege los tokens contra ataques XSS en el navegador (`LIN-SEC-APP-001 §10.1`) y simplifica la seguridad del canal — el frontend nunca maneja directamente el token de acceso al core.
+
+**Cuándo adoptarlo:** cuando el sistema presta servicios a dos o más canales de consumo diferenciados (ej. Portal Web Angular + App Móvil nativa) con requisitos de seguridad distintos, o cuando un canal requiere mediación especializada frente al API Manager. Si el proyecto tiene un único canal estándar y no hay mediación SSO externa, la propia capa `controller/` del Monolito Modular sirve el contrato directamente — no se construye un BFF Token Handler separado.
 
 ### 5.2 Patrón Gateway-Aggregation (*PT10*)
 
@@ -405,7 +443,7 @@ public class ReniecHttpAdapter implements ConsultaPersonaExternalPort {
 
 ## 6. Resiliencia Táctica en Comunicaciones Externas (*Design for Failure*)
 
-Todo llamado por red desde un adaptador de infraestructura hacia un servicio externo o base de datos es inherentemente falible. Para evitar efectos dominó y colapsos en cascada dentro del clúster de Kubernetes, es mandatoria la implementación de patrones de tolerancia a fallos mediante la librería oficial institucional: **Resilience4j**.
+Todo llamado por red desde un adaptador de infraestructura hacia un servicio externo o base de datos es inherentemente falible. Para evitar efectos dominó y colapsos en cascada dentro del clúster de Kubernetes, es mandatoria la implementación de tolerancia a fallos — **pero no todo lo hace `Resilience4j`**. El *Timeout* estricto (§6.1) es siempre obligatorio en cualquier estilo. El *Bulkhead* (§6.3) y el *Retry* se resuelven por defecto con Apache HttpClient 5 y Spring Retry — sin Resilience4j. El *Circuit Breaker* formal con Resilience4j (§6.2) es obligatorio solo en Microservicios, y excepcional con ADR en Monolito Modular.
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
@@ -435,13 +473,25 @@ Todo llamado por red desde un adaptador de infraestructura hacia un servicio ext
 
 ### 6.1 Estrategia de Timeouts Finos
 
-Queda **terminantemente prohibido** dejar clientes HTTP, JDBC o SOAP con *timeouts* por defecto (infinitos o > 30 segundos). Todo adaptador deberá configurar explícitamente:
-- **Connection Timeout (Máx. 2 segundos):** Tiempo máximo para establecer el saludo inicial TCP/TLS con el servidor externo. Si no responde en 2s, el servidor externo está inalcanzable.
-- **Read Timeout (Máx. 3 a 5 segundos según criticidad):** Tiempo máximo esperando el cuerpo de la respuesta una vez establecida la conexión.
+Queda **terminantemente prohibido** dejar clientes HTTP, JDBC o SOAP con *timeouts* por defecto (infinitos o > 30 segundos). En lugar de un rango genérico único, el timeout se configura según la **demanda concurrente** y la **criticidad en la ruta interactiva del ciudadano**:
+
+| Categoría del Servicio Externo | Ejemplo en ONP | Perfil de Demanda | Connection Timeout | Read Timeout | Estrategia ante Fallo |
+|---|---|---|---|---|---|
+| **Alta demanda / Ruta crítica interactiva** | RENIEC, SAA (Token), validación DNI en ventanilla virtual | Muy alta (cientos de req/min); bloquea directamente al ciudadano en pantalla | `≤ 1.5-2s` | `2-3s` | *Fail-fast*: abortar rápido para liberar hilos; notificar en UI o consultar caché temporal si existe |
+| **Demanda media / Consulta de negocio** | PIDE, consulta de deudas, padrones externos | Media; consultas durante la tramitación interna de un expediente | `≤ 2s` | `4-6s` | Reintento simple acotado (solo si es lectura idempotente, ver §6.4) |
+| **Baja demanda / Proceso asíncrono o diferido** | SUNAT, PLAME, conciliaciones por lote | Baja concurrencia en tiempo real, ejecutado por *workers* en segundo plano | `≤ 3s` | `10-15s` | Mayor tolerancia; ante fallo persistente, derivar a cola o DLQ |
+
+Todo adaptador configura explícitamente estos tres controles juntos con **Apache HttpClient 5** (`HttpComponentsClientHttpRequestFactory`), que en una sola configuración provee connection timeout, read timeout y el límite de conexiones por ruta (Bulkhead, §6.3).
 
 ### 6.2 Patrón Circuit Breaker (Cortacircuitos)
 
-El *Circuit Breaker* debe proteger todo punto de salida hacia servicios de terceros (SUNAT, RENIEC, PIDE, pasarelas bancarias) con una máquina de estados obligatoria:
+**`Resilience4j` (`resilience4j-spring-boot3`) no es el estándar por defecto en un Monolito Modular.** Su adopción está condicionada:
+
+1. **Criterio primario (Microservicios — Estadio 3):** el Circuit Breaker formal es **obligatorio** cuando el sistema opera como microservicio (extracción validada según `LIN-ARQ-001 §2.1`). Con múltiples servicios llamándose por red, una máquina de estados formal con *fallback* es indispensable para evitar colapsos en cascada.
+2. **Criterio de excepción en Monolito Modular:** un Monolito Modular puede adoptar Resilience4j **únicamente** para envolver el *Adapter* de salida hacia un proveedor externo que cumpla **ambas** condiciones simultáneamente: **(a)** volumetría masiva en ruta crítica interactiva (cientos de llamadas por minuto en la ruta directa del ciudadano, ej. RENIEC en ventanilla virtual), y **(b)** necesidad de corte automático sin intento de red (*fast fail*) porque el timeout + pool de conexiones de §6.1 no basta — bajo carga alta con el proveedor caído, los *slots* del pool se agotan igual esperando el timeout en cada intento.
+   > **Lo que NO justifica el ADR:** necesitar Bulkhead o Retry — ambos ya están cubiertos por defecto (§6.3 y §6.4), sin Resilience4j. Esta adopción excepcional en Monolito Modular requiere **ADR aprobado por Arquitectura** y se justifica exclusivamente por la máquina de estados del Circuit Breaker.
+
+Donde aplica (Microservicios siempre; Monolito Modular bajo ADR), el *Circuit Breaker* protege todo punto de salida hacia servicios de terceros (SUNAT, RENIEC, PIDE, pasarelas bancarias) con la siguiente máquina de estados obligatoria:
 
 | Estado del Circuit Breaker | Comportamiento Táctico y Condición de Transición |
 |---|---|
@@ -452,4 +502,18 @@ El *Circuit Breaker* debe proteger todo punto de salida hacia servicios de terce
 ### 6.3 Patrón Bulkhead (Compartimentación)
 
 El patrón *Bulkhead* aisla recursos en compartimentos estancos para evitar que la lentitud o caída de un servicio secundario (ej. generador externo de reportes PDF) acapare todos los hilos Tomcat/container del microservicio principal, tumbando la atención de los trámites core.
-- **Implementación Mandatoria:** Uso de `ThreadPoolBulkhead` o `SemaphoreBulkhead` de **Resilience4j** sobre adaptadores lentos o de terceros, asignando un pool máximo acotado (ejemplo: máximo 15 hilos y 10 en cola por cada proveedor externo). Si el pool se llena, las peticiones excedentes rebotan de inmediato con `BulkheadFullException` sin poner en riesgo la estabilidad del resto de endpoints del contenedor.
+
+- **Implementación por defecto (sin Resilience4j):** el aislamiento queda resuelto en la configuración del cliente HTTP de infraestructura (`clienteRestFactory`) mediante `setMaxConnPerRoute` de **Apache HttpClient 5** — un pool máximo acotado de conexiones por proveedor externo (ejemplo: máximo 15 conexiones por ruta). Este es el mecanismo estándar en Monolito Modular; no requiere ADR.
+- **`ThreadPoolBulkhead` / `SemaphoreBulkhead` de Resilience4j:** solo aplica bajo el mismo criterio de excepción del Circuit Breaker (§6.2) o de forma obligatoria en Microservicios.
+
+### 6.4 Reintentos (Retry)
+
+Para mitigar microcortes en lecturas idempotentes, se prefiere **Spring Retry** simple — no Resilience4j — como mecanismo por defecto en Monolito Modular. **Prohibido** reintentar automáticamente operaciones de escritura (`POST`, `PUT`) no idempotentes.
+
+```java
+// 2 intentos en total: 1 inicial + 1 reintento
+@Retryable(maxAttempts = 2, backoff = @Backoff(delay = 500, multiplier = 2))
+public DatosPersonaReniec consultarDni(String dni) { ... }
+```
+
+El `Retry` de Resilience4j solo aplica bajo el mismo criterio de excepción del Circuit Breaker (§6.2) o de forma obligatoria en Microservicios.

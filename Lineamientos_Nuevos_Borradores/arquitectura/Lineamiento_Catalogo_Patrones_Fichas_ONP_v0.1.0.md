@@ -1,8 +1,8 @@
 # Catálogo Oficial de Patrones y Fichas Técnicas de Arquitectura, Diseño Táctico y Programación en la ONP
 
 **Código:** LIN-PAT-001  
-**Versión:** 0.1.0  
-**Fecha:** 2026-07-08  
+**Versión:** 0.1.2  
+**Fecha:** 2026-07-09  
 **Autor:** Oficina de Tecnologías de la Información — ONP  
 **Estado:** Vigente / Catálogo Institucional Transversal  
 **Clasificación:** Catálogo normativo de toma de decisiones. Articula y consolida los criterios de selección para las decisiones de Nivel 1 (`LIN-ARQ-001`), Nivel 2 (`LIN-DIS-001`), Nivel 3 (`LIN-DEV-JAVA-001`) y dominios transversales (`LIN-BD-ORA-001`, `LIN-API-REST-001`, `LIN-BI-001`, `LIN-BUS-001`). De uso diario obligatorio para Arquitectos, Tech Leads y Desarrolladores.
@@ -173,10 +173,10 @@ Cada vez que un Arquitecto de Software, Diseñador/Tech Lead o Desarrollador ana
 | **Nombre** | **Backend for Frontend (*BFF*)** |
 | **Capa / Dominio** | Orquestación de Presentación Pública (`LIN-DIS-001 §5.1`) |
 | **Descripción** | Capa de agregación y presentación ligera dedicada y construida a la medida exacta de una interfaz de usuario cliente específica (ej. *BFF Mesa de Partes Web Angular* vs. *BFF App Móvil ONP*), que consolida llamados a múltiples microservicios internos y reduce la carga del payload devolviendo solo lo que la vista requiere. |
-| **✅ Criterio de Selección<br>*(¿Cuándo usar en ONP?)*** | **Se DEBE usar si el análisis de requisitos determina:**<br>• Una interfaz SPA Angular o aplicación móvil requiere realizar más de 3 peticiones REST por red dispersas para construir una sola pantalla de atención al ciudadano.<br>• Los servicios transaccionales internos devuelven DTOs con 80+ atributos técnicos o sensibles y el frontend solo necesita mostrar 10 en su tabla visual.<br>• Necesidad de adaptar protocolos entre el navegador (`HTTPS/REST/JSON`) y los servicios internos (`gRPC / Kafka / SOAP`). |
+| **✅ Criterio de Selección<br>*(¿Cuándo usar en ONP?)*** | **Se DEBE usar si el análisis de requisitos determina:**<br>• Una interfaz SPA Angular o aplicación móvil requiere realizar más de 3 peticiones REST por red dispersas para construir una sola pantalla de atención al ciudadano.<br>• Los servicios transaccionales internos devuelven DTOs con 80+ atributos técnicos o sensibles y el frontend solo necesita mostrar 10 en su tabla visual.<br>• Necesidad de adaptar protocolos entre el navegador (`HTTPS/REST/JSON`) y los servicios internos (`gRPC / Kafka / SOAP`).<br>• Necesidad de mediación de seguridad frente al API Manager WSO2 mediante el patrón **Token Handler** (`LIN-DIS-001 §5.1.1`): el BFF gestiona cookies `HttpOnly` con el frontend e inyecta el `Authorization: Bearer` hacia el core. |
 | **❌ Criterio de Exclusión<br>*(¿Cuándo NO usar?)*** | **NO usar cuando:**<br>• Existe una relación 1:1 simple donde la UI consume exactamente el mismo DTO transaccional que expone el servicio de dominio.<br>• Se introduce en el BFF lógica transaccional, mutaciones ACID de base de datos Oracle o reglas de cálculo de pensión (el BFF es **presentación y agregación pura**). |
 | **🛠️ Stack / Herramienta<br>Homologada en ONP** | Java 21 + Spring Boot 3 (`pe.gob.onp.bff.*`) expuesto a través de API Gateway WSO2 y consumiendo APIs internas vía `RestClient` y Resilience4j. |
-| **📖 Referencia Oficial** | `LIN-DIS-001 §5.1` y `LIN-FE-ANG-001` |
+| **📖 Referencia Oficial** | `LIN-DIS-001 §5.1-5.1.1` y `LIN-FE-ANG-001` |
 
 ---
 
@@ -250,8 +250,8 @@ Cada vez que un Arquitecto de Software, Diseñador/Tech Lead o Desarrollador ana
 | **Nombre** | **Circuit Breaker (*Cortacircuitos Resilience4j*)** |
 | **Capa / Dominio** | Tolerancia a Fallos en Adaptadores de Salida (`LIN-DIS-001 §6.2`) |
 | **Descripción** | Mecanismo de protección que supervisa continuamente las llamadas por red hacia servicios externos o bases de datos. Si detecta que la tasa de fallos o latencia supera el 50% en una ventana de 100 peticiones, "abre el circuito" cortando las llamadas salientes durante 30 segundos y ejecutando una respuesta de contingencia inmediata (*Fallback*) para evitar agotar los hilos de la JVM. |
-| **✅ Criterio de Selección<br>*(¿Cuándo usar en ONP?)*** | **Se DEBE usar obligatoriamente si el análisis de requisitos determina:**<br>• **Toda llamada por red saliente (`HTTP / REST / SOAP / JDBC`)** que un adaptador de infraestructura en Java realice hacia servicios o sistemas fuera de la memoria del contenedor (RENIEC, SUNAT, bancos, PIDE, servicios de otros dominios en WSO2). |
-| **❌ Criterio de Exclusión<br>*(¿Cuándo NO usar?)*** | **NO usar cuando:**<br>• Llamadas a métodos en memoria dentro del mismo módulo o invocaciones a clases transaccionales locales donde no hay I/O de red involucrado. |
+| **✅ Criterio de Selección<br>*(¿Cuándo usar en ONP?)*** | **Se DEBE usar obligatoriamente si el análisis de requisitos determina:**<br>• **Microservicios (Estadio 3):** toda llamada por red saliente (`HTTP / REST / SOAP / JDBC`) hacia otro servicio o sistema externo.<br>• **Monolito Modular:** solo con **ADR aprobado**, y únicamente cuando el adaptador de salida cumple **ambas** condiciones simultáneamente: (a) volumetría masiva en ruta crítica interactiva, y (b) necesidad de corte automático sin intento de red (*fast fail*) porque el timeout + pool de conexiones no basta. |
+| **❌ Criterio de Exclusión<br>*(¿Cuándo NO usar?)*** | **NO usar cuando:**<br>• Llamadas a métodos en memoria dentro del mismo módulo o invocaciones a clases transaccionales locales donde no hay I/O de red involucrado.<br>• **En Monolito Modular, sin ADR aprobado** — no es el estándar por defecto fuera de Microservicios; Bulkhead y Retry se resuelven por defecto sin Resilience4j (ver `PAT-RES-02`). |
 | **🛠️ Stack / Herramienta<br>Homologada en ONP** | **Resilience4j Spring Boot Starter** configurado mediante `application.yml` o anotaciones `@CircuitBreaker(name = "reniecService", fallbackMethod = "fallbackReniec")`. |
 | **📖 Referencia Oficial** | `LIN-DIS-001 §6.2` y `LIN-API-REST-001` |
 
@@ -264,10 +264,10 @@ Cada vez que un Arquitecto de Software, Diseñador/Tech Lead o Desarrollador ana
 | **Código** | `PAT-RES-02` / `PT08` (Nivel 2 / Resiliencia en Kubernetes) |
 | **Nombre** | **Bulkhead (*Aislamiento de Compartimentos / Hilos*)** |
 | **Capa / Dominio** | Compartimentación de Recursos en la JVM (`LIN-DIS-001 §6.3`) |
-| **Descripción** | Aislamiento y particionamiento del <i>pool</i> de hilos o conexiones concurrentes asignados a la atención de un servicio externo secundario lentificado (ej. generación externa de PDF o consulta a servicio bancario lento), garantizando que si dicho servicio colapsa, solo agote su pequeño *pool* asignado (máx. 15 hilos) dejando el 90% de los hilos de Tomcat intactos para el resto de la aplicación. |
-| **✅ Criterio de Selección<br>*(¿Cuándo usar en ONP?)*** | **Se DEBE usar obligatoriamente si el análisis de requisitos determina:**<br>• Adaptadores de salida que consumen servicios externos de terceros de alta latencia o impredecibles que comparten el mismo contenedor/Pod de Kubernetes con servicios de alta prioridad ciudadana.<br>• Puntos finales donde la lentitud extrema de un proveedor pueda provocar que la sonda `Liveness Probe` de K8s deje de responder y reinicie el Pod en bucle. |
-| **❌ Criterio de Exclusión<br>*(¿Cuándo NO usar?)*** | **NO usar cuando:**<br>• El microservicio es altamente especializado, tiene una sola tarea y se ejecuta en un *Pod* dedicado de K8s donde la compartimentación ya la garantiza el límite de CPU/Memoria del contenedor del orquestador (`LIN-K8S-001`). |
-| **🛠️ Stack / Herramienta<br>Homologada en ONP** | **Resilience4j `ThreadPoolBulkhead` / `SemaphoreBulkhead`** configurado con máximos concurrentes estrictos y colas acotadas (`maxThreadPoolSize = 15`). |
+| **Descripción** | Aislamiento y particionamiento del <i>pool</i> de hilos o conexiones concurrentes asignados a la atención de un servicio externo secundario lentificado (ej. generación externa de PDF o consulta a servicio bancario lento), garantizando que si dicho servicio colapsa, solo agote su pequeño *pool* asignado dejando el resto de la aplicación intacto. **En Monolito Modular, esto es el comportamiento por defecto de `setMaxConnPerRoute` en Apache HttpClient 5 — no requiere Resilience4j ni ADR.** |
+| **✅ Criterio de Selección<br>*(¿Cuándo usar en ONP?)*** | **Por defecto (sin Resilience4j, sin ADR):** todo adaptador de salida en Monolito Modular configura `setMaxConnPerRoute` en su `RestClient`/`HttpClient` — este es el mecanismo estándar.<br>**`ThreadPoolBulkhead`/`SemaphoreBulkhead` de Resilience4j se DEBE usar obligatoriamente solo si:**<br>• **Microservicios (Estadio 3):** siempre.<br>• **Monolito Modular:** únicamente bajo el mismo ADR de excepción que habilita Circuit Breaker (`PAT-RES-01`). |
+| **❌ Criterio de Exclusión<br>*(¿Cuándo NO usar?)*** | **NO usar Resilience4j Bulkhead cuando:**<br>• El aislamiento ya está resuelto por `setMaxConnPerRoute` de HttpClient 5 y no existe ADR aprobado para la excepción.<br>• El microservicio es altamente especializado, tiene una sola tarea y se ejecuta en un *Pod* dedicado de K8s donde la compartimentación ya la garantiza el límite de CPU/Memoria del contenedor del orquestador (`LIN-K8S-001`). |
+| **🛠️ Stack / Herramienta<br>Homologada en ONP** | **Por defecto:** Apache HttpClient 5 (`setMaxConnPerRoute`). **Bajo ADR o en Microservicios:** Resilience4j `ThreadPoolBulkhead` / `SemaphoreBulkhead` con máximos concurrentes estrictos y colas acotadas (`maxThreadPoolSize = 15`). |
 | **📖 Referencia Oficial** | `LIN-DIS-001 §6.3` y `LIN-K8S-001` |
 
 ---

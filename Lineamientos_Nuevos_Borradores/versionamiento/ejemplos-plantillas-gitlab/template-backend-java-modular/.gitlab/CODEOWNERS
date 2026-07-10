@@ -1,0 +1,35 @@
+# EJEMPLO DE REFERENCIA — LIN-VER-001 Anexo F
+# Ajustar los grupos con los nombres reales existentes en GitLab.
+# ADVERTENCIA: Los grupos referenciados deben existir en GitLab.
+# Si un grupo no existe, la regla se aplica silenciosamente sin efecto.
+
+# Propietario por defecto — todo lo no cubierto abajo
+* @APLICACIONES/arquitectura-oti
+
+# Código fuente — revisión de desarrollo (multi-módulo: comun/, componentes/, onp-template-boot/)
+/comun/ @APLICACIONES/desarrollo
+/componentes/ @APLICACIONES/desarrollo
+/onp-template-boot/ @APLICACIONES/desarrollo
+
+# Nuevo componente de negocio (Bounded Context) — requiere aprobación de Arquitectura
+# por el impacto en fronteras del Monolito Modular (LIN-DIS-001 §3.1)
+/componentes/*/onp-*-domain/ @APLICACIONES/desarrollo @APLICACIONES/arquitectura-oti
+
+# Contratos API — revisión de Arquitectura
+/docs/openapi/ @APLICACIONES/arquitectura-oti
+
+# Migraciones Flyway y scripts de base de datos — revisión de datos/BD
+/onp-template-boot/src/main/resources/db/migration/ @APLICACIONES/desarrollo @APLICACIONES/arquitectura-oti
+/db/ @APLICACIONES/desarrollo @APLICACIONES/arquitectura-oti
+
+# Manifiestos Kubernetes — revisión de Plataforma
+/k8s/ @APLICACIONES/plataforma
+
+# Configuración de seguridad — revisión de Seguridad Digital
+/onp-template-boot/src/main/java/**/filter/ @APLICACIONES/seguridad-digital
+
+# Architecture Decision Records
+/docs/adr/ @APLICACIONES/arquitectura-oti
+
+# Dockerfile — revisión conjunta
+Dockerfile @APLICACIONES/desarrollo @APLICACIONES/plataforma

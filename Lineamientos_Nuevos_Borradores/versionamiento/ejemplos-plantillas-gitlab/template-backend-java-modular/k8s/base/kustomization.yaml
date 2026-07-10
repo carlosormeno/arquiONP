@@ -1,0 +1,21 @@
+# EJEMPLO DE REFERENCIA — LIN-VER-001 Anexo F / LIN-K8S-001 Anexo A
+# Base Kustomize para el componente backend.
+# Completar con los manifiestos reales del sistema.
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Reemplazar con el nombre real del namespace y sistema
+namespace: nombre-sistema
+
+resources:
+  - deployment.yaml
+  - service.yaml
+  - configmap.yaml
+  # - hpa.yaml          # si se requiere autoescalado
+  # - networkpolicy.yaml # obligatorio para servicios críticos (LIN-K8S-001 sección 11)
+
+commonLabels:
+  app.kubernetes.io/name: api-nombre-sistema
+  app.kubernetes.io/part-of: nombre-sistema
+  app.kubernetes.io/managed-by: kustomize

@@ -1,7 +1,7 @@
 # GLOSARIO ONP — Términos Transversales
 
-**Versión:** 0.2.0 (Alineación a 3 Niveles de Arquitectura)  
-**Fecha:** 2026-07-08  
+**Versión:** 0.2.1 (Completa términos GoF/DDD faltantes: BFF, CDC, Transaction Script, Published Language)  
+**Fecha:** 2026-07-09  
 **Estado:** Vigente / Operativo  
 **Propósito:** consolidar términos de uso recurrente en los lineamientos ONP para reducir ambigüedad entre arquitectura, diseño táctico, desarrollo, seguridad, base de datos, pruebas y plataforma en su jerarquía de 3 niveles.
 
@@ -70,6 +70,10 @@ Si un lineamiento necesita una definición más específica para su dominio, deb
 | **Port** | Interfaz que expresa una capacidad requerida o expuesta por el dominio o la aplicación. |
 | **Adapter** | Implementación concreta que conecta puertos con infraestructura o sistemas externos (`LIN-DEV-JAVA-001 §8`). |
 | **ACL (Anti-Corruption Layer)** | Capa o conjunto de mappers que traduce y aísla entre modelos externos/legacy y el modelo limpio de ONP (`LIN-DIS-001 §6`). |
+| **BFF (Backend for Frontend)** | Capa de agregación y adaptación dedicada a un canal de consumo (SPA, móvil) que compone y traduce respuestas de servicios internos hacia el formato que ese canal necesita (`LIN-DIS-001 §5.1`). |
+| **CDC (Change Data Capture)** | Técnica que captura los cambios de datos ocurridos en un origen (típicamente logs de la BD, ej. Oracle LogMiner) y los propaga como eventos, sin requerir cambios en la aplicación origen (`LIN-DIS-001 §4.2`). |
+| **Transaction Script** | Estrategia de organización de lógica de negocio donde cada operación se implementa como un procedimiento lineal en la capa de servicio, sin modelo de dominio propio (`LIN-DIS-001 §4.1`). |
+| **Published Language** | Contrato de datos publicado y versionado que un productor expone a sus consumidores (CloudEvents/Schema Registry para eventos, OpenAPI para REST), de forma que ningún consumidor dependa de la estructura interna del productor (`LIN-ARQ-001 §4.1-4.2`, `LIN-BUS-001 §5.2`). |
 | **Contrato API** | Acuerdo observable de una API: rutas, métodos, payloads, códigos, headers, semántica y restricciones (`LIN-API-REST-001`). |
 | **Contrato de respuesta** | Estructura estándar de respuesta usada por los servicios, por ejemplo `ApiResponseWrapper`. |
 | **Catálogo normativo** | Lista oficial de valores o reglas aprobadas por documento dueño. Puede existir con o sin persistencia física. |

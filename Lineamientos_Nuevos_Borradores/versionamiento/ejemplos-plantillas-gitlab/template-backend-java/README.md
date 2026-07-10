@@ -44,6 +44,8 @@ mvn spring-boot:run -Dspring-boot.run.profiles=dev
 > La plantilla incluye `application.yml`, `application-dev.yml`, `application-qa.yml` y `application-prod.yml`.
 > Si se requiere perfil `local`, debe crearse fuera del estándar versionado y nunca incluir secretos en el repositorio.
 
+`mvn verify` falla el build si la cobertura de línea cae por debajo de `${jacoco.coverage.minimum}` (0.65 — mínimo normado para Monolito Simple en `LIN-TEST-001 §5.1`). Este proyecto es un ejemplo de **Monolito Simple**; si el sistema real crece a Monolito Modular u Hexagonal, revisar el umbral correspondiente en la misma sección antes de subirlo.
+
 ## Estructura del proyecto
 
 ```

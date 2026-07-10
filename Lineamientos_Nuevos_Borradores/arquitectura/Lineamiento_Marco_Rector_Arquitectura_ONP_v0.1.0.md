@@ -1,8 +1,8 @@
 # Lineamiento Marco Rector de Arquitectura de Software en la ONP
 
 **Código:** LIN-ARQ-001  
-**Versión:** 0.1.0  
-**Fecha:** 2026-07-08  
+**Versión:** 0.1.4  
+**Fecha:** 2026-07-09  
 **Autor:** Oficina de Tecnologías de la Información — ONP  
 **Estado:** Vigente / Estándar de Nivel 1  
 **Clasificación:** Marco rector institucional. Documento supremo en la jerarquía del modelo de 3 niveles de la OTI. Establece las decisiones macro, Hacia Dónde y Por Qué de la arquitectura de sistemas. Todo lineamiento táctico (Nivel 2) y de implementación o código (Nivel 3) está supeditado a las reglas y directivas declaradas en el presente documento.
@@ -17,6 +17,18 @@ El presente Marco Rector de Arquitectura de Software define las políticas gener
 1. Proyectos de desarrollo de software nuevo (internos o contratados).
 2. Proyectos de modernización y refactorización de sistemas existentes o legados.
 3. Adquisición y contratación de servicios de desarrollo de software a medida (Fábricas de Software y Terceros).
+
+**Relación con documentos institucionales previos:**
+
+| Documento previo | Cómo se relaciona con este Marco Rector |
+|---|---|
+| Lineamiento de Estándares de Tecnología v2.0 | Define el stack tecnológico obligatorio: Java + Spring Boot + Maven para backend nuevo. Este Marco Rector respeta esa decisión y la operacionaliza en los tres niveles de la jerarquía documental. |
+| Lineamiento sobre Arquitectura Patrón de Apps y BD v1.0 | Define estilos y fichas de patrones. Este Marco Rector lo extiende (añade Monolito Modular, Hexagonal, DDD) y aporta la profundidad de implementación que el documento previo no tenía — desarrollada en `LIN-DIS-001` y `LIN-DEV-JAVA-001`. |
+| Arquitectura de referencia v0.1 (Dic. 2025) | Incorpora patrones adicionales (CQRS, Saga, Anti-Corruption Layer, Strangler Fig). Este Marco Rector los integra dentro de un marco de uso coherente y normado. |
+
+**Audiencia principal:** Arquitectos de TI de ONP.
+
+**Audiencia secundaria:** Líderes técnicos y desarrolladores senior contratados (Locadores), Fábricas de Software. El personal contratado recibe el conjunto de lineamientos formales derivados de este Marco Rector (Nivel 2 y Nivel 3), no este documento directamente.
 
 ### 1.2 Supremacía Jerárquica: El Modelo de 3 Niveles (C4 Model)
 
@@ -101,6 +113,8 @@ La arquitectura de microservicios **no es el punto de partida ni el estado de ma
 
 > **Mandato:** Si falta tan solo UNO de los 6 criterios, la funcionalidad **debe permanecer dentro del Monolito Modular**.
 
+> **Nota de alcance (`ADR-003`):** estos 6 criterios rigen **exclusivamente la extracción a microservicio**. No condicionan ni sustituyen los 6 criterios de adopción de Domain-Driven Design, que son una decisión independiente y están definidos en `LIN-DIS-001 §3.0`. Un módulo puede adoptar DDD sin ser candidato a microservicio, y un microservicio puede construirse sin DDD si su lógica de dominio no lo amerita.
+
 ### 2.2 Estrategia de Migración de Sistemas Legados (*Strangler Fig*)
 
 Para modernizar sistemas del Estadio 1 hacia el Estadio 2 (o Estadio 3 cuando esté debidamente justificado), la ONP prohíbe las reescrituras tipo *Big-Bang*. Se adopta oficialmente el patrón de migración **Strangler Fig (Higuera Estranguladora — ADR-004)**:
@@ -138,6 +152,12 @@ El patrón *Strangler Fig* y el desarrollo continuo en Trunk-Based Development (
 | **Permission Toggle** | Habilitar características experimentales solo para un grupo beta de usuarios internos o auditores. | **Hasta fin de la campaña** de pruebas o auditoría. | Eliminación del flag al generalizar la función. |
 
 > **Regla de Cero Deuda Técnica en Toggles:** Un Release Toggle que permanece en el código fuente por más de 30 días después del pase a producción se clasifica como **deuda técnica crítica**. El pipeline de análisis estático (SonarQube) emitirá una alerta de bloqueo para el módulo si detecta flags de liberación caducos en las comprobaciones de Unleash.
+
+**Alternativa ligera y restricción de SaaS externo:**
+- **Alternativa ligera:** para servicios simples o Release Toggles, se permite el uso de **Spring Cloud Config** con flags condicionales en YAML, siempre que no se requieran cambios en tiempo sub-segundo sin recarga de contexto.
+- **Servicios SaaS externos:** el uso de plataformas en la nube como **LaunchDarkly** está **restringido** y requiere un ADR aprobado conjuntamente por Arquitectura OTI y la Oficina de Seguridad de la Información, ya que implican salida de red externa e intercambio de telemetría incompatible con entornos on-premise cerrados (*ADR-014*).
+
+**Branch by Abstraction:** cuando un Feature Toggle reemplaza progresivamente una implementación existente (no solo oculta una nueva), se combina con el patrón **Branch by Abstraction**: se define una interfaz en `domain.port.out` y un *Router* de infraestructura que decide, según el toggle, cuál implementación invocar. Esto evita ramas de código de larga vida (*long-lived branches*) durante la migración.
 
 ---
 
@@ -187,6 +207,63 @@ Para mantener coherencia de negocio entre dos o más dominios autónomos o micro
 2. **Tabla Outbox:** En la misma transacción local del negocio, se inserta el evento del cambio en una tabla `OUTBOX` de la base de datos local.
 3. **Publicación Asíncrona:** Un proceso de relevo (*Relay* / Debezium / Kafka Connect) lee la tabla `OUTBOX` y publica de forma garantizada (*At-Least-Once*) el evento hacia el bus de mensajería (Apache Kafka).
 4. **Compensación ante Fallos:** Si una etapa posterior del flujo de negocio falla, el Saga orquestador o la coreografía emite **Eventos de Compensación** que instruyen a los servicios previos a ejecutar transacciones locales inversas para anular el efecto de la operación.
+
+#### 3.3.1 Variante ONP: Saga por orquestación sobre aplicativos monolíticos (Kafka + REST)
+
+El patrón Saga no requiere microservicios. En ONP, donde el parque de aplicativos está compuesto mayoritariamente por monolitos con base de datos propia, Saga se implementa combinando **Kafka como canal de transporte** y **REST como mecanismo de ejecución** en cada participante — esta es la variante de corto/mediano plazo mientras el parque no ha sido extraído a microservicios.
+
+```
+Orquestador (app separada — gestor del flujo y estado)
+    │
+    ├──► topic: onp.saga.{flujo}.paso1.comando
+    │         └──► Monolito A consume → llama su propio POST /api/v1/... → persiste en su BD
+    │              └──► publica en: onp.saga.{flujo}.paso1.respuesta { estado: OK|FALLO }
+    │                                       ↑
+    │              Orquestador lee respuesta─┘
+    │              Si OK → avanza al paso 2
+    │              Si FALLO → inicia compensaciones en orden inverso
+    │
+    ├──► topic: onp.saga.{flujo}.paso2.comando
+    │    ...
+    └──► Saga COMPLETADA / Saga FALLIDA (todo compensado)
+```
+
+**Roles y responsabilidades:**
+
+| Componente | Responsabilidad |
+|---|---|
+| **Orquestador** | Mantiene el estado de la Saga en BD propia. Publica comandos en Kafka. Lee respuestas. Decide avanzar o compensar. |
+| **Kafka** | Canal de transporte desacoplado. El orquestador no conoce la URL de cada monolito — solo el tópico. |
+| **Monolito participante** | Consume el comando Kafka. Llama su propio servicio REST interno. Publica la respuesta. No sabe que está en una Saga. |
+
+**Estado que el orquestador debe persistir:**
+
+```sql
+SAGA_INSTANCIA
+├── saga_id          UUID      -- identificador del flujo completo
+├── tipo             VARCHAR   -- ej. 'PENSION_COMPLETA'
+├── estado           VARCHAR   -- INICIADA | EN_PROGRESO | COMPENSANDO | COMPLETADA | FALLIDA
+├── paso_actual      INTEGER
+├── contexto         JSON      -- IDs de cada operación ejecutada por paso (para compensación)
+├── creado_en        TIMESTAMP
+└── actualizado_en   TIMESTAMP
+```
+
+**Lo que cada monolito participante debe garantizar:**
+
+- **Idempotencia:** si el comando llega más de una vez (reintento por timeout), el monolito no duplica el efecto. Usar `sagaId` + número de paso como clave de idempotencia.
+- **Endpoint de compensación:** operación de negocio inversa con auditoría. No es un `DELETE` físico — es una reversión con trazabilidad.
+- **Desconocimiento de la Saga:** el servicio REST del monolito es una operación normal. El conocimiento del flujo completo vive solo en el orquestador.
+
+**Cuándo usar esta variante:**
+
+| Criterio | Saga REST + Kafka (esta variante) | Saga microservicios pura |
+|---|---|---|
+| Participantes | Monolitos existentes con BD propia | Microservicios extraídos con BD propia |
+| Adopción | Baja — los monolitos solo agregan consumer/producer Kafka | Mayor — requiere diseño de microservicio completo |
+| Cuándo aplica en ONP | Corto/mediano plazo — parque actual de aplicativos | Largo plazo — tras extracción de microservicios |
+
+> El detalle de la convención de tópicos Saga y la estructura de CloudEvents extendido está en **`LIN-BUS-001` sección 9.4**.
 
 ---
 
@@ -268,6 +345,10 @@ El clúster de **Kubernetes con containerd (*ADR-009*)** es el destino de produc
 
 > **Mandato:** No se permite alegar "desconocimiento de Kubernetes por parte del proveedor" como criterio para solicitar una máquina virtual. La capacitación técnica es responsabilidad contractual del proveedor.
 
+**Estadio de Transición (runtime temporal, no destino final):** durante el desarrollo local, el runtime de contenedores es de libre elección (Docker Engine o Podman). Entre el build y el despliegue en el clúster QA/PROD, `LIN-K8S-001` define un estadio operativo intermedio con Docker Engine + Docker Compose — es una etapa temporal, nunca un destino de producción. El `Dockerfile` es el estándar de construcción en todos los casos; el runtime de QA/PROD es exclusivamente **containerd**, gestionado con `crictl`. El detalle operativo completo de este estadio está en `LIN-K8S-001`.
+
+**Aprovisionamiento declarativo (IaC):** la infraestructura del clúster Kubernetes y sus recursos asociados se aprovisionan de forma declarativa mediante Terraform en un repositorio dedicado, según el modelo de madurez y las fases de adopción definidas en `LIN-IAC-001`.
+
 ### 5.3 Observabilidad Institucional (*Marco Google SRE Four Golden Signals*)
 
 La observabilidad es un **requisito de arquitectura de producción, no una opción de soporte (*ADR-010*)**. Ningún sistema podrá ser liberado a producción si no expone las telemetrías necesarias para supervisar las **Cuatro Señales Doradas (*Four Golden Signals*) del marco SRE de Google**:
@@ -303,6 +384,19 @@ Su adopción requiere **ADR aprobado** y debe sustentarse en la verificación fe
 | **Patrón de búsqueda y consulta no CRUD** (Búsqueda por texto libre, facetas, scoring, similitud difusa sobre millones de documentos). | **Search Store** | **Elasticsearch** | Búsqueda masiva y filtrado avanzado de expedientes previsionales y resoluciones digitales. (Ya operativo en observabilidad para logs/trazas - *LIN-OBS-001*). |
 | **Proyecciones ricas y desnormalizadas para baja latencia en lectura** (Vistas consolidadas con estructuras anidadas variables). | **Document Store** | **MongoDB** | Lado de lectura (*Read Model*) en arquitecturas **CQRS** para expedientes o carpetas ciudadanas autocontenidas (`§3.10 LIN-DIS-001`). |
 | **Datos temporales de ciclo de vida corto y TTL** (Lookup sub-milisegundo por clave). | **Key-Value Store** | **Redis** | Almacenamiento en caché de tokens institucionales (SAA), sesiones de usuario, contadores de *rate limiting* y catálogos estáticos de consulta frecuente. |
+| **Volumen de escritura supera lo que Oracle ACID puede sostener** (tablas `LOG_`/`HIS_` con millones de inserciones diarias que generan contención; consistencia eventual aceptable). | **Column-family Store** | **Apache Cassandra** | Escritura masiva de eventos y *audit logs* de alto volumen. Requiere ADR — sin uso productivo actual en el ecosistema ONP. |
+| **Métricas de negocio con altísima frecuencia de escritura** (no confundir con métricas de infraestructura, ya cubiertas por Prometheus — *LIN-OBS-001*). | **Time-series Store** | **InfluxDB / TimescaleDB** | Series temporales de negocio (ej. variación intradía de indicadores actuariales). Requiere ADR — sin uso productivo actual en el ecosistema ONP. |
+
+**Lo que NO es un detonador válido:** "NoSQL escala mejor" sin evidencia de que Oracle sea el cuello de botella; "el equipo quiere aprender la tecnología"; "la arquitectura de referencia del proveedor la usa"; "es más simple que modelar en relacional" — la simplicidad de escritura no compensa la pérdida de ACID ni las garantías de integridad referencial.
+
+**Regla de gobierno para la adopción:**
+
+1. **ADR aprobado por Arquitectura OTI** con el detonador verificado, el tipo de BD seleccionado y la justificación técnica.
+2. **Nuevo lineamiento específico** para la tecnología NoSQL adoptada, equivalente a `LIN-BD-ORA-001` para Oracle, que cubra diseño de datos, operación, seguridad y observabilidad.
+3. **Validación de Plataforma** sobre viabilidad operativa en Kubernetes (`LIN-K8S-001`): *backups*, monitoreo, alta disponibilidad.
+4. **Piloto controlado** antes de uso productivo, con criterios de éxito documentados y fecha de evaluación.
+
+Mientras el lineamiento específico de la tecnología no exista, su uso productivo no está autorizado.
 
 ### 6.3 Dominio Complementario: Business Intelligence y Analítica (Medallion)
 
@@ -316,6 +410,7 @@ Para separar totalmente la carga analítica y de reportes masivos del procesamie
 
 - La capa **Gold** en formato tabular **Parquet / Apache Nessie** constituye la fuente autoritativa para dashboards ejecutivos, analítica avanzada e inteligencia de negocios.
 - **Prohibición de Reportes Masivos en el Core OLTP:** Queda estrictamente prohibido ejecutar consultas de reportes agregados, inteligencia de negocios o extracciones masivas sin paginar directamente sobre las bases de datos operacionales de Oracle en horario laboral. Tales procesos deben consumir las capas Silver o Gold del Lakehouse (*LIN-BI-001*).
+- **Relación con CQRS operacional (§6.2):** el Medallion no es una rama aislada del negocio transaccional — la capa **Gold** es también la fuente natural para los **read models analíticos de CQRS** (reportes, dashboards, análisis histórico), mientras que Redis/MongoDB/Elasticsearch sirven los read models operacionales de baja latencia (`LIN-DIS-001 §4.2`). Ambos son proyecciones derivadas de la misma fuente de verdad transaccional en Oracle; se diferencian por el patrón de consulta que sirven, no por ser mecanismos independientes.
 
 ---
 
@@ -362,16 +457,31 @@ Todo profesional o equipo asignado por la empresa contratista a proyectos de des
 
 | Topología del Proyecto Licitado | Competencias y Habilidades Especializadas Requeridas | Señales de Alarma / Anti-Patrones en la Evaluación Técnica |
 |---|---|---|
+| **Transaction Script / Active Record** *(mantenimiento de sistemas simples o legados)* | • JPA/Hibernate, Spring Data, manejo transaccional declarativo. | No conoce `@Transactional` o usa `SELECT *`; no distingue transacción declarativa de programática. |
 | **Estadio 2: Monolito Modular** *(Estándar por Defectos en ONP)* | • Arquitectura modular Maven y gobierno de fronteras de paquetes.<br>• Principios SOLID aplicados rigurosamente a clases y servicios (`LIN-DEV-JAVA-001 §7`).<br>• Capacidad para aislar subdominios sin incurrir en dependencias circulares. | Desconoce el impacto de acoplar paquetes de dominio entre sí; usa comodines de importación o no logra explicar cómo evitar ciclos en dependencias Maven multi-módulo. |
-| **Estadio 3: Microservicios o Arquitectura Hexagonal** | • Patrón Hexagonal (*Ports & Adapters*) estricto con inversión de dependencias (`LIN-DIS-001 §2.2`).<br>• Diseño de Bounded Contexts y agregados de Domain-Driven Design (DDD).<br>• Manejo de Patrones de Resiliencia (*Circuit Breaker*, *Timeouts*) y Trazabilidad Distribuida (OpenTelemetry).<br>• Transacciones distribuidas eventuales (Patrón Saga y Outbox). | Mezcla anotaciones `@Entity` o librerías de infraestructura en clases de dominio puro; intenta usar `2PC` o transacciones bloqueantes entre servicios; desconoce el Teorema CAP o cómo operar en consistencia eventual. |
+| **Arquitectura Hexagonal** *(candidato a microservicio)* | • Patrón Hexagonal (*Ports & Adapters*) estricto con inversión de dependencias (`LIN-DIS-001 §2.2`).<br>• Pruebas de dominio puro sin contenedor Spring. | Mezcla lógica de negocio en Controllers o Repositories; no logra aislar el dominio del framework en pruebas unitarias. |
+| **Estadio 3: Microservicios** | • Spring Cloud o diseño *Kubernetes-native*, Circuit Breaker, Trazabilidad Distribuida (OpenTelemetry).<br>• Transacciones distribuidas eventuales (Patrón Saga y Outbox, `§3.3`). | Intenta usar `2PC` o transacciones bloqueantes entre servicios; desconoce el Teorema CAP, Saga o cómo operar en consistencia eventual. |
+| **Domain-Driven Design (DDD)** *(solo cuando aplican los 6 criterios de `LIN-DIS-001 §3.0`)* | • Bounded Contexts, Agregados, Value Objects, Domain Events, CQRS básico. | No puede distinguir un Agregado de una entidad JPA; propone DDD para un CRUD simple sin justificar los 6 criterios de gobernanza. |
 | **Desarrollo Frontend SPA Angular** | • Angular 17+ con TypeScript estricto, programación reactiva con RxJS (`Signals`, `Observables`).<br>• Optimización extrema para cumplimiento de Core Web Vitals (LCP, INP, CLS) y pruebas en Lighthouse.<br>• Diseño responsivo y buenas prácticas de seguridad (gestión limpia del token SAA). | Manipula directamente el DOM mediante `document.getElementById()`; utiliza `any` en TypeScript; abusa de `setTimeout(fn, 0)` para hackear el ciclo de detección de cambios (*Change Detection*) de Angular. |
 
 ### 8.3 Criterios Técnicos de Aceptación y Entrega Formal de Software
 Para que la OTI o el Área Usuaria otorgue la **conformidad técnica y aceptación formal de un entregable de software contratado**, el contratista deberá adjuntar y aprobar las siguientes evidencias en el pipeline CI/CD:
-1. **Informe de SonarQube:** 0 vulnerabilidades de seguridad (*Security Hotspots / Blocker / Critical*), cero deuda técnica caduca en *Unleash Feature Toggles*, y cumplimiento de cobertura mínima de pruebas automáticas (`LIN-TEST-001`): **≥ 75% en Monolito Modular y ≥ 80% en Hexagonal/Microservicios**.
+1. **Informe de SonarQube:** 0 vulnerabilidades de seguridad (*Security Hotspots / Blocker / Critical*), cero deuda técnica caduca en *Unleash Feature Toggles*, y cumplimiento de la cobertura mínima de pruebas automáticas según el estilo arquitectónico del proyecto — el umbral exacto por estilo es normado exclusivamente en **`LIN-TEST-001 §5.1`** (dueño de este tema; no se duplica aquí para evitar que ambos documentos queden desalineados).
 2. **Evidencia de Cumplimiento Core Web Vitals:** Reporte automatizado de Lighthouse en el pipeline CI/CD demostrando un LCP < 2.5s, INP < 200ms y CLS < 0.1 en las pantallas entregadas.
 3. **Evidencia de Observabilidad Completa:** Captura de pantalla y traza de prueba funcional ejecutada en el clúster de QA donde se compruebe la presencia simultánea de las cuatro señales en el Dashboard de Grafana (`LIN-OBS-001`) y la traza distribuida continua en Jaeger sin cortes de context propagation.
 4. **Declaración de Conformidad con LIN-ARQ-001:** Declaración jurada técnica en el `README.md` del repositorio firmada por el Tech Lead de la fábrica, certificando la ausencia de importaciones entre fronteras prohibidas en el Monolito Modular (`LIN-DIS-001 §3.4`).
+
+### 8.4 Validación Técnica en el Proceso de Contratación
+
+Prueba técnica recomendada por perfil, a aplicar durante la evaluación de ingreso del personal propuesto por la fábrica de software:
+
+| Perfil | Prueba técnica | Tiempo |
+|---|---|---|
+| Base + Transaction Script | Implementar un CRUD con validaciones de negocio, manejo de excepciones y pruebas unitarias. | 3 horas |
+| Monolito Modular | Diseñar la estructura de módulos Maven para un sistema dado y justificar las decisiones de fronteras. | 2 horas |
+| Hexagonal | Implementar un *port* de salida con su *adapter* y prueba de integración con WireMock. | 4 horas |
+| Microservicios | Diseñar la comunicación entre dos servicios incluyendo manejo de fallo (Circuit Breaker) y trazabilidad. | 3 horas |
+| DDD | Modelar un Agregado con su lógica de dominio, eventos de dominio y pruebas unitarias puras (sin Spring). | 5 horas |
 
 ---
 
@@ -383,7 +493,7 @@ La siguiente tabla compendia las decisiones históricas y vigentes adoptadas por
 |---|---|---|---|
 | **ADR-001** | **Stack Backend Oficial:** Java LTS (actual 21) + Spring Boot 3.x + Apache Maven es el ecosistema de codificación mandatorio para todo backend institucional. | 2026-05-21 | Aceptada / Vigente |
 | **ADR-002** | **Monolito Modular por Defecto:** Se adopta el Monolito Modular como la topología por defecto para todo proyecto nuevo de software previsional. | 2026-05-21 | Aceptada / Vigente |
-| **ADR-003** | **Criterios de Microservicios y DDD:** La extracción de un microservicio y adopción plena de DDD táctico exige el cumplimiento simultáneo de 6 criterios medibles. | 2026-05-21 | Aceptada / Vigente |
+| **ADR-003** | **Criterios de Microservicios y DDD (dos tablas independientes bajo un mismo ADR):** (a) La extracción de un módulo a microservicio exige el cumplimiento simultáneo de los 6 criterios de `§2.1` (dominio autónomo, soberanía de datos, escalamiento asimétrico, ciclo de vida independiente, consistencia eventual, capacidad SRE). (b) La adopción plena de DDD táctico exige el cumplimiento simultáneo de los 6 criterios de `LIN-DIS-001 §3.0` (sistema core, reglas complejas, experto de dominio disponible, equipo con experiencia previa, vida útil larga, bounded context delimitado). **Ambas tablas se evalúan de forma independiente** — cumplir una no implica cumplir la otra; un microservicio no requiere DDD, y un módulo del Monolito Modular puede adoptar DDD sin extraerse. | 2026-05-21 | Aceptada / Vigente |
 | **ADR-004** | **Patrón Strangler Fig para Migración:** Toda migración y modernización de sistemas del Estadio 1 (JBoss/Legacy) debe realizarse gradualmente usando la Higuera Estranguladora. | 2026-05-21 | Aceptada / Vigente |
 | **ADR-005** | **Anti-Corruption Layer (ACL) Gubernamental:** Es obligatorio implementar una capa ACL en el lado del consumidor para toda consulta o intercambio de datos con RENIEC, SUNAT y PIDE. | 2026-05-21 | Aceptada / Vigente |
 | **ADR-006** | **Angular como Framework Primario SPA:** Angular es el estándar primario por defecto para todo frontend web nuevo; React o Vue requieren justificación por ADR. | 2026-05-21 | Aceptada / Vigente |
