@@ -1,9 +1,9 @@
 # LIN-IAC-001 — Lineamiento de Infraestructura como Código ONP
 
 **Código:** LIN-IAC-001  
-**Versión:** v0.1.1  
+**Versión:** v0.1.2  
 **Estado:** Borrador  
-**Fecha:** 2026-07-09  
+**Fecha:** 2026-07-10  
 **Propietario documental:** Arquitectura de Software — OTI  
 **Revisores sugeridos:** Plataforma/Infraestructura, Seguridad Digital, Arquitectura, Desarrollo  
 **Marco rector:** LIN-ARQ-001 — Marco Rector de Arquitectura de Software  
@@ -17,6 +17,7 @@
 |---|---|---|---|
 | v0.1.0 | 2026-05-28 | Arquitectura OTI | Borrador inicial del lineamiento de infraestructura como código |
 | v0.1.1 | 2026-07-09 | Arquitectura OTI | Corrige la referencia al Marco Rector: `LIN-ARQ-000` (congelado) → `LIN-ARQ-001` (vigente) en encabezado y §2 |
+| v0.1.2 | 2026-07-10 | Arquitectura OTI | Corrige contradicción interna: el checklist §12.1 exigía una rama `develop` protegida que §5.4 rechaza explícitamente ("sería redundante y crearía confusión"). El checklist ahora solo exige `main` protegida |
 
 ---
 
@@ -615,7 +616,7 @@ Ningún cambio manual en infraestructura gestionada por Terraform puede quedar s
 [ ] Estructura de directorios environments/dev|qa|prod/ y modules/ creada desde el primer commit
 [ ] .gitignore incluye *.tfstate, *.tfstate.backup, .terraform/, terraform.tfvars
 [ ] README con instrucciones de inicialización y uso
-[ ] Ramas main y develop protegidas con MR obligatorio
+[ ] Rama main protegida con MR obligatorio (no existe rama develop — ver §5.4)
 ```
 
 ### 12.2 Configuración de Terraform

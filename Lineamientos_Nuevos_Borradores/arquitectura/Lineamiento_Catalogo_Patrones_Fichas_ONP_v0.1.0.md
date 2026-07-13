@@ -1,7 +1,7 @@
 # Catálogo Oficial de Patrones y Fichas Técnicas de Arquitectura, Diseño Táctico y Programación en la ONP
 
 **Código:** LIN-PAT-001  
-**Versión:** 0.1.3  
+**Versión:** 0.1.4  
 **Fecha:** 2026-07-10  
 **Autor:** Oficina de Tecnologías de la Información — ONP  
 **Estado:** Vigente / Catálogo Institucional Transversal  
@@ -340,12 +340,12 @@ Cada vez que un Arquitecto de Software, Diseñador/Tech Lead o Desarrollador ana
 |---|---|
 | **Código** | `PAT-DEV-02` (Nivel 3 / Seguridad — Autenticación en Aplicación) |
 | **Nombre** | **Filtro de Validación y Contexto SAA (*SaaTokenValidationFilter*)** |
-| **Capa / Dominio** | Seguridad de Endpoints REST en Spring Boot (`LIN-SEC-APP-001 §8`) |
+| **Capa / Dominio** | Seguridad de Endpoints REST en Spring Boot (`LIN-SEC-APP-001 §8.3`) |
 | **Descripción** | Patrón e implementación de filtro de seguridad en Spring Security (`OncePerRequestFilter`) que intercepta toda petición HTTP entrante al contenedor de la aplicación, extrae el token de autorización del header `Authorization: Bearer <token>`, valida criptográficamente su autenticidad e inyecta el contexto del usuario institucional o ciudadano (`SecurityContextHolder`) disponible para los controladores. |
 | **✅ Criterio de Selección<br>*(¿Cuándo usar en ONP?)*** | **Se DEBE usar obligatoriamente si el análisis de requisitos determina:**<br>• **Toda aplicación o microservicio Spring Boot de la ONP** que exponga endpoints REST/HTTP protegidos y reciba tráfico desde el API Gateway WSO2 o front-ends institucionales.<br>• Queda **terminantemente prohibido** que una aplicación desarrolle su propia tabla de usuarios, contraseñas o genere tokens JWT paralelos fuera de la delegación al SAA/WSO2. |
 | **❌ Criterio de Exclusión<br>*(¿Cuándo NO usar?)*** | **NO usar cuando:**<br>• Endpoints explícitamente catalogados como públicos o de salud operacional (`/actuator/health`, `/actuator/info` o `Liveness/Readiness` de Kubernetes). |
 | **🛠️ Stack / Herramienta<br>Homologada en ONP** | Spring Security 6+ sobre Java 21 integrado con cliente oficial o validación OIDC/JWT hacia **SAA / WSO2 Identity Server**. |
-| **📖 Referencia Oficial** | `LIN-SEC-APP-001 §8` y `LIN-DEV-JAVA-001 §14` |
+| **📖 Referencia Oficial** | `LIN-SEC-APP-001 §8.3` (fuente autoritativa del filtro; no vive en `LIN-DEV-JAVA-001`) |
 
 ---
 

@@ -1,12 +1,12 @@
 # LIN-VER-001 — Lineamiento de Versionamiento, Control de Cambios y Revisión de Código ONP
 
 **Código:** LIN-VER-001  
-**Versión:** v0.1.5  
+**Versión:** v0.1.6  
 **Estado:** Borrador  
-**Fecha:** 2026-05-28  
+**Fecha:** 2026-07-10  
 **Propietario documental:** Arquitectura de Software — OTI  
 **Revisores sugeridos:** Desarrollo, QA, Seguridad Digital, Plataforma/Infraestructura, Arquitectura  
-**Marco rector:** LIN-ARQ-000 — Marco Rector de Diseño y Arquitectura de Software  
+**Marco rector:** LIN-ARQ-001 — Marco Rector de Arquitectura de Software  
 **Herramienta institucional:** GitLab Ultimate  
 
 ---
@@ -21,6 +21,7 @@
 | v0.1.3 | 2026-05-28 | Arquitectura OTI | Alinea el lenguaje de Merge Requests y evidencias al concepto de reversa/compensación para cambios de base de datos |
 | v0.1.4 | 2026-05-28 | Arquitectura OTI | Completa alineación terminológica: reemplaza las tres ocurrencias restantes de "rollback" por "plan de reversa" en [sección 15.2](#152-release-notes-minimas), [sección 18](#18-cambios-en-contenedores-y-manifiestos-kubernetes) y checklist [sección 22.4](#224-release) |
 | v0.1.5 | 2026-05-28 | Arquitectura OTI | Precisa encabezado de tabla comparativa [sección 4.3](#43-comparacion-visual-de-modelos): "GitLab Flow" → "GitLab Flow — ramas por ambiente" para eliminar ambigüedad con el modelo objetivo |
+| v0.1.6 | 2026-07-10 | Arquitectura OTI | Migra Marco rector de `LIN-ARQ-000` (congelado) a `LIN-ARQ-001` (vigente) |
 
 ---
 
@@ -90,7 +91,7 @@ Aplica a:
 | Tema | Documento / responsable |
 |---|---|
 | Ejecución automática de pipelines | LIN-CICD-001 — Borrador |
-| Definición de arquitectura de aplicación | LIN-ARQ-000 |
+| Definición de arquitectura de aplicación | LIN-ARQ-001 |
 | Estándar de desarrollo Java | LIN-DEV-JAVA-001 |
 | Estándar de APIs REST | LIN-API-REST-001 |
 | Estándar de base de datos Oracle | LIN-BD-ORA-001 |
@@ -106,7 +107,7 @@ Aplica a:
 
 | Documento | Código | Relación |
 |---|---|---|
-| Marco Rector de Diseño y Arquitectura de Software | LIN-ARQ-000 | Define principios y decisiones rectoras de arquitectura |
+| Marco Rector de Arquitectura de Software | LIN-ARQ-001 | Define principios y decisiones rectoras de arquitectura |
 | Estándar de Desarrollo Java | LIN-DEV-JAVA-001 | Define reglas de implementación backend |
 | Estándar de APIs REST | LIN-API-REST-001 | Define contrato, versionamiento y publicación de APIs |
 | Estándar de Base de Datos Oracle | LIN-BD-ORA-001 | Define control de scripts y tratamiento de PL/SQL legacy |

@@ -1,6 +1,6 @@
 # LIN-BI-001 — Lineamiento de Explotación y Analítica de Datos (Business Intelligence) ONP
 ## Oficina de Normalización Previsional — OTI
-### Código: LIN-BI-001 | Versión 0.1.0 | Estado: Borrador | Marco rector: LIN-ARQ-000
+### Código: LIN-BI-001 | Versión 0.1.1 | Estado: Borrador | Marco rector: LIN-ARQ-001
 
 ---
 
@@ -9,6 +9,7 @@
 | Versión | Fecha | Autor | Descripción |
 |---------|-------|-------|-------------|
 | 0.1.0   | 2026-06-08 | OTI | Versión inicial del borrador alineado con la Sección 9 del *Lineamiento de Estándares de Tecnología v2.0* de la ONP y el piloto de arquitectura Lakehouse. |
+| 0.1.1   | 2026-07-10 | OTI | Migra Marco rector de `LIN-ARQ-000` (congelado) a `LIN-ARQ-001` (vigente) en encabezado y §1.3 |
 
 ---
 
@@ -48,7 +49,7 @@ Este estándar aplica a:
 
 | Documento | Código | Relación |
 |-----------|--------|----------|
-| Marco Rector de Diseño y Arquitectura de Software | `LIN-ARQ-000` | Define el dominio complementario BI y el modelo conceptual Lakehouse. |
+| Marco Rector de Arquitectura de Software | `LIN-ARQ-001` | Define el dominio complementario BI y el modelo conceptual Lakehouse (§6.3). |
 | Estándar de Base de Datos Oracle | `LIN-BD-ORA-001` | Regula las fuentes transaccionales core de donde se extraen los datos analíticos. |
 | Estándar de Seguridad en Aplicaciones | `LIN-SEC-APP-001` | Define las políticas de cifrado, gestión de secretos (Vault) y clasificación PII. |
 | Estándar de Versionamiento y Control de Cambios | `LIN-VER-001` | Alinea la estrategia de ramas de código con la estrategia de ramas de datos (Nessie). |

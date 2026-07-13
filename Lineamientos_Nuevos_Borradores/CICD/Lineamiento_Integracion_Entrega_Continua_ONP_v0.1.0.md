@@ -1,12 +1,12 @@
 # LIN-CICD-001 — Lineamiento de Integración y Entrega Continua ONP
 
 **Código:** LIN-CICD-001  
-**Versión:** v0.1.3  
+**Versión:** v0.1.5  
 **Estado:** Borrador  
 **Fecha:** 2026-07-10  
 **Propietario documental:** Arquitectura de Software — OTI  
 **Revisores sugeridos:** Desarrollo, QA, Plataforma/Infraestructura, Seguridad Digital, Arquitectura  
-**Marco rector:** LIN-ARQ-000 — Marco Rector de Diseño y Arquitectura de Software  
+**Marco rector:** LIN-ARQ-001 — Marco Rector de Arquitectura de Software  
 **Herramienta institucional:** GitLab Ultimate  
 
 ---
@@ -19,6 +19,8 @@
 | v0.1.1 | 2026-05-28 | Arquitectura OTI | Declara el estado operacional actual de las capacidades CI/CD para adopción progresiva en GitLab Ultimate |
 | v0.1.2 | 2026-05-28 | Arquitectura OTI | Normaliza el lenguaje operativo hacia plan de reversa en despliegues y elimina ambigüedad terminológica con reversa BD Oracle |
 | v0.1.3 | 2026-07-10 | Arquitectura OTI | Corrige el Anexo F: reemplaza la variable sugerida `TERRAFORM_WORKSPACE` por `ENV_NAME`, que es la que realmente usa el pipeline referencial de `LIN-IAC-001` (Anexo B) para seleccionar el directorio de ambiente. La variable anterior sugería implícitamente el uso de Terraform Workspaces, práctica que `LIN-IAC-001 §6.2`/§13/§14.1 prohíbe expresamente para separar ambientes |
+| v0.1.4 | 2026-07-10 | Arquitectura OTI | Migra Marco rector de `LIN-ARQ-000` (congelado) a `LIN-ARQ-001` (vigente) en encabezado y §2 |
+| v0.1.5 | 2026-07-10 | Arquitectura OTI | Implementa 4 gates mandatorios de `LIN-ARQ-001` que hasta ahora no tenían dueño en el pipeline: (1) Core Web Vitals vía Lighthouse CI como gate de bloqueo (§9.4, `LIN-ARQ-001 §7.2`); (2) condición explícita de SonarQube "0 vulnerabilidades Blocker/Critical" (§12.3, `LIN-ARQ-001 §8.3`); (3) verificación de deuda técnica de Feature Toggles vía API de Unleash (§12.4, `LIN-ARQ-001 §2.3`); (4) verificación de presencia de la Declaración de Conformidad con LIN-ARQ-001 en README (§12.5, `LIN-ARQ-001 §8.3` punto 4). Actualiza §7.2, §9.1, §19.2, §20, §23.1, §23.3, Anexo B y Anexo F en consecuencia |
 
 ---
 
@@ -123,7 +125,7 @@ Aplica a:
 
 | Documento | Código | Relación |
 |---|---|---|
-| Marco Rector de Diseño y Arquitectura de Software | LIN-ARQ-000 | Define modelo arquitectónico general |
+| Marco Rector de Arquitectura de Software | LIN-ARQ-001 | Define modelo arquitectónico general |
 | Versionamiento y Control de Cambios | LIN-VER-001 | Define ramas, MR, tags, releases y trazabilidad |
 | Estándar de Desarrollo Java | LIN-DEV-JAVA-001 | Define stack Java, calidad, PMD, Checkstyle y estructura |
 | Estándar de APIs REST | LIN-API-REST-001 | Define OpenAPI, contrato REST y API Manager |
@@ -352,6 +354,7 @@ install
 lint
 unit-test
 build
+lighthouse
 quality
 security
 package
@@ -451,6 +454,7 @@ PMD se ejecuta como validación complementaria de calidad Java. No reemplaza a C
 | Unit tests | Jest o Karma/Jasmine | Fase 1 |
 | E2E | Playwright preferente | Fase 2/3 según criticidad |
 | Lint | ESLint | Fase 2 |
+| **Core Web Vitals** | **Lighthouse CI (`lhci autorun`)** | **Fase 2 — gate de bloqueo mandatorio (`LIN-ARQ-001 §7.2`)** |
 | SCA | npm audit / herramienta aprobada | Fase 2 |
 | Package | Artefacto estático | Fase 1 |
 | Docker build | Nginx u runtime web aprobado | Fase 3 |
@@ -476,6 +480,34 @@ Las pruebas E2E no deben ejecutarse obligatoriamente en cada commit para todos l
 | Frontend nuevo | Recomendado |
 | Cambio visual menor | No obligatorio |
 | Release candidate | Recomendado/obligatorio según criticidad |
+
+### 9.4 Core Web Vitals (Lighthouse CI) — gate de bloqueo
+
+`LIN-ARQ-001 §7.2` declara el cumplimiento de Core Web Vitals como **gate de bloqueo mandatorio para la promoción del build de frontend a producción**, y `LIN-FE-ANG-001 §15.2` define el archivo `lighthouserc.js` con los umbrales institucionales (LCP < 2.5 s, INP/TBT < 200 ms, CLS < 0.1, FCP < 1.8 s, TTI < 3.5 s). Esta sección cierra el circuito: implementa el job de CI/CD que ejecuta esa configuración y bloquea el pipeline si no se cumple.
+
+**Herramienta:** `@lhci/cli` (Lighthouse CI), ejecutado contra el build de producción servido localmente en el runner.
+
+```yaml
+lighthouse:
+  stage: quality
+  image: node:20-alpine
+  script:
+    - npm ci
+    - npm run build -- --configuration production
+    - npx @lhci/cli@0.13.x autorun --config=./lighthouserc.js
+  artifacts:
+    when: always
+    paths:
+      - .lighthouseci/
+    expire_in: 30 days
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_BRANCH == "main"'
+```
+
+**Regla de bloqueo:** `lhci autorun` retorna código de salida distinto de cero si cualquier `assertion` de `lighthouserc.js` falla (ver umbrales completos en `LIN-FE-ANG-001 §15.2`); el job falla y el MR queda bloqueado igual que cualquier otro gate de calidad. No existe una ruta de "advertencia sin bloqueo" — `LIN-ARQ-001 §7.2` es explícito en que es un gate, no una recomendación.
+
+**Excepción:** solo mediante el proceso de ADR de la [sección 25](#25-proceso-adr-para-excepciones), igual que cualquier otro gate bloqueante (§19.3).
 
 ---
 
@@ -592,6 +624,83 @@ El quality gate debe considerar progresivamente:
 - deuda técnica controlada;
 - no reducción significativa de cobertura;
 - no incremento injustificado de issues críticos.
+
+**Condición explícita de SonarQube (`LIN-ARQ-001 §8.3`):** "ausencia de violaciones críticas" no es un umbral discrecional por fase — el criterio de aceptación institucional es **cero (0) vulnerabilidades en severidad `Blocker` o `Critical`** (*Security Hotspots* incluidos) en el análisis de SonarQube. El quality gate de SonarQube debe configurarse con una condición dedicada sobre `security_rating`/`reliability_rating` en severidad Blocker/Critical = 0, independiente del gate genérico de cobertura o duplicación. Esta condición bloquea desde Fase 2 sin excepción de madurez (a diferencia del resto de reglas de este apartado, que sí escalan progresivamente por fase).
+
+### 12.4 Deuda técnica de Feature Toggles (Unleash)
+
+`LIN-ARQ-001 §2.3` establece que un *Release Toggle* que permanece en el código más de 30 días después del pase a producción es deuda técnica crítica, y que "el pipeline de análisis estático (SonarQube) emitirá una alerta de bloqueo... en las comprobaciones de Unleash". SonarQube no tiene un plugin nativo para Unleash, así que esta comprobación se implementa como un job dedicado que consulta la API administrativa de Unleash y bloquea el pipeline — el efecto de bloqueo es el mismo que describe `LIN-ARQ-001 §2.3`, aunque el motor no sea SonarQube en sí mismo.
+
+**Script referencial** (ejecutado contra el proyecto/entorno Unleash institucional):
+
+```bash
+#!/usr/bin/env bash
+set -euo pipefail
+
+UNLEASH_API="${UNLEASH_API_URL}/api/admin/projects/${UNLEASH_PROJECT_ID}/features"
+MAX_DIAS_RELEASE_TOGGLE=30
+
+curl -sf -H "Authorization: ${UNLEASH_ADMIN_TOKEN}" "$UNLEASH_API" \
+  | jq -r --arg tag "release" '
+      .features[]
+      | select(.tags[]?.value == $tag)
+      | [.name, .createdAt] | @tsv
+    ' \
+  | while IFS=$'\t' read -r nombre creado_en; do
+      dias=$(( ( $(date +%s) - $(date -d "$creado_en" +%s) ) / 86400 ))
+      if [ "$dias" -gt "$MAX_DIAS_RELEASE_TOGGLE" ]; then
+        echo "BLOQUEO: Release Toggle '$nombre' tiene $dias días (máximo $MAX_DIAS_RELEASE_TOGGLE) — LIN-ARQ-001 §2.3"
+        exit 1
+      fi
+    done
+```
+
+```yaml
+unleash-toggle-debt-check:
+  stage: quality
+  image: alpine:3.20
+  before_script:
+    - apk add --no-cache curl jq bash
+  script:
+    - bash ./scripts/check-unleash-toggle-debt.sh
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+```
+
+**Alcance:** solo aplica a *Release Toggles* (etiqueta `release` en Unleash, ver `LIN-ARQ-001 §2.3` tabla de categorías) — los *Ops*, *Experiment* y *Permission Toggles* tienen ciclo de vida largo/permanente por diseño y no entran en esta regla. Requiere que el equipo etiquete el toggle como `release` al crearlo en Unleash; sin esa etiqueta el script no puede distinguirlo de un toggle de largo plazo.
+
+### 12.5 Declaración de Conformidad con LIN-ARQ-001 en README
+
+`LIN-ARQ-001 §8.3` punto 4 exige una "declaración jurada técnica en el `README.md` del repositorio firmada por el Tech Lead de la fábrica, certificando la ausencia de importaciones entre fronteras prohibidas en el Monolito Modular (`LIN-DIS-001 §3.4`)". El pipeline **no puede validar el contenido sustantivo** de esa declaración (es un juicio humano del Tech Lead, no una propiedad verificable por máquina) — lo que sí puede y debe hacer es bloquear el pase si la sección obligatoria está ausente o incompleta.
+
+**Formato mínimo obligatorio en `README.md`:**
+
+```markdown
+## Declaración de Conformidad con LIN-ARQ-001
+
+- **Tech Lead responsable:** <nombre completo>
+- **Fecha:** <YYYY-MM-DD>
+- **Declaro que** el presente repositorio no contiene importaciones entre fronteras
+  prohibidas del Monolito Modular según LIN-DIS-001 §3.4, y que la arquitectura
+  implementada es conforme con LIN-ARQ-001.
+```
+
+**Job de verificación de presencia (no de contenido):**
+
+```yaml
+readme-conformance-check:
+  stage: quality
+  image: alpine:3.20
+  script:
+    - grep -q "## Declaración de Conformidad con LIN-ARQ-001" README.md || (echo "BLOQUEO: falta la sección de Declaración de Conformidad (LIN-ARQ-001 §8.3.4)" && exit 1)
+    - grep -q "Tech Lead responsable:" README.md || (echo "BLOQUEO: falta el firmante (Tech Lead responsable)" && exit 1)
+    - grep -qE "Fecha:.*[0-9]{4}-[0-9]{2}-[0-9]{2}" README.md || (echo "BLOQUEO: falta fecha de la declaración" && exit 1)
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+```
+
+**Límite explícito:** este job certifica que la declaración *existe y está firmada* — no certifica que sea cierta. La veracidad de "sin importaciones prohibidas" sigue siendo responsabilidad del Tech Lead y, si se requiere verificación automática de fronteras de paquetes, es un control aparte (análisis estático de dependencias entre módulos Maven, fuera del alcance de este job).
 
 ---
 
@@ -875,6 +984,9 @@ Debe requerir:
 | PMD crítico | Sí desde Fase 2 madura |
 | CPD duplicación crítica | Según umbral |
 | SonarQube quality gate falla | Según fase |
+| **SonarQube: vulnerabilidad Blocker o Critical presente** | **Sí, sin excepción de fase (`LIN-ARQ-001 §8.3`)** |
+| **Feature Toggle (Unleash) caduco: Release Toggle > 30 días desde el pase a producción** | **Sí (`LIN-ARQ-001 §2.3`, ver §12.4)** |
+| **Lighthouse CI (Core Web Vitals) falla algún assertion** | **Sí desde Fase 2 (`LIN-ARQ-001 §7.2`, ver §9.4)** |
 | Secret detectado | Sí |
 | Vulnerabilidad crítica | Sí salvo excepción |
 | Imagen con CVE crítico | Sí salvo excepción |
@@ -908,6 +1020,8 @@ El pipeline debe generar o enlazar evidencias como:
 | Reporte Checkstyle | 2 |
 | Reporte PMD/CPD | 2 |
 | SonarQube quality gate | 2 |
+| Reporte Lighthouse CI (Core Web Vitals) | 2 |
+| Verificación de deuda de Feature Toggles (Unleash) | 2 |
 | SCA/dependencias | 2 |
 | Secret scan | 2 |
 | Imagen construida | 3 |
@@ -965,6 +1079,7 @@ Las aprobaciones manuales deben quedar registradas en GitLab o en el expediente 
 [ ] Tiene Merge Requests obligatorios
 [ ] Tiene ramas protegidas según LIN-VER-001
 [ ] Tiene README con instrucciones de build
+[ ] README incluye la Declaración de Conformidad con LIN-ARQ-001 firmada por el Tech Lead (`LIN-ARQ-001 §8.3` punto 4 — ver job `readme-conformance-check` en §12.5)
 [ ] Tiene scripts de build reproducibles
 [ ] Tiene estructura preparada para pipeline
 ```
@@ -987,6 +1102,9 @@ Las aprobaciones manuales deben quedar registradas en GitLab o en el expediente 
 [ ] PMD configurado si aplica
 [ ] CPD configurado si aplica
 [ ] SonarQube configurado o planificado
+[ ] SonarQube quality gate exige 0 vulnerabilidades Blocker/Critical (LIN-ARQ-001 §8.3)
+[ ] Lighthouse CI (`lighthouserc.js`) configurado y bloqueando el pipeline si aplica frontend (§9.4)
+[ ] Verificación de deuda de Feature Toggles (Unleash) configurada si el proyecto usa toggles (§12.4)
 [ ] SCA configurado o planificado
 [ ] Secret scan configurado o planificado
 ```
@@ -1157,6 +1275,7 @@ stages:
   - install
   - test
   - build
+  - quality
 
 install:
   stage: install
@@ -1175,7 +1294,18 @@ build:
   artifacts:
     paths:
       - dist/
+
+lighthouse:
+  stage: quality
+  script:
+    - npx @lhci/cli@0.13.x autorun --config=./lighthouserc.js
+  artifacts:
+    when: always
+    paths:
+      - .lighthouseci/
 ```
+
+> Configuración completa de `lighthouserc.js` y umbrales institucionales en `LIN-FE-ANG-001 §15.2`; detalle del job y regla de bloqueo en [sección 9.4](#94-core-web-vitals-lighthouse-ci--gate-de-bloqueo).
 
 ### Anexo C — Pipeline referencial de imagen
 
@@ -1270,7 +1400,12 @@ TRIVY_SEVERITY
 OPENAPI_FILE
 JMETER_SCENARIO
 ENV_NAME
+UNLEASH_API_URL
+UNLEASH_PROJECT_ID
+UNLEASH_ADMIN_TOKEN
 ```
+
+> **Nota (deuda de Feature Toggles, §12.4):** `UNLEASH_API_URL`, `UNLEASH_PROJECT_ID` y `UNLEASH_ADMIN_TOKEN` deben declararse como variables protegidas y enmascaradas en GitLab CI/CD → Settings → Variables, igual que `SONAR_TOKEN`. El token administrativo de Unleash solo requiere permiso de lectura sobre features/tags — nunca de escritura.
 
 > **Nota (pipeline Terraform/IaC):** `ENV_NAME` selecciona el directorio de ambiente (`environments/dev|qa|prod/`) que ejecuta el pipeline referencial de `LIN-IAC-001` — **no** un Terraform Workspace. `LIN-IAC-001 §6.2` prohíbe expresamente el uso de `terraform workspace` para separar ambientes (riesgo de `apply` en el ambiente incorrecto); la separación es siempre por directorios independientes. Además, recordar que ese pipeline vive únicamente en el repositorio dedicado `oti-plataforma/infrastructure-iac` (`LIN-IAC-001 §18.1`) — los equipos de aplicación no agregan jobs de Terraform en su propio `.gitlab-ci.yml`.
 

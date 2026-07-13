@@ -1,12 +1,12 @@
 # LIN-PERF-001 — Lineamiento de Pruebas de Rendimiento, Carga y Estrés ONP
 
 **Código:** LIN-PERF-001  
-**Versión:** v0.1.1  
+**Versión:** v0.1.2  
 **Estado:** Borrador  
-**Fecha:** 2026-05-28  
+**Fecha:** 2026-07-10  
 **Propietario documental:** Arquitectura de Software — OTI  
 **Revisores sugeridos:** Desarrollo, QA, Plataforma/Infraestructura, Seguridad Digital, Arquitectura  
-**Marco rector:** LIN-ARQ-000 — Marco Rector de Diseño y Arquitectura de Software  
+**Marco rector:** LIN-ARQ-001 — Marco Rector de Arquitectura de Software  
 **Herramienta preferente:** JMeter  
 
 ---
@@ -17,6 +17,7 @@
 |---|---|---|---|
 | v0.1.0 | 2026-05-28 | Arquitectura OTI | Borrador inicial del lineamiento de pruebas de rendimiento, carga y estrés |
 | v0.1.1 | 2026-07-06 | Arquitectura OTI | §12.1 separa el ambiente `PQA` (etapa de rama legado de `LIN-VER-001 §5`, sin clúster propio) del ambiente `Preproducción`/`UAT` (ambiente real opcional, requiere ADR según `LIN-K8S-001 §4.4`) — antes se listaban como si fueran equivalentes. Actualiza §13 (evidencia mínima del informe) para reflejar el mismo cambio |
+| v0.1.2 | 2026-07-10 | Arquitectura OTI | Migra Marco rector de `LIN-ARQ-000` (congelado) a `LIN-ARQ-001` (vigente) |
 
 ---
 
@@ -95,7 +96,7 @@ Aplica a:
 
 | Documento | Código | Relación |
 |---|---|---|
-| Marco Rector de Diseño y Arquitectura de Software | LIN-ARQ-000 | Define la necesidad de RNF medibles y criterios de arquitectura |
+| Marco Rector de Arquitectura de Software | LIN-ARQ-001 | Define la necesidad de RNF medibles y criterios de arquitectura |
 | Estándar de Pruebas | LIN-TEST-001 | Excluye performance y remite a este lineamiento |
 | Estándar de Desarrollo Java | LIN-DEV-JAVA-001 | Define stack backend y pruebas funcionales Java |
 | Estándar de APIs REST | LIN-API-REST-001 | Define contratos, endpoints y criterios REST |

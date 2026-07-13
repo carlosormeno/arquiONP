@@ -1,10 +1,10 @@
 # LIN-FE-ANG-001 — Estándar de Diseño Web Frontend ONP
 **Código:** LIN-FE-ANG-001  
-**Versión:** 0.1.0  
+**Versión:** 0.1.1  
 **Estado:** Borrador  
-**Fecha:** 2026-05-22  
+**Fecha:** 2026-07-10  
 **Área responsable:** OTI — Oficina de Tecnologías de la Información  
-**Marco rector:** LIN-ARQ-000 — Marco Rector de Diseño y Arquitectura de Software  
+**Marco rector:** LIN-ARQ-001 — Marco Rector de Arquitectura de Software  
 
 ---
 
@@ -897,9 +897,9 @@ Flujos obligatorios a cubrir por cada feature:
 
 ## 15. Observabilidad y performance
 
-El **LIN-ARQ-000 sección 9.5** establece que todo sistema que llega a producción en ONP debe implementar los cuatro pilares de observabilidad sin excepción. Para una SPA Angular, estos pilares se traducen de la siguiente manera:
+El **LIN-ARQ-001 sección 5.3** establece que todo sistema que llega a producción en ONP debe implementar los cuatro pilares de observabilidad (Four Golden Signals) sin excepción. Para una SPA Angular, estos pilares se traducen de la siguiente manera:
 
-| Pilar (Architecture [sección 9.5](#95-registro-de-interceptores)) | Aplicabilidad en SPA Angular |
+| Pilar (`LIN-ARQ-001 §5.3`) | Aplicabilidad en SPA Angular |
 |---|---|
 | **Trazas distribuidas** | El SPA no genera spans propios, pero **debe propagar `X-Request-ID`** en cada request HTTP para que los traces del backend sean correlacionables |
 | **Logs estructurados** | No aplica al browser directamente; los errores JS se capturan y envían al backend via API |
@@ -1088,7 +1088,7 @@ Registro en `app.config.ts`:
 
 ### 15.4 Checklist mínimo antes de pasar a producción
 
-Equivalente del checklist de Architecture [sección 9.5](#95-registro-de-interceptores), aplicado al SPA Angular:
+Equivalente del checklist de `LIN-ARQ-001 §5.3`, aplicado al SPA Angular:
 
 - [ ] `correlationInterceptor` registrado como primer interceptor en `app.config.ts`
 - [ ] `GlobalErrorHandler` registrado en `app.config.ts`

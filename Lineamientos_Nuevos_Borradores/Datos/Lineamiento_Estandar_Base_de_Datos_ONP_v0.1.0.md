@@ -1,6 +1,6 @@
 # LIN-BD-ORA-001 — Estándar de Base de Datos Oracle ONP
 ## Oficina de Normalización Previsional — OTI
-### Código: LIN-BD-ORA-001 | Versión 0.1.8 | Estado: Borrador | Marco rector: LIN-ARQ-000
+### Código: LIN-BD-ORA-001 | Versión 0.1.9 | Estado: Borrador | Marco rector: LIN-ARQ-001
 
 ---
 
@@ -17,6 +17,7 @@
 | 0.1.6 | 2026-05-29 | OTI | Refuerza consistencia para desarrollo de software: tipado canónico de claves e indicadores, estrategia de PK/FK, borrado lógico, manejo robusto de errores, auditoría consistente con pools, precisión en planes de ejecución y reglas de uso de sinónimos |
 | 0.1.7 | 2026-05-29 | OTI | Agrega DDL de catálogos centralizados (BD [sección 2.3](#23-catalogo-centralizado-de-bases-de-datos), DBLinks [sección 4.9.1](#491-condiciones-para-el-uso-de-dblinks), Jobs [sección 4.12](#412-jobs-de-dbms_scheduler)), tablespace LOB y sección [sección 3.8](#38-tipos-de-datos-lob) Tipos de datos LOB, [sección 7.6](#76-sentencia-merge-upsert) Sentencia MERGE con manejo de auditoría, [sección 9.5](#95-estadisticas-del-optimizador-dbms_stats) Estadísticas del optimizador DBMS_STATS, documenta excepción canónica de prefijo ID_ para campos de auditoría ([sección 3.4](#34-prefijos-de-columnas)), corrige tipo en borrado lógico Anexo C.2 |
 | 0.1.8 | 2026-07-10 | OTI | Agrega el prefijo técnico `EVT_` ([sección 3.3](#33-tipos-de-tablas--prefijos)) y la [sección 3.10](#310-tabla-técnica-transversal-evt_outbox-transactional-outbox) con el nombre canónico y DDL de `EVT_OUTBOX`, cerrando la brecha donde este documento —dueño normativo de tablas Oracle— no definía la tabla del patrón Transactional Outbox pese a que `LIN-ARQ-001`, `LIN-DIS-001`, `LIN-BUS-001` y `LIN-PAT-001` ya la referenciaban con tres nombres distintos (`OUTBOX`, `TB_OUTBOX`, `EVT_OUTBOX`) |
+| 0.1.9 | 2026-07-10 | OTI | Migra Marco rector de `LIN-ARQ-000` (congelado) a `LIN-ARQ-001` (vigente) en encabezado; redirige las citas de §3.9 (Monolito Modular por defecto, Saga) desde `LIN-ARQ-000 §3.4` hacia `LIN-ARQ-001 §2.1` y `§3.3` |
 
 ---
 
@@ -331,7 +332,7 @@ CREATE INDEX IDX_EVT_OUTBOX_ESTADO ON EVT_OUTBOX (ESTADO, CREADO_EN);
 
 #### Implicancia arquitectónica
 
-Las propiedades ACID son la razón por la que el **Monolito Modular con BD compartida** es el punto de llegada por defecto de ONP (ver **LIN-ARQ-000 sección 3.4**). Al dividir en microservicios con bases de datos separadas, `@Transactional` de Spring solo abarca una conexión a una BD: no hay ACID entre servicios. La alternativa correcta para coordinación entre microservicios es el patrón **Saga** (ver LIN-ARQ-000).
+Las propiedades ACID son la razón por la que el **Monolito Modular con BD compartida** es el punto de llegada por defecto de ONP (ver **LIN-ARQ-001 sección 2.1**). Al dividir en microservicios con bases de datos separadas, `@Transactional` de Spring solo abarca una conexión a una BD: no hay ACID entre servicios. La alternativa correcta para coordinación entre microservicios es el patrón **Saga** (ver **LIN-ARQ-001 sección 3.3**).
 
 ---
 

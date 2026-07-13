@@ -3,13 +3,13 @@
 | | |
 |---|---|
 | **Código** | LIN-API-REST-001 |
-| **Versión** | 0.1.2 |
-| **Fecha** | 2026-05-28 |
+| **Versión** | 0.1.3 |
+| **Fecha** | 2026-07-10 |
 | **Estado** | Borrador |
 | **Clasificación** | Uso Interno (Técnico) |
 | **Área responsable** | OTI — Innovación y Desarrollo |
 | **Dirigido a** | Equipos de desarrollo, arquitectura y QA de la OTI |
-| **Marco rector** | LIN-ARQ-000 — Marco Rector de Diseño y Arquitectura de Software |
+| **Marco rector** | LIN-ARQ-001 — Marco Rector de Arquitectura de Software |
 
 ---
 
@@ -20,6 +20,7 @@
 | 0.1.0 | 2026-05-22 | Arquitectura OTI | Versión inicial |
 | 0.1.1 | 2026-05-28 | Arquitectura OTI | Aclara el carácter normativo de `codDetRespuesta` y alinea el checklist de observabilidad con `LIN-OBS-001` y `LIN-K8S-001` |
 | 0.1.2 | 2026-05-28 | Arquitectura OTI | Define la gobernanza operativa de `codDetRespuesta`, su dueño y el proceso de alta/cambio de códigos |
+| 0.1.3 | 2026-07-10 | Arquitectura OTI | Migra Marco rector de `LIN-ARQ-000` (congelado) a `LIN-ARQ-001` (vigente). Corrige 5 citas a `LIN-DEV-JAVA-001 sección 11.4[.x]` → `sección 13.4[.x]`/`14` (renumeración interna nunca reflejada aquí) y 2 citas a la sección fantasma `LIN-ARQ-000 sección 9.5` → `LIN-ARQ-001 §5.3` (Four Golden Signals) |
 
 ---
 
@@ -70,7 +71,7 @@ No aplica a:
 
 | Documento | Descripción |
 |---|---|
-| LIN-ARQ-000 — Marco Rector de Arquitectura ONP | Estilos arquitectónicos y principios |
+| LIN-ARQ-001 — Marco Rector de Arquitectura de Software | Estilos arquitectónicos y principios |
 | LIN-DEV-JAVA-001 — Estándar de Desarrollo Java ONP | Implementación Spring Boot, estructura Maven, Swagger/OpenAPI |
 | LIN-OBS-001 — Log Centralizado, Trazabilidad y Observabilidad | Trazas OTEL, logging estructurado ECS, métricas, No PII |
 | INFORME-0000XX-2024-OTI.ID — Lineamientos de Servicios Web v2.0 | Antecedente institucional |
@@ -413,7 +414,7 @@ Todos los servicios REST de la ONP deben retornar sus respuestas usando `ApiResp
 | `meta.totalElementos` | Long | Solo paginado | Total de registros que coinciden con el filtro |
 | `meta.totalPaginas` | Integer | Solo paginado | Total de páginas |
 
-> Para la implementación Spring Boot de `ApiResponseWrapper<T>` (clase completa, factory methods, `CampoError`), ver **LIN-DEV-JAVA-001 sección 11.4.4**.
+> Para la implementación Spring Boot de `ApiResponseWrapper<T>` (clase completa, factory methods, `CampoError`), ver **LIN-DEV-JAVA-001 sección 13.4.4**.
 
 ### 4.2 Tabla de codDetRespuesta
 
@@ -625,7 +626,7 @@ La herramienta de documentación es **SpringDoc OpenAPI** (`springdoc-openapi-st
 | QA | Habilitado | Siempre activo |
 | PROD | Deshabilitado por defecto | Activar puntualmente vía variable de entorno `SWAGGER_ENABLED=true` y deshabilitar al terminar |
 
-> Para la configuración completa de SpringDoc (dependencia Maven, `OpenApiConfig.java`, YAML por entorno y activación temporal en PROD), ver **LIN-DEV-JAVA-001 sección 11.4.1–11.4.3**.
+> Para la configuración completa de SpringDoc (dependencia Maven, `OpenApiConfig.java`, YAML por entorno y activación temporal en PROD), ver **LIN-DEV-JAVA-001 sección 13.4.1–13.4.3**.
 
 ### 6.3 Anotaciones obligatorias
 
@@ -646,7 +647,7 @@ Todos los endpoints deben retornar `ApiResponseWrapper` como tipo de respuesta e
 | `@Operation summary` | Verbo en infinitivo + objeto. Máx 80 chars. Sin punto. Ej: `Obtener afiliado por ID` |
 | `@ApiResponse description` | Cuándo ocurre esa respuesta. Terminar con punto. Ej: `Afiliado no encontrado.` |
 
-> Para los ejemplos de código completos de cada método HTTP (GET, POST, PUT, DELETE) con `@Operation`, `@ApiResponses` y `@Schema`, ver **LIN-DEV-JAVA-001 sección 11.4**.
+> Para los ejemplos de código completos de cada método HTTP (GET, POST, PUT, DELETE) con `@Operation`, `@ApiResponses` y `@Schema`, ver **LIN-DEV-JAVA-001 sección 13.4.6–13.4.7**.
 
 ---
 
@@ -784,7 +785,7 @@ El API Gateway aplica rate limiting por cliente (IP o token). Los servicios no i
 
 ## 9. Observabilidad
 
-Los servicios REST de la ONP deben estar instrumentados con los **cuatro pilares de observabilidad** definidos en **LIN-ARQ-000 sección 9.5**: trazas, logs estructurados, métricas y health checks. **No hay excepciones:** un servicio sin observabilidad no está listo para producción. Este lineamiento define los requisitos de cada pilar desde la perspectiva REST; la implementación técnica completa se encuentra en **LIN-OBS-001**.
+Los servicios REST de la ONP deben estar instrumentados con los **cuatro pilares de observabilidad** definidos en **LIN-ARQ-001 sección 5.3** (Four Golden Signals): trazas, logs estructurados, métricas y health checks. **No hay excepciones:** un servicio sin observabilidad no está listo para producción. Este lineamiento define los requisitos de cada pilar desde la perspectiva REST; la implementación técnica completa se encuentra en **LIN-OBS-001**.
 
 ### 9.1 Correlación de peticiones — X-Request-ID
 
@@ -916,7 +917,7 @@ Un servicio sin probes declaradas en el Deployment **no puede ser aprobado** par
 
 ### 9.7 Checklist mínimo de observabilidad antes de producción
 
-Equivalente del checklist de **LIN-ARQ-000 sección 9.5**, aplicado a servicios REST:
+Equivalente del checklist de **LIN-ARQ-001 sección 5.3**, aplicado a servicios REST:
 
 - [ ] `spring-boot-starter-actuator` incluido en `pom.xml`
 - [ ] `micrometer-registry-prometheus` incluido en `pom.xml`
@@ -967,7 +968,7 @@ Antes de que OTI Arquitectura active el estado `PUBLISHED` en WSO2, el equipo de
 #### Parte A — Requisitos técnicos (equipo de desarrollo)
 
 - [ ] Especificación OpenAPI 3.0 generada, válida y sin errores (verificable en Swagger Editor o Stoplight)
-- [ ] Todos los endpoints documentados con `@Operation`, `@ApiResponse` y `@Schema` (ver LIN-DEV-JAVA-001 sección 11.4)
+- [ ] Todos los endpoints documentados con `@Operation`, `@ApiResponse` y `@Schema` (ver LIN-DEV-JAVA-001 sección 13.4.6–13.4.7)
 - [ ] Backend desplegado y smoke-tested en el ambiente de destino (QA o PROD)
 - [ ] Endpoint `/actuator/health` responde `{"status":"UP"}` en el ambiente de destino
 - [ ] Instrumentación de observabilidad completa: trazas visibles en Jaeger, logs en Kibana (ver LIN-OBS-001 sección 11)
@@ -1053,9 +1054,10 @@ https://<host>/api/v{N}/{recurso-plural}/{id}/{sub-recurso}?param=valor
 | LIN-OBS-001 sección 5 | Implementación de trazas OTEL en Spring Boot (`@NewSpan`, Jaeger) |
 | LIN-OBS-001 sección 6 | Implementación de logging estructurado (`logback-spring.xml`, ECS, No PII) |
 | LIN-OBS-001 secciones 4.9–4.10 | `CanonicalRequestLogFilter`, `RequestIdFilter` |
-| LIN-DEV-JAVA-001 sección 11.4 | Implementación completa de OpenAPI/Swagger y `ApiResponseWrapper<T>` |
-| LIN-DEV-JAVA-001 sección 12 | Estructura de proyecto Maven y convenciones de nombrado |
-| LIN-ARQ-000 sección 3 | Estilos arquitectónicos (monolito, modular, hexagonal) |
+| LIN-DEV-JAVA-001 sección 13.4 | Implementación completa de OpenAPI/Swagger y `ApiResponseWrapper<T>` |
+| LIN-DEV-JAVA-001 sección 14 | Estructura de proyecto Maven y convenciones de nombrado |
+| LIN-ARQ-001 sección 2 | Estilos arquitectónicos macro (monolito, monolito modular, microservicios) |
+| LIN-DIS-001 sección 3.2 | Arquitectura Hexagonal (Ports & Adapters) |
 
 ---
 

@@ -3,9 +3,9 @@
 ---
 
 **Código:** LIN-OBS-001
-**Marco rector:** LIN-ARQ-000
-**Versión:** v0.1.1
-**Fecha:** 2026-05-28
+**Marco rector:** LIN-ARQ-001
+**Versión:** v0.1.2
+**Fecha:** 2026-07-10
 **Propietario documental:** OTI / Arquitectura
 **Clasificación:** Uso Interno (Técnico)
 **Dirigido a:** Equipo de Desarrollo, Plataforma/Infraestructura
@@ -20,6 +20,7 @@
 |---------|-------------|-------------|------------------------------------------|
 | 0.1.0   | 2026-05-25  | Arquitectura OTI | Versión inicial; absorbe Guía v0.1.2 [secciones 1](#1-objetivo-y-alcance)–2 |
 | 0.1.1   | 2026-05-28  | Arquitectura OTI | Declara YAML como formato oficial de configuración, alinea el modelo OTEL con overrides operativos en K8s y documenta el comportamiento de la cadena de filtros ante fallos |
+| 0.1.2   | 2026-07-10  | Arquitectura OTI | Migra Marco rector de `LIN-ARQ-000` (congelado) a `LIN-ARQ-001` (vigente) |
 
 ---
 

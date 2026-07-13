@@ -81,9 +81,9 @@ Este documento registra los patrones, estilos, principios y decisiones arquitect
 | PD01 | Aggregate | ✅ Documentado | LIN-ARQ-000 §6.4.1 | Guía normativa en contexto Spring: transacciones y eventos en Agregado Raíz |
 | PD02 | Entity / Value Object | ✅ Documentado | LIN-ARQ-000 §6.4.1 | Diferenciación estricta con `@Entity` JPA; records autovalidados en Java 21 |
 | PD03 | Domain Event | ✅ Documentado | LIN-ARQ-000 + LIN-BUS-001 | |
-| PD04 | Repository | ✅ Documentado | LIN-DEV-JAVA-001 §11.5.3 | Puerto en capa de dominio + adaptador `JpaRepository`/`JdbcRepository` en infraestructura; traducción de excepciones Oracle a jerarquía limpia |
-| PD05 | Domain Service | ✅ Documentado | LIN-DEV-JAVA-001 §11.5.2 | POJO puro sin anotaciones de Spring/JPA; registro obligatorio vía `@Configuration`/`@Bean` para preservar la pureza hexagonal |
-| PD06 | Application Service | ✅ Documentado | LIN-DEV-JAVA-001 §11.5.1 | Orquestador transaccional (`@Service` + `@Transactional`); delega en el Domain Service y publica eventos de dominio |
+| PD04 | Repository | ✅ Documentado | LIN-DEV-JAVA-001 §13.5.3 | Puerto en capa de dominio + adaptador `JpaRepository`/`JdbcRepository` en infraestructura; traducción de excepciones Oracle a jerarquía limpia |
+| PD05 | Domain Service | ✅ Documentado | LIN-DEV-JAVA-001 §13.5.2 | POJO puro sin anotaciones de Spring/JPA; registro obligatorio vía `@Configuration`/`@Bean` para preservar la pureza hexagonal |
+| PD06 | Application Service | ✅ Documentado | LIN-DEV-JAVA-001 §13.5.1 | Orquestador transaccional (`@Service` + `@Transactional`); delega en el Domain Service y publica eventos de dominio |
 | PD07 | Bounded Context | ✅ Documentado | LIN-ARQ-000 | |
 | PD08 | Context Map | ✅ Documentado | LIN-ARQ-000 §3.9.1 | Contrato y relaciones entre Bounded Contexts en Monolito Modular |
 | PD09 | Shared Kernel | ✅ Documentado | LIN-ARQ-000 §3.9.2 | Estándar y tabla de elementos permitidos/prohibidos en módulo común |
@@ -107,14 +107,14 @@ Este documento registra los patrones, estilos, principios y decisiones arquitect
 
 | # | Principio | Estado | Documento destino | Notas |
 |---|---|---|---|---|
-| PR01 | SOLID — Single Responsibility | ✅ Documentado | LIN-ARQ-000 §7.1 + LIN-DEV-JAVA-001 §10.4.1 | Declaración arquitectónica en LIN-ARQ-000 §7.1; aplicación práctica en Spring y anti-patrón God Object en LIN-DEV-JAVA-001 §10.4.1. |
-| PR02 | SOLID — Open/Closed | ✅ Documentado | LIN-ARQ-000 §7.1 + LIN-DEV-JAVA-001 §10.4.1 | Ídem PR01 — ejemplo de patrón Estrategia inyectado por Spring para evitar condicionales en cadena |
-| PR03 | SOLID — Liskov Substitution | ✅ Documentado | LIN-ARQ-000 §7.1 + LIN-DEV-JAVA-001 §10.4.1 | Ídem PR01 |
-| PR04 | SOLID — Interface Segregation | ✅ Documentado | LIN-ARQ-000 §7.1 + LIN-DEV-JAVA-001 §10.4.1 | Ídem PR01 |
-| PR05 | SOLID — Dependency Inversion | ✅ Documentado | LIN-ARQ-000 §7.1 + LIN-DEV-JAVA-001 §10.4.1, §11.5 | Declaración en LIN-ARQ-000 §7.1; guía de inyección por constructor y puertos de dominio en LIN-DEV-JAVA-001 §10.4.1 y §11.5. |
-| PR06 | DRY (Don't Repeat Yourself) | ✅ Documentado | LIN-ARQ-000 §7.2 + LIN-DEV-JAVA-001 §10.4.2 | Declarado en LIN-ARQ-000 §7.2; criterio ONP de duplicación de conocimiento de negocio vs. acoplamiento entre módulos en LIN-DEV-JAVA-001 §10.4.2. |
-| PR07 | KISS (Keep It Simple) | ✅ Documentado | LIN-ARQ-000 §7.2 + LIN-DEV-JAVA-001 §10.4.3 | Ídem PR06 — uso de Records/Sealed Classes de Java 21 y prohibición de sobre-ingeniería |
-| PR08 | YAGNI (You Ain't Gonna Need It) | ✅ Documentado | LIN-ARQ-000 §7.2 + LIN-DEV-JAVA-001 §10.4.4 | Ídem PR06 — prohibición de abstracciones especulativas sin requerimiento formal |
+| PR01 | SOLID — Single Responsibility | ✅ Documentado | LIN-ARQ-000 §7.1 + LIN-DEV-JAVA-001 §7.1 | Declaración arquitectónica en LIN-ARQ-000 §7.1; aplicación práctica en Spring y anti-patrón God Object en LIN-DEV-JAVA-001 §7.1 (renumerado desde §10.4.1 — corrección 2026-07-10). |
+| PR02 | SOLID — Open/Closed | ✅ Documentado | LIN-ARQ-000 §7.1 + LIN-DEV-JAVA-001 §7.2 | Ídem PR01 — ejemplo de patrón Estrategia inyectado por Spring para evitar condicionales en cadena |
+| PR03 | SOLID — Liskov Substitution | ✅ Documentado | LIN-ARQ-000 §7.1 + LIN-DEV-JAVA-001 §7.3 | Ídem PR01 |
+| PR04 | SOLID — Interface Segregation | ✅ Documentado | LIN-ARQ-000 §7.1 + LIN-DEV-JAVA-001 §7.4 | Ídem PR01 |
+| PR05 | SOLID — Dependency Inversion | ✅ Documentado | LIN-ARQ-000 §7.1 + LIN-DEV-JAVA-001 §7.5, §13.5 | Declaración en LIN-ARQ-000 §7.1; guía de inyección por constructor y puertos de dominio en LIN-DEV-JAVA-001 §7.5 y §13.5. |
+| PR06 | DRY (Don't Repeat Yourself) | ✅ Documentado | LIN-ARQ-000 §7.2 + LIN-DEV-JAVA-001 §12.4.2 | Declarado en LIN-ARQ-000 §7.2; criterio ONP de duplicación de conocimiento de negocio vs. acoplamiento entre módulos en LIN-DEV-JAVA-001 §12.4.2. |
+| PR07 | KISS (Keep It Simple) | ✅ Documentado | LIN-ARQ-000 §7.2 + LIN-DEV-JAVA-001 §12.4.3 | Ídem PR06 — uso de Records/Sealed Classes de Java 21 y prohibición de sobre-ingeniería |
+| PR08 | YAGNI (You Ain't Gonna Need It) | ✅ Documentado | LIN-ARQ-000 §7.2 + LIN-DEV-JAVA-001 §12.4.4 | Ídem PR06 — prohibición de abstracciones especulativas sin requerimiento formal |
 | PR09 | Separation of Concerns | ✅ Documentado | LIN-ARQ-000 §3.11 + §7.2 | Declarado formalmente en §3.11 y referenciado en §7.2 con ejemplos de violación |
 | PR10 | Law of Demeter | ❌ Pendiente | LIN-DEV-JAVA-001 | |
 | PR11 | Tell Don't Ask | ❌ Pendiente | LIN-DEV-JAVA-001 | |
@@ -163,7 +163,7 @@ Este documento registra los patrones, estilos, principios y decisiones arquitect
 | PD09 | Shared Kernel | ✅ Cerrada (LIN-ARQ-000 §3.9.2) |
 | PI09 | Bulkhead | ✅ Cerrada (LIN-ARQ-000 §3.7.2) |
 | PA07 | CQRS — detalle de implementación | ✅ Cerrada (LIN-ARQ-000 §3.10) |
-| PD04–PD06 | Repository, Domain Service, Application Service — building blocks tácticos en Spring | ✅ Cerrada (LIN-DEV-JAVA-001 §11.5) |
+| PD04–PD06 | Repository, Domain Service, Application Service — building blocks tácticos en Spring | ✅ Cerrada (LIN-DEV-JAVA-001 §13.5) |
 
 ### Baja prioridad — complementan el framework a largo plazo
 
@@ -199,3 +199,4 @@ Lineamientos identificados como necesarios para roles que aún no tienen cobertu
 | v0.1.2 | 2026-07-02 | Arquitectura OTI | Cierra brechas de patrones oficiales PT09 (PA09), PT10 (PA11) y PT12 (PA10) normadas en LIN-ARQ-000 §3.8 |
 | v0.1.3 | 2026-07-02 | Arquitectura OTI | Cierra brechas de patrones DDD en Monolito Modular PD08 (Context Map) y PD09 (Shared Kernel) normadas en LIN-ARQ-000 §3.9 |
 | v0.1.4 | 2026-07-06 | Arquitectura OTI | Cierra brechas de Nivel 3 en LIN-DEV-JAVA-001 v0.1.2: PR01–PR08 (SOLID + DRY/KISS/YAGNI, §10.4) y PD04–PD06 (Repository/Domain Service/Application Service, §11.5). Actualiza PG01–PG03 de ❌ Pendiente a ⚠️ Parcial tras verificar cobertura de Adapter/Decorator/Facade, Factory Method/Builder/Singleton y Strategy/Observer/Command/State en LIN-ARQ-000 §8 |
+| v0.1.5 | 2026-07-10 | Arquitectura OTI | Corrige citas a LIN-DEV-JAVA-001 en filas PR01–PR09 y PD04–PD06: las secciones §10.4.x y §11.5.x citadas en v0.1.4 fueron renumeradas internamente en revisiones posteriores de LIN-DEV-JAVA-001 sin que este tablero se actualizara. Ubicación real verificada: SOLID → §7.1–§7.5, DRY/KISS/YAGNI → §12.4.2–§12.4.4, Repository/Domain Service/Application Service → §13.5.1–§13.5.3. Pendiente: el resto de filas de este tablero sigue citando `LIN-ARQ-000` (congelado desde 2026-07-07) en vez de `LIN-ARQ-001`/`LIN-DIS-001`/`LIN-PAT-001` — reconciliación completa fuera de alcance de esta corrección puntual |

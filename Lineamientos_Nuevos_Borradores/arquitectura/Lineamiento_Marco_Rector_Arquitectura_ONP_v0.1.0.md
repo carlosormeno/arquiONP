@@ -1,8 +1,8 @@
 # Lineamiento Marco Rector de Arquitectura de Software en la ONP
 
 **Código:** LIN-ARQ-001  
-**Versión:** 0.1.5  
-**Fecha:** 2026-07-09  
+**Versión:** 0.1.6  
+**Fecha:** 2026-07-10  
 **Autor:** Oficina de Tecnologías de la Información — ONP  
 **Estado:** Vigente / Estándar de Nivel 1  
 **Clasificación:** Marco rector institucional. Documento supremo en la jerarquía del modelo de 3 niveles de la OTI. Establece las decisiones macro, Hacia Dónde y Por Qué de la arquitectura de sistemas. Todo lineamiento táctico (Nivel 2) y de implementación o código (Nivel 3) está supeditado a las reglas y directivas declaradas en el presente documento.
@@ -463,6 +463,8 @@ Todo profesional o equipo asignado por la empresa contratista a proyectos de des
 | **Estadio 3: Microservicios** | • Spring Cloud o diseño *Kubernetes-native*, Circuit Breaker, Trazabilidad Distribuida (OpenTelemetry).<br>• Transacciones distribuidas eventuales (Patrón Saga y Outbox, `§3.3`). | Intenta usar `2PC` o transacciones bloqueantes entre servicios; desconoce el Teorema CAP, Saga o cómo operar en consistencia eventual. |
 | **Domain-Driven Design (DDD)** *(solo cuando aplican los 6 criterios de `LIN-DIS-001 §3.0`)* | • Bounded Contexts, Agregados, Value Objects, Domain Events, CQRS básico. | No puede distinguir un Agregado de una entidad JPA; propone DDD para un CRUD simple sin justificar los 6 criterios de gobernanza. |
 | **Desarrollo Frontend SPA Angular** | • Angular 17+ con TypeScript estricto, programación reactiva con RxJS (`Signals`, `Observables`).<br>• Optimización extrema para cumplimiento de Core Web Vitals (LCP, INP, CLS) y pruebas en Lighthouse.<br>• Diseño responsivo y buenas prácticas de seguridad (gestión limpia del token SAA). | Manipula directamente el DOM mediante `document.getElementById()`; utiliza `any` en TypeScript; abusa de `setTimeout(fn, 0)` para hackear el ciclo de detección de cambios (*Change Detection*) de Angular. |
+
+> **Nota de alcance:** esta tabla agrupa perfiles de contratación/TDR y mezcla dos dimensiones distintas a propósito — estilo arquitectónico (Monolito Modular, Hexagonal, Microservicios) y estrategia de lógica de dominio (Transaction Script/Active Record, DDD) — porque ambas son relevantes para evaluar competencias de un candidato. Para gates de cobertura de pruebas **no se usa esta tabla**: `LIN-TEST-001 §5.1` define los umbrales por estilo arquitectónico (Monolito Simple, Monolito Modular, Hexagonal, Microservicio, EDA), y `LIN-TEST-001 §4.6` explica por qué la estrategia de lógica de dominio (Transaction Script, DDD) es una dimensión ortogonal que modula el *foco* de las pruebas unitarias pero no tiene un porcentaje de cobertura propio.
 
 ### 8.3 Criterios Técnicos de Aceptación y Entrega Formal de Software
 Para que la OTI o el Área Usuaria otorgue la **conformidad técnica y aceptación formal de un entregable de software contratado**, el contratista deberá adjuntar y aprobar las siguientes evidencias en el pipeline CI/CD:

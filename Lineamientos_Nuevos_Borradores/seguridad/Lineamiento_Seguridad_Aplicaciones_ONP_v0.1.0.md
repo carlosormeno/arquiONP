@@ -1,11 +1,11 @@
 # Lineamiento de Seguridad en Aplicaciones ONP
 **Código:** LIN-SEC-APP-001
-**Versión:** v0.1.3
+**Versión:** v0.1.4
 **Estado:** Borrador
 **Fecha:** 2026-07-10
 **Propietario:** Arquitectura de Software — OTI
 **Revisores:** Seguridad de la Información, Arquitectura, Desarrollo
-**Marco rector:** LIN-ARQ-000 — Marco Rector de Diseño y Arquitectura de Software
+**Marco rector:** LIN-ARQ-001 — Marco Rector de Arquitectura de Software
 
 ---
 
@@ -17,6 +17,7 @@
 | v0.1.1 | 2026-05-28 | Arquitectura OTI | Alinea la configuración a YAML, documenta el comportamiento del filtro SAA ante fallos y referencia la transición gobernada hacia WSO2 |
 | v0.1.2 | 2026-07-06 | Arquitectura OTI | Declara a LIN-ARQ-000 como marco rector (encabezado y §2), único lineamiento de Nivel 3 que no lo citaba. Corrige mención de Circuit Breaker: el patrón oficial es PT06, no PT07 (PT07 es Bulkhead); actualiza la referencia obsoleta "pendiente LIN-BUS-001" a LIN-ARQ-000 §3.7.3, donde Circuit Breaker ya está normado |
 | v0.1.3 | 2026-07-10 | Arquitectura OTI | Revierte la corrección de v0.1.2: el código correcto de Circuit Breaker es **PT07**, no PT06 — PT06 es Retry y PT08 es Bulkhead, según el catálogo autoritativo `LIN-PAT-001` (fichas PAT-RES-01/02) y `Matriz_Propiedad_Documental_ONP`. Actualiza §8.7 y el glosario. Redirige además la referencia de Circuit Breaker desde el documento congelado `LIN-ARQ-000 §3.7.3` hacia `LIN-DIS-001 §6.2`, donde vive el contenido vigente |
+| v0.1.4 | 2026-07-10 | Arquitectura OTI | Migra Marco rector de `LIN-ARQ-000` (congelado) a `LIN-ARQ-001` (vigente) en encabezado y §2; corrige la clasificación de "Nivel 2" a "Nivel 1" para el marco rector |
 
 ---
 
@@ -80,7 +81,7 @@ Aplica a:
 
 | Documento | Código | Relevancia |
 |---|---|---|
-| Marco Rector de Diseño y Arquitectura de Software | LIN-ARQ-000 | Documento rector de Nivel 2 — define Design for Failure (§3.7), Circuit Breaker/Resilience4j (§3.7.3) y el marco general que este lineamiento opera en materia de seguridad |
+| Marco Rector de Arquitectura de Software | LIN-ARQ-001 | Documento rector de Nivel 1 — define Zero Trust y Defensa en Profundidad (§5.1), Observabilidad (§5.3) y el marco general que este lineamiento opera en materia de seguridad. Circuit Breaker/Resilience4j vive en `LIN-DIS-001 §6.2` |
 | Lineamiento de Estándar APIs REST | LIN-API-REST-001 | HTTPS, headers, CORS, WSO2 |
 | Lineamiento Estándar Desarrollo Java | LIN-DEV-JAVA-001 | Estructura de proyecto, secrets |
 | Lineamiento Log, Trazabilidad y Observabilidad | LIN-OBS-001 | No PII en logs, propagación user.id |
