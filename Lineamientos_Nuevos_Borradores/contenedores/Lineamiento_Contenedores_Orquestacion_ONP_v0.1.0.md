@@ -1,9 +1,9 @@
 # LIN-K8S-001 — Lineamiento de Contenedores y Orquestación ONP
 
 **Código:** LIN-K8S-001  
-**Versión:** v0.1.11  
+**Versión:** v0.1.12  
 **Estado:** Borrador  
-**Fecha:** 2026-07-10  
+**Fecha:** 2026-07-14  
 **Propietario documental:** Arquitectura de Software — OTI  
 **Revisores sugeridos:** Plataforma/Infraestructura, Seguridad Digital, Desarrollo, Arquitectura  
 **Marco rector:** LIN-ARQ-001 — Marco Rector de Arquitectura de Software  
@@ -27,6 +27,7 @@
 | v0.1.9 | 2026-07-09 | Arquitectura OTI | Corrige las citas colgantes hacia el documento congelado `LIN-ARQ-000 §11.1`: el estadio de Transición (Docker Compose) y el runtime containerd de producción ahora citan `LIN-ARQ-001 §5.2` (Marco Rector vigente) |
 | v0.1.10 | 2026-07-09 | Arquitectura OTI | Añade en §10.3 la diferenciación de réplicas mínimas y SLO por estilo arquitectónico (Monolito Modular 99.0% / Microservicio 99.5%), que solo existía en el documento congelado |
 | v0.1.11 | 2026-07-10 | Arquitectura OTI | Corrige el ejemplo de imagen frontend en §5.4 y el Anexo D: reemplaza `nginx:stable-alpine` en puerto 80 (root) por `nginxinc/nginx-unprivileged:1.27-alpine` en puerto 8080 con directorios temporales en `/tmp`, alineando con `LIN-FE-ANG-001 §16` y con la propia regla de este documento (§14.1, `runAsNonRoot: true`) — el ejemplo previo violaba su propia norma y contradecía el anti-patrón explícito de §16.5 |
+| v0.1.12 | 2026-07-14 | Arquitectura OTI | Corrige las 9 citas residuales al documento congelado `LIN-ARQ-000` que quedaron sin migrar en v0.1.9 (que solo corrigió §11.1): §1.3, la cláusula de supremacía jerárquica de §2 (que además decía erróneamente que el marco rector es "Nivel 2" — es Nivel 1), tabla de §2, detonador NoSQL de §5.2, atribución de los patrones Sidecar/Ambassador de §9.4 (son normados por este propio documento, no por el marco rector), reglas de resiliencia y Strangler Fig de §9.4.2/9.4.3, y la cláusula de supremacía del proceso ADR en §20. Todas redirigidas a `LIN-ARQ-001` (§2.1, §2.2, §4.3, §6.2) y `LIN-DIS-001 §6` según corresponda |
 
 ---
 
@@ -125,12 +126,12 @@ Aplica a:
 
 ## 2. Normativa y documentos relacionados
 
-> **Importante:** **Supremacía Jerárquica del Marco Rector (LIN-ARQ-000):**  
-> `LIN-ARQ-000` es el **documento rector de jerarquía superior (Nivel 2)** que rige de manera absoluta sobre todos los estándares y lineamientos técnicos específicos de **Nivel 3** (incluyendo el presente documento, `LIN-DEV-JAVA-001`, `LIN-OBS-001`, `LIN-SEC-APP-001`, etc.). Este lineamiento implementa de forma táctica y operativa en Kubernetes y contenedores los principios arquitectónicos (PR01–PR08) y patrones de despliegue (PA12, PA13, PT08) definidos en `LIN-ARQ-000`. **Ante cualquier vacío, conflicto o presunta discrepancia de interpretación entre este documento y el marco rector, prevalecerán siempre y en todo momento los mandatos, patrones y directivas de LIN-ARQ-000.**
+> **Importante:** **Supremacía Jerárquica del Marco Rector (LIN-ARQ-001):**  
+> `LIN-ARQ-001` es el **documento rector de jerarquía superior (Nivel 1)** que rige de manera absoluta sobre todos los estándares tácticos de Nivel 2 (`LIN-DIS-001`) y de implementación de Nivel 3 (incluyendo el presente documento, `LIN-DEV-JAVA-001`, `LIN-OBS-001`, `LIN-SEC-APP-001`, etc. — ver el modelo de 3 niveles en `LIN-ARQ-001 §1.2`). Este lineamiento implementa de forma táctica y operativa en Kubernetes y contenedores los principios arquitectónicos y patrones de despliegue normados en `LIN-ARQ-001` y, para los patrones tácticos multi-contenedor (Sidecar, Ambassador), en este mismo documento (§9.4). **Ante cualquier vacío, conflicto o presunta discrepancia de interpretación entre este documento y el marco rector, prevalecerán siempre y en todo momento los mandatos, patrones y directivas de LIN-ARQ-001.**
 
 | Documento | Código | Relación |
 |---|---|---|
-| Marco Rector de Diseño y Arquitectura de Software | LIN-ARQ-000 | Define Kubernetes como destino objetivo y estilos de despliegue |
+| Marco Rector de Arquitectura de Software | LIN-ARQ-001 | Define Kubernetes como destino objetivo y estilos de despliegue |
 | Estándar de Desarrollo Java | LIN-DEV-JAVA-001 | Define stack Java/Spring Boot y configuración de aplicación |
 | Estándar de APIs REST | LIN-API-REST-001 | Define exposición de APIs y relación con WSO2 API Manager |
 | Log, Trazabilidad y Observabilidad | LIN-OBS-001 | Define logs, métricas, health checks y trazas |
@@ -220,7 +221,7 @@ ONP opera **un clúster Kubernetes independiente por ambiente**. El modelo base 
 - Necesidad de pruebas de rendimiento/carga en condiciones equivalentes a PROD que QA no puede proveer por volumen de datos, topología de red o recursos (ver `LIN-PERF-001 §12`).
 - Ventana de validación final pre-lanzamiento para sistemas de alta criticidad (ej. cálculo de pensiones) donde un defecto en PROD tiene consecuencia legal o financiera severa.
 
-*Lo que NO es un detonador válido:* "por si acaso", costumbre de otros proyectos, o preferencia del equipo sin evidencia de una necesidad concreta — igual que se exige en la adopción de BD no relacional (§5.2 de LIN-ARQ-000).
+*Lo que NO es un detonador válido:* "por si acaso", costumbre de otros proyectos, o preferencia del equipo sin evidencia de una necesidad concreta — igual que se exige en la adopción de BD no relacional (`LIN-ARQ-001 §6.2`).
 
 El ADR debe declarar: el detonador que lo justifica; si el ambiente es permanente para el sistema o temporal (ej. solo durante una migración), y en ese caso su criterio de retiro; y quién lo opera (Plataforma aprovisiona el clúster, Desarrollo lo usa). Una vez aprobado, el ambiente se documenta en la ficha de despliegue del sistema (ver sección 16), igual que ya lo contempla la Plantilla de Documento de Arquitectura ("si existe UAT también debe incluirse").
 
@@ -650,7 +651,7 @@ app.kubernetes.io/managed-by: <equipo-o-herramienta>
 
 En Kubernetes, la unidad atómica de despliegue es el **Pod**. Por regla general y en estricta coherencia con el principio de separación de responsabilidades (§4.2), **un pod en la ONP debe contener un único contenedor de negocio (estilo 1 Pod = 1 Contenedor)**.
 
-No obstante, el marco rector de arquitectura (**LIN-ARQ-000**) contempla dos patrones tácticos de despliegue multi-contenedor (*Multi-Container Pod Patterns*): **Sidecar (PA12)** y **Ambassador (PA13)**. Para prevenir sobre-ingeniería, desperdicio de recursos computacionales (CPU/RAM) y colisiones con otros lineamientos del framework institucional, su adopción se rige por las siguientes reglas binarias de aplicación:
+No obstante, este lineamiento norma dos patrones tácticos de despliegue multi-contenedor (*Multi-Container Pod Patterns*) identificados como brecha pendiente en `Brecha_Framework_Arquitectura_ONP`: **Sidecar (PA12)** y **Ambassador (PA13)**. Para prevenir sobre-ingeniería, desperdicio de recursos computacionales (CPU/RAM) y colisiones con otros lineamientos del framework institucional, su adopción se rige por las siguientes reglas binarias de aplicación:
 
 #### A. Patrón Sidecar (PA12) — Co-procesos de Apoyo y Observabilidad
 
@@ -720,11 +721,11 @@ spec:
 
 El patrón **Ambassador** actúa como un proxy de red local dentro del pod que media y blinda todo el tráfico saliente (*outbound traffic*) desde la aplicación hacia sistemas externos, APIs, bases de datos o servicios heredados.
 
-1. **Regla General en ONP (Prohibido para Java / Spring Boot 3):** En coherencia con **LIN-ARQ-000 §3.7 y §3.8.4**, para aplicaciones construidas en Java 21 / Spring Boot 3, **está estrictamente prohibido utilizar un Ambassador sidecar para gestionar resiliencia o conectividad saliente**. Toda la resiliencia de integración hacia sistemas externos (RENIEC, SUNAT, PIDE) o servicios WSO2 debe resolverse **dentro de la JVM** en la capa de infraestructura del software (`pe.gob.onp.<sistema>.<modulo>.infrastructure.client.*`):
+1. **Regla General en ONP (Prohibido para Java / Spring Boot 3):** En coherencia con **`LIN-ARQ-001 §4.3`** (Interoperabilidad Gubernamental y SOA) y **`LIN-DIS-001 §6`** (Resiliencia Táctica), para aplicaciones construidas en Java 21 / Spring Boot 3, **está estrictamente prohibido utilizar un Ambassador sidecar para gestionar resiliencia o conectividad saliente**. Toda la resiliencia de integración hacia sistemas externos (RENIEC, SUNAT, PIDE) o servicios WSO2 debe resolverse **dentro de la JVM** en la capa de infraestructura del software (`pe.gob.onp.<sistema>.<modulo>.infrastructure.client.*`):
    - *Timeouts y Bulkhead (PI08 / PI09):* Mediante configuración nativa de **Apache HttpClient 5** (`setMaxConnPerRoute`).
    - *Circuit Breaker y Reintentos (PI06 / PI07):* Mediante anotaciones y máquinas de estado de **Resilience4j** en el cliente Java.  
    Ningún desarrollador Java debe delegar, duplicar ni configurar políticas de reintento o circuit breaker en un proxy de red externo.
-2. **Única Excepción Legítima (Strangler Fig sobre Monolitos Legacy No-Java):** En el marco de la hoja de ruta de modernización institucional (**LIN-ARQ-000 §2.2 Strangler Fig** y **§3.3 Monolito Puro**), cuando se contenericen sistemas heredados (ej. monolitos en JBoss, WebLogic, C++ o frameworks antiguos) cuyo código fuente no puede ser refactorizado o modificado para incorporar políticas de resiliencia o seguridad moderna, se autoriza el despliegue de un **Ambassador sidecar** (ej. Envoy, Envoy-based Proxy o WSO2 Microgateway ligero) en el pod. En este escenario —y solo en este—, el Ambassador asumirá la terminación mTLS, rotación de cabeceras, timeouts y reintentos hacia el exterior, protegiendo al monolito heredado sin necesidad de reescribir su lógica interna.
+2. **Única Excepción Legítima (Strangler Fig sobre Monolitos Legacy No-Java):** En el marco de la hoja de ruta de modernización institucional (**`LIN-ARQ-001 §2.2`** Strangler Fig y **§2.1** Estadio 1 — Monolito Tradicional), cuando se contenericen sistemas heredados (ej. monolitos en JBoss, WebLogic, C++ o frameworks antiguos) cuyo código fuente no puede ser refactorizado o modificado para incorporar políticas de resiliencia o seguridad moderna, se autoriza el despliegue de un **Ambassador sidecar** (ej. Envoy, Envoy-based Proxy o WSO2 Microgateway ligero) en el pod. En este escenario —y solo en este—, el Ambassador asumirá la terminación mTLS, rotación de cabeceras, timeouts y reintentos hacia el exterior, protegiendo al monolito heredado sin necesidad de reescribir su lógica interna.
 
 ---
 
@@ -1137,7 +1138,7 @@ Mientras `LIN-IAC-001` no esté oficializado:
 
 ## 20. Proceso ADR para desviaciones
 
-> **Importante:** **Gobernanza y Supremacía de LIN-ARQ-000:** En estricta coherencia con la supremacía jerárquica del marco rector de **Nivel 2**, ningún ADR podrá ser aprobado ni será válido si contraviene los principios arquitectónicos fundamentales (PR01–PR08), patrones de resiliencia (PI06–PI09) o mandatos rectores de **LIN-ARQ-000**, salvo autorización expresa y excepcional de la Dirección de Arquitectura de la OTI.
+> **Importante:** **Gobernanza y Supremacía de LIN-ARQ-001:** En estricta coherencia con la supremacía jerárquica del marco rector de **Nivel 1**, ningún ADR podrá ser aprobado ni será válido si contraviene los principios arquitectónicos fundamentales, patrones de resiliencia (PI06–PI09) o mandatos rectores de **LIN-ARQ-001**, salvo autorización expresa y excepcional de la Dirección de Arquitectura de la OTI.
 
 Toda desviación relevante requiere ADR aprobado por Arquitectura. Si afecta seguridad, requiere además validación de Seguridad Digital conforme a la Directiva de Desarrollo de Software Seguro.
 
