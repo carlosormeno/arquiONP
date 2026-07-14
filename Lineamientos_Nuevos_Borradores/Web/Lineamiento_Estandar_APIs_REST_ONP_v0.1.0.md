@@ -3,8 +3,8 @@
 | | |
 |---|---|
 | **Código** | LIN-API-REST-001 |
-| **Versión** | 0.1.3 |
-| **Fecha** | 2026-07-10 |
+| **Versión** | 0.1.4 |
+| **Fecha** | 2026-07-14 |
 | **Estado** | Borrador |
 | **Clasificación** | Uso Interno (Técnico) |
 | **Área responsable** | OTI — Innovación y Desarrollo |
@@ -21,6 +21,7 @@
 | 0.1.1 | 2026-05-28 | Arquitectura OTI | Aclara el carácter normativo de `codDetRespuesta` y alinea el checklist de observabilidad con `LIN-OBS-001` y `LIN-K8S-001` |
 | 0.1.2 | 2026-05-28 | Arquitectura OTI | Define la gobernanza operativa de `codDetRespuesta`, su dueño y el proceso de alta/cambio de códigos |
 | 0.1.3 | 2026-07-10 | Arquitectura OTI | Migra Marco rector de `LIN-ARQ-000` (congelado) a `LIN-ARQ-001` (vigente). Corrige 5 citas a `LIN-DEV-JAVA-001 sección 11.4[.x]` → `sección 13.4[.x]`/`14` (renumeración interna nunca reflejada aquí) y 2 citas a la sección fantasma `LIN-ARQ-000 sección 9.5` → `LIN-ARQ-001 §5.3` (Four Golden Signals) |
+| 0.1.4 | 2026-07-14 | Arquitectura OTI | Corrige el Apéndice A.3: la cita a Arquitectura Hexagonal decía `LIN-DIS-001 sección 3.2` (introducido por error en la corrección de v0.1.3) — el número real es `sección 2.3` |
 
 ---
 
@@ -1057,7 +1058,7 @@ https://<host>/api/v{N}/{recurso-plural}/{id}/{sub-recurso}?param=valor
 | LIN-DEV-JAVA-001 sección 13.4 | Implementación completa de OpenAPI/Swagger y `ApiResponseWrapper<T>` |
 | LIN-DEV-JAVA-001 sección 14 | Estructura de proyecto Maven y convenciones de nombrado |
 | LIN-ARQ-001 sección 2 | Estilos arquitectónicos macro (monolito, monolito modular, microservicios) |
-| LIN-DIS-001 sección 3.2 | Arquitectura Hexagonal (Ports & Adapters) |
+| LIN-DIS-001 sección 2.3 | Arquitectura Hexagonal (Ports & Adapters) |
 
 ---
 

@@ -4,8 +4,8 @@
 
 **Código:** LIN-BUS-001  
 **Marco rector:** LIN-ARQ-001  
-**Versión:** v0.1.4  
-**Fecha:** 2026-07-09  
+**Versión:** v0.1.5  
+**Fecha:** 2026-07-14  
 **Propietario documental:** OTI / Arquitectura  
 **Clasificación:** Uso Interno (Técnico)  
 **Dirigido a:** Equipos de Desarrollo, Plataforma/Infraestructura, Arquitectura  
@@ -22,6 +22,7 @@
 | v0.1.2 | 2026-07-09 | Arquitectura OTI | Nombra explícitamente el patrón DDD Lenguaje Publicado (*Published Language*) en §5, del cual el envelope CloudEvents y sus reglas de evolución son la implementación institucional |
 | v0.1.3 | 2026-07-09 | Arquitectura OTI | Completa §4.3 con las 2 situaciones faltantes de "cuándo NO usar el bus" (desacoplar sin análisis, observabilidad inmadura) y añade advertencias sobre Event Sourcing (no está en la lista de patrones, no es CQRS), ausentes en todo el ecosistema tras la redistribución del documento congelado |
 | v0.1.4 | 2026-07-09 | Arquitectura OTI | Corrige §8.6: `ExponentialBackOffWithMaxRetries` fue retirada de Spring Framework 6.x — el ejemplo no compilaba contra el stack vigente (Spring Boot 3.x). Se reemplaza por `ExponentialBackOff.setMaxAttempts(int)`, validado con build real de Maven en `template-backend-java-modular` |
+| v0.1.5 | 2026-07-14 | Arquitectura OTI | Corrige 5 citas residuales al documento congelado `LIN-ARQ-000` que quedaron sin migrar en la reconciliación de marco rector: §1.1, §1.3 (Hexagonal → `LIN-DIS-001 §2.3`), tabla de §2, principio P7 y regla de ADR en §9.4 — todas redirigidas a `LIN-ARQ-001 §3.3`/`§4.2` según corresponda |
 
 ---
 
@@ -61,7 +62,7 @@ Este lineamiento establece los estándares obligatorios para el diseño, impleme
 - Los patrones de consistencia distribuida aplicables (Saga, Transactional Outbox).
 - Los requisitos de seguridad, observabilidad y gobierno documental.
 
-**Este lineamiento formaliza y reemplaza la regla transitoria de mensajería establecida en LIN-ARQ-000 sección 3.7.** Su vigencia levanta la restricción de adopción ad hoc de mensajería para los sistemas que cumplan con las normas aquí definidas.
+**Este lineamiento formaliza y reemplaza la regla transitoria de mensajería que originalmente estableció el documento congelado `LIN-ARQ-000` (sección 3.7).** Su vigencia levanta la restricción de adopción ad hoc de mensajería para los sistemas que cumplan con las normas aquí definidas; el gobierno vigente de EDA a nivel macro está en `LIN-ARQ-001 §4.2`.
 
 ### 1.2 Alcance
 
@@ -83,7 +84,7 @@ Este lineamiento establece los estándares obligatorios para el diseño, impleme
 
 ### 1.3 Prerrequisito arquitectónico
 
-De acuerdo con LIN-ARQ-000 sección 3.5, todo módulo que use mensajería para coordinar transacciones distribuidas debe haber adoptado previamente una **Arquitectura Hexagonal** (LIN-ARQ-000 sección 3.2). El broker no es un atajo para omitir esa frontera — los ports y adapters hacen explícita la separación entre el dominio y la infraestructura de mensajería.
+De acuerdo con `LIN-DIS-001 §2.3`, todo módulo que use mensajería para coordinar transacciones distribuidas debe haber adoptado previamente una **Arquitectura Hexagonal**. El broker no es un atajo para omitir esa frontera — los ports y adapters hacen explícita la separación entre el dominio y la infraestructura de mensajería.
 
 ---
 
@@ -91,8 +92,8 @@ De acuerdo con LIN-ARQ-000 sección 3.5, todo módulo que use mensajería para c
 
 | Documento | Código | Relevancia |
 |---|---|---|
-| Lineamiento de Diseño y Arquitectura de Software | LIN-ARQ-000 | Marco rector — EDA (3.6), regla transitoria (3.7), Saga/Outbox (3.6) |
-| Lineamiento Log, Trazabilidad y Observabilidad | LIN-OBS-001 | **Prerequisito para adoptar EDA** (LIN-ARQ-000 §3.6) — correlación de trazas productor→consumidor en Jaeger, política No PII, campos de log estructurado obligatorios (§11) |
+| Lineamiento Marco Rector de Arquitectura de Software | LIN-ARQ-001 | Marco rector — EDA (§4.2), Saga con Transactional Outbox (§3.3) |
+| Lineamiento Log, Trazabilidad y Observabilidad | LIN-OBS-001 | **Prerequisito para adoptar EDA** (LIN-ARQ-001 §4.2) — correlación de trazas productor→consumidor en Jaeger, política No PII, campos de log estructurado obligatorios (§11) |
 | Lineamiento de Contenedores y Orquestación | LIN-K8S-001 | Despliegue de Kafka y servicios consumidores/productores en K8s |
 | Lineamiento de Seguridad en Aplicaciones | LIN-SEC-APP-001 | Autenticación, autorización y gestión de secretos |
 | Lineamiento Estándar Desarrollo Java | LIN-DEV-JAVA-001 | Implementación de productores y consumidores en Spring Boot |
@@ -111,7 +112,7 @@ De acuerdo con LIN-ARQ-000 sección 3.5, todo módulo que use mensajería para c
 | P4 | **Eventos pequeños** | Un evento contiene solo los identificadores y datos mínimos necesarios. Si el consumidor necesita más datos, consulta directamente al servicio productor. |
 | P5 | **Consistencia eventual explícita** | El uso de mensajería implica consistencia eventual. Esta decisión debe ser explícita en el diseño y aceptada por el negocio antes de adoptar EDA. |
 | P6 | **Idempotencia en consumidores** | Todo consumidor debe estar diseñado para procesar el mismo evento más de una vez sin efectos secundarios indeseados. |
-| P7 | **Observabilidad del flujo asíncrono** | Cada evento publicado y consumido debe tener trazabilidad completa en Jaeger. Un flujo EDA sin trazas no está listo para producción. LIN-ARQ-000 §3.6 establece la madurez de LIN-OBS-001 como condición previa a la adopción de EDA. |
+| P7 | **Observabilidad del flujo asíncrono** | Cada evento publicado y consumido debe tener trazabilidad completa en Jaeger. Un flujo EDA sin trazas no está listo para producción. `LIN-ARQ-001 §4.2` establece la madurez de LIN-OBS-001 como condición previa a la adopción de EDA. |
 | P8 | **Gobierno centralizado** | Arquitectura OTI aprueba la creación de tópicos y el contrato de eventos. Plataforma crea y opera el broker. Seguridad OTI valida las ACLs. |
 
 ---
@@ -677,7 +678,7 @@ La respuesta que el monolito participante publica:
 - Los tópicos Saga los crea **Plataforma** igual que los tópicos de dominio — no se crean ad hoc.
 - El `sagaId` debe usarse como **clave de partición** para garantizar orden de mensajes dentro del mismo flujo.
 - Si un paso falla y el mensaje va a DLQ, el orquestador inicia compensación — no espera el replay del DLQ.
-- Cada flujo Saga debe documentarse como **ADR** con el diagrama de pasos y las compensaciones explícitas (regla de LIN-ARQ-000 §3.6).
+- Cada flujo Saga debe documentarse como **ADR** con el diagrama de pasos y las compensaciones explícitas (ver `LIN-ARQ-001 §3.3`).
 
 ---
 

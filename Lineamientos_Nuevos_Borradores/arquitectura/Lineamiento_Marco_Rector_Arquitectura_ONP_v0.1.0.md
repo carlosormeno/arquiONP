@@ -1,8 +1,8 @@
 # Lineamiento Marco Rector de Arquitectura de Software en la ONP
 
 **Código:** LIN-ARQ-001  
-**Versión:** 0.1.6  
-**Fecha:** 2026-07-10  
+**Versión:** 0.1.7  
+**Fecha:** 2026-07-14  
 **Autor:** Oficina de Tecnologías de la Información — ONP  
 **Estado:** Vigente / Estándar de Nivel 1  
 **Clasificación:** Marco rector institucional. Documento supremo en la jerarquía del modelo de 3 niveles de la OTI. Establece las decisiones macro, Hacia Dónde y Por Qué de la arquitectura de sistemas. Todo lineamiento táctico (Nivel 2) y de implementación o código (Nivel 3) está supeditado a las reglas y directivas declaradas en el presente documento.
@@ -459,7 +459,7 @@ Todo profesional o equipo asignado por la empresa contratista a proyectos de des
 |---|---|---|
 | **Transaction Script / Active Record** *(mantenimiento de sistemas simples o legados)* | • JPA/Hibernate, Spring Data, manejo transaccional declarativo. | No conoce `@Transactional` o usa `SELECT *`; no distingue transacción declarativa de programática. |
 | **Estadio 2: Monolito Modular** *(Estándar por Defectos en ONP)* | • Arquitectura modular Maven y gobierno de fronteras de paquetes.<br>• Principios SOLID aplicados rigurosamente a clases y servicios (`LIN-DEV-JAVA-001 §7`).<br>• Capacidad para aislar subdominios sin incurrir en dependencias circulares. | Desconoce el impacto de acoplar paquetes de dominio entre sí; usa comodines de importación o no logra explicar cómo evitar ciclos en dependencias Maven multi-módulo. |
-| **Arquitectura Hexagonal** *(candidato a microservicio)* | • Patrón Hexagonal (*Ports & Adapters*) estricto con inversión de dependencias (`LIN-DIS-001 §2.2`).<br>• Pruebas de dominio puro sin contenedor Spring. | Mezcla lógica de negocio en Controllers o Repositories; no logra aislar el dominio del framework en pruebas unitarias. |
+| **Arquitectura Hexagonal** *(candidato a microservicio)* | • Patrón Hexagonal (*Ports & Adapters*) estricto con inversión de dependencias (`LIN-DIS-001 §2.3`).<br>• Pruebas de dominio puro sin contenedor Spring. | Mezcla lógica de negocio en Controllers o Repositories; no logra aislar el dominio del framework en pruebas unitarias. |
 | **Estadio 3: Microservicios** | • Spring Cloud o diseño *Kubernetes-native*, Circuit Breaker, Trazabilidad Distribuida (OpenTelemetry).<br>• Transacciones distribuidas eventuales (Patrón Saga y Outbox, `§3.3`). | Intenta usar `2PC` o transacciones bloqueantes entre servicios; desconoce el Teorema CAP, Saga o cómo operar en consistencia eventual. |
 | **Domain-Driven Design (DDD)** *(solo cuando aplican los 6 criterios de `LIN-DIS-001 §3.0`)* | • Bounded Contexts, Agregados, Value Objects, Domain Events, CQRS básico. | No puede distinguir un Agregado de una entidad JPA; propone DDD para un CRUD simple sin justificar los 6 criterios de gobernanza. |
 | **Desarrollo Frontend SPA Angular** | • Angular 17+ con TypeScript estricto, programación reactiva con RxJS (`Signals`, `Observables`).<br>• Optimización extrema para cumplimiento de Core Web Vitals (LCP, INP, CLS) y pruebas en Lighthouse.<br>• Diseño responsivo y buenas prácticas de seguridad (gestión limpia del token SAA). | Manipula directamente el DOM mediante `document.getElementById()`; utiliza `any` en TypeScript; abusa de `setTimeout(fn, 0)` para hackear el ciclo de detección de cambios (*Change Detection*) de Angular. |

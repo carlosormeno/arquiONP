@@ -1,10 +1,20 @@
 # LIN-FE-ANG-001 — Estándar de Diseño Web Frontend ONP
 **Código:** LIN-FE-ANG-001  
-**Versión:** 0.1.1  
+**Versión:** 0.1.2  
 **Estado:** Borrador  
-**Fecha:** 2026-07-10  
+**Fecha:** 2026-07-14  
 **Área responsable:** OTI — Oficina de Tecnologías de la Información  
 **Marco rector:** LIN-ARQ-001 — Marco Rector de Arquitectura de Software  
+
+---
+
+## Control de cambios
+
+| Versión | Fecha | Autor | Descripción |
+|---|---|---|---|
+| 0.1.0 | 2026-05-22 | Arquitectura OTI | Borrador inicial |
+| 0.1.1 | 2026-07-10 | Arquitectura OTI | Migra Marco rector de `LIN-ARQ-000` (congelado) a `LIN-ARQ-001` (vigente) |
+| 0.1.2 | 2026-07-14 | Arquitectura OTI | Cierra dos brechas de cobertura frente a `LIN-ARQ-001 §7.2` y `LIN-DIS-001 §5.1.1`: agrega la prohibición de manipulación directa del DOM y de `setTimeout` como hack de Change Detection (§15.2), y bifurca la gestión del token SAA en dos escenarios mutuamente excluyentes según haya o no BFF (§9.3.1 sin BFF / §9.3.2 con BFF — Token Handler), actualizando el registro de interceptores en §9.5 |
 
 ---
 
@@ -563,6 +573,12 @@ export class UsuarioService {
 
 ### 9.3 Interceptor de autenticación
 
+El patrón de manejo del token SAA en Angular depende de si el sistema tiene un **BFF (Backend for Frontend)** delante del core, según los criterios de adopción de `LIN-DIS-001 §5.1`. Son dos escenarios distintos, no intercambiables — implementar el patrón equivocado para la topología real del proyecto es una desviación de `LIN-DIS-001 §5.1.1`.
+
+#### 9.3.1 Escenario sin BFF (canal único) — interceptor con token directo
+
+Cuando el proyecto tiene un único canal de consumo estándar y no hay mediación SSO externa (`LIN-DIS-001 §5.1`: *"si el proyecto tiene un único canal estándar... no se construye un BFF Token Handler separado"*), Angular consume el core directamente y es responsable de adjuntar el token en cada request:
+
 ```typescript
 // core/interceptors/auth.interceptor.ts
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
@@ -579,6 +595,34 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   return next(req);
 };
 ```
+
+`authService.getToken()` lee el token desde el almacenamiento cliente permitido (`LIN-SEC-APP-001 §10.1`). Este es el único escenario donde Angular maneja el token directamente.
+
+#### 9.3.2 Escenario con BFF (Token Handler) — Angular nunca ve el token del core
+
+Cuando el sistema presta servicios a dos o más canales diferenciados (ej. Portal Web + App Móvil) o requiere mediación especializada frente a WSO2, `LIN-DIS-001 §5.1.1` exige el patrón **Token Handler**: el BFF gestiona una cookie de sesión `HttpOnly` con la SPA, y es el BFF —no Angular— quien inyecta el `Authorization: Bearer <token>` real al llamar al core. Bajo este patrón, **el interceptor de la sección 9.3.1 no se implementa** — sería una violación directa de `LIN-DIS-001 §5.1.1` ("el frontend nunca maneja directamente el token de acceso al core"), porque expondría el token real a ataques XSS en el navegador exactamente en el escenario que el patrón Token Handler existe para evitar.
+
+En su lugar, Angular solo necesita garantizar que la cookie de sesión viaje con cada request hacia el BFF:
+
+```typescript
+// core/interceptors/session.interceptor.ts
+// Escenario CON BFF — no adjunta ningún token: la cookie HttpOnly la gestiona el navegador
+export const sessionInterceptor: HttpInterceptorFn = (req, next) => {
+  if (req.url.startsWith(environment.bffUrl)) {
+    // withCredentials envía la cookie HttpOnly de sesión con el BFF automáticamente.
+    // Angular nunca lee, decodifica ni almacena el token real del core (LIN-DIS-001 §5.1.1).
+    req = req.clone({ withCredentials: true });
+  }
+  return next(req);
+};
+```
+
+```typescript
+// app.config.ts — HttpClient debe habilitar el envío de cookies por defecto
+provideHttpClient(withInterceptors([sessionInterceptor, errorInterceptor]), withFetch())
+```
+
+**Regla de decisión:** un proyecto usa 9.3.1 **o** 9.3.2, nunca ambos. La decisión de qué escenario aplica no la toma el equipo de frontend por preferencia — se deriva de si el proyecto cumple los criterios de adopción de BFF de `LIN-DIS-001 §5.1` (documentados en la arquitectura del proyecto, no en este lineamiento).
 
 ### 9.4 Interceptor de errores HTTP
 
@@ -611,7 +655,7 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
 ### 9.5 Registro de interceptores
 
 ```typescript
-// app.config.ts
+// app.config.ts — escenario SIN BFF (§9.3.1)
 export const appConfig: ApplicationConfig = {
   providers: [
     provideHttpClient(
@@ -623,7 +667,21 @@ export const appConfig: ApplicationConfig = {
 };
 ```
 
-> El orden importa: `correlationInterceptor` debe ir primero para que el header `X-Request-ID` esté presente incluso en requests rechazados por `authInterceptor`. Ver [sección 15.1](#151-interceptor-de-correlacion-x-request-id) para la implementación.
+```typescript
+// app.config.ts — escenario CON BFF / Token Handler (§9.3.2)
+// Nota: authInterceptor NO se registra en este escenario — ver §9.3.2.
+export const appConfig: ApplicationConfig = {
+  providers: [
+    provideHttpClient(
+      withInterceptors([correlationInterceptor, sessionInterceptor, errorInterceptor])
+    ),
+    provideRouter(routes),
+    provideAnimations(),
+  ],
+};
+```
+
+> El orden importa en ambos escenarios: `correlationInterceptor` debe ir primero para que el header `X-Request-ID` esté presente incluso en requests rechazados por `authInterceptor`/`sessionInterceptor`. Ver [sección 15.1](#151-interceptor-de-correlacion-x-request-id) para la implementación. Un proyecto registra únicamente el conjunto correspondiente a su escenario (§9.3.1 o §9.3.2) — nunca ambos interceptores de sesión a la vez.
 
 ### 9.6 Interpretación de codDetRespuesta
 
@@ -1047,7 +1105,39 @@ module.exports = {
 };
 ```
 
-La integración de Lighthouse en el pipeline CI/CD se define en **LIN-CICD-001** (en borrador).
+La integración de Lighthouse en el pipeline CI/CD está implementada en **LIN-CICD-001 §9.4** como job `lighthouse` (gate de bloqueo, no advertencia) que ejecuta esta misma configuración.
+
+#### Prohibición de manipulación directa del DOM y de `setTimeout` como hack de Change Detection
+
+`LIN-ARQ-001 §7.2` prohíbe explícitamente dos prácticas que degradan Core Web Vitals y ocultan errores de binding: manipular el DOM directamente en lugar de dejar que Angular lo gestione vía su ciclo de Change Detection (Zone.js o Signals en modo zoneless), y usar `setTimeout`/`setInterval` para forzar artificialmente un re-render.
+
+**Por qué está prohibido:** cuando un binding no se actualiza como se espera, la causa casi siempre es un error de referencia, de inmutabilidad o de zona de ejecución — nunca "Angular no se dio cuenta". Envolver la asignación en `setTimeout(fn, 0)` oculta ese error en vez de corregirlo, y la manipulación directa del DOM (`document.getElementById`, `innerHTML`, `classList` fuera de bindings) desincroniza el estado real del DOM del que Angular cree tener, produciendo bugs visuales intermitentes difíciles de reproducir. Es además el anti-patrón señalado explícitamente en `LIN-ARQ-001 §8.2` como señal de alarma en evaluación técnica de candidatos.
+
+```typescript
+// ❌ Prohibido — manipulación directa del DOM
+document.getElementById('resultado')!.innerText = valor;
+this.elementRef.nativeElement.querySelector('.badge')?.classList.add('activo');
+
+// ❌ Prohibido — setTimeout como hack de Change Detection
+setTimeout(() => {
+  this.valor = nuevoValor; // "fuerza" a Angular a detectar el cambio
+}, 0);
+```
+
+```typescript
+// ✅ Correcto — binding declarativo, Angular gestiona el DOM
+valor = signal<string>('');
+// template: <span [class.activo]="estaActivo()">{{ valor() }}</span>
+
+// ✅ Correcto — ElementRef solo para comandos imperativos del navegador
+// (foco, medición de layout), nunca para mutar contenido o clases
+@ViewChild('inputRef') inputRef!: ElementRef<HTMLInputElement>;
+enfocarInput(): void {
+  this.inputRef.nativeElement.focus();
+}
+```
+
+**Única excepción tolerada a `setTimeout`:** debounce/throttle explícito de eventos de usuario (búsqueda en vivo, resize) — nunca como sustituto de un binding roto. Preferir `debounceTime` de RxJS o `effect()` de Signals antes que un `setTimeout` manual; si se usa `setTimeout` para este fin, debe llevar un comentario que documente el propósito.
 
 ### 15.3 Captura de errores JavaScript no manejados
 
@@ -1097,6 +1187,7 @@ Equivalente del checklist de `LIN-ARQ-001 §5.3`, aplicado al SPA Angular:
 - [ ] Lighthouse ejecutado contra el build de producción — todos los assertions en verde
 - [ ] Lazy loading verificado: el bundle inicial (`main.js`) no supera **200 KB** (gzip)
 - [ ] Imágenes en formato WebP con `loading="lazy"`
+- [ ] Sin manipulación directa del DOM (`document.getElementById`, `innerHTML`, `classList` fuera de bindings) ni `setTimeout` usado como hack de Change Detection
 - [ ] Header `X-Request-ID` visible en DevTools → Network para al menos un request de prueba
 
 ---

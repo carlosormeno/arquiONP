@@ -111,7 +111,7 @@ Aplica a:
 
 | Tema | Documento / responsable |
 |---|---|
-| Definición de arquitectura de aplicación | LIN-ARQ-000 |
+| Definición de arquitectura de aplicación | LIN-ARQ-001 |
 | Convenciones de código Java | LIN-DEV-JAVA-001 |
 | Contrato de APIs REST | LIN-API-REST-001 |
 | Observabilidad de aplicación | LIN-OBS-001 |
