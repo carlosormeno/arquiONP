@@ -39,8 +39,8 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiResponseWrapper<Void>> handleValidacion(MethodArgumentNotValidException exception) {
-        List<ApiResponseWrapper.FieldError> errores = exception.getBindingResult().getFieldErrors().stream()
-                .map(error -> new ApiResponseWrapper.FieldError(error.getField(), error.getDefaultMessage()))
+        List<ApiResponseWrapper.CampoError> errores = exception.getBindingResult().getFieldErrors().stream()
+                .map(error -> new ApiResponseWrapper.CampoError(error.getField(), error.getDefaultMessage()))
                 .collect(Collectors.toList());
         return build(HttpStatus.BAD_REQUEST, "400", "Error de validación en la solicitud.", errores);
     }
@@ -52,7 +52,7 @@ public class GlobalExceptionHandler {
     }
 
     private ResponseEntity<ApiResponseWrapper<Void>> build(
-            HttpStatus status, String codDetRespuesta, String mensaje, List<ApiResponseWrapper.FieldError> errores) {
+            HttpStatus status, String codDetRespuesta, String mensaje, List<ApiResponseWrapper.CampoError> errores) {
         String requestId = MDC.get("http.request.id");
         ApiResponseWrapper<Void> body =
                 ApiResponseWrapper.error(status.value(), codDetRespuesta, mensaje, errores, requestId, appVersion);

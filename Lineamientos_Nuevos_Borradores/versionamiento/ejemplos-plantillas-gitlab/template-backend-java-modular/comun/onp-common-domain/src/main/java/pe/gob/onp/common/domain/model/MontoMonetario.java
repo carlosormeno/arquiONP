@@ -19,7 +19,8 @@ public record MontoMonetario(BigDecimal valor, String moneda) {
 
     public MontoMonetario sumar(MontoMonetario otro) {
         if (!this.moneda.equals(otro.moneda)) {
-            throw new IllegalArgumentException("No se pueden sumar montos de monedas distintas: " + this.moneda + " vs " + otro.moneda);
+            throw new IllegalArgumentException(
+                    "No se pueden sumar montos de monedas distintas: " + this.moneda + " vs " + otro.moneda);
         }
         return new MontoMonetario(this.valor.add(otro.valor), this.moneda);
     }

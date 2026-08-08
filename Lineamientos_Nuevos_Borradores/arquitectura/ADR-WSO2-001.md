@@ -1,5 +1,6 @@
 # ADR-WSO2-001 — Transición de SAA hacia WSO2 API Manager
 
+**Código:** ADR-WSO2-001  
 **Fecha:** 2026-05-28  
 **Estado:** Propuesta de ADR  
 **Ámbito:** Seguridad, APIs, Plataforma, Arquitectura

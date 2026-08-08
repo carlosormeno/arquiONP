@@ -3,8 +3,8 @@
 | | |
 |---|---|
 | **Código** | LIN-API-REST-001 |
-| **Versión** | 0.1.4 |
-| **Fecha** | 2026-07-14 |
+| **Versión** | 0.1.5 |
+| **Fecha** | 2026-08-05 |
 | **Estado** | Borrador |
 | **Clasificación** | Uso Interno (Técnico) |
 | **Área responsable** | OTI — Innovación y Desarrollo |
@@ -22,6 +22,7 @@
 | 0.1.2 | 2026-05-28 | Arquitectura OTI | Define la gobernanza operativa de `codDetRespuesta`, su dueño y el proceso de alta/cambio de códigos |
 | 0.1.3 | 2026-07-10 | Arquitectura OTI | Migra Marco rector de `LIN-ARQ-000` (congelado) a `LIN-ARQ-001` (vigente). Corrige 5 citas a `LIN-DEV-JAVA-001 sección 11.4[.x]` → `sección 13.4[.x]`/`14` (renumeración interna nunca reflejada aquí) y 2 citas a la sección fantasma `LIN-ARQ-000 sección 9.5` → `LIN-ARQ-001 §5.3` (Four Golden Signals) |
 | 0.1.4 | 2026-07-14 | Arquitectura OTI | Corrige el Apéndice A.3: la cita a Arquitectura Hexagonal decía `LIN-DIS-001 sección 3.2` (introducido por error en la corrección de v0.1.3) — el número real es `sección 2.3` |
+| 0.1.5 | 2026-08-05 | Arquitectura OTI | **§8.3 deja de publicar valores propios de timeout** (Connection 5s / Read 10s), que divergían de la matriz por criticidad de `LIN-DIS-001 §6.1` (documento dueño) y del rango de `LIN-ARQ-001 §4.3` — tres fuentes distintas para el mismo control. Ahora referencia al dueño y conserva solo lo propio del contrato REST: la respuesta `504` / `codDetRespuesta 402` ante vencimiento (`GOB-CHK-001` H3) |
 
 ---
 
@@ -109,7 +110,7 @@ Todos los servicios web nuevos de la ONP deben implementarse siguiendo el estilo
 - **Recursos identificados por URI:** cada recurso tiene una URI única e intuitiva.
 - **JSON como formato de intercambio:** salvo excepciones justificadas y aprobadas por el Arquitecto de Soluciones, el formato de datos es JSON (RFC 8259).
 
-> **Servicios SOAP:** Los servicios SOAP legados existentes se mantienen sin cambios. Para nuevos desarrollos que necesiten consumir servicios SOAP externos, ver [sección 10.3](#103-gate-de-publicacion-en-wso2).
+> **Servicios SOAP:** Los servicios SOAP legados existentes se mantienen sin cambios. Para nuevos desarrollos que necesiten consumir servicios SOAP externos, ver [sección 10.4](#104-consumo-de-servicios-soap-legacy).
 
 ### 2.2 HTTPS obligatorio
 
@@ -769,14 +770,11 @@ public List<Regimen> obtenerRegimenes(String tipo) {
 
 ### 8.3 Timeout
 
-Todo cliente HTTP que llame a servicios externos debe configurar timeouts explícitos:
+Todo cliente HTTP que llame a servicios externos debe configurar timeouts explícitos. Queda prohibido dejar los valores por defecto del cliente (infinitos o excesivos).
 
-| Parámetro | Valor recomendado |
-|---|---|
-| Connection timeout | 5 segundos |
-| Read timeout | 10 segundos |
+> **Valores normativos — documento dueño `LIN-DIS-001 §6.1`.** Los umbrales se definen mediante una matriz por **criticidad y demanda** del servicio consumido (ruta crítica interactiva / consulta de negocio / proceso diferido o batch), no con un par de valores único: RENIEC en ventanilla virtual exige `fail-fast` más agresivo que una conciliación SUNAT por lotes. Este lineamiento **no publica valores propios** para evitar divergencia entre documentos. Ver también `LIN-ARQ-001 §4.3` para integraciones con entidades del Estado.
 
-Si el servicio externo no responde en el plazo, retornar `504` / `codDetRespuesta: 402`.
+Lo que este lineamiento sí norma es la **respuesta del contrato REST ante el vencimiento del timeout**: si el servicio externo no responde en el plazo configurado, retornar `504` / `codDetRespuesta: 402` (ver [sección 5.1](#51-mapeo-de-codigo-http-a-coddetrespuesta)).
 
 ### 8.4 Rate limiting
 
@@ -955,8 +953,8 @@ Los estados de ciclo de vida se gestionan en WSO2 API Manager (Publisher). Solo 
 |---|---|---|---|
 | **Diseño** | — | Definición del contrato OpenAPI y revisión por Arquitectura. La API no está en WSO2 aún | Equipo de desarrollo |
 | **Desarrollo** | — | Implementación siguiendo este lineamiento, LIN-DEV-JAVA-001 y LIN-OBS-001 | Equipo de desarrollo |
-| **QA** | `CREATED` | API registrada en WSO2 Publisher, visible solo para administradores. Gate [sección 10.4](#104-consumo-de-servicios-soap-legacy) completado para QA | OTI Arquitectura |
-| **Producción** | `PUBLISHED` | Visible en Dev Portal, consumidores pueden suscribirse. Gate [sección 10.4](#104-consumo-de-servicios-soap-legacy) completado para PROD | OTI Arquitectura |
+| **QA** | `CREATED` | API registrada en WSO2 Publisher, visible solo para administradores. Gate [sección 10.3](#103-gate-de-publicacion-en-wso2) completado para QA | OTI Arquitectura |
+| **Producción** | `PUBLISHED` | Visible en Dev Portal, consumidores pueden suscribirse. Gate [sección 10.3](#103-gate-de-publicacion-en-wso2) completado para PROD | OTI Arquitectura |
 | **Deprecación** | `DEPRECATED` | Sigue funcionando; no acepta nuevas suscripciones. Header `Deprecation: true` en todas las respuestas. Período mínimo: 6 meses | OTI Arquitectura |
 | **Retiro** | `RETIRED` | Eliminada del gateway; consumidores bloqueados. Solo tras período mínimo en `DEPRECATED` | OTI Arquitectura |
 
@@ -1072,5 +1070,5 @@ El ADR debe incluir: contexto, decisión, alternativas evaluadas, consecuencias,
 
 ---
 
-*LIN-API-REST-001 — Estándar de Servicios Web y APIs REST ONP v0.1.2*  
+*LIN-API-REST-001 — Estándar de Servicios Web y APIs REST ONP*  
 *OTI — Oficina de Tecnologías de la Información*

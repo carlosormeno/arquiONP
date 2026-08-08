@@ -1,0 +1,56 @@
+# Pipeline del corpus documental ONP
+#
+# Aplica al repositorio de lineamientos (GOB-*, LIN-*), no a los proyectos de software.
+# Verifica automáticamente la coherencia interna del corpus — las mismas clases de
+# inconsistencia que la revisión integral de 2026-08-05 encontró a mano
+# (ver GOB-CHK-001 H12.2).
+#
+# Los templates de `versionamiento/ejemplos-plantillas-gitlab/` tienen su propio
+# `.gitlab-ci.yml` y no son alcanzados por este pipeline.
+
+stages:
+  - validar
+
+variables:
+  # Sin dependencias externas: el linter usa solo la librería estándar de Python.
+  PYTHON_IMAGE: "python:3.12-alpine"
+
+lint-corpus:
+  stage: validar
+  image: $PYTHON_IMAGE
+  script:
+    - python3 herramientas/lint_corpus.py
+  rules:
+    # Se ejecuta en todo MR que toque documentación o el propio linter.
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      changes:
+        - "**/*.md"
+        - "herramientas/*.py"
+        - "desarrollo/plantillas/**/*"
+        - "versionamiento/ejemplos-plantillas-gitlab/**/checkstyle-onp.xml"
+    # Y siempre sobre la rama principal.
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+  artifacts:
+    when: always
+    expire_in: 30 days
+    paths:
+      - reporte-lint.txt
+  before_script:
+    - echo "Validando coherencia del corpus documental ONP..."
+  after_script:
+    - python3 herramientas/lint_corpus.py > reporte-lint.txt 2>&1 || true
+
+# Job informativo: reporta los avisos sin bloquear.
+# Útil mientras GOB-CHK-001 H8 (versión en nombre de archivo) siga abierto.
+lint-corpus-avisos:
+  stage: validar
+  image: $PYTHON_IMAGE
+  allow_failure: true
+  script:
+    - |
+      echo "Avisos abiertos del corpus (no bloquean el pipeline):"
+      python3 herramientas/lint_corpus.py | grep '^aviso' || echo "Sin avisos."
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      changes:
+        - "**/*.md"

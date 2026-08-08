@@ -1,6 +1,6 @@
 # LIN-DEV-JAVA-001 — Estándar de Desarrollo Java ONP
 ## Oficina de Normalización Previsional — OTI
-### Código: LIN-DEV-JAVA-001 | Versión 0.1.8 | Estado: Borrador | Marco rector: LIN-ARQ-001
+### Código: LIN-DEV-JAVA-001 | Versión 0.1.9 | Estado: En revisión | Marco rector: LIN-ARQ-001 (Nivel 1)
 
 ---
 
@@ -17,6 +17,7 @@
 | 0.1.6 | 2026-07-09 | OTI | Revisión de §14: (1) el umbral de cobertura JaCoCo en §14.5 deja de estar hardcodeado en 80% — ahora usa `${jacoco.coverage.minimum}` y remite a `LIN-TEST-001 §5.1` para el valor por estilo, reconciliando la contradicción con Marco Rector §8.3; (2) corrige la regla de gobernanza #2 de §14.1: la comunicación intra-JVM entre módulos del Monolito Modular pasa por `-domain` (`port.in`), no por `-api` (evita arrastrar dependencias HTTP/Spring MVC ajenas al módulo consumidor); (3) reemplaza las citas informales "PD08"/"PD09" (sin ficha en el Catálogo) por referencias directas a `LIN-DIS-001 §3.1` y `§3.4` |
 | 0.1.7 | 2026-07-09 | OTI | Reordena la Tabla de Contenidos en 6 bloques temáticos (Alcance/stack, Estructura del proyecto, Conceptos y principios, Convenciones del día a día, Cross-cutting, Gobernanza) como guía de lectura para desarrolladores nuevos. No renumera secciones — las citas existentes desde LIN-ARQ-001/LIN-DIS-001/LIN-TEST-001/Catálogo siguen siendo válidas. Separa 12.4 (DRY/KISS/YAGNI, conceptual) de 12.1-12.3 (métricas/antipatrones/PMD, gobernanza de herramientas) como entradas independientes en la tabla |
 | 0.1.8 | 2026-07-09 | OTI | Corrige §12.1: eliminaba las 3 filas de cobertura de pruebas (servicios ≥80%, utilidades ≥90%, controladores REST ≥70%) — la de controladores contradecía directamente `LIN-TEST-001 §5.1`, que exige explícitamente NO medir Controllers con umbral duro de cobertura. Ahora §12.1 remite a `LIN-TEST-001 §5.1` como única fuente, igual que ya se hizo en §14.5 y en Marco Rector §8.3 |
+| 0.1.9 | 2026-08-05 | OTI | Saneamiento integral (`GOB-CHK-001` H13). **(1) §15.3 — cierre real de la contradicción que la v0.1.8 dio por resuelta:** la tabla de cobertura eliminada de §12.1 seguía intacta en §15.3, y §16.2 (gate de aprobación de PR) apuntaba precisamente a §15.3 — el umbral "Controladores REST 70%" que `LIN-TEST-001 §5.1` prohíbe seguía gobernando los merges. §15.3 pasa a remitir al documento dueño y §16.2 se actualiza. **(2) Anexo B:** reproducía el `checkstyle-onp.xml` con `LineLength` dentro de `TreeWalker`, configuración que aborta el build desde Checkstyle 8.24 — sincronizado con el archivo canónico `desarrollo/plantillas/checkstyle-onp.xml` y declarado como copia de referencia. **(3) §16.6:** subsecciones renumeradas de `14.6.x` a `16.6.x` (residuo de una reubicación previa) y corregida la referencia interna "Sección 14.2" → §16.2; citas a la sección inexistente `LIN-ARQ-001 §2.2.1.A` redirigidas a `§2.3`; `Permission Toggle` acotado a control de acceso tras incorporarse `Experiment Toggle` al Nivel 1. **(4) §1.4 y §17:** `LIN-ARQ-001` estaba clasificado como "Nivel 2" (es Nivel 1) y nombrado con el título del documento congelado; se añaden `LIN-DIS-001`, `LIN-SEC-APP-001` y `LIN-TEST-001` a la tabla de documentos relacionados. **(5) §13.3:** referencia fantasma "sección 3.4 del Lineamiento de Arquitectura (doc. interno)" → `LIN-ARQ-001 §3`. **(6)** 10 enlaces `file:///home/carlos/...` convertidos a rutas relativas del repositorio |
 
 ---
 
@@ -108,14 +109,17 @@ Al iniciar un proyecto Spring Boot en ONP, configurar los siguientes componentes
 ### 1.4 Relación con otros documentos
 
 > **Importante:** **Supremacía Jerárquica del Marco Rector (LIN-ARQ-001):**  
-> `LIN-ARQ-001` es el **documento rector de jerarquía superior (Nivel 2)** que rige de manera absoluta sobre todos los estándares y lineamientos técnicos específicos de **Nivel 3** (incluyendo el presente documento, `LIN-API-REST-001`, `LIN-BD-ORA-001`, `LIN-OBS-001`, etc.). Este estándar implementa de forma táctica y operativa en Java 21 / Spring Boot 3 los principios arquitectónicos (PR01–PR08), patrones de diseño (PD04–PD06) y lineamientos de contención de deuda técnica (PA14) definidos en `LIN-ARQ-001`. **Ante cualquier vacío, conflicto o presunta discrepancia de interpretación entre este documento y el marco rector, prevalecerán siempre y en todo momento los mandatos, patrones y directivas de LIN-ARQ-001.**
+> `LIN-ARQ-001` es el **Marco Rector de Nivel 1**, documento supremo de la jerarquía documental de la OTI. Rige de manera absoluta sobre el estándar táctico de **Nivel 2** (`LIN-DIS-001`) y sobre todos los estándares de **Nivel 3** (incluyendo el presente documento, `LIN-API-REST-001`, `LIN-BD-ORA-001`, `LIN-OBS-001`, etc.). Este estándar implementa de forma operativa en Java 21 / Spring Boot 3 los principios arquitectónicos (PR01–PR08), patrones de diseño (PD04–PD06) y lineamientos de contención de deuda técnica (PA14) definidos en el marco rector y aterrizados tácticamente en `LIN-DIS-001`. **Ante cualquier vacío, conflicto o presunta discrepancia de interpretación entre este documento y el marco rector, prevalecerán siempre y en todo momento los mandatos, patrones y directivas de LIN-ARQ-001.**
 
 | Documento | Relación |
 |-----------|----------|
-| **LIN-ARQ-001 — Marco Rector de Diseño y Arquitectura de Software** | **Documento Rector (Nivel 2) de supremacía jerárquica.** Rige y fundamenta todos los mandatos arquitectónicos de este estándar. |
+| **LIN-ARQ-001 — Marco Rector de Arquitectura de Software** | **Documento Rector de Nivel 1, de supremacía jerárquica.** Rige y fundamenta todos los mandatos arquitectónicos de este estándar. |
+| **LIN-DIS-001 — Estándar de Diseño de Software y Patrones Tácticos** | **Nivel 2.** Define el diseño interno del módulo (Hexagonal, DDD, CQRS, ACL/BFF y resiliencia táctica) que este estándar aterriza en código. |
 | LIN-API-REST-001 — Estándar de APIs REST | Complementa [sección 13.4](#134-api-rest-y-documentacion-openapi): convenciones REST detalladas |
 | LIN-BD-ORA-001 — Estándar de Base de Datos Oracle | Complementa [sección 13.3](#133-transacciones): convenciones de persistencia |
 | LIN-OBS-001 — Log, Trazabilidad y Observabilidad | Complementa sección 10: logging estructurado avanzado |
+| LIN-SEC-APP-001 — Seguridad en Aplicaciones | Fuente autoritativa de la configuración mínima de Spring Security (§9.1), el filtro `SaaTokenValidationFilter` (§8.3) y la política de secretos (§12) |
+| LIN-TEST-001 — Estándar de Pruebas | Dueño de los umbrales de cobertura por estilo arquitectónico (§5.1) que consume [sección 15.3](#153-cobertura-minima--remite-a-lin-test-001-51) |
 
 ---
 
@@ -1500,7 +1504,7 @@ public class ExpedienteServiceImpl {
 
 | Paquete | Nivel |
 |---|---|
-| `pe.gob.onp.*` | `INFO` — permite registrar eventos de negocio significativos exigidos por LIN-ARQ-001 sección 9.5 |
+| `pe.gob.onp.*` | `INFO` — permite registrar eventos de negocio significativos exigidos por `LIN-ARQ-001 §5.3` (Observabilidad / Four Golden Signals) |
 | `org.springframework.*`, `org.hibernate.*`, librerías de terceros | `WARN` — reduce ruido de frameworks |
 
 Subir `pe.gob.onp.*` a `DEBUG` solo para diagnóstico puntual y de forma temporal; revertir al terminar.
@@ -1707,7 +1711,7 @@ Todo proyecto debe declarar el plugin de PMD en su archivo de construcción, for
 
 #### 10.3.2 Archivo de reglas institucional (`onp-pmd-ruleset.xml`)
 
-El archivo `onp-pmd-ruleset.xml` debe estar en la raíz de cada repositorio. Contiene una mezcla de reglas estándar y reglas de cumplimiento específicas de la ONP. Puedes [descargar el archivo de reglas onp-pmd-ruleset.xml](file:///home/carlos/Documentos/Telemetria-traza-swagger/Lineamientos_Nuevos_Borradores/desarrollo/plantillas/onp-pmd-ruleset.xml) directamente.
+El archivo `onp-pmd-ruleset.xml` debe estar en la raíz de cada repositorio. Contiene una mezcla de reglas estándar y reglas de cumplimiento específicas de la ONP. Puedes [descargar el archivo de reglas onp-pmd-ruleset.xml](./plantillas/onp-pmd-ruleset.xml) directamente.
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
@@ -2033,7 +2037,7 @@ public class ExpedienteServiceImpl implements ExpedienteService {
 }
 ```
 
-> Ver sección 3.4 del Lineamiento de Arquitectura (doc. interno) para la discusión ACID/CAP y el rol de `@Transactional` en la estrategia de consistencia.
+> Ver **`LIN-ARQ-001 §3`** (Gobierno de Datos y Teorema CAP) para la discusión ACID/CAP, la prohibición de 2PC y el rol de `@Transactional` en la estrategia de consistencia. La coordinación entre dominios sin transacción distribuida se resuelve con Saga + Transactional Outbox (`LIN-ARQ-001 §3.3`, `LIN-BUS-001 §7.3`).
 
 ### 13.4 API REST y documentación OpenAPI
 
@@ -2061,7 +2065,7 @@ Agregar en `pom.xml`:
 
 #### 13.4.2 Bean de configuración OpenAPI
 
-Crear una sola vez por proyecto en `src/main/java/<paquete-base>/config/OpenApiConfig.java`. Puedes [descargar la plantilla OpenApiConfig.java](file:///home/carlos/Documentos/Telemetria-traza-swagger/Lineamientos_Nuevos_Borradores/desarrollo/plantillas/OpenApiConfig.java) directamente.
+Crear una sola vez por proyecto en `src/main/java/<paquete-base>/config/OpenApiConfig.java`. Puedes [descargar la plantilla OpenApiConfig.java](./plantillas/OpenApiConfig.java) directamente.
 
 ```java
 package pe.gob.onp.pensiones.expedientes.config;
@@ -2140,7 +2144,7 @@ env:
 
 > **Fuente autoritativa:** el contrato de `ApiResponseWrapper<T>` está definido en **LIN-API-REST-001**. Esta sección documenta únicamente la implementación Java. Cualquier cambio al contrato debe hacerse en LIN-API-REST-001 y reflejarse aquí.
 
-Todos los endpoints retornan `ApiResponseWrapper<T>`. Crear una sola vez por proyecto en `src/main/java/<paquete-base>/dto/common/ApiResponseWrapper.java`. Puedes [descargar la plantilla ApiResponseWrapper.java](file:///home/carlos/Documentos/Telemetria-traza-swagger/Lineamientos_Nuevos_Borradores/desarrollo/plantillas/ApiResponseWrapper.java) directamente.
+Todos los endpoints retornan `ApiResponseWrapper<T>`. Crear una sola vez por proyecto en `src/main/java/<paquete-base>/dto/common/ApiResponseWrapper.java`. Puedes [descargar la plantilla ApiResponseWrapper.java](./plantillas/ApiResponseWrapper.java) directamente.
 
 ```java
 package pe.gob.onp.pensiones.expedientes.dto.common;
@@ -2246,7 +2250,7 @@ public ResponseEntity<ApiResponseWrapper<ExpedienteResponse>> obtener(@PathVaria
 
 #### 13.4.5 Filtro de correlación — RequestIdFilter
 
-Crear una sola vez por proyecto en `src/main/java/<paquete-base>/filter/RequestIdFilter.java`. Habilita el campo `meta.requestId` en todas las respuestas y lo propaga al MDC para correlacionar peticiones entre servicios en los logs. Puedes [descargar la plantilla RequestIdFilter.java](file:///home/carlos/Documentos/Telemetria-traza-swagger/Lineamientos_Nuevos_Borradores/desarrollo/plantillas/RequestIdFilter.java) directamente.
+Crear una sola vez por proyecto en `src/main/java/<paquete-base>/filter/RequestIdFilter.java`. Habilita el campo `meta.requestId` en todas las respuestas y lo propaga al MDC para correlacionar peticiones entre servicios en los logs. Puedes [descargar la plantilla RequestIdFilter.java](./plantillas/RequestIdFilter.java) directamente.
 
 ```java
 package pe.gob.onp.pensiones.expedientes.filter;
@@ -2462,7 +2466,7 @@ public record CrearExpedienteRequest(
 
 Dado que MDC (`Mapped Diagnostic Context`) utiliza internamente almacenamiento a nivel de hilo (`ThreadLocal`), el contexto de correlación (`http.request.id` y `user.id`) se pierde cuando se delega el trabajo a hilos secundarios, incluyendo llamadas `@Async`, tareas programadas `@Scheduled` o hilos virtuales.
 
-Para asegurar la trazabilidad distribuida, se debe registrar un `TaskDecorator` que copie el contexto de MDC al crear nuevos hilos. Puedes [descargar la plantilla AsyncMdcConfig.java](file:///home/carlos/Documentos/Telemetria-traza-swagger/Lineamientos_Nuevos_Borradores/desarrollo/plantillas/AsyncMdcConfig.java) directamente.
+Para asegurar la trazabilidad distribuida, se debe registrar un `TaskDecorator` que copie el contexto de MDC al crear nuevos hilos. Puedes [descargar la plantilla AsyncMdcConfig.java](./plantillas/AsyncMdcConfig.java) directamente.
 
 ```java
 package pe.gob.onp.pensiones.expedientes.config;
@@ -2517,7 +2521,7 @@ Los servicios de aplicación son el punto de entrada transaccional para los caso
 - **Prohibiciones:** No deben ejecutar cálculos previsionales, condicionales complejos de negocio ni consultas SQL directas.
 - **Nomenclatura (Sección 4.2):** En la convención de nombres de la ONP, el rol arquitectónico de "Application Service" corresponde directamente a la interfaz con sufijo `Service` (ej. `SolicitudPensionService`) y su implementación con sufijo `ServiceImpl` (ej. `SolicitudPensionServiceImpl`), o directamente como clase `Service` en estilos modulares.
 
-> **Referencia Institucional:** Ver plantillas completas en [SolicitudPensionService.java](file:///home/carlos/Documentos/Telemetria-traza-swagger/Lineamientos_Nuevos_Borradores/desarrollo/plantillas/SolicitudPensionService.java) e [SolicitudPensionServiceImpl.java](file:///home/carlos/Documentos/Telemetria-traza-swagger/Lineamientos_Nuevos_Borradores/desarrollo/plantillas/SolicitudPensionServiceImpl.java).
+> **Referencia Institucional:** Ver plantillas completas en [SolicitudPensionService.java](./plantillas/SolicitudPensionService.java) e [SolicitudPensionServiceImpl.java](./plantillas/SolicitudPensionServiceImpl.java).
 
 **Ejemplo de Orquestación Transaccional y Observabilidad en Application Service:**
 ```java
@@ -2568,7 +2572,7 @@ Los servicios de dominio encapsulan la lógica de negocio pura, reglas prevision
 - **Pureza del Dominio (Mandatorio):** Un servicio de dominio **debe ser una clase Java pura (POJO)**. Queda estrictamente prohibido incluir en esta capa anotaciones de infraestructura de Spring (`@Service`, `@Component`, `@Transactional`, `@Autowired`, `@Value`), anotaciones de persistencia JPA (`@Entity`, `@Table`) o dependencias de librerías de transporte/serialización (Jackson, OpenAPI, WSO2, clientes SOAP).
 - **Estandarización de Registro en Spring Boot (`@Configuration` / `@Bean`):** Para preservar la pureza hexagonal sin renunciar a la gestión del ciclo de vida y la inyección de dependencias del contenedor de Spring, los servicios de dominio se registrarán obligatoriamente mediante clases de configuración (`@Configuration`) en la capa de aplicación o infraestructura del módulo.
 
-> **Referencia Institucional:** Ver plantilla completa en [CalculoPensionVitaliciaDomainService.java](file:///home/carlos/Documentos/Telemetria-traza-swagger/Lineamientos_Nuevos_Borradores/desarrollo/plantillas/CalculoPensionVitaliciaDomainService.java).
+> **Referencia Institucional:** Ver plantilla completa en [CalculoPensionVitaliciaDomainService.java](./plantillas/CalculoPensionVitaliciaDomainService.java).
 
 **Ejemplo de Servicio de Dominio Puro (POJO sin anotaciones Spring):**
 ```java
@@ -2619,7 +2623,7 @@ El patrón Repositorio media entre el dominio y las capas de mapeo de datos, act
   - Traducir las excepciones técnicas de Oracle (`RAISE_APPLICATION_ERROR`, SQLCODE) a excepciones limpias de la jerarquía de aplicación, preservando el *backtrace* técnico sin exponer el stacktrace SQL a la capa REST.
   - Utilizar obligatoriamente *bind variables* (o parámetros parametrizados por Spring/JDBC) para prevenir inyecciones SQL y optimizar el plan cache de Oracle.
 
-> **Referencia Institucional:** Ver plantilla completa en [AportanteJdbcRepository.java](file:///home/carlos/Documentos/Telemetria-traza-swagger/Lineamientos_Nuevos_Borradores/desarrollo/plantillas/AportanteJdbcRepository.java).
+> **Referencia Institucional:** Ver plantilla completa en [AportanteJdbcRepository.java](./plantillas/AportanteJdbcRepository.java).
 
 **Ejemplo de Puerto en Dominio y Adaptador Oracle con Traducción de Excepciones:**
 ```java
@@ -3224,15 +3228,20 @@ void deberiaRetornarExpedienteCuandoIdExiste() {
 }
 ```
 
-### 15.3 Cobertura mínima por capa
+### 15.3 Cobertura mínima — remite a `LIN-TEST-001 §5.1`
 
-| Capa | Cobertura mínima | Tipo de prueba |
+> **Documento dueño: `LIN-TEST-001 §5.1`.** Los umbrales de cobertura se definen **por estilo arquitectónico** (Monolito Simple, Monolito Modular, Hexagonal, Microservicio, EDA) y por capa, no con una tabla plana. Este estándar **no publica umbrales propios** para evitar que ambos documentos queden desalineados — misma regla ya aplicada en `§12.1` y `§14.5`.
+
+**Lo que sí debe saber el desarrollador Java al escribir las pruebas** (el detalle normativo está en `LIN-TEST-001 §5.1`):
+
+| Elemento | Criterio | Tipo de prueba |
 |------|-----------------|---------------|
-| Servicios de negocio | 80% | Unitarias (Mockito) |
-| Controladores REST | 70% | Integración (`@WebMvcTest`) |
-| Repositorios (queries custom) | 100% de los custom queries | Integración (Testcontainers) |
-| Clases de utilidad | 90% | Unitarias |
-| Mappers (MapStruct) | No obligatorio | MapStruct genera código verificado |
+| Capa de dominio / casos de uso | El umbral más exigente del proyecto | Unitarias (Mockito, sin contenedor Spring) |
+| Repositorios con *queries* custom | Toda query custom debe estar ejercitada | Integración (Testcontainers / `OracleContainer`) |
+| **Controladores REST** | **No se miden con umbral duro de cobertura de línea** | Integración (`@WebMvcTest`) — se verifica comportamiento, no porcentaje |
+| Mappers (MapStruct), configuración, clases generadas | Sin umbral | MapStruct genera código verificado por el compilador |
+
+> ⚠️ **Controllers:** `LIN-TEST-001 §5.1` es explícito en que los Controllers REST **no** se someten a umbral duro de cobertura de línea. Cualquier gate de CI que imponga un porcentaje sobre `controller/` contradice al documento dueño.
 
 ### 15.4 Testcontainers para repositorios
 
@@ -3292,7 +3301,7 @@ Un PR no puede aprobarse si alguna de las siguientes condiciones no se cumple:
 | Condición | Verificación |
 |---|---|
 | Pipeline de CI verde | Build, tests y Checkstyle pasados sin errores |
-| Cobertura de pruebas dentro del umbral | JaCoCo no reporta degradación por debajo del mínimo del [sección 15.3](#153-cobertura-minima-por-capa) |
+| Cobertura de pruebas dentro del umbral | JaCoCo no reporta degradación por debajo del mínimo normado en `LIN-TEST-001 §5.1` según el estilo arquitectónico del proyecto (ver [sección 15.3](#153-cobertura-minima--remite-a-lin-test-001-51)). **Los Controllers REST no se evalúan con umbral duro** |
 | Sin antipatrones del [sección 12.2](#122-tabla-de-antipatrones-prohibidos) | El revisor verifica la tabla de antipatrones prohibidos |
 | Sin credenciales ni secretos en el código | Búsqueda manual o con herramienta de detección de secretos |
 | Sin código comentado | Ver [sección 9.3](#93-comentarios-internos-no-javadoc) — el código comentado no llega a rama principal |
@@ -3315,9 +3324,9 @@ Cualquier desviación de este estándar — incluyendo omitir la revisión por u
 
 ### 16.6 Patrón Feature Toggle y Deuda Técnica Cero (PA14)
 
-En alineación con el patrón arquitectónico **PA14 (Feature Toggle)** de **LIN-ARQ-001** y las directivas de control de cambios de **LIN-VER-001**, el uso de *Feature Toggles* (o banderas de funcionalidad) es un mecanismo permitido para el despliegue continuo y la entrega progresiva, pero está sujeto a un riguroso control de ciclo de vida para garantizar la **deuda técnica cero**.
+En alineación con el patrón arquitectónico **PA14 (Feature Toggle)** de **`LIN-ARQ-001 §2.3`** y las directivas de control de cambios de **LIN-VER-001**, el uso de *Feature Toggles* (o banderas de funcionalidad) es un mecanismo permitido para el despliegue continuo y la entrega progresiva, pero está sujeto a un riguroso control de ciclo de vida para garantizar la **deuda técnica cero**.
 
-#### 14.6.1 Estrategia Tecnológica Oficial en Dos Niveles
+#### 16.6.1 Estrategia Tecnológica Oficial en Dos Niveles
 Para mantener un stack mínimo, homogéneo y eficiente en Spring Boot 3, la ONP estandariza la implementación de *Feature Toggles* en dos niveles operativos, en conformidad con **ADR-014 (LIN-ARQ-001 Apéndice A)**:
 
 | Nivel Operativo | Tecnologías Estándar | Cuándo Utilizar |
@@ -3366,15 +3375,15 @@ public class SolicitudPensionServiceImpl implements SolicitudPensionService {
 }
 ```
 
-#### 14.6.2 Ciclo de Vida y Caducidad Acotada (Deuda Técnica Cero)
-En estricta coherencia con **LIN-ARQ-001 §2.2.1.A**, la obligación de caducidad y retiro del código fuente aplica diferenciadamente según la clasificación del toggle:
+#### 16.6.2 Ciclo de Vida y Caducidad Acotada (Deuda Técnica Cero)
+En estricta coherencia con **`LIN-ARQ-001 §2.3`** (tabla de categorías y ciclo de vida máximo, `ADR-014`), la obligación de caducidad y retiro del código fuente aplica diferenciadamente según la clasificación del toggle:
 
 | Clasificación según LIN-ARQ-001 | Plazo y Obligación de Retiro |
 |---|---|
 | **Release Toggle** | **Corto plazo (Mandatorio):** Se elimina en el sprint inmediatamente posterior al go-live (plazo máximo: **1 sprint / 14 días calendario**). |
 | **Experiment Toggle** | **Medio plazo (Mandatorio):** Se elimina una vez concluido el experimento previsional o la validación A/B (plazo máximo según definición del experimento, típicamente **1 sprint / 14 días calendario** tras el veredicto). |
 | **Ops Toggle** | **Largo plazo (Exento de borrado automático):** Permanece en el código mientras el caso de uso se considere crítico para la resiliencia operativa o degradación controlada. Sujeto a auditoría periódica. |
-| **Permission Toggle** | **Largo plazo o Permanente (Exento de borrado automático):** Controla características reservadas a roles, suscripciones o segmentos especiales (en coordinación con SAA). |
+| **Permission Toggle** | **Largo plazo o Permanente (Exento de borrado automático):** Controla el acceso a características reservadas a roles, perfiles o segmentos de usuario, en coordinación con SAA. Codifica una regla de negocio de control de acceso, no un experimento — si el flag existe para *decidir* algo, es un Experiment Toggle y caduca. |
 
 Para los toggles de caducidad obligatoria (*Release* y *Experiment*), su existencia añade complejidad ciclomática y ramas condicionales que deben limpiarse rigurosamente:
 
@@ -3384,8 +3393,8 @@ Para los toggles de caducidad obligatoria (*Release* y *Experiment*), su existen
 | **Estabilización (Go-Live / PROD)** | Una vez que la funcionalidad asociada ha sido desplegada en Producción (`PUBLISHED`), estabilizada y verificada por el negocio, el toggle entra en estado de expiración. |
 | **Retiro / Limpieza (Gate PA14)** | Es **obligatorio** crear una tarea técnica en el sprint inmediatamente posterior al go-live (plazo máximo: **1 sprint / 14 días calendario**) para eliminar completamente las ramas condicionales del código, remover la configuración del toggle y eliminar la funcionalidad obsoleta o reemplazada. |
 
-#### 14.6.3 Verificación en Pull Request (Gate de Revisión)
-Durante la revisión de código (Sección 14.2), el revisor y el líder técnico deben hacer cumplir las siguientes reglas incompatibles con la aprobación del PR:
+#### 16.6.3 Verificación en Pull Request (Gate de Revisión)
+Durante la revisión de código ([sección 16.2](#162-condiciones-minimas-para-aprobar-un-pr)), el revisor y el líder técnico deben hacer cumplir las siguientes reglas incompatibles con la aprobación del PR:
 1. **Rechazar toggles sin fecha de retiro:** Todo nuevo PR que introduzca un *Release Toggle* o *Experiment Toggle* debe indicar en la descripción del PR y en el código cuándo y cómo se eliminará.
 2. **Rechazar toggles anidados:** Se prohíbe anidar condicionales de múltiples *Feature Toggles* dentro del mismo bloque de lógica de dominio (ej. `if (featureA.isEnabled()) { if (featureB.isEnabled()) { ... } }`).
 3. **Auditoría periódica de código muerto:** No se aprobarán nuevos PRs de características a equipos o módulos que acumulen *Release/Experiment Toggles* expirados y no retirados del código fuente, haciendo efectiva la contención de deuda técnica institucional.
@@ -3394,7 +3403,7 @@ Durante la revisión de código (Sección 14.2), el revisor y el líder técnico
 
 ## 17. Proceso de excepción a este estándar
 
-> **Importante:** **Gobernanza y Supremacía de LIN-ARQ-001:** En estricta coherencia con la supremacía jerárquica del marco rector de **Nivel 2**, ningún ADR podrá ser aprobado ni será válido si contraviene los principios arquitectónicos fundamentales (PR01–PR08) o mandatos rectores de **LIN-ARQ-001**, salvo autorización expresa y excepcional de la Dirección de Arquitectura de la OTI.
+> **Importante:** **Gobernanza y Supremacía de LIN-ARQ-001:** En estricta coherencia con la supremacía jerárquica del marco rector de **Nivel 1**, ningún ADR podrá ser aprobado ni será válido si contraviene los principios arquitectónicos fundamentales (PR01–PR08) o mandatos rectores de **LIN-ARQ-001**, salvo autorización expresa y excepcional de la Dirección de Arquitectura de la OTI.
 
 Toda desviación de las reglas establecidas en este documento requiere un ADR (Architecture Decision Record) aprobado formalmente por el equipo de Arquitectura de la OTI antes de implementarse.
 
@@ -3466,9 +3475,13 @@ public enum EstadoExpediente {
 
 ---
 
-## Anexo B: Configuración Checkstyle recomendada
+## Anexo B: Configuración Checkstyle institucional
 
-Archivo `checkstyle-onp.xml` a colocar en la raíz del proyecto o en un módulo de configuración compartido. Puedes [descargar el archivo checkstyle-onp.xml](file:///home/carlos/Documentos/Telemetria-traza-swagger/Lineamientos_Nuevos_Borradores/desarrollo/plantillas/checkstyle-onp.xml) directamente.
+> **Fuente canónica: [`desarrollo/plantillas/checkstyle-onp.xml`](./plantillas/checkstyle-onp.xml).** El XML reproducido abajo es una **copia de referencia**: ante cualquier diferencia prevalece el archivo canónico. Los templates institucionales (`template-backend-java` y `template-backend-java-modular`) ya lo incluyen sincronizado — un proyecto derivado de ellos no necesita copiarlo. Apartarse de esta configuración requiere ADR aprobado (§17).
+
+Archivo `checkstyle-onp.xml` a colocar en la raíz del proyecto o en un módulo de configuración compartido. Aplica las métricas obligatorias de [§12.1](#121-métricas-mínimas-obligatorias): complejidad ciclomática ≤ 10, método ≤ 30 líneas, clase ≤ 500 líneas y línea ≤ 120 caracteres.
+
+> ⚠️ **`LineLength` y `FileLength` van a nivel `Checker`, nunca dentro de `TreeWalker`.** Desde Checkstyle 8.24 `LineLength` dejó de ser hija de `TreeWalker`; declararla ahí aborta la ejecución con `TreeWalker is not allowed as a parent of LineLength` y el gate de calidad deja de correr. No mover estas dos reglas al interior del `TreeWalker`.
 
 ```xml
 <?xml version="1.0"?>
@@ -3501,9 +3514,6 @@ Archivo `checkstyle-onp.xml` a colocar en la raíz del proyecto o en un módulo 
             <property name="basicOffset" value="4"/>
             <property name="tabWidth" value="4"/>
         </module>
-        <module name="LineLength">
-            <property name="max" value="120"/>
-        </module>
         <module name="NeedBraces"/>            <!-- llaves siempre obligatorias -->
         <module name="LeftCurly"/>             <!-- llave de apertura en la misma línea -->
         <module name="OneStatementPerLine"/>   <!-- una sentencia por línea -->
@@ -3526,9 +3536,19 @@ Archivo `checkstyle-onp.xml` a colocar en la raíz del proyecto o en un módulo 
 
     </module>
 
-    <!-- Longitud máxima de archivo -->
+    <!-- Reglas de nivel Checker (NO pueden ir dentro de TreeWalker) -->
+
+    <!-- Longitud máxima de archivo — LIN-DEV-JAVA-001 §12.1 -->
     <module name="FileLength">
         <property name="max" value="500"/>
+    </module>
+
+    <!-- Longitud máxima de línea.
+         Desde Checkstyle 8.24 LineLength es hijo de Checker, no de TreeWalker:
+         declararlo dentro de TreeWalker aborta la ejecución con
+         "TreeWalker is not allowed as a parent of LineLength". -->
+    <module name="LineLength">
+        <property name="max" value="120"/>
     </module>
 
 </module>
@@ -3583,7 +3603,7 @@ La implementación recomendada en Spring Boot es una clase base anotada con `@Ma
 
 ### D.1 Clase base de auditoría
 
-Crear una sola vez por proyecto en `src/main/java/<paquete-base>/persistence/entity/AuditoriaBase.java`. Puedes [descargar la plantilla AuditoriaBase.java](file:///home/carlos/Documentos/Telemetria-traza-swagger/Lineamientos_Nuevos_Borradores/desarrollo/plantillas/AuditoriaBase.java) directamente.
+Crear una sola vez por proyecto en `src/main/java/<paquete-base>/persistence/entity/AuditoriaBase.java`. Puedes [descargar la plantilla AuditoriaBase.java](./plantillas/AuditoriaBase.java) directamente.
 
 ```java
 package pe.gob.onp.pensiones.expedientes.infrastructure.persistence.entity;
@@ -3710,5 +3730,5 @@ public class NotificacionEntity extends AuditoriaBase {
 
 ---
 
-*Estándar de Desarrollo Java — ONP v0.1.2*
+*LIN-DEV-JAVA-001 — Estándar de Desarrollo Java ONP*
 *OTI — Oficina de Tecnologías de la Información*

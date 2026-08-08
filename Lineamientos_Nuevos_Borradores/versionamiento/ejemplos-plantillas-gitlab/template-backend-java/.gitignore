@@ -3,6 +3,10 @@
 
 # Maven
 target/
+# Caché local de Maven — el CI la genera con -Dmaven.repo.local=.m2/repository;
+# nunca debe versionarse (GOB-CHK-001 H9).
+.m2/
+
 !.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/

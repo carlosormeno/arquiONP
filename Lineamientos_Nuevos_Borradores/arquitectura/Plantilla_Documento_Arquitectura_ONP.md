@@ -1,12 +1,17 @@
 # DOCUMENTO DE ARQUITECTURA DE TI
 **OFICINA DE TECNOLOGÍAS DE LA INFORMACIÓN**
 
+> **Identidad de esta plantilla — no copiar al documento derivado.**
+> **Código:** GOB-PLA-001 · **Versión:** v2.2 · **Estado:** Vigente · **Propietario:** Arquitectura OTI
+>
+> Estos datos identifican a la **plantilla institucional**. El documento de arquitectura que se produzca a partir de ella lleva su propia identidad en la tabla de abajo, y su versión evoluciona de forma independiente de la versión de la plantilla. Al completar el documento, elimina este bloque.
+
 ---
 
 | Campo | Valor |
 |---|---|
 | **Proyecto / Aplicación** | [Nombre del Sistema] |
-| **Versión** | v2.0 |
+| **Versión** | [vX.Y — versión del documento de arquitectura, no de la plantilla] |
 | **Fecha** | [DD/MM/AAAA] |
 | **Estado** | Borrador / En revisión / Aprobado |
 | **Elaborado por** | [Nombre del Arquitecto] |
@@ -21,6 +26,8 @@
 |---|---|---|---|
 | v0.1 – v1.2 | Versiones iniciales y refinamientos pedagógicos de la plantilla | OTI | |
 | v2.0 | Alineación normativa total con los 3 Niveles de Arquitectura ONP (`LIN-ARQ-001`, `LIN-DIS-001`, `LIN-DEV-JAVA-001`), mandatos K8s/containerd, SRE Four Golden Signals y Política de Deuda Técnica Cero / Excepciones ADR | OTI / Arquitectura | [DD/MM/AAAA] |
+| v2.1 | Corrige la escala de Estadios a la oficial de `LIN-ARQ-001 §2.1` (1 = Legacy, 2 = Monolito Modular, 3 = Microservicios) en las guías de las vistas A.1, A.2 y A.3 — antes usaba una numeración 0/1/2 inexistente en el marco rector — y redirige las citas de ACL (`LIN-DIS-001 §5.4`) y Strangler Fig (`LIN-ARQ-001 §2.2`) | OTI / Arquitectura | 2026-08-05 |
+| v2.2 | Corrige la cita de Kubernetes/`containerd`: decía `LIN-ARQ-001 §7` (que es *Estrategia Macro de Frontend*) — el destino real es `§5.2` (`GOB-CHK-001` H10.2) | OTI / Arquitectura | 2026-08-08 |
 
 ---
 
@@ -181,10 +188,10 @@ A continuación se presenta la Vista General de la arquitectura de **[Nombre del
 > 📋 **Orientación para el arquitecto**
 >
 > Describe los componentes de aplicación del sistema alineados a **LIN-DIS-001 (Patrones Tácticos de Diseño)**.
-> - **Estilo Táctico Seleccionado:** Declara explícitamente si el sistema adopta *Monolito Modular* o *Arquitectura Hexagonal / Limpia* (por defecto en nuevos proyectos, según LIN-ARQ-000/LIN-DIS-001) o *Capas Clásica* (solo mantenimiento/legacy).
+> - **Estilo Táctico Seleccionado:** Declara explícitamente si el sistema adopta *Monolito Modular* o *Arquitectura Hexagonal / Limpia* (por defecto en nuevos proyectos, según `LIN-ARQ-001 §2.1` y `LIN-DIS-001 §2`) o *Capas Clásica* (solo mantenimiento/legacy).
 > - **Frontend:** Indica el tipo de aplicación (SPA, MPA, aplicación móvil) y la estrategia de despliegue.
 > - **Backend / Contextos Delimitados (Bounded Contexts):** Lista cada servicio o módulo táctico de dominio con su nombre oficial y responsabilidad principal en una línea. Si el sistema expone un **API Gateway**, **BFF (Backend for Frontend)** o **Facade Arquitectónico**, descríbelo como punto de entrada perimetral.
-> - **Integraciones con Legados:** Si el Backend interactúa con sistemas core legacy de la institución (Estadio 0), declara si implementa el patrón **Anti-Corruption Layer (ACL)** o **Strangler Fig** (`LIN-DIS-001 §6`).
+> - **Integraciones con Legados:** Si el Backend interactúa con sistemas core legacy de la institución (Estadio 1), declara si implementa el patrón **Anti-Corruption Layer (ACL)** (`LIN-DIS-001 §5.4`) o **Strangler Fig** (`LIN-ARQ-001 §2.2`).
 >
 > **Lo que NO va aquí:** protocolos de comunicación en detalle, contratos de API, formatos de mensajes, lógica interna de métodos.
 
@@ -327,7 +334,7 @@ Mostrar el sistema como una unidad y su relación con los actores externos (usua
 > **Elementos que debes incluir:**
 > - El sistema como un solo bloque con su nombre oficial
 > - Los tipos de usuario que lo usan (no personas específicas, sino roles)
-> - Los sistemas externos e internos con los que se integra, declarando explícitamente a qué estadio de la topología institucional pertenecen (`Estadio 0 Legacy`, `Estadio 1 Transición/Strangler Fig` o `Estadio 2 Cloud-Native`, según `LIN-ARQ-001 §6`)
+> - Los sistemas externos e internos con los que se integra, declarando explícitamente a qué estadio de la topología institucional pertenecen (`Estadio 1 Monolito Tradicional/Legacy`, `Estadio 2 Monolito Modular` o `Estadio 3 Microservicios Selectivos`, según `LIN-ARQ-001 §2.1`)
 > - Una relación por cada interacción relevante, con una etiqueta que indique qué hace (ej. "consulta datos", "recibe notificación")
 >
 > **Lo que NO debe aparecer en esta vista:**
@@ -382,7 +389,7 @@ Mostrar los principales componentes de aplicación que componen el sistema, sus 
 > - Declaración visual y conceptual de los **Bounded Contexts** (Contextos Delimitados de DDD) del sistema (`LIN-DIS-001 §3`)
 > - Las interfaces o APIs expuestas por cada componente (indicando si cuentan con contrato OpenAPI 3.0 Code-First según `LIN-API-REST-001`)
 > - Las bases de datos propias del sistema (Oracle 19c / PostgreSQL institucional)
-> - Los sistemas internos de la ONP con los que se integra (declarando si se intermedia con una Capa Anticorrupción **ACL** para legados Estadio 0)
+> - Los sistemas internos de la ONP con los que se integra (declarando si se intermedia con una Capa Anticorrupción **ACL** para legados Estadio 1)
 > - Los sistemas externos agrupados por entidad y comunicados vía Facade perimetral
 > - Las relaciones de comunicación entre componentes, indicando el protocolo si es relevante (REST sincrónico o CloudEvents asíncrono sobre Apache Kafka)
 > - Diferenciación visual entre componentes nuevos a implementar y componentes ya existentes (usar colores según leyenda)
@@ -498,7 +505,7 @@ Mostrar cómo los componentes del sistema son desplegados en la infraestructura 
 > **Elementos que debes incluir:**
 > - Los ambientes del sistema (DEV, QA, UAT, PRD) como agrupadores
 > - Los nodos de cómputo: servidores virtuales y nodos workers del cluster institucional
-> - El orquestador de contenedores institucional obligatorio: **Kubernetes (K8s) con motor de runtime CRI `containerd`** y contenedores inmutables (`LIN-ARQ-001 §7`)
+> - El orquestador de contenedores institucional obligatorio: **Kubernetes (K8s) con motor de runtime CRI `containerd`** y contenedores inmutables (`LIN-ARQ-001 §5.2`)
 > - Los artefactos desplegables: imágenes de contenedor por cada componente o Bounded Context, asignadas a sus respectivos *Namespaces* (ej. `past-frontend`, `past-backend`)
 > - Las redes y zonas de seguridad de la OTI: DMZ (acceso público), Red Interna de Aplicaciones (K8s pods), y Red de Datos (Oracle/BD)
 > - Los mecanismos de acceso perimetral externo: WAF institucional, Balanceador de Carga e Ingress Controller
@@ -644,10 +651,10 @@ Este anexo describe los atributos de calidad relevantes para el sistema y cómo 
 
 | Atributo | Requisito / Expectativa | Decisión arquitectónica que lo aborda |
 |---|---|---|
-| **Disponibilidad y Resiliencia** | [ej. 99.5% uptime en horario hábil y tolerancia a fallos transaccionales] | [ej. Despliegue en K8s con réplicas/probes, timeouts mandatorios (2s conn / 3-5s read) y patrones **Circuit Breaker / Bulkhead** de Resilience4j (`LIN-DIS-001 §8`) — Ver AD-00X] |
+| **Disponibilidad y Resiliencia** | [ej. 99.5% uptime en horario hábil y tolerancia a fallos transaccionales] | [ej. Despliegue en K8s con réplicas/probes; aislamiento de fallos en llamadas externas según la matriz por criticidad de `LIN-DIS-001 §6` — timeout estricto y Bulkhead siempre, Circuit Breaker con Resilience4j solo en Microservicios o bajo ADR (`§6.2`) — Ver AD-00X] |
 | **Seguridad** | [ej. Autenticación obligatoria en todas las APIs públicas y Zero Trust] | [ej. WAF + JWT vía SAA/token para APIs internas (`LIN-SEC-APP-001`); autenticación SBS para EAF] |
 | **Escalabilidad** | [ej. Soporte para N usuarios concurrentes en pico electoral] | [ej. Contenedorización inmutable en K8s con autoescalado horizontal (HPA) — Ver AD-00X] |
-| **Observabilidad (Google SRE 4 Golden Signals)** | [ej. Monitoreo obligatorio de las 4 Señales Doradas: Latencia, Tráfico, Errores y Saturación (`LIN-ARQ-001 §9`)] | [ej. OpenTelemetry + centralización de logs ECS con `trace_id` y propagación de headers `X-Request-ID` / `CodDetRespuesta` (`LIN-API-REST-001`) — Ver AD-00X] |
+| **Observabilidad (Google SRE 4 Golden Signals)** | [ej. Monitoreo obligatorio de las 4 Señales Doradas: Latencia, Tráfico, Errores y Saturación (`LIN-ARQ-001 §5.3`)] | [ej. OpenTelemetry + centralización de logs ECS con `trace_id` y propagación de headers `X-Request-ID` / `CodDetRespuesta` (`LIN-API-REST-001`) — Ver AD-00X] |
 | **Mantenibilidad** | [ej. Capacidad de actualizar o reemplazar un servicio sin afectar los demás] | [ej. Bounded Contexts independientes con contratos OpenAPI 3.0 Code-First (`LIN-API-REST-001`)] |
 | **Interoperabilidad** | [ej. Integración con 10+ entidades externas del Estado y legados internos] | [ej. Servicio de fachada para Entidades Externas y Capa Anticorrupción (**ACL**) para legados ONP] |
 | **Recuperabilidad** | [ej. RTO máximo de X horas, RPO máximo de Y horas] | [ej. Estrategia de backup inmutable y recuperación coordinada sobre Oracle 19c / K8s PV] |
@@ -700,7 +707,7 @@ Este anexo registra los riesgos arquitectónicos identificados y la deuda técni
 >
 > Lista las decisiones subóptimas que se tomaron conscientemente. Para cada una indica qué se hizo, por qué no se hizo de la forma ideal (tiempo, información incompleta, dependencia de otro equipo) y cuándo o cómo se planea resolver.
 >
-> **MANDATO INSTITUCIONAL DE DEUDA TÉCNICA CERO (`LIN-ARQ-000 / LIN-DEV-JAVA-001 §16.6`):**
+> **MANDATO INSTITUCIONAL DE DEUDA TÉCNICA CERO (`LIN-ARQ-001 §2.3` / `LIN-DEV-JAVA-001 §16.6`):**
 > Toda deuda técnica admitida por compromisos de cronograma o dependencias externas debe:
 > 1. Estar asociada obligatoriamente a un **Ticket de Refactorización registrado en el Backlog** oficial de GitLab / Jira del proyecto.
 > 2. Contar con una **estrategia de mitigación de bajo riesgo**, como el uso de **Feature Toggles (PA14)** para encender/apagar el comportamiento temporal sin re-despliegues complejos.

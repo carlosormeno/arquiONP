@@ -1346,4 +1346,4 @@ Toda desviación a este lineamiento requiere un **Architecture Decision Record (
 
 *Este documento es fuente autoritativa de observabilidad en ONP. Cualquier referencia a logs, trazas, métricas o campos de correlación en otros lineamientos apunta a este documento — no redefine sus contenidos.*
 
-*LIN-OBS-001 v0.1.0 — Lineamiento de Log Centralizado, Trazabilidad y Observabilidad — ONP*
+*LIN-OBS-001 — Lineamiento de Log Centralizado, Trazabilidad y Observabilidad — ONP*

@@ -1,5 +1,6 @@
 # ADR-CLOUDEVENTS-001 — Adopción de CloudEvents v1.0 como estándar de envelope para eventos del bus institucional
 
+**Código:** ADR-CLOUDEVENTS-001
 **Fecha:** 2026-06-08
 **Estado:** Aceptada
 **Ámbito:** Mensajería, Arquitectura, Interoperabilidad
@@ -19,7 +20,7 @@ La primera versión del envelope ONP usaba un esquema propietario con campos de 
 
 La ONP adopta **CloudEvents v1.0** como el estándar de envelope para todos los eventos publicados en el bus institucional.
 
-El envelope institutcional conforme a CloudEvents v1.0 es:
+El envelope institucional conforme a CloudEvents v1.0 es:
 
 ```json
 {

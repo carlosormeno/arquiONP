@@ -33,7 +33,8 @@ public class Afiliado {
     }
 
     /** Reconstrucción desde persistencia — usada exclusivamente por el Mapper de infraestructura. */
-    public static Afiliado reconstruir(AfiliadoId id, Dni dni, String nombreCompleto, EstadoAfiliado estado, Instant fechaRegistro) {
+    public static Afiliado reconstruir(
+            AfiliadoId id, Dni dni, String nombreCompleto, EstadoAfiliado estado, Instant fechaRegistro) {
         return new Afiliado(id, dni, nombreCompleto, estado, fechaRegistro);
     }
 

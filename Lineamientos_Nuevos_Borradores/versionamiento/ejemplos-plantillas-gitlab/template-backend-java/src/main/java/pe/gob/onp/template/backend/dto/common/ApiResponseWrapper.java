@@ -9,7 +9,7 @@ public class ApiResponseWrapper<T> {
     private String codDetRespuesta;
     private String menDetRespuesta;
     private T data;
-    private List<FieldError> errors;
+    private List<CampoError> errors;
     private Meta meta;
 
     public ApiResponseWrapper(
@@ -17,7 +17,7 @@ public class ApiResponseWrapper<T> {
             String codDetRespuesta,
             String menDetRespuesta,
             T data,
-            List<FieldError> errors,
+            List<CampoError> errors,
             String requestId,
             String version) {
         this.codHttp = codHttp;
@@ -29,14 +29,15 @@ public class ApiResponseWrapper<T> {
     }
 
     public static <T> ApiResponseWrapper<T> ok(T data, String requestId, String version) {
-        return new ApiResponseWrapper<>(200, "000", "Operacion completada correctamente.", data, null, requestId, version);
+        return new ApiResponseWrapper<>(
+                200, "000", "Operacion completada correctamente.", data, null, requestId, version);
     }
 
     public static <T> ApiResponseWrapper<T> error(
             int codHttp,
             String codDetRespuesta,
             String message,
-            List<FieldError> errors,
+            List<CampoError> errors,
             String requestId,
             String version) {
         return new ApiResponseWrapper<>(codHttp, codDetRespuesta, message, null, errors, requestId, version);
@@ -58,7 +59,7 @@ public class ApiResponseWrapper<T> {
         return data;
     }
 
-    public List<FieldError> getErrors() {
+    public List<CampoError> getErrors() {
         return errors;
     }
 
@@ -90,11 +91,11 @@ public class ApiResponseWrapper<T> {
         }
     }
 
-    public static class FieldError {
+    public static class CampoError {
         private String campo;
         private String mensaje;
 
-        public FieldError(String campo, String mensaje) {
+        public CampoError(String campo, String mensaje) {
             this.campo = campo;
             this.mensaje = mensaje;
         }

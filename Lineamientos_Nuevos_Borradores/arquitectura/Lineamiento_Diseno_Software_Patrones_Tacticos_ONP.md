@@ -1,11 +1,20 @@
 # Lineamiento de Estándar de Diseño de Software y Patrones Tácticos en la ONP
 
 **Código:** LIN-DIS-001  
-**Versión:** 0.1.4  
-**Fecha:** 2026-07-09  
+**Versión:** 0.1.5  
+**Fecha:** 2026-08-05  
 **Autor:** Oficina de Tecnologías de la Información — ONP  
-**Estado:** Vigente / Estándar de Nivel 2  
+**Estado:** En revisión / Estándar de Nivel 2 — pendiente de graduación a Vigente (`GOB-MAT-001`, Ciclo de vida documental)  
 **Clasificación:** Lineamiento táctico de diseño. Segundo nivel en la jerarquía arquitectónica institucional. Aterriza las decisiones macro dictadas en `LIN-ARQ-001` hacia el diseño interior de contenedores, módulos, capas, límites de dominio e interfaces. De cumplimiento obligatorio por Tech Leads, Arquitectos de Software y Desarrolladores Senior.
+
+---
+
+## Historial de versiones
+
+| Versión | Fecha | Autor | Descripción |
+|---|---|---|---|
+| 0.1.0 – 0.1.4 | 2026-07-08 a 2026-07-09 | Arquitectura OTI | Versiones iniciales del estándar táctico derivadas del desglose de `LIN-ARQ-000` en el modelo de 3 niveles. *(Detalle por versión no registrado — este historial se incorpora en v0.1.5.)* |
+| 0.1.5 | 2026-08-05 | Arquitectura OTI | Declara explícitamente a `§6` como **documento dueño** de la resiliencia táctica (umbrales de timeout, Bulkhead, Retry y condiciones de adopción de Circuit Breaker), tras corregirse en `LIN-ARQ-001 §4.3` un mandato de Resilience4j que contradecía a `§6.2` y un rango de timeout propio que divergía de la matriz de `§6.1`. Se deja constancia de qué delega el Nivel 1 y qué conserva `LIN-API-REST-001 §8.3` (`GOB-CHK-001` H2 y H3) |
 
 ---
 
@@ -290,7 +299,7 @@ En el Monolito Modular, para no duplicar código transversal pero evitar introdu
 
 La OTI reconoce cuatro estrategias para organizar la lógica transaccional, ordenadas según la complejidad del requerimiento del submódulo:
 
-| Estrategia de Lógica (`§6 LIN-ARQ-000`) | Definición Táctica y Estructura | Cuándo Aplicar en Módulos de la ONP |
+| Estrategia de Lógica de Dominio | Definición Táctica y Estructura | Cuándo Aplicar en Módulos de la ONP |
 |---|---|---|
 | **1. Transaction Script** | Cada caso de uso es un método procedimental en un Servicio (`@Service @Transactional`) que invoca secuencialmente queries sobre tablas y realiza cálculos lineales directos. | Módulos CRUD de soporte administrativo, generación de registros simples o flujos de carga masiva sin reglas cruzadas de estado. |
 | **2. Active Record** | La entidad que mapea la fila de la base de datos (`@Entity` JPA) contiene getters/setters y encapsula en sí misma pequeñas validaciones simples y operaciones locales de su propio registro. | Módulos intermedios de catálogos enriquecidos o tablas maestras del sistema donde no existen invariantes complejos que abarquen múltiples tablas. |
@@ -444,6 +453,8 @@ public class ReniecHttpAdapter implements ConsultaPersonaExternalPort {
 ## 6. Resiliencia Táctica en Comunicaciones Externas (*Design for Failure*)
 
 Todo llamado por red desde un adaptador de infraestructura hacia un servicio externo o base de datos es inherentemente falible. Para evitar efectos dominó y colapsos en cascada dentro del clúster de Kubernetes, es mandatoria la implementación de tolerancia a fallos — **pero no todo lo hace `Resilience4j`**. El *Timeout* estricto (§6.1) es siempre obligatorio en cualquier estilo. El *Bulkhead* (§6.3) y el *Retry* se resuelven por defecto con Apache HttpClient 5 y Spring Retry — sin Resilience4j. El *Circuit Breaker* formal con Resilience4j (§6.2) es obligatorio solo en Microservicios, y excepcional con ADR en Monolito Modular.
+
+> **Propiedad documental:** esta sección `§6` es el **documento dueño** de la resiliencia táctica en comunicaciones externas — umbrales de timeout, mecanismo de Bulkhead, política de Retry y condiciones de adopción de Circuit Breaker (`GOB-MAT-001`). `LIN-ARQ-001 §4.3` exige el *resultado* (aislamiento ante caídas de terceros del Estado) y delega aquí el mecanismo; `LIN-API-REST-001 §8.3` norma únicamente la respuesta REST ante el vencimiento (`504` / `codDetRespuesta 402`). Ningún otro documento publica valores de timeout propios: si un lineamiento necesita precisar umbrales para su dominio, los referencia desde `§6.1` y agrega solo la especificidad de su contexto.
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐

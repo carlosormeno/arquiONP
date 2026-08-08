@@ -93,6 +93,17 @@ Ver LIN-K8S-001 para el proceso completo de construcción y promoción de imáge
 5. Reemplazar manifiestos K8s placeholder por los del sistema real.
 6. Definir si el proyecto usará `db/migration` únicamente o un modelo mixto con scripts manuales, según `LIN-BD-ORA-001`.
 
+## Artefactos normados — no personalizar
+
+Los siguientes archivos son **copias controladas** de una fuente canónica institucional. No deben modificarse en el proyecto derivado: si un equipo necesita apartarse de ellos, requiere ADR aprobado por Arquitectura OTI.
+
+| Archivo en este template | Fuente canónica | Documento que lo norma |
+|---|---|---|
+| `checkstyle-onp.xml` | `desarrollo/plantillas/checkstyle-onp.xml` | `LIN-DEV-JAVA-001 §12.1` — complejidad ciclomática ≤ 10, método ≤ 30 líneas, clase ≤ 500 líneas, línea ≤ 120 caracteres |
+| `ApiResponseWrapper.java` (contrato: `codHttp`, `codDetRespuesta`, `menDetRespuesta`, `data`, `errors` con `CampoError{campo, mensaje}`, `meta`) | `desarrollo/plantillas/ApiResponseWrapper.java` | `LIN-API-REST-001 §4` (contrato) y `LIN-DEV-JAVA-001 §13.4.4` (implementación) |
+
+> El nombre de la clase de error es **`CampoError`** con campos `campo`/`mensaje`, en español, según el contrato institucional. No usar `FieldError` — además de apartarse de la norma, colisiona visualmente con `org.springframework.validation.FieldError` en el `GlobalExceptionHandler`.
+
 ## Contacto
 
 - **Líder técnico:** [nombre]

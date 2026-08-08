@@ -99,7 +99,8 @@ Este principio aplica especialmente a sistemas legacy: el objetivo de una prueba
 
 | Documento | Código | Relación |
 |---|---|---|
-| Marco Rector de Arquitectura de Software | LIN-ARQ-000 | Define pirámide por estilo; este documento la desarrolla |
+| Marco Rector de Arquitectura de Software | LIN-ARQ-001 | Marco rector de Nivel 1 |
+| Estándar de Diseño de Software y Patrones Tácticos | LIN-DIS-001 | Define la pirámide de pruebas por estilo (`§2`); este documento la desarrolla y es dueño de los umbrales |
 | Estándar de Desarrollo Java | LIN-DEV-JAVA-001 | Aplica este lineamiento en contexto Java; no redefine |
 | Estándar de Base de Datos Oracle | LIN-BD-ORA-001 | Aplica pruebas de caracterización para PL/SQL; no redefine |
 | Estándar de Diseño Web Frontend Angular | LIN-FE-ANG-001 | Aplica este lineamiento en contexto Angular; no redefine |

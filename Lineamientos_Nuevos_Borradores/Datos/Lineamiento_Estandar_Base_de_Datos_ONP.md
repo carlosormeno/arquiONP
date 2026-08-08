@@ -1,6 +1,6 @@
 # LIN-BD-ORA-001 — Estándar de Base de Datos Oracle ONP
 ## Oficina de Normalización Previsional — OTI
-### Código: LIN-BD-ORA-001 | Versión 0.1.9 | Estado: Borrador | Marco rector: LIN-ARQ-001
+### Código: LIN-BD-ORA-001 | Versión 0.1.10 | Estado: Borrador | Marco rector: LIN-ARQ-001
 
 ---
 
@@ -9,6 +9,7 @@
 | Versión | Fecha | Autor | Descripción |
 |---------|-------|-------|-------------|
 | 0.1.0 | 2026-05-22 | OTI | Versión inicial |
+| 0.1.10 | 2026-08-08 | OTI | Incorpora la sección 3.8.1 (Estándar de Búsqueda de texto libre con Oracle Text `CTXSYS`) y la sección 8.4 (Modelo de migraciones automatizadas de BD con Flyway en CI/CD) |
 | 0.1.1 | 2026-05-28 | OTI | Formaliza la estrategia de reversa Oracle, agrega evidencia mínima para pase y define el modelo mínimo del catálogo PL/SQL legacy |
 | 0.1.2 | 2026-05-28 | OTI | Define el modelo operativo de cambios de BD por tipo de sistema y lo alinea con `LIN-VER-001` y la plantilla backend institucional |
 | 0.1.3 | 2026-05-29 | OTI | Agrega condiciones de uso de DBLinks en [sección 4.9.1](#491-condiciones-para-el-uso-de-dblinks): justificación arquitectónica, restricciones técnicas, gobernanza y condiciones de exclusión |
@@ -280,9 +281,46 @@ LOB (C_CONTENIDO) STORE AS SECUREFILE (
 
 - No definir columnas LOB en tablas de alta concurrencia transaccional sin análisis previo de rendimiento e impacto en undo/redo.
 - Los campos de auditoría ([sección 5.1](#51-definicion)) aplican a las tablas con columnas LOB del mismo modo que a cualquier tabla permanente.
-- Las columnas LOB no participan en índices B-Tree estándar. Para búsqueda de texto libre sobre `CLOB`, coordinar con el DBA la habilitación de **Oracle Text** (esquema CTXSYS). Su implementación se detallará en revisión posterior para el esquema EXPEDIENTES.
+- Las columnas LOB no participan en índices B-Tree estándar. Para búsqueda de texto libre sobre `CLOB` y `BLOB`, se debe implementar **Oracle Text** (esquema `CTXSYS`) según lo normado en la [sección 3.8.1](#381-búsqueda-de-texto-libre-con-oracle-text-ctxsys).
 
-> Esta sección cubre los aspectos base de tablespace y formato de almacenamiento. La guía completa de SecureFiles, Oracle Text y estrategia de compresión/deduplicación se madurará en revisiones posteriores del lineamiento.
+### 3.8.1 Búsqueda de texto libre con Oracle Text (`CTXSYS`)
+
+Para búsquedas de texto libre sobre columnas `CLOB` y `BLOB` (ej: expedientes escaneados, resoluciones, documentos adjuntos) dentro de la base de datos relacional Oracle 19c, se debe implementar **Oracle Text** (esquema `CTXSYS`).
+
+#### 1. Criterio de elección de tecnología de búsqueda
+- **Oracle Text (`CONTEXT Index`):** Usar cuando la búsqueda por texto libre se realiza sobre datos o documentos del propio esquema relacional y no se justifica desplegar infraestructura NoSQL.
+- **Elasticsearch (`LIN-ARQ-001 §6.2` / `LIN-OBS-001`):** Usar para búsquedas multi-dominio masivas fuera de la base de datos o logs centralizados.
+
+#### 2. Configuración canónica del índice `CONTEXT`
+Todo índice de texto libre debe usar el analizador de idioma español `SPANISH_LEXER` para manejar insensibilidad a tildes, mayúsculas/minúsculas y caracteres diacríticos del castellano:
+
+```sql
+-- 1. Crear la preferencia de lexer en español (ejecutado por DBA o dueño del esquema)
+BEGIN
+    CTX_DDL.CREATE_PREFERENCE('ONP_SPANISH_LEXER', 'SPANISH_LEXER');
+    CTX_DDL.SET_ATTRIBUTE('ONP_SPANISH_LEXER', 'BASE_LETTER', 'YES'); -- Ignora tildes
+END;
+/
+
+-- 2. Crear el índice CONTEXT con sincronización asíncrona por intervalo
+CREATE INDEX EXPEDIENTES.IDX_MAE_EXP_CONTENIDO ON EXPEDIENTES.MAE_EXPEDIENTE (C_CONTENIDO)
+INDEXTYPE IS CTXSYS.CONTEXT
+PARAMETERS ('LEXER ONP_SPANISH_LEXER SYNC (EVERY "FREQ=MINUTELY; INTERVAL=5")');
+```
+
+#### 3. Sincronización del índice
+- **Asíncrona (`EVERY ...`):** Es la estrategia obligatoria para tablas OLTP con alta concurrencia. La sincronización se ejecuta en segundo plano vía `DBMS_SCHEDULER` sin bloquear ni penalizar el tiempo de respuesta del `COMMIT` del usuario.
+- **Síncrona (`ON COMMIT`):** Permitida únicamente en tablas de baja concurrencia o catálogos estáticos donde la disponibilidad del término buscado deba ser instantánea tras el pase.
+
+#### 4. Sintaxis de consulta canónica
+Las consultas deben utilizar el operador `CONTAINS` filtrando por `SCORE > 0` y permitiendo ranking de relevancia:
+
+```sql
+SELECT ID_EXPEDIENTE, C_NUMERO_EXPEDIENTE, SCORE(1) AS N_RELEVANCIA
+FROM EXPEDIENTES.MAE_EXPEDIENTE
+WHERE CONTAINS(C_CONTENIDO, 'pensionista AND invalidez', 1) > 0
+ORDER BY SCORE(1) DESC;
+```
 
 ### 3.9 Modelo transaccional — propiedades ACID
 
@@ -1198,6 +1236,41 @@ Los scripts siguen la cadena:
 Desarrollo (ONP_DESA) → Precalidad (ONP_PQA) → QA (ONP_QA) → Producción (master)
 ```
 
+### 8.4 Modelo de migraciones automatizadas de BD con Flyway en CI/CD
+
+Para sistemas nuevos y modernizados (modelo versionado `§8.2.2.a`), los cambios DDL y DML se automatizan en el pipeline de CI/CD mediante **Flyway**.
+
+#### 1. Nomenclatura canónica de archivos Flyway
+Los scripts de migración deben ubicarse en la ruta `db/migration/` del repositorio y cumplir la convención:
+
+- **Migraciones Versionadas (DDL/DML inmutables):**  
+  `V{MAJOR}.{MINOR}.{PATCH}__{descripcion_snake_case}.sql`  
+  *Ejemplo:* `V1.2.0__crear_tabla_evt_outbox.sql`
+- **Migraciones Repetibles (Vistas, Packages, Procedures):**  
+  `R__{tipo_objeto}_{nombre_objeto}.sql`  
+  *Ejemplo:* `R__vw_aportante_activo.sql` o `R__pkg_calculo_aporte.sql` (Flyway lo vuelve a aplicar únicamente si el hash del archivo cambia).
+- **Undo / Rollback:**  
+  `U{MAJOR}.{MINOR}.{PATCH}__{descripcion_snake_case}.sql`
+
+#### 2. Segregación de roles y usuarios Oracle en CI/CD
+- **Usuario DDL de CI/CD (`USR_FLYWAY_<ESQUEMA>`):** Usuario asignado al runner de GitLab CI/CD con privilegios de `CREATE`, `ALTER`, `DROP` sobre el esquema de la aplicación.
+- **Usuario Runtime de App (`USR_APP_<ESQUEMA>`):** Usuario que utiliza HikariCP desde Spring Boot en Kubernetes. Solo posee permisos DML (`SELECT`, `INSERT`, `UPDATE`, `DELETE`) y `EXECUTE` sobre packages. No puede ejecutar DDL.
+
+#### 3. Gates de seguridad en el pipeline GitLab CI/CD
+El pipeline de integración continua debe ejecutar la migración en la fase de pre-despliegue (`pre-deploy` stage):
+
+```yaml
+# Fragmento canónico .gitlab-ci.yml para migraciones de BD
+migrate_db:
+  stage: pre-deploy
+  script:
+    - flyway -url=jdbc:oracle:thin:@//db-oracle:1521/ONPDB -user=$FLYWAY_USER -password=$FLYWAY_PASS -locations=filesystem:db/migration info
+    - flyway -url=jdbc:oracle:thin:@//db-oracle:1521/ONPDB -user=$FLYWAY_USER -password=$FLYWAY_PASS -locations=filesystem:db/migration validate
+    - flyway -url=jdbc:oracle:thin:@//db-oracle:1521/ONPDB -user=$FLYWAY_USER -password=$FLYWAY_PASS -locations=filesystem:db/migration migrate
+```
+
+Si `flyway validate` detecta que un script versionado previamente aplicado fue modificado en el repositorio, el pipeline **se detiene inmediatamente** impidiendo el despliegue del Pod backend en Kubernetes.
+
 - Los permisos de UPDATE a nivel de columna se especifican explícitamente en el documento de pase a QA/Producción.
 - No se ejecutan scripts de carga masiva en servidores de producción en horario de mayor demanda.
 - Los paquetes de pase se aíslan por ambiente para facilitar el traslado y la trazabilidad.
@@ -2003,5 +2076,5 @@ Casos que siempre requieren ADR en este estándar:
 
 ---
 
-*LIN-BD-ORA-001 — Estándar de Base de Datos Oracle ONP v0.1.7*  
+*LIN-BD-ORA-001 — Estándar de Base de Datos Oracle ONP*  
 *OTI — Oficina de Tecnologías de la Información*

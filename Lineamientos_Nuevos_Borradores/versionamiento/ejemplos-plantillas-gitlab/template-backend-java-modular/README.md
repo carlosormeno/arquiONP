@@ -114,6 +114,17 @@ Para agregar un consumer nuevo en otro componente: crear `onp-{componente}-messa
 5. Reemplazar manifiestos K8s placeholder por los del sistema real.
 6. Revisar el umbral `jacoco.coverage.minimum` / `jacoco.coverage.minimum.domain` si el sistema justifica un mínimo mayor al normado en `LIN-TEST-001 §5.1`.
 
+## Artefactos normados — no personalizar
+
+Los siguientes archivos son **copias controladas** de una fuente canónica institucional. No deben modificarse en el proyecto derivado: si un equipo necesita apartarse de ellos, requiere ADR aprobado por Arquitectura OTI.
+
+| Archivo en este template | Fuente canónica | Documento que lo norma |
+|---|---|---|
+| `checkstyle-onp.xml` (raíz del reactor) | `desarrollo/plantillas/checkstyle-onp.xml` | `LIN-DEV-JAVA-001 §12.1` — complejidad ciclomática ≤ 10, método ≤ 30 líneas, clase ≤ 500 líneas, línea ≤ 120 caracteres |
+| `comun/onp-common-web/.../ApiResponseWrapper.java` (contrato: `codHttp`, `codDetRespuesta`, `menDetRespuesta`, `data`, `errors` con `CampoError{campo, mensaje}`, `meta`) | `desarrollo/plantillas/ApiResponseWrapper.java` | `LIN-API-REST-001 §4` (contrato) y `LIN-DEV-JAVA-001 §13.4.4` (implementación) |
+
+> El nombre de la clase de error es **`CampoError`** con campos `campo`/`mensaje`, en español, según el contrato institucional. No usar `FieldError` — además de apartarse de la norma, colisiona visualmente con `org.springframework.validation.FieldError` en el `GlobalExceptionHandler`, que consume `getBindingResult().getFieldErrors()` de Spring en la misma línea.
+
 ## Contacto
 
 - **Líder técnico:** [nombre]

@@ -1,11 +1,22 @@
 # Lineamiento Marco Rector de Arquitectura de Software en la ONP
 
 **Código:** LIN-ARQ-001  
-**Versión:** 0.1.7  
-**Fecha:** 2026-07-14  
+**Versión:** 0.1.10  
+**Fecha:** 2026-08-05  
 **Autor:** Oficina de Tecnologías de la Información — ONP  
-**Estado:** Vigente / Estándar de Nivel 1  
+**Estado:** En revisión / Estándar de Nivel 1 — pendiente de graduación a Vigente (`GOB-MAT-001`, Ciclo de vida documental)  
 **Clasificación:** Marco rector institucional. Documento supremo en la jerarquía del modelo de 3 niveles de la OTI. Establece las decisiones macro, Hacia Dónde y Por Qué de la arquitectura de sistemas. Todo lineamiento táctico (Nivel 2) y de implementación o código (Nivel 3) está supeditado a las reglas y directivas declaradas en el presente documento.
+
+---
+
+## Historial de versiones
+
+| Versión | Fecha | Autor | Descripción |
+|---|---|---|---|
+| 0.1.0 – 0.1.7 | 2026-05-21 a 2026-07-14 | Arquitectura OTI | Versiones iniciales del Marco Rector derivadas del desglose de `LIN-ARQ-000` en el modelo de 3 niveles. *(Detalle por versión no registrado — este historial se incorpora en v0.1.8.)* |
+| 0.1.10 | 2026-08-08 | Arquitectura OTI | Correcciones menores (`GOB-CHK-001` H10): unifica el nombre del modelo de ramas con su documento dueño — `§2.3` y `§8.1` decían «Trunk-Based Development» cuando `LIN-VER-001 §6` lo denomina **GitLab Flow simplificado**, disciplinado con principios TBD; corrige tres erratas (`oquestado`→`orquestado` en `§3.3`; «Estándar por Defectos»→«por Defecto» en `§2.1` y `§8.2`) |
+| 0.1.9 | 2026-08-05 | Arquitectura OTI | `§2.3`: incorpora **Experiment Toggle** como cuarta categoría de Feature Toggle y acota **Permission Toggle** al control de acceso por rol/perfil (SAA). La taxonomía anterior mezclaba en una sola categoría dos ciclos de vida opuestos —el experimento caduca obligatoriamente con su veredicto, el permiso puede ser permanente— lo que llevaba a que flags temporales quedaran clasificados como permanentes. Alinea el Nivel 1 con `LIN-DEV-JAVA-001 §16.6`, que ya operaba con las cuatro categorías sin respaldo normativo del marco rector. Ampliación anotada en `ADR-014` (`GOB-CHK-001` H13.3) |
+| 0.1.8 | 2026-08-05 | Arquitectura OTI | Corrige `§4.3` numeral 3, que contradecía al Nivel 2: exigía **Circuit Breaker con Resilience4j** como mandatorio para integraciones con el Estado, mientras `LIN-DIS-001 §6.2` lo declara excepcional bajo ADR en Monolito Modular — por la Regla de Supremacía, el mandato de Nivel 1 forzaba justamente lo que el Nivel 2 buscaba evitar. El numeral pasa a exigir el **resultado** (aislamiento ante caídas: timeout estricto + Bulkhead + degraded mode) y delega el mecanismo y los umbrales en `LIN-DIS-001 §6`, eliminando además el rango propio de timeout "3 a 5 segundos" que divergía de la matriz por criticidad del dueño (`GOB-CHK-001` H2 y H3). Se incorpora este historial de versiones |
 
 ---
 
@@ -95,7 +106,7 @@ Monolito Tradicional                  Monolito Modular                      Micr
 Sistemas históricos que operan en servidores de aplicaciones tradicionales (JBoss, Oracle WebLogic) con bases de datos relacionales compartidas sin separación de esquemas por módulo.
 - **Política:** No se permite la creación de nuevos sistemas bajo este esquema. Los sistemas existentes en Estadio 1 deben entrar en un plan gradual de modernización hacia el Estadio 2 utilizando el patrón de migración *Strangler Fig*.
 
-#### Estadio 2: Monolito Modular (Estándar por Defectos para Todo Proyecto Nuevo)
+#### Estadio 2: Monolito Modular (Estándar por Defecto para Todo Proyecto Nuevo)
 Es la topología arquitectónica mandatoria para la construcción de nuevos sistemas en la ONP (*ADR-002*). Consiste en una única aplicación desplegable (un solo contenedor OCI en Kubernetes), pero estructurada internamente en **módulos Maven con fronteras explícitas y aislamiento estricto de dominio**.
 - **Por qué es el estándar por defecto:** El 85% de los sistemas institucionales de la ONP poseen requerimientos de transaccionalidad ACID (cálculo actuarial, planillas de pensiones, liquidaciones) y concurrencia moderada. El Monolito Modular brinda la disciplina de diseño de un sistema distribuido (alto acoplamiento interno prohibido, APIs claras por subdominio) sin pagar el altísimo costo operativo de latencia de red, serialización continua, transacciones distribuidas complejas y orquestación masiva de infraestructura.
 
@@ -143,13 +154,16 @@ Para modernizar sistemas del Estadio 1 hacia el Estadio 2 (o Estadio 3 cuando es
 
 ### 2.3 Gobierno Institucional de Feature Toggles (*Unleash*)
 
-El patrón *Strangler Fig* y el desarrollo continuo en Trunk-Based Development (*LIN-VER-001*) exigen desacoplar el **despliegue de código** de la **liberación de funcionalidades al usuario**. Para ello, es mandatorio el uso de **Feature Toggles (PA14)** gestionados mediante la plataforma estándar on-premise de la institución: **Unleash (*ADR-014*)**.
+El patrón *Strangler Fig* y la integración continua bajo el modelo **GitLab Flow simplificado** —disciplinado con principios de Trunk-Based Development (`LIN-VER-001 §6`)— exigen desacoplar el **despliegue de código** de la **liberación de funcionalidades al usuario**. Para ello, es mandatorio el uso de **Feature Toggles (PA14)** gestionados mediante la plataforma estándar on-premise de la institución: **Unleash (*ADR-014*)**.
 
 | Categoría del Toggle | Propósito Técnico | Ciclo de Vida Máximo Permitido | Acción de Gobierno al Vencer |
 |---|---|---|---|
 | **Release Toggle** | Ocultar una funcionalidad incompleta o en migración en la rama principal (*main*). | **2 semanas tras el go-live** de la funcionalidad. | **Eliminación obligatoria** en el siguiente *pull request* de refactorización. |
+| **Experiment Toggle** | Conmutar entre dos implementaciones alternativas para validar cuál se adopta (prueba A/B, contraste de un motor de cálculo nuevo contra el vigente). | **Hasta el veredicto del experimento** (típicamente 1 sprint / 14 días tras concluir la medición). | **Eliminación obligatoria** de la rama descartada y del flag, en el sprint siguiente al veredicto. |
 | **Ops Toggle** | Apagar o degradar un comportamiento pesado ante caídas o degradación de terceros (ej. consulta RENIEC en línea). | **Indefinido / Permanente** (gobernado por SRE). | Revisión semestral de vigencia y umbrales en Grafana. |
-| **Permission Toggle** | Habilitar características experimentales solo para un grupo beta de usuarios internos o auditores. | **Hasta fin de la campaña** de pruebas o auditoría. | Eliminación del flag al generalizar la función. |
+| **Permission Toggle** | Restringir el acceso a una funcionalidad según rol, perfil o segmento de usuario, en coordinación con el SAA (ej. función disponible solo para auditores o para un grupo beta interno). | **Indefinido / Permanente** mientras la restricción de acceso siga siendo una regla de negocio vigente. | Revisión periódica; eliminación del flag solo si la función se generaliza a todos los perfiles. |
+
+> **Distinción entre Experiment y Permission:** ambos pueden exponer una función a un subconjunto de usuarios, pero su ciclo de vida es opuesto. El *Experiment Toggle* **caduca obligatoriamente** — existe para tomar una decisión y desaparece con ella. El *Permission Toggle* **puede ser permanente** — codifica una regla de negocio de control de acceso. Clasificar mal un experimento como permiso es la vía habitual por la que un flag temporal se vuelve deuda técnica indefinida.
 
 > **Regla de Cero Deuda Técnica en Toggles:** Un Release Toggle que permanece en el código fuente por más de 30 días después del pase a producción se clasifica como **deuda técnica crítica**. El pipeline de análisis estático (SonarQube) emitirá una alerta de bloqueo para el módulo si detecta flags de liberación caducos en las comprobaciones de Unleash.
 
@@ -201,7 +215,7 @@ Queda **terminantemente prohibido** el uso de transacciones distribuidas con pro
 
 ### 3.3 Patrón Saga con Transactional Outbox (Consistencia Eventual)
 
-Para mantener coherencia de negocio entre dos o más dominios autónomos o microservicios sin violar la prohibición de 2PC, se establece como norma obligatoria la adopción del **Patrón Saga (oquestado o coreografiado)** respaldado por el patrón **Transactional Outbox (*LIN-DIS-001 §4.2*, DDL en *LIN-BD-ORA-001 §3.10*, relevo en *LIN-BUS-001 §7.3*)**.
+Para mantener coherencia de negocio entre dos o más dominios autónomos o microservicios sin violar la prohibición de 2PC, se establece como norma obligatoria la adopción del **Patrón Saga (orquestado o coreografiado)** respaldado por el patrón **Transactional Outbox (*LIN-DIS-001 §4.2*, DDL en *LIN-BD-ORA-001 §3.10*, relevo en *LIN-BUS-001 §7.3*)**.
 
 1. **Transacciones Locales ACID:** Cada servicio participante ejecuta su modificación de estado exclusivamente sobre su base de datos local dentro de una transacción ACID propia.
 2. **Tabla Outbox:** En la misma transacción local del negocio, se inserta el evento del cambio en la tabla `EVT_OUTBOX` de la base de datos local.
@@ -310,7 +324,11 @@ Las integraciones con entidades externas del Estado Peruano (Plataforma de Inter
 
 1. **Aislamiento de Seguridad (Zero Trust):** Toda comunicación con terceros gubernamentales debe transitar obligatoriamente a través de la pasarela de seguridad perimetral (**WSO2 API Gateway / mTLS mutual proxy**), nunca directamente desde un contenedor de aplicación de backend.
 2. **Capa Anticorrupción (ACL Mandatoria):** Según el principio de protección de fronteras (*ADR-005* y *PT13 en LIN-DIS-001*), el módulo que consume un servicio PIDE o RENIEC no puede propagar los DTOs XML o estructuras de terceros al interior de su lógica de negocio. Debe implementar un `Adapter` de infraestructura que traduzca de forma quirúrgica la respuesta exterior hacia el modelo inmutable de la ONP (`DatosPersona`, `Dni`).
-3. **Aislamiento ante Caídas Exteriores:** Dado que los servicios externos del Estado experimentan caídas impredecibles, es mandatorio que el cliente HTTP/SOAP tenga configurados **Timeouts estrictos (máx. 3 a 5 segundos)**, **Circuit Breakers (Resilience4j)** y estrategias de contingencia o *degraded mode* (por ejemplo, permitir registro manual provisorio con validación diferida si RENIEC está caído).
+3. **Aislamiento ante Caídas Exteriores (*Design for Failure*):** Dado que los servicios externos del Estado experimentan caídas impredecibles, es **mandatorio** que todo cliente HTTP/SOAP hacia terceros gubernamentales garantice el aislamiento de fallos mediante tres controles conjuntos: **timeouts explícitos y estrictos** (queda prohibido dejar los valores por defecto del cliente, infinitos o superiores a 30 segundos), **acotamiento del pool de conexiones por proveedor** (*Bulkhead*) y **estrategia de contingencia o *degraded mode*** (por ejemplo, permitir registro manual provisorio con validación diferida si RENIEC está caído).
+
+   > **Qué exige este Marco Rector y qué delega:** el Nivel 1 exige el **resultado** — que la caída de un tercero nunca agote los hilos ni tumbe el servicio ONP — no una herramienta específica. El **mecanismo y los valores concretos los define `LIN-DIS-001 §6` como documento dueño**: matriz de timeouts por criticidad y demanda (`§6.1` — RENIEC en ruta crítica interactiva exige valores más agresivos que SUNAT en proceso diferido), Bulkhead por defecto vía `setMaxConnPerRoute` de Apache HttpClient 5 (`§6.3`) y reintentos con Spring Retry en lecturas idempotentes (`§6.4`).
+   >
+   > El **Circuit Breaker formal con Resilience4j (`LIN-DIS-001 §6.2`) es obligatorio en Microservicios (Estadio 3) y excepcional bajo ADR en Monolito Modular** — no es exigible por este numeral. Un Monolito Modular que consuma RENIEC cumple este mandato con timeout estricto + Bulkhead + degraded mode, sin Resilience4j.
 
 ---
 
@@ -451,14 +469,14 @@ Dado que la totalidad del software previsional en la ONP es desarrollado mediant
 Todo profesional o equipo asignado por la empresa contratista a proyectos de desarrollo Java en la institución deberá acreditar competencias avanzadas en:
 - **Java 21 LTS:** Dominio de registros (`records`), clases selladas (`sealed classes`), coincidencias de patrones (`pattern matching`) e hilos virtuales (`virtual threads`).
 - **Spring Boot 3.x:** Configuración por perfiles, inyección de dependencias avanzada, `spring-boot-starter-actuator` y transaccionalidad declarativa con `@Transactional`.
-- **Ecosistema y Herramientas:** Maven (construcción multi-módulo), Git (flujo Trunk-Based / Conventional Commits), Docker (construcción multi-stage) y pruebas unitarias automáticas con JUnit 5 y Mockito.
+- **Ecosistema y Herramientas:** Maven (construcción multi-módulo), Git (GitLab Flow simplificado con disciplina TBD, `LIN-VER-001 §6` / Conventional Commits), Docker (construcción multi-stage) y pruebas unitarias automáticas con JUnit 5 y Mockito.
 
 ### 8.2 Exigencias Diferenciadas según Topología del Proyecto
 
 | Topología del Proyecto Licitado | Competencias y Habilidades Especializadas Requeridas | Señales de Alarma / Anti-Patrones en la Evaluación Técnica |
 |---|---|---|
 | **Transaction Script / Active Record** *(mantenimiento de sistemas simples o legados)* | • JPA/Hibernate, Spring Data, manejo transaccional declarativo. | No conoce `@Transactional` o usa `SELECT *`; no distingue transacción declarativa de programática. |
-| **Estadio 2: Monolito Modular** *(Estándar por Defectos en ONP)* | • Arquitectura modular Maven y gobierno de fronteras de paquetes.<br>• Principios SOLID aplicados rigurosamente a clases y servicios (`LIN-DEV-JAVA-001 §7`).<br>• Capacidad para aislar subdominios sin incurrir en dependencias circulares. | Desconoce el impacto de acoplar paquetes de dominio entre sí; usa comodines de importación o no logra explicar cómo evitar ciclos en dependencias Maven multi-módulo. |
+| **Estadio 2: Monolito Modular** *(Estándar por Defecto en ONP)* | • Arquitectura modular Maven y gobierno de fronteras de paquetes.<br>• Principios SOLID aplicados rigurosamente a clases y servicios (`LIN-DEV-JAVA-001 §7`).<br>• Capacidad para aislar subdominios sin incurrir en dependencias circulares. | Desconoce el impacto de acoplar paquetes de dominio entre sí; usa comodines de importación o no logra explicar cómo evitar ciclos en dependencias Maven multi-módulo. |
 | **Arquitectura Hexagonal** *(candidato a microservicio)* | • Patrón Hexagonal (*Ports & Adapters*) estricto con inversión de dependencias (`LIN-DIS-001 §2.3`).<br>• Pruebas de dominio puro sin contenedor Spring. | Mezcla lógica de negocio en Controllers o Repositories; no logra aislar el dominio del framework en pruebas unitarias. |
 | **Estadio 3: Microservicios** | • Spring Cloud o diseño *Kubernetes-native*, Circuit Breaker, Trazabilidad Distribuida (OpenTelemetry).<br>• Transacciones distribuidas eventuales (Patrón Saga y Outbox, `§3.3`). | Intenta usar `2PC` o transacciones bloqueantes entre servicios; desconoce el Teorema CAP, Saga o cómo operar en consistencia eventual. |
 | **Domain-Driven Design (DDD)** *(solo cuando aplican los 6 criterios de `LIN-DIS-001 §3.0`)* | • Bounded Contexts, Agregados, Value Objects, Domain Events, CQRS básico. | No puede distinguir un Agregado de una entidad JPA; propone DDD para un CRUD simple sin justificar los 6 criterios de gobernanza. |
@@ -506,7 +524,7 @@ La siguiente tabla compendia las decisiones históricas y vigentes adoptadas por
 | **ADR-011** | **Kubernetes como Destino por Defecto:** K8s es el destino habitual; el uso de Máquinas Virtuales dedicadas se limita a 4 criterios técnicos excepcionales con ADR. | 2026-05-21 | Aceptada / Vigente |
 | **ADR-012** | **Apache Kafka como Broker Institucional:** Se oficializa a Apache Kafka (`LIN-BUS-001`) como el único canal institucional de mensajería y eventos asíncronos para EDA. | 2026-06-05 | Aceptada / Vigente |
 | **ADR-013** | **CloudEvents v1.0 como Estándar de Eventos:** Todo evento publicado en los tópicos institucionales de Kafka debe ajustarse a la especificación estándar CNCF CloudEvents v1.0. | 2026-06-08 | Aceptada / Vigente |
-| **ADR-014** | **Unleash para Feature Toggles On-Premise:** Se adopta Unleash self-hosted como herramienta oficial para Feature Toggles en Trunk-Based Development (*LIN-VER-001*). | 2026-07-02 | Aceptada / Vigente |
+| **ADR-014** | **Unleash para Feature Toggles On-Premise:** Se adopta Unleash self-hosted como herramienta oficial para Feature Toggles en Trunk-Based Development (*LIN-VER-001*). **Ampliación 2026-08-05:** la taxonomía de `§2.3` incorpora **Experiment Toggle** como cuarta categoría y acota **Permission Toggle** al control de acceso por rol/perfil — antes una sola categoría mezclaba ambos ciclos de vida (el experimento caduca con su veredicto; el permiso puede ser permanente). Alinea el Nivel 1 con la taxonomía operativa de `LIN-DEV-JAVA-001 §16.6`. | 2026-07-02 | Aceptada / Vigente |
 
 ---
 

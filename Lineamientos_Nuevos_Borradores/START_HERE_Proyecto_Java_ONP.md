@@ -1,6 +1,7 @@
 # START HERE — Proyecto Java ONP
 
-**Versión:** 0.2.0 (Alineado a 3 Niveles de Arquitectura)  
+**Código:** GOB-INI-001  
+**Versión:** 0.3.0 (Criterio de elección de template; citas corregidas)  
 **Fecha:** 2026-07-08  
 **Estado:** Vigente / Operativo  
 **Propósito:** punto de entrada para iniciar un proyecto Java/Spring Boot bajo los lineamientos ONP federados en 3 niveles de abstracción.
@@ -59,15 +60,22 @@ Un proyecto backend nuevo debe tener como mínimo:
 
 ## 4. Decisiones ya cerradas para proyectos nuevos
 
-- Estilo arquitectónico por defecto en nuevos proyectos: **Monolito Modular** o **Arquitectura Hexagonal / Limpia** (`LIN-DIS-001`).
-- Plataforma de despliegue inmutable: **Kubernetes (K8s) con CRI `containerd`** (`LIN-ARQ-001 §7`).
+- Topología por defecto en nuevos proyectos: **Monolito Modular** (Estadio 2, `LIN-ARQ-001 §2.1`). El diseño interno del módulo —Capas o Hexagonal— se decide con el árbol de decisión de `LIN-DIS-001 §2`.
+- Plataforma de despliegue inmutable: **Kubernetes (K8s) con CRI `containerd`** (`LIN-ARQ-001 §5.2`).
 - Formato oficial de configuración Spring Boot: YAML (`application.yml`, perfiles `-dev`, `-qa`, `-prod`).
 - Modelo primario de observabilidad: OpenTelemetry con correlación canónica (`traceId`, `X-Request-ID`, Four Golden Signals).
 - Variables OTEL en K8s: solo override operativo administrado por Plataforma.
 - Modelo de repositorio para proyectos nuevos: GitLab Flow simplificado con MR obligatorio (`LIN-VER-001`), salvo ADR aprobado.
 
-## 5. Punto de arranque técnico
+## 5. Punto de arranque técnico — qué template usar
 
-`versionamiento/ejemplos-plantillas-gitlab/template-backend-java/`
+Existen dos templates institucionales. **El default es el modular**, coherente con la topología por defecto de `LIN-ARQ-001 §2.1` (Estadio 2, Monolito Modular).
 
-Este template debe usarse como baseline para proyectos backend Java nuevos y adaptarse según el alcance del sistema, el modelo de BD y las capacidades activas de `LIN-CICD-001`.
+| Template | Cuándo usarlo | Estructura |
+|---|---|---|
+| **`template-backend-java-modular`** *(por defecto)* | Todo sistema nuevo que abarque **2 o más dominios funcionales**, o que sea candidato a extraer alguno como microservicio. Es el arranque coherente con el Estadio 2. | Reactor Maven multi-módulo con fronteras explícitas: `domain` / `application` / `infrastructure` / `api` / `boot`, más `comun/` como Shared Kernel (`LIN-DIS-001 §3.4`). |
+| **`template-backend-java`** *(simple)* | Sistema de **un solo dominio** sin candidatura a microservicio: módulos de soporte, mantenedores de catálogos, cruds administrativos o flujos lineales sin invariantes cruzados (`LIN-DIS-001 §2.2`). | Módulo Maven único en capas: `controller` / `service` / `repository` / `entity`. |
+
+> **Criterio de decisión:** si dudas entre ambos, elige el **modular**. Partir de un módulo único y migrar después a multi-módulo obliga a reorganizar paquetes, `pom.xml` y pipeline; empezar modular y mantener un solo componente no tiene coste. `LIN-DEV-JAVA-001 §3.1` marca como señal de alarma que un `service` del template simple supere las ~300 líneas: es indicio de que el sistema necesitaba el modular.
+
+Cualquiera de los dos se adapta según el alcance del sistema, el modelo de BD y las capacidades activas de `LIN-CICD-001`. Los archivos marcados como **artefactos normados** en el README de cada template (`checkstyle-onp.xml`, `ApiResponseWrapper`) no se personalizan sin ADR.

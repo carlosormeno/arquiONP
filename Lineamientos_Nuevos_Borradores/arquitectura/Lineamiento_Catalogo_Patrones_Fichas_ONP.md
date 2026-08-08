@@ -1,11 +1,22 @@
 # Catálogo Oficial de Patrones y Fichas Técnicas de Arquitectura, Diseño Táctico y Programación en la ONP
 
 **Código:** LIN-PAT-001  
-**Versión:** 0.1.4  
-**Fecha:** 2026-07-10  
+**Versión:** 0.1.5  
+**Fecha:** 2026-08-05  
 **Autor:** Oficina de Tecnologías de la Información — ONP  
-**Estado:** Vigente / Catálogo Institucional Transversal  
+**Estado:** En revisión / Catálogo Institucional Transversal — pendiente de graduación a Vigente (`GOB-MAT-001`, Ciclo de vida documental)  
 **Clasificación:** Catálogo normativo de toma de decisiones. Articula y consolida los criterios de selección para las decisiones de Nivel 1 (`LIN-ARQ-001`), Nivel 2 (`LIN-DIS-001`), Nivel 3 (`LIN-DEV-JAVA-001`) y dominios transversales (`LIN-BD-ORA-001`, `LIN-API-REST-001`, `LIN-BI-001`, `LIN-BUS-001`). De uso diario obligatorio para Arquitectos, Tech Leads y Desarrolladores.
+
+> **Fuente única de códigos `PT`:** este catálogo es autoritativo para la asignación de códigos `PT01`–`PT16` y de las fichas `PAT-*`. Ningún documento puede asignar un código `PT` a un patrón distinto del registrado aquí. El índice de trazabilidad `PT → ficha → dueño normativo` se mantiene en `GOB-MAT-001`.
+
+---
+
+## Historial de versiones
+
+| Versión | Fecha | Autor | Descripción |
+|---|---|---|---|
+| 0.1.0 – 0.1.4 | 2026-07-08 a 2026-07-10 | Arquitectura OTI | Versiones iniciales del catálogo de fichas de decisión. *(Detalle por versión no registrado — este historial se incorpora en v0.1.5.)* |
+| 0.1.5 | 2026-08-05 | Arquitectura OTI | Corrige 4 fichas (`PAT-TOP-01`, `PAT-TOP-03`, `PAT-INT-04`, `PAT-DAT-03`) que usaban "Estadio 0" para legacy: la escala oficial de `LIN-ARQ-001 §2.1` es Estadio 1 = Legacy, 2 = Monolito Modular, 3 = Microservicios (`GOB-CHK-001` H1). Declara explícitamente al catálogo como fuente única de códigos `PT`, tras detectarse asignaciones contradictorias en el tablero de Brechas (`GOB-CHK-001` H6.3). Se incorpora este historial de versiones |
 
 ---
 
@@ -62,12 +73,12 @@ Cada vez que un Arquitecto de Software, Diseñador/Tech Lead o Desarrollador ana
 |---|---|
 | **Código** | `PAT-TOP-01` (Nivel 1 — Topología Macro) |
 | **Nombre** | **Monolito Modular (*Estadio 2*)** |
-| **Capa / Dominio** | Topología de Despliegue e Interconexión de Sistemas (`LIN-ARQ-001 §6.2`) |
+| **Capa / Dominio** | Topología de Despliegue e Interconexión de Sistemas (`LIN-ARQ-001 §2.1`) |
 | **Descripción** | Aplicación desplegable en una sola unidad física en Kubernetes (`Pod`), pero organizada internamente en módulos estancos independientes (*Bounded Contexts*) con aislamiento estricto de código, esquemas de base de datos divididos por dominio y comunicación regulada en memoria. |
-| **✅ Criterio de Selección<br>*(¿Cuándo usar en ONP?)*** | **Se DEBE usar si el análisis de requisitos determina:**<br>• El sistema abarca entre 2 y 6 dominios funcionales fuertemente colaborativos (ej. Sistema Previsional Core que gestiona Expedientes, Aportes y Pensionistas en transacciones coordinadas).<br>• El equipo técnico asignado tiene menos de 15 desarrolladores y comparte un pipeline CI/CD unificado.<br>• Es un nuevo desarrollo que reemplaza un sistema legacy (*Estadio 0*) y busca alta modularidad sin asumir la complejidad operacional extrema ni la latencia de red de múltiples microservicios distribuidos. |
+| **✅ Criterio de Selección<br>*(¿Cuándo usar en ONP?)*** | **Se DEBE usar si el análisis de requisitos determina:**<br>• El sistema abarca entre 2 y 6 dominios funcionales fuertemente colaborativos (ej. Sistema Previsional Core que gestiona Expedientes, Aportes y Pensionistas en transacciones coordinadas).<br>• El equipo técnico asignado tiene menos de 15 desarrolladores y comparte un pipeline CI/CD unificado.<br>• Es un nuevo desarrollo que reemplaza un sistema legacy (*Estadio 1*) y busca alta modularidad sin asumir la complejidad operacional extrema ni la latencia de red de múltiples microservicios distribuidos. |
 | **❌ Criterio de Exclusión<br>*(¿Cuándo NO usar?)*** | **NO usar cuando:**<br>• Un único submódulo o función concentra más del 85% del tráfico o de la carga computacional y requiere escalar horizontalmente en K8s de forma aislada sin duplicar el resto del sistema (en ese caso $\rightarrow$ *Microservicio PAT-TOP-02*).<br>• Se permite que las clases de un paquete accedan libremente a clases internas o tablas `JPA` de otro paquete sin pasar por las interfaces de contrato `application.api`. |
 | **🛠️ Stack / Herramienta<br>Homologada en ONP** | Java 21 + Spring Boot 3 (`Maven Multi-Module` organizado con `onp-common-domain` para primitivas transversales) sobre contenedor Linux Alpine en `containerd/K8s`. |
-| **📖 Referencia Oficial** | `LIN-ARQ-001 §6.2` y `LIN-DIS-001 §3` |
+| **📖 Referencia Oficial** | `LIN-ARQ-001 §2.1` (Estadio 2) y `LIN-DIS-001 §3` |
 
 ---
 
@@ -77,12 +88,12 @@ Cada vez que un Arquitecto de Software, Diseñador/Tech Lead o Desarrollador ana
 |---|---|
 | **Código** | `PAT-TOP-02` (Nivel 1 — Topología Macro) |
 | **Nombre** | **Microservicios Cloud-Native (*Estadio 3*)** |
-| **Capa / Dominio** | Topología de Despliegue Distribuido (`LIN-ARQ-001 §6.3`) |
+| **Capa / Dominio** | Topología de Despliegue Distribuido (`LIN-ARQ-001 §2.1`) |
 | **Descripción** | Descomposición de un sistema en servicios pequeños, autónomos y altamente especializados, donde cada microservicio encapsula una única capacidad de negocio previsional, posee su propia base de datos exclusiva y se despliega y escala de forma 100% independiente en Kubernetes. |
 | **✅ Criterio de Selección<br>*(¿Cuándo usar en ONP?)*** | **Se DEBE usar si el análisis de requisitos determina:**<br>• El componente tiene requerimientos de escalabilidad masiva y latencia asimétrica respecto al resto de la institución (ej. Motor Actuarial de Cálculo de Pensiones en épocas de pago masivo o Consulta Ciudadana Web en picos masivos).<br>• La solución es mantenida por equipos de desarrollo independientes (*Two-Pizza Teams*) con ciclos de entrega de software (`Releases`) dispares.<br>• El servicio debe evolucionar tecnológicamente de forma aislada sin afectar la estabilidad ni reiniciar el clúster transaccional core. |
 | **❌ Criterio de Exclusión<br>*(¿Cuándo NO usar?)*** | **NO usar cuando:**<br>• Se intenta crear un "nanoservicio" o un CRUD de 3 tablas que requiere hacer 5 llamadas REST sincrónicas a otros microservicios para completar una sola operación transaccional básica (antipatrón *Distributed Monolith*). |
 | **🛠️ Stack / Herramienta<br>Homologada en ONP** | Java 21 + Spring Boot 3 / Spring Cloud o Go 1.22+ (si aplica alto rendimiento concurrente) en Pods K8s gestionados por API Gateway WSO2 y trazas OpenTelemetry. |
-| **📖 Referencia Oficial** | `LIN-ARQ-001 §6.3` y `ADR-012` |
+| **📖 Referencia Oficial** | `LIN-ARQ-001 §2.1` (Estadio 3, con los 6 criterios de extracción) y `ADR-003` |
 
 ---
 
@@ -92,12 +103,12 @@ Cada vez que un Arquitecto de Software, Diseñador/Tech Lead o Desarrollador ana
 |---|---|
 | **Código** | `PAT-TOP-03` / `PT10` (Nivel 1 — Transición y Modernización) |
 | **Nombre** | **Patrón Strangler Fig (Higuera Estranguladora)** |
-| **Capa / Dominio** | Estrategia de Migración y Despliegue Progresivo (`LIN-ARQ-001 §6.1`) |
+| **Capa / Dominio** | Estrategia de Migración y Despliegue Progresivo (`LIN-ARQ-001 §2.2`) |
 | **Descripción** | Estrategia de modernización progresiva que consiste en crear una fachada o enrutador perimetral (`API Gateway / Proxy`) que desvía gradualmente las nuevas peticiones hacia los nuevos módulos construidos en Java 21 / K8s, estrangulando y reduciendo por fases el tráfico hacia el sistema legacy monolítico (JBoss / Oracle Forms) hasta apagarlo por completo. |
-| **✅ Criterio de Selección<br>*(¿Cuándo usar en ONP?)*** | **Se DEBE usar si el análisis de requisitos determina:**<br>• Modernización de sistemas previsionales críticos legacy (*Estadio 0*) donde un reemplazo total "de un solo golpe" (*Big Bang*) representa un riesgo de interrupción inaceptable para el pago de pensiones o la atención ciudadana.<br>• Coexistencia obligatoria de largo plazo (>6 meses) entre la nueva arquitectura en contenedores y las bases de datos transaccionales heredadas. |
+| **✅ Criterio de Selección<br>*(¿Cuándo usar en ONP?)*** | **Se DEBE usar si el análisis de requisitos determina:**<br>• Modernización de sistemas previsionales críticos legacy (*Estadio 1*) donde un reemplazo total "de un solo golpe" (*Big Bang*) representa un riesgo de interrupción inaceptable para el pago de pensiones o la atención ciudadana.<br>• Coexistencia obligatoria de largo plazo (>6 meses) entre la nueva arquitectura en contenedores y las bases de datos transaccionales heredadas. |
 | **❌ Criterio de Exclusión<br>*(¿Cuándo NO usar?)*** | **NO usar cuando:**<br>• El sistema a reemplazar es pequeño, no tiene dependencias cruzadas complejas y puede reescribirse y migrarse por completo en un solo *sprint* de 3 semanas o durante una ventana de mantenimiento programada de fin de semana. |
 | **🛠️ Stack / Herramienta<br>Homologada en ONP** | API Gateway WSO2 / NGINX Ingress Controller en Kubernetes + Capas Anticorrupción (`ACL`) y sincronización `CDC/Debezium` con Oracle 19c. |
-| **📖 Referencia Oficial** | `LIN-ARQ-001 §6.1` y `Matriz GOB-MAT-001` |
+| **📖 Referencia Oficial** | `LIN-ARQ-001 §2.2` y `ADR-004` |
 
 ---
 
@@ -218,10 +229,10 @@ Cada vez que un Arquitecto de Software, Diseñador/Tech Lead o Desarrollador ana
 | **Nombre** | **Anti-Corruption Layer (*Capa Anticorrupción — ACL*)** |
 | **Capa / Dominio** | Integración Táctica e Interoperabilidad Legacy (`LIN-DIS-001 §5.4`) |
 | **Descripción** | Capa de traducción e impermeabilización transaccional que intercepta las respuestas o eventos provenientes de un sistema tercero o legacy, transformando sus modelos de datos arcaicos, nombres cripticos o formatos de fecha incompatibles hacia objetos puros del dominio moderno (`Records` de `domain/model/`), impidiendo que el modelo ajeno corrompa la semántica interna de la ONP. |
-| **✅ Criterio de Selección<br>*(¿Cuándo usar en ONP?)*** | **Se DEBE usar obligatoriamente si el análisis de requisitos determina:**<br>• Consumo de servicios de terceros externos (RENIEC, SUNAT, bancos) donde las tablas o XML devuelven campos como `fec_nac_per` en formato `"dd/MM/yyyy"` que deben traducirse inmediatamente a `LocalDate fechaNacimiento` antes de tocar la lógica del negocio.<br>• Lectura o invocación de procedimientos almacenados heredados (*Legacy PL/SQL*) del Estadio 0. |
+| **✅ Criterio de Selección<br>*(¿Cuándo usar en ONP?)*** | **Se DEBE usar obligatoriamente si el análisis de requisitos determina:**<br>• Consumo de servicios de terceros externos (RENIEC, SUNAT, bancos) donde las tablas o XML devuelven campos como `fec_nac_per` en formato `"dd/MM/yyyy"` que deben traducirse inmediatamente a `LocalDate fechaNacimiento` antes de tocar la lógica del negocio.<br>• Lectura o invocación de procedimientos almacenados heredados (*Legacy PL/SQL*) del Estadio 1. |
 | **❌ Criterio de Exclusión<br>*(¿Cuándo NO usar?)*** | **NO usar cuando:**<br>• La comunicación ocurre entre dos módulos modernos (*Bounded Contexts*) del mismo Monolito Modular ONP que comparten el `Shared Kernel` (`onp-common-domain`) y exponen contratos DTO estandarizados por la OTI. |
 | **🛠️ Stack / Herramienta<br>Homologada en ONP** | Java 21 (`Mappers` de traducción y adaptadores implementados dentro del paquete `infrastructure/adapter/out/acl/`). |
-| **📖 Referencia Oficial** | `LIN-DIS-001 §5.4` y `LIN-ARQ-001 §6.3` |
+| **📖 Referencia Oficial** | `LIN-DIS-001 §5.4` y `LIN-ARQ-001 §4.3` (ACL mandatoria en interoperabilidad gubernamental) |
 
 ---
 
@@ -308,12 +319,12 @@ Cada vez que un Arquitecto de Software, Diseñador/Tech Lead o Desarrollador ana
 |---|---|
 | **Código** | `PAT-MSG-03` / `PT09` (Nivel 1 / Mensajería Transaccional) |
 | **Nombre** | **Patrón Saga Distribuida (*Orquestada o Coreografiada*)** |
-| **Capa / Dominio** | Coordinación Transaccional entre Microservicios (`LIN-ARQ-001 §6.2`) |
+| **Capa / Dominio** | Coordinación Transaccional entre Microservicios (`LIN-ARQ-001 §3.3`) |
 | **Descripción** | Secuencia coordinada de transacciones locales independientes en múltiples microservicios o *Bounded Contexts*, donde cada paso actualiza una base de datos local y publica un evento. Si un paso posterior falla por reglas de negocio, la Saga ejecuta transacciones de **compensación en reversa** para deshacer limpiamente los cambios previos ya confirmados, manteniendo la consistencia eventual. |
 | **✅ Criterio de Selección<br>*(¿Cuándo usar en ONP?)*** | **Se DEBE usar si el análisis de requisitos determina:**<br>• Flujos de negocio transaccionales de largo alcance que cruzan múltiples microservicios o dominios de base de datos Oracle aislados donde el bloqueo distribuido (`2-Phase Commit / 2PC`) no es viable ni soportado en arquitectura Cloud-Native.<br>• *Ejemplo en ONP:* Flujo de Liquidación de Jubilación (Paso 1: Bloquear Reserva en Tesorería $\rightarrow$ Paso 2: Generar Resolución Legal $\rightarrow$ Paso 3: Si falla Resolución Legal, ejecutar *Compensación Liberar Reserva en Tesorería*). |
 | **❌ Criterio de Exclusión<br>*(¿Cuándo NO usar?)*** | **NO usar cuando:**<br>• Toda la transacción ocurre dentro del mismo módulo del Monolito Modular y sobre el mismo esquema de base de datos Oracle transaccional donde un simple `@Transactional` (ACID nativo) garantiza la consistencia sin complejidad distribuida. |
 | **🛠️ Stack / Herramienta<br>Homologada en ONP** | Orquestación mediante **Spring StateMachine / Apache Camel** o Coreografía sobre **Apache Kafka (`CloudEvents`) + Outbox Table** con idempotencia estricta por `X-Request-ID`. |
-| **📖 Referencia Oficial** | `LIN-ARQ-001 §6.2` y `LIN-BUS-001` |
+| **📖 Referencia Oficial** | `LIN-ARQ-001 §3.3` (Saga con Transactional Outbox) y `LIN-BUS-001 §9` |
 
 ---
 
@@ -387,7 +398,7 @@ Cada vez que un Arquitecto de Software, Diseñador/Tech Lead o Desarrollador ana
 | **Nombre** | **Change Data Capture (*Captura de Cambios de Datos — CDC*)** |
 | **Capa / Dominio** | Replicación Transaccional No Invasiva (`LIN-BD-ORA-001 / LIN-BI-001`) |
 | **Descripción** | Mecanismo de integración a nivel de motor de base de datos que lee y captura los cambios (`INSERT, UPDATE, DELETE`) directamente desde los registros binarios transaccionales (`Redo Logs / LogMiner / XStream` en Oracle) sin ejecutar consultas ni alterar las tablas operativas, convirtiendo las mutaciones en eventos continuos transmitidos hacia Apache Kafka o el Data Lakehouse. |
-| **✅ Criterio de Selección<br>*(¿Cuándo usar en ONP?)*** | **Se DEBE usar si el análisis de requisitos determina:**<br>• Replicación o sincronización en tiempo real desde bases de datos relacionales transaccionales críticas de Oracle hacia stores de lectura NoSQL de *CQRS (`PAT-DIS-04`)* o hacia la capa *Bronze* de analítica (`PAT-BI-01`).<br>• Extracción no invasiva de datos transaccionales desde sistemas heredados (*Estadio 0*) que no pueden ser modificados en código para emitir eventos de aplicación. |
+| **✅ Criterio de Selección<br>*(¿Cuándo usar en ONP?)*** | **Se DEBE usar si el análisis de requisitos determina:**<br>• Replicación o sincronización en tiempo real desde bases de datos relacionales transaccionales críticas de Oracle hacia stores de lectura NoSQL de *CQRS (`PAT-DIS-04`)* o hacia la capa *Bronze* de analítica (`PAT-BI-01`).<br>• Extracción no invasiva de datos transaccionales desde sistemas heredados (*Estadio 1*) que no pueden ser modificados en código para emitir eventos de aplicación. |
 | **❌ Criterio de Exclusión<br>*(¿Cuándo NO usar?)*** | **NO usar cuando:**<br>• No se cuenta con la validación o autorización formal de los Administradores de Base de Datos (`DBA`) respecto a la sobrecarga computacional o el licenciamiento de `LogMiner / Supplemental Logging` en el servidor Oracle transaccional de producción. |
 | **🛠️ Stack / Herramienta<br>Homologada en ONP** | **Debezium Oracle Connector + Kafka Connect Clúster** conectado hacia Apache Kafka Institucional e inyectando en MinIO/Iceberg. |
 | **📖 Referencia Oficial** | `LIN-BD-ORA-001`, `LIN-BI-001` y `LIN-DIS-001 §4.2` |

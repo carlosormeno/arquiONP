@@ -1,7 +1,8 @@
 # GLOSARIO ONP — Términos Transversales
 
-**Versión:** 0.2.1 (Completa términos GoF/DDD faltantes: BFF, CDC, Transaction Script, Published Language)  
-**Fecha:** 2026-07-09  
+**Código:** GLOSARIO-ONP  
+**Versión:** 0.2.2 (Corrige "Estadios de Topología" a la escala oficial 1/2/3 de `LIN-ARQ-001 §2.1` — la definición anterior usaba una numeración 0/1/2 inexistente en el marco rector y citaba una sección errónea)  
+**Fecha:** 2026-08-05  
 **Estado:** Vigente / Operativo  
 **Propósito:** consolidar términos de uso recurrente en los lineamientos ONP para reducir ambigüedad entre arquitectura, diseño táctico, desarrollo, seguridad, base de datos, pruebas y plataforma en su jerarquía de 3 niveles.
 
@@ -62,14 +63,14 @@ Si un lineamiento necesita una definición más específica para su dominio, deb
 | Término | Definición ONP |
 |---|---|
 | **Monolito simple** | Aplicación desplegable única con estructura básica en capas y complejidad moderada. |
-| **Monolito modular** | Aplicación desplegable única organizada en módulos explícitos con fronteras claras y dependencias controladas (`LIN-DIS-001 §3.1`). |
-| **Hexagonal** | Estilo donde dominio y casos de uso se aíslan de frameworks mediante puertos y adaptadores (`LIN-DIS-001 §3.2`). |
+| **Monolito modular** | Aplicación desplegable única organizada en módulos explícitos con fronteras claras y dependencias controladas. Topología: `LIN-ARQ-001 §2.1` (Estadio 2, estándar por defecto); diseño interno: `LIN-DIS-001 §3`. |
+| **Hexagonal** | Estilo donde dominio y casos de uso se aíslan de frameworks mediante puertos y adaptadores (`LIN-DIS-001 §2.3`). |
 | **Dominio** | Modelo del problema de negocio que el software resuelve, con sus reglas, conceptos y restricciones. |
 | **Bounded Context** | Límite explícito dentro del cual un modelo de dominio es consistente y tiene significado unívoco. |
-| **Estadios de Topología** | Clasificación evolutiva de sistemas ONP según `LIN-ARQ-001 §6`: Estadio 0 (Legacy/On-Premise), Estadio 1 (Transición/Strangler Fig) y Estadio 2 (Cloud-Native/K8s). |
+| **Estadios de Topología** | Clasificación evolutiva de sistemas ONP según `LIN-ARQ-001 §2.1`: **Estadio 1** (Monolito Tradicional / Legacy en JBoss/WebLogic), **Estadio 2** (Monolito Modular — estándar por defecto para todo proyecto nuevo) y **Estadio 3** (Microservicios Selectivos — excepción regulada por 6 criterios). La migración del Estadio 1 al 2 se realiza con el patrón Strangler Fig (`LIN-ARQ-001 §2.2`), que es una estrategia de transición, no un estadio. |
 | **Port** | Interfaz que expresa una capacidad requerida o expuesta por el dominio o la aplicación. |
 | **Adapter** | Implementación concreta que conecta puertos con infraestructura o sistemas externos (`LIN-DEV-JAVA-001 §8`). |
-| **ACL (Anti-Corruption Layer)** | Capa o conjunto de mappers que traduce y aísla entre modelos externos/legacy y el modelo limpio de ONP (`LIN-DIS-001 §6`). |
+| **ACL (Anti-Corruption Layer)** | Capa o conjunto de mappers que traduce y aísla entre modelos externos/legacy y el modelo limpio de ONP (`LIN-DIS-001 §5.4`; obligatoriedad en interoperabilidad gubernamental: `LIN-ARQ-001 §4.3`). |
 | **BFF (Backend for Frontend)** | Capa de agregación y adaptación dedicada a un canal de consumo (SPA, móvil) que compone y traduce respuestas de servicios internos hacia el formato que ese canal necesita (`LIN-DIS-001 §5.1`). |
 | **CDC (Change Data Capture)** | Técnica que captura los cambios de datos ocurridos en un origen (típicamente logs de la BD, ej. Oracle LogMiner) y los propaga como eventos, sin requerir cambios en la aplicación origen (`LIN-DIS-001 §4.2`). |
 | **Transaction Script** | Estrategia de organización de lógica de negocio donde cada operación se implementa como un procedimiento lineal en la capa de servicio, sin modelo de dominio propio (`LIN-DIS-001 §4.1`). |
@@ -92,7 +93,7 @@ Si un lineamiento necesita una definición más específica para su dominio, deb
 | **`requestId`** | Valor de correlación expuesto en el contrato de respuesta y alineado al `X-Request-ID`. |
 | **`traceId`** | Identificador de la traza distribuida. |
 | **`spanId`** | Identificador de una unidad de trabajo dentro de la traza. |
-| **Four Golden Signals** | Las 4 métricas doradas de Google SRE de monitoreo mandatorio para producción: Latencia, Tráfico, Errores y Saturación (`LIN-ARQ-001 §9`). |
+| **Four Golden Signals** | Las 4 métricas doradas de Google SRE de monitoreo mandatorio para producción: Latencia, Tráfico, Errores y Saturación (`LIN-ARQ-001 §5.3`). |
 | **Override operativo** | Valor inyectado por plataforma u operación para ajustar comportamiento por ambiente sin modificar la configuración base versionada. |
 | **Health check** | Señal técnica para determinar si una aplicación está viva, lista o en condiciones de recibir tráfico (`Liveness/Readiness Probes`). |
 

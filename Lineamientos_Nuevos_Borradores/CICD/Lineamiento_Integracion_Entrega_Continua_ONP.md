@@ -693,7 +693,7 @@ readme-conformance-check:
   stage: quality
   image: alpine:3.20
   script:
-    - grep -q "## Declaración de Conformidad con LIN-ARQ-001" README.md || (echo "BLOQUEO: falta la sección de Declaración de Conformidad (LIN-ARQ-001 §8.3.4)" && exit 1)
+    - grep -q "## Declaración de Conformidad con LIN-ARQ-001" README.md || (echo "BLOQUEO: falta la sección de Declaración de Conformidad (LIN-ARQ-001 §8.3, numeral 4)" && exit 1)
     - grep -q "Tech Lead responsable:" README.md || (echo "BLOQUEO: falta el firmante (Tech Lead responsable)" && exit 1)
     - grep -qE "Fecha:.*[0-9]{4}-[0-9]{2}-[0-9]{2}" README.md || (echo "BLOQUEO: falta fecha de la declaración" && exit 1)
   rules:
@@ -1407,7 +1407,7 @@ UNLEASH_ADMIN_TOKEN
 
 > **Nota (deuda de Feature Toggles, §12.4):** `UNLEASH_API_URL`, `UNLEASH_PROJECT_ID` y `UNLEASH_ADMIN_TOKEN` deben declararse como variables protegidas y enmascaradas en GitLab CI/CD → Settings → Variables, igual que `SONAR_TOKEN`. El token administrativo de Unleash solo requiere permiso de lectura sobre features/tags — nunca de escritura.
 
-> **Nota (pipeline Terraform/IaC):** `ENV_NAME` selecciona el directorio de ambiente (`environments/dev|qa|prod/`) que ejecuta el pipeline referencial de `LIN-IAC-001` — **no** un Terraform Workspace. `LIN-IAC-001 §6.2` prohíbe expresamente el uso de `terraform workspace` para separar ambientes (riesgo de `apply` en el ambiente incorrecto); la separación es siempre por directorios independientes. Además, recordar que ese pipeline vive únicamente en el repositorio dedicado `oti-plataforma/infrastructure-iac` (`LIN-IAC-001 §18.1`) — los equipos de aplicación no agregan jobs de Terraform en su propio `.gitlab-ci.yml`.
+> **Nota (pipeline Terraform/IaC):** `ENV_NAME` selecciona el directorio de ambiente (`environments/dev|qa|prod/`) que ejecuta el pipeline referencial de `LIN-IAC-001` — **no** un Terraform Workspace. `LIN-IAC-001 §6.2` prohíbe expresamente el uso de `terraform workspace` para separar ambientes (riesgo de `apply` en el ambiente incorrecto); la separación es siempre por directorios independientes. Además, recordar que ese pipeline vive únicamente en el repositorio dedicado `oti-plataforma/infrastructure-iac` (`LIN-IAC-001 §5`) — los equipos de aplicación no agregan jobs de Terraform en su propio `.gitlab-ci.yml`.
 
 ### Anexo G — Estructura sugerida de proyecto automatizable
 

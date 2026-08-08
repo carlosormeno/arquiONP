@@ -28,9 +28,6 @@
             <property name="basicOffset" value="4"/>
             <property name="tabWidth" value="4"/>
         </module>
-        <module name="LineLength">
-            <property name="max" value="120"/>
-        </module>
         <module name="NeedBraces"/>            <!-- llaves siempre obligatorias -->
         <module name="LeftCurly"/>             <!-- llave de apertura en la misma línea -->
         <module name="OneStatementPerLine"/>   <!-- una sentencia por línea -->
@@ -53,9 +50,19 @@
 
     </module>
 
-    <!-- Longitud máxima de archivo -->
+    <!-- Reglas de nivel Checker (NO pueden ir dentro de TreeWalker) -->
+
+    <!-- Longitud máxima de archivo — LIN-DEV-JAVA-001 §12.1 -->
     <module name="FileLength">
         <property name="max" value="500"/>
+    </module>
+
+    <!-- Longitud máxima de línea.
+         Desde Checkstyle 8.24 LineLength es hijo de Checker, no de TreeWalker:
+         declararlo dentro de TreeWalker aborta la ejecución con
+         "TreeWalker is not allowed as a parent of LineLength". -->
+    <module name="LineLength">
+        <property name="max" value="120"/>
     </module>
 
 </module>

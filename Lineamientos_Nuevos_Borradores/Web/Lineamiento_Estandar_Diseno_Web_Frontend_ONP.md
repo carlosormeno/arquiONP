@@ -487,7 +487,7 @@ module.exports = {
 
 ### 9.1 Modelo de respuesta estándar
 
-Todas las APIs REST de ONP responden con `ApiResponseWrapper` (definido en LIN-DEV-JAVA-001 sección 11.4.4). El frontend lo tipifica así:
+Todas las APIs REST de ONP responden con `ApiResponseWrapper` (contrato en `LIN-API-REST-001 §4`; implementación Java en `LIN-DEV-JAVA-001 §13.4.4`). El frontend lo tipifica así:
 
 ```typescript
 // shared/models/api-response.model.ts
@@ -1327,5 +1327,5 @@ Casos que siempre requieren ADR en este estándar:
 
 ---
 
-*LIN-FE-ANG-001 — Estándar de Diseño Web Frontend ONP v0.1.0*  
+*LIN-FE-ANG-001 — Estándar de Diseño Web Frontend ONP*  
 *OTI — Oficina de Tecnologías de la Información*

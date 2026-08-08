@@ -10,7 +10,8 @@ public record Dni(String valor) {
 
     public Dni {
         if (valor == null || !valor.matches("\\d{" + LONGITUD + "}")) {
-            throw new IllegalArgumentException("DNI inválido: debe contener exactamente " + LONGITUD + " dígitos numéricos");
+            throw new IllegalArgumentException(
+                    "DNI inválido: debe contener exactamente " + LONGITUD + " dígitos numéricos");
         }
     }
 }

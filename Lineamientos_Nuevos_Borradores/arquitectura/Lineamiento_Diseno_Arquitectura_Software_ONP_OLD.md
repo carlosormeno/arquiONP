@@ -3,9 +3,9 @@
 > [!WARNING]
 > **ESTADO: CONGELADO / CANTERA HISTÓRICA (v0.1.19)**  
 > *Este documento representa la base de conocimiento y cantera técnica original (`v0.1.19`) que dio origen al modelo jerárquico en 3 niveles de la OTI (C4 Model / DDD). Su contenido ha sido redistribuido y refinado sin pérdida de información en los siguientes lineamientos vigentes:*  
-> *• **Nivel 1 (Macro / Arquitectura):** [LIN-ARQ-001 — Marco Rector de Arquitectura de Software](file:///home/carlos/Documentos/Telemetria-traza-swagger/Lineamientos_Nuevos_Borradores/arquitectura/Lineamiento_Marco_Rector_Arquitectura_ONP_v0.1.0.md)*  
-> *• **Nivel 2 (Táctico / Diseño):** [LIN-DIS-001 — Estándar de Diseño de Software y Patrones Tácticos](file:///home/carlos/Documentos/Telemetria-traza-swagger/Lineamientos_Nuevos_Borradores/arquitectura/Lineamiento_Diseno_Software_Patrones_Tacticos_ONP_v0.1.0.md)*  
-> *• **Nivel 3 (Micro / Código):** [LIN-DEV-JAVA-001 — Estándar de Desarrollo Java ONP](file:///home/carlos/Documentos/Telemetria-traza-swagger/Lineamientos_Nuevos_Borradores/desarrollo/Lineamiento_Estandar_Desarrollo_Java_ONP_v0.1.0.md)*  
+> *• **Nivel 1 (Macro / Arquitectura):** [LIN-ARQ-001 — Marco Rector de Arquitectura de Software](./Lineamiento_Marco_Rector_Arquitectura_ONP.md)*  
+> *• **Nivel 2 (Táctico / Diseño):** [LIN-DIS-001 — Estándar de Diseño de Software y Patrones Tácticos](./Lineamiento_Diseno_Software_Patrones_Tacticos_ONP.md)*  
+> *• **Nivel 3 (Micro / Código):** [LIN-DEV-JAVA-001 — Estándar de Desarrollo Java ONP](../desarrollo/Lineamiento_Estandar_Desarrollo_Java_ONP.md)*  
 > *Por tanto, este documento se conserva para fines de auditoría, trazabilidad e investigación histórica. Para el desarrollo y licitación de nuevos proyectos, remitirse a los lineamientos de los niveles 1, 2 y 3 indicados arriba.*
 
 **Código:** LIN-ARQ-000 (Histórico)  

@@ -1,7 +1,7 @@
 # Lineamiento de Seguridad en Aplicaciones ONP
 **Código:** LIN-SEC-APP-001
-**Versión:** v0.1.4
-**Estado:** Borrador
+**Versión:** v0.1.5
+**Estado:** En revisión — revisión de contenido cerrada (`GOB-CHK-001` H15); pendiente de graduación
 **Fecha:** 2026-07-10
 **Propietario:** Arquitectura de Software — OTI
 **Revisores:** Seguridad de la Información, Arquitectura, Desarrollo
@@ -18,6 +18,7 @@
 | v0.1.2 | 2026-07-06 | Arquitectura OTI | Declara a LIN-ARQ-000 como marco rector (encabezado y §2), único lineamiento de Nivel 3 que no lo citaba. Corrige mención de Circuit Breaker: el patrón oficial es PT06, no PT07 (PT07 es Bulkhead); actualiza la referencia obsoleta "pendiente LIN-BUS-001" a LIN-ARQ-000 §3.7.3, donde Circuit Breaker ya está normado |
 | v0.1.3 | 2026-07-10 | Arquitectura OTI | Revierte la corrección de v0.1.2: el código correcto de Circuit Breaker es **PT07**, no PT06 — PT06 es Retry y PT08 es Bulkhead, según el catálogo autoritativo `LIN-PAT-001` (fichas PAT-RES-01/02) y `Matriz_Propiedad_Documental_ONP`. Actualiza §8.7 y el glosario. Redirige además la referencia de Circuit Breaker desde el documento congelado `LIN-ARQ-000 §3.7.3` hacia `LIN-DIS-001 §6.2`, donde vive el contenido vigente |
 | v0.1.4 | 2026-07-10 | Arquitectura OTI | Migra Marco rector de `LIN-ARQ-000` (congelado) a `LIN-ARQ-001` (vigente) en encabezado y §2; corrige la clasificación de "Nivel 2" a "Nivel 1" para el marco rector |
+| v0.1.5 | 2026-08-08 | Arquitectura OTI | Revisión de contenido (`GOB-CHK-001` H15). **(1) §9.3** publicaba un contrato de error paralelo (`ErrorResponse` con códigos `ERR-INTERNAL`/`ERR-FORBIDDEN`) que contradecía el contrato institucional y el catálogo `codDetRespuesta` — reescrito con `ApiResponseWrapper` y códigos `500`/`301`. **(2) §8.4** el cliente SAA usaba `RestTemplate` **sin timeouts**, en la ruta crítica de cada petición y contra el servicio que el propio §8.7 declara dependencia crítica — reescrito con `RestClient` sobre Apache HttpClient 5, con los umbrales de `LIN-DIS-001 §6.1` y Bulkhead de `§6.3`. **(3) §8.3** se documenta que `response.sendError()` no produce `ApiResponseWrapper` y cuál es la forma conforme. **(4) §8.5** el ejemplo DEV publicaba la URL del SAA en claro sobre **HTTP** contra un servidor compartido, violando su propio §7.1 (HTTPS obligatorio fuera de localhost) y §12.1 (esa URL es un secreto) — sustituida por variable de entorno. **(5)** Corrige la cita de PMD `LIN-DEV-JAVA-001 10.3` → `§12.3` |
 
 ---
 
@@ -441,6 +442,8 @@ public class SaaTokenValidationFilter extends OncePerRequestFilter {
 }
 ```
 
+> **Respuestas del filtro y contrato institucional.** `response.sendError()` delega en el manejador de errores por defecto del contenedor, que **no** produce `ApiResponseWrapper`: un 401 emitido aquí no cumple el contrato de `LIN-API-REST-001 §4`. Dado que el filtro se ejecuta antes del `@RestControllerAdvice`, la implementación conforme debe **serializar el wrapper directamente en la respuesta** —escribiendo `ApiResponseWrapper.error(401, "300", ...)` sobre `response.getWriter()` con `Content-Type: application/json`— o delegar en un `AuthenticationEntryPoint` de Spring Security que haga lo mismo. Los códigos aplicables son `401`/`300` (token ausente, inválido o expirado) y `503`/`400` (SAA no disponible), según `LIN-API-REST-001 §4.2` y `§7.1`. El ejemplo de arriba usa `sendError` por brevedad; **no es la forma conforme**.
+
 ### 8.4 Cliente SAA
 
 ```java
@@ -449,26 +452,39 @@ public class SaaTokenClient {
 
     private static final Logger log = LoggerFactory.getLogger(SaaTokenClient.class);
 
-    private final RestTemplate restTemplate;
+    private final RestClient restClient;
 
     @Value("${saa.token.validar.url}")
     private String validarUrl;
 
-    public SaaTokenClient(RestTemplate restTemplate) {
-        this.restTemplate = restTemplate;
+    // El SAA está en la ruta crítica de CADA petición: sus timeouts son obligatorios
+    // y siguen la categoría «Alta demanda / ruta crítica interactiva» de LIN-DIS-001 §6.1
+    // (connect ≤1.5-2s, read 2-3s), con el pool acotado por proveedor (Bulkhead, §6.3).
+    public SaaTokenClient(RestClient.Builder builder,
+                          @Value("${saa.token.connect-timeout-ms:1500}") int connectTimeoutMs,
+                          @Value("${saa.token.read-timeout-ms:3000}") int readTimeoutMs) {
+        var connConfig = ConnectionConfig.custom()
+                .setConnectTimeout(Timeout.ofMilliseconds(connectTimeoutMs))
+                .setSocketTimeout(Timeout.ofMilliseconds(readTimeoutMs))
+                .build();
+        var connManager = PoolingHttpClientConnectionManagerBuilder.create()
+                .setDefaultConnectionConfig(connConfig)
+                .setMaxConnPerRoute(15)   // Bulkhead — LIN-DIS-001 §6.3
+                .build();
+        var httpClient = HttpClients.custom().setConnectionManager(connManager).build();
+        this.restClient = builder
+                .requestFactory(new HttpComponentsClientHttpRequestFactory(httpClient))
+                .build();
     }
 
     public SaaValidationResult validar(String token) {
         try {
-            HttpHeaders headers = new HttpHeaders();
-            headers.setBearerAuth(token);
-            headers.setContentType(MediaType.APPLICATION_JSON);
-            HttpEntity<Void> entity = new HttpEntity<>(headers);
-
-            ResponseEntity<SaaValidationResult> response =
-                restTemplate.exchange(validarUrl, HttpMethod.POST, entity, SaaValidationResult.class);
-
-            return response.getBody();
+            return restClient.post()
+                    .uri(validarUrl)
+                    .headers(h -> h.setBearerAuth(token))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .retrieve()
+                    .body(SaaValidationResult.class);
         } catch (HttpClientErrorException.Unauthorized e) {
             return SaaValidationResult.invalid();
         } catch (RestClientException e) {
@@ -492,14 +508,18 @@ saa:
 ```
 
 ```yaml
-# application-dev.yml
+# application-dev.yml — la URL también viene de variable de entorno
 saa:
   token:
     validar:
-      url: "http://onpwasihsd01.onp.gob.pe:80/appComponenteWeb/SAA/token/validar"
+      url: "${SAA_TOKEN_VALIDAR_URL}"
+    connect-timeout-ms: 1500   # LIN-DIS-001 §6.1 — ruta crítica interactiva
+    read-timeout-ms: 3000
 ```
 
-El valor de producción se inyecta como variable de entorno o K8s Secret — nunca en el repositorio.
+**En ningún ambiente se escribe la URL literal en el repositorio**, tampoco en DEV: `§12.1` clasifica la URL de validación de token SAA como **secreto** por contener el host interno. El valor de cada ambiente lo inyecta Plataforma como variable de entorno o K8s Secret.
+
+Todas las URLs de ambientes compartidos (DEV-servidor, QA, PROD) usan **HTTPS**; `§7.1` solo admite HTTP en `localhost` del desarrollador.
 
 ### 8.6 Prohibiciones para la integración SAA
 
@@ -575,30 +595,35 @@ public class SecurityConfig {
 
 ### 9.3 Manejo seguro de errores
 
+> **Contrato de respuesta:** el manejador usa `ApiResponseWrapper` y los códigos `codDetRespuesta` del catálogo institucional (`LIN-API-REST-001 §4` y `§4.2`), que es el dueño de ese contrato. **No se crean códigos de error propios por sistema** (`LIN-API-REST-001 §4.2.1.d`). La implementación de referencia completa está en `LIN-DEV-JAVA-001 §11.1`; aquí solo se muestran los aspectos de seguridad.
+
 ```java
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
+    @Value("${info.app.version:1.0.0}")
+    private String version;
+
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ErrorResponse> handleGeneral(Exception ex, HttpServletRequest req) {
+    public ResponseEntity<ApiResponseWrapper<Void>> handleGeneral(Exception ex, HttpServletRequest req) {
         // Log completo interno con trace.id para correlación
         log.error("Error no controlado en {}: {}", req.getRequestURI(), ex.getMessage(), ex);
         // Respuesta al cliente: genérica, sin stack trace, sin detalles técnicos
-        return ResponseEntity.status(500).body(new ErrorResponse(
-            "ERR-INTERNAL",
-            "Error interno del servidor",
-            MDC.get("http.request.id")
+        return ResponseEntity.status(500).body(ApiResponseWrapper.error(
+            500, "500",
+            "Error interno del servidor. Referencie el requestId al equipo de soporte.",
+            null, MDC.get("http.request.id"), version
         ));
     }
 
     @ExceptionHandler(AccessDeniedException.class)
-    public ResponseEntity<ErrorResponse> handleAccessDenied(AccessDeniedException ex) {
-        return ResponseEntity.status(403).body(new ErrorResponse(
-            "ERR-FORBIDDEN",
-            "No tiene permisos para realizar esta operación",
-            MDC.get("http.request.id")
+    public ResponseEntity<ApiResponseWrapper<Void>> handleAccessDenied(AccessDeniedException ex) {
+        return ResponseEntity.status(403).body(ApiResponseWrapper.error(
+            403, "301",
+            "No tiene permisos para realizar esta operación.",
+            null, MDC.get("http.request.id"), version
         ));
     }
 }
@@ -864,7 +889,7 @@ Todo desarrollador que trabaje en sistemas ONP debe conocer el OWASP Top 10 vige
 | CI/CD | Trivy | CVEs en imagen de contenedor | LIN-CICD-001 |
 | Pre-producción | DAST (herramienta a definir por Seguridad) | Vulnerabilidades en runtime | Seguridad de la Información |
 
-**Nota sobre PMD (SAST):** Adicionalmente a SonarQube, para proyectos Java se requiere la validación local y en pipeline de las reglas de seguridad de PMD (`category/java/security.xml`), bloqueando el build si se detectan credenciales hardcodeadas (`HardCodedCredential`) o criptografía insegura. Ver **LIN-DEV-JAVA-001 10.3** para la configuración de PMD.
+**Nota sobre PMD (SAST):** Adicionalmente a SonarQube, para proyectos Java se requiere la validación local y en pipeline de las reglas de seguridad de PMD (`category/java/security.xml`), bloqueando el build si se detectan credenciales hardcodeadas (`HardCodedCredential`) o criptografía insegura. Ver **`LIN-DEV-JAVA-001 §12.3`** para la configuración de PMD.
 
 ### 13.3 Criterios de aceptación de seguridad
 
