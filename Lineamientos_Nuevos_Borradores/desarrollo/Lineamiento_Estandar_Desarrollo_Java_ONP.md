@@ -1,6 +1,6 @@
 # LIN-DEV-JAVA-001 — Estándar de Desarrollo Java ONP
 ## Oficina de Normalización Previsional — OTI
-### Código: LIN-DEV-JAVA-001 | Versión 0.1.9 | Estado: En revisión | Marco rector: LIN-ARQ-001 (Nivel 1)
+### Código: LIN-DEV-JAVA-001 | Versión 0.1.10 | Estado: En revisión | Marco rector: LIN-ARQ-001 (Nivel 1)
 
 ---
 
@@ -9,6 +9,7 @@
 | Versión | Fecha | Autor | Descripción |
 |---------|-------|-------|-------------|
 | 0.1.0 | 2026-05-22 | OTI | Versión inicial |
+| 0.1.10 | 2026-08-08 | OTI | Incorpora el Índice CRAP (Change Risk Anti-Patterns) en la sección 12.1 (tabla de métricas) y la sección 12.4.5 como principio de evaluación de riesgo de cambio y refactorización |
 | 0.1.1 | 2026-05-28 | OTI | Alinea la configuración institucional a YAML, corrige el árbol de proyecto y adopta Checkstyle junto a PMD |
 | 0.1.2 | 2026-07-06 | OTI | Cierre de brechas Nivel 3 (PR01-PR08, PD04-PD06, PA14): Inclusión de secciones 10.4, 11.5, 14.6, catálogo de plantillas Java y reconciliación total con LIN-ARQ-000 y LIN-BD-ORA-001 |
 | 0.1.3 | 2026-07-09 | OTI | Completa el catálogo GoF de la sección 8 con los patrones que quedaron sin sede formal tras la redistribución del documento congelado (`Lineamiento_Diseno_Arquitectura_Software_ONP_v0.1.19`): Adapter (8.1.1), Singleton (8.2.3), Strategy (8.3.1), Command (8.3.3) y Mapper (8.4.1) |
@@ -1645,6 +1646,7 @@ public class GlobalExceptionHandler {
 | Complejidad ciclomática por método | ≤ 10 | Checkstyle / PMD |
 | Longitud máxima de método | 30 líneas | Checkstyle |
 | Longitud máxima de clase | 500 líneas | Checkstyle |
+| **Índice CRAP (*Change Risk Anti-Patterns*)** | **≤ 30 por método** | **JaCoCo / GMetrics / SonarQube** (ver [§12.4.5](#1245-crap-change-risk-anti-patterns--evaluación-de-riesgo-de-cambio)) |
 
 **Cobertura de pruebas:** el umbral exacto por estilo arquitectónico y por capa (`domain`, `application`, etc.) es normado exclusivamente en **`LIN-TEST-001 §5.1`** (dueño de este tema) — no se duplica aquí para evitar que ambos documentos queden desalineados. Ver también §14.5 (gate JaCoCo por módulo). `LIN-TEST-001 §5.1` es explícito en que los **Controllers REST no se miden con umbral duro de cobertura de línea** — se verifican con pruebas de integración (`@WebMvcTest`, §15), no con JaCoCo.
 
@@ -1955,6 +1957,24 @@ public record AportanteResumenDto(
 No se debe escribir código, interfaces ni abstracciones basándose en suposiciones de necesidades futuras no confirmadas en el alcance actual del requerimiento o ticket funcional.
 - **Regla estricta:** Si una abstracción o interfaz tiene una única implementación y no existe evidencia arquitectónica ni requerimiento formal de múltiples implementaciones futuras, se debe implementar de forma directa (o con una interfaz simple sin capas de indirección vacías).
 - Toda funcionalidad especulativa o "por si acaso" es considerada deuda técnica prematura y será rechazada en la revisión de Pull Request.
+
+#### 12.4.5 CRAP (Change Risk Anti-Patterns) — Evaluación de Riesgo de Cambio
+
+El **Índice CRAP** (*Change Risk Anti-Patterns*) es una métrica combinada que evalúa el **riesgo de modificar o refactorizar un método** en función de su **Complejidad Ciclomática** $\text{comp}(m)$ y su **Cobertura de Pruebas Unitarias** $\text{cov}(m)$ (expresada entre $0.0$ y $1.0$).
+
+##### 1. Fórmula Matemática
+$$\text{CRAP}(m) = \text{comp}(m)^2 \times (1 - \text{cov}(m))^3 + \text{comp}(m)$$
+
+##### 2. Reglas de Interpretación
+- Si un método tiene baja complejidad ($\text{comp} \le 5$), posee un riesgo de cambio bajo incluso con poca cobertura de pruebas.
+- A medida que la complejidad del método aumenta (ej: $\text{comp} > 10$), se exige un porcentaje de cobertura de pruebas exponencialmente mayor para mantener el índice dentro de límites seguros.
+- Un método con alta complejidad ($\text{comp} = 30$) y 0% de cobertura de pruebas tiene un puntaje de $\text{CRAP} \approx 930$, lo que garantiza casi con certeza la introducción de errores en producción al ser modificado.
+
+##### 3. Umbral Institucional y Acción de Gobierno
+- **Umbral Máximo Permitido en ONP:** **$\text{CRAP}(m) \le 30$** para todo método en producción.
+- **Tratamiento de Deuda Técnica:** Si un método supera el valor de $30$, se clasifica automáticamente como **"Código CRAP / Deuda Técnica de Alto Riesgo"**. El desarrollador o fábrica de software tiene la obligación de aplicar una de las siguientes dos acciones (o ambas):
+  1. **Refactorizar el método** dividiéndolo en métodos privados o clases más pequeñas para reducir la complejidad ciclomática $\text{comp}(m)$.
+  2. **Incrementar las pruebas unitarias** (JUnit / Mockito) para cubrir las ramas condicionales no probadas y elevar la cobertura $\text{cov}(m)$.
 
 ---
 
