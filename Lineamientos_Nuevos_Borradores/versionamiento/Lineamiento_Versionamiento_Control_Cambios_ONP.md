@@ -1,9 +1,9 @@
 # LIN-VER-001 — Lineamiento de Versionamiento, Control de Cambios y Revisión de Código ONP
 
 **Código:** LIN-VER-001  
-**Versión:** v0.1.6  
-**Estado:** Borrador  
-**Fecha:** 2026-07-10  
+**Versión:** v0.1.8  
+**Estado:** En revisión  
+**Fecha:** 2026-08-09  
 **Propietario documental:** Arquitectura de Software — OTI  
 **Revisores sugeridos:** Desarrollo, QA, Seguridad Digital, Plataforma/Infraestructura, Arquitectura  
 **Marco rector:** LIN-ARQ-001 — Marco Rector de Arquitectura de Software  
@@ -22,6 +22,8 @@
 | v0.1.4 | 2026-05-28 | Arquitectura OTI | Completa alineación terminológica: reemplaza las tres ocurrencias restantes de "rollback" por "plan de reversa" en [sección 15.2](#152-release-notes-minimas), [sección 18](#18-cambios-en-contenedores-y-manifiestos-kubernetes) y checklist [sección 22.4](#224-release) |
 | v0.1.5 | 2026-05-28 | Arquitectura OTI | Precisa encabezado de tabla comparativa [sección 4.3](#43-comparacion-visual-de-modelos): "GitLab Flow" → "GitLab Flow — ramas por ambiente" para eliminar ambigüedad con el modelo objetivo |
 | v0.1.6 | 2026-07-10 | Arquitectura OTI | Migra Marco rector de `LIN-ARQ-000` (congelado) a `LIN-ARQ-001` (vigente) |
+| v0.1.7 | 2026-08-09 | Arquitectura OTI | `§16.1.1` atribuye explícitamente la nomenclatura de scripts a su dueño `LIN-BD-ORA-001 §8.1`/`§8.4` en vez de presentarla como propia (`GOB-CHK-001` H14.5). El tema figuraba en la matriz con **dos dueños simultáneos**, contra su principio rector; ahora está dividido: obligatoriedad de versionar aquí, nomenclatura y estructura en el estándar de BD |
+| v0.1.8 | 2026-08-09 | Arquitectura OTI | Revisión de fondo (`GOB-CHK-001` H23). (1) La [sección 12](#12-revision-de-codigo) asume la propiedad del **proceso** de revisión para todo tipo de cambio e incorpora el límite de **400 líneas** que hasta ahora vivía solo en `LIN-DEV-JAVA-001 §16.4`, donde de hecho dejaba sin regla de tamaño a los MR de Angular, SQL y manifiestos. (2) La [sección 13](#13-evidencias-minimas-por-tipo-de-cambio) decía "cobertura si aplica", degradando a opcional un umbral **obligatorio** de `LIN-TEST-001` (documento vigente); ahora remite a `LIN-TEST-001 §5.1`. (3) La [sección 15.1](#151-regla-general) declaraba obligatorio un formato de tag que excluía las pre-releases admitidas por la propia [sección 14.3](#143-pre-releases). (4) La [sección 15.3](#153-relacion-con-imagenes-de-contenedor) admitía "un identificador trazable" como tag de imagen, resquicio por el que cabía `latest`, prohibido por `LIN-K8S-001 §6.3`. (5) Protected branches, Merge Requests y approval rules pasan de recomendados a **obligatorios** en la [sección 21.1](#211-capacidades-a-habilitar-desde-esta-fase): son el mecanismo que hace exigibles P2, P3 y la prohibición de autoaprobación. (6) La [sección 2](#2-normativa-y-documentos-relacionados) incorpora `LIN-DIS-001` y `GOB-MAT-001`. Se ordena cronológicamente este control de cambios y el documento pasa a **En revisión** |
 
 ---
 
@@ -108,6 +110,8 @@ Aplica a:
 | Documento | Código | Relación |
 |---|---|---|
 | Marco Rector de Arquitectura de Software | LIN-ARQ-001 | Define principios y decisiones rectoras de arquitectura |
+| Lineamiento de Diseño de Software | LIN-DIS-001 | Nivel 2: define el diseño táctico que este lineamiento versiona y promueve |
+| Matriz de Propiedad Documental | GOB-MAT-001 | Determina qué documento es dueño de cada tema y resuelve solapamientos |
 | Estándar de Desarrollo Java | LIN-DEV-JAVA-001 | Define reglas de implementación backend |
 | Estándar de APIs REST | LIN-API-REST-001 | Define contrato, versionamiento y publicación de APIs |
 | Estándar de Base de Datos Oracle | LIN-BD-ORA-001 | Define control de scripts y tratamiento de PL/SQL legacy |
@@ -756,6 +760,8 @@ Para cualquier cambio funcional, de seguridad, BD, API o K8s, el template comple
 
 ## 12. Revisión de código
 
+> **Dueño del proceso de revisión.** Esta sección es la fuente autoritativa de **cómo se revisa un cambio en ONP**, cualquiera que sea el lenguaje: quién puede aprobar, cuántos revisores hacen falta, qué revisor especializado exige cada tipo de cambio y qué tamaño máximo admite un MR. Los estándares por tecnología **no redefinen estas reglas**: añaden las verificaciones propias de su stack (por ejemplo, `LIN-DEV-JAVA-001 §16.2` lista las condiciones específicas de Java — Checkstyle, JaCoCo, tabla de antipatrones).
+
 ### 12.1 Reglas mínimas
 
 | Regla | Estado |
@@ -765,6 +771,9 @@ Para cualquier cambio funcional, de seguridad, BD, API o K8s, el template comple
 | Cambios críticos requieren revisión especializada | Obligatorio |
 | La revisión debe verificar cumplimiento de lineamientos aplicables | Obligatorio |
 | No se aprueban MRs sin descripción ni evidencia mínima | Obligatorio |
+| Un MR no supera **400 líneas** de código productivo (excluidos pruebas y configuración) | Obligatorio |
+
+> **Sobre el límite de 400 líneas.** Un MR mayor debe dividirse: los MR grandes degradan la calidad de la revisión y aumentan el riesgo de integración. La regla aplica a **todo tipo de cambio** —Java, Angular, scripts SQL, manifiestos K8s, Terraform—, no solo a código Java. Si el cambio es indivisible por naturaleza (migración masiva generada, renombrado global), se declara en la descripción del MR y se acuerda revisor adicional.
 
 ### 12.2 Revisión por tipo de cambio
 
@@ -803,10 +812,12 @@ El revisor debe verificar, según aplique:
 
 Hasta la implementación de `LIN-CICD-001`, las evidencias mínimas se adjuntan, enlazan o describen en el Merge Request.
 
+> **Qué se evidencia y qué se exige son cosas distintas.** Esta tabla define *qué prueba debe acompañar al MR*; los **umbrales** de cobertura y los tipos de prueba obligatorios los fija `LIN-TEST-001 §5.1`, que es el documento dueño. Ninguna fila de esta tabla releva de esos umbrales.
+
 | Tipo de cambio | Evidencia mínima |
 |---|---|
-| Backend Java | Resultado de pruebas unitarias/integración, cobertura si aplica |
-| Frontend Angular | Pruebas unitarias, build local, E2E si aplica |
+| Backend Java | Resultado de pruebas unitarias/integración y **cobertura conforme a los umbrales de `LIN-TEST-001 §5.1`** (no es opcional) |
+| Frontend Angular | Pruebas unitarias con la cobertura exigida en `LIN-TEST-001 §5.1`, build local, E2E si aplica |
 | API REST | `openapi.yml` actualizado y evidencia de compatibilidad |
 | Contrato API crítico | Validación OpenAPI o prueba de contrato |
 | Base de datos | Script versionado, estrategia de reversa o compensación si aplica, evidencia de prueba |
@@ -876,7 +887,7 @@ Todo pase a producción debe tener un tag Git asociado.
 Formato obligatorio:
 
 ```text
-v<MAJOR>.<MINOR>.<PATCH>
+v<MAJOR>.<MINOR>.<PATCH>[-<pre-release>]
 ```
 
 Ejemplos:
@@ -885,7 +896,10 @@ Ejemplos:
 v1.0.0
 v1.1.0
 v1.1.1
+v1.2.0-rc.1      ← candidata (sección 14.3), no apta para producción
 ```
+
+> El sufijo de pre-release solo se admite en tags que **no** corresponden a un pase a producción. Todo tag productivo usa la forma `v<MAJOR>.<MINOR>.<PATCH>` sin sufijo.
 
 ### 15.2 Release notes mínimas
 
@@ -906,7 +920,7 @@ Todo release debe documentar:
 
 ### 15.3 Relación con imágenes de contenedor
 
-Cuando el componente genera imagen de contenedor, el tag de imagen debe corresponder a la versión del release o a un identificador trazable.
+Cuando el componente genera imagen de contenedor, el tag de imagen debe corresponder a la versión del release. Conforme a `LIN-K8S-001 §6.3`, el tag debe ser **explícito e inmutable**: `latest` y cualquier etiqueta móvil están prohibidos en QA y Producción. Si por restricción técnica no puede usarse la versión del release, se admite un identificador inmutable y trazable al commit (por ejemplo, el SHA corto), nunca una etiqueta reutilizable.
 
 Ejemplo:
 
@@ -933,7 +947,8 @@ ONP opera con dos modelos de scripts según el tipo de sistema. Ambos son válid
 | Criterio | Modelo manual interactivo | Modelo versionado automatizable |
 |---|---|---|
 | **Cuándo aplica** | Sistemas legacy con PL/SQL complejo, packages o procedures críticos | Sistemas nuevos con DDL simple (tablas, índices, vistas) y Spring Boot |
-| **Nomenclatura** | `PP_<ORIGEN>_<NUMERO>_<ESQUEMA>_<TIPO>_<NN>.SQL` | `V<VERSION>_<NNN>__<descripcion>.sql` (esta sección) |
+| **Nomenclatura** | `PP_<ORIGEN>_<NUMERO>_<ESQUEMA>_<TIPO>_<NN>.SQL` | `V<VERSION>_<NNN>__<descripcion>.sql` |
+| **Dónde se define** | `LIN-BD-ORA-001 §8.1` | `LIN-BD-ORA-001 §8.4` |
 | **Ejecución** | Manual — DBA ejecuta en SQL*Plus con revisión previa y aplica la estrategia de reversa definida para el cambio | Manual por ahora; preparado para Flyway/Liquibase en el marco de LIN-CICD-001 |
 | **Referencia** | **LIN-BD-ORA-001 sección 8** — proceso completo con PROMPT, SPOOL y validación | Esta sección |
 | **PL/SQL, packages, procedures** | Obligatorio modelo manual | No aplica |
@@ -1104,21 +1119,23 @@ Resumen orientativo:
 
 Aunque CI/CD no esté priorizado, GitLab Ultimate debe aprovecharse progresivamente para control de cambios.
 
-### 21.1 Capacidades recomendadas desde esta fase
+### 21.1 Capacidades a habilitar desde esta fase
 
-| Capacidad | Uso |
-|---|---|
-| Protected branches | Proteger `main`, `master`, `ONP_QA`, `ONP_PQA`, `ONP_DESA` o equivalentes |
-| Merge Requests | Canal obligatorio de integración |
-| Approval rules | Reglas de aprobación por tipo de cambio |
-| CODEOWNERS | Revisores por carpeta o componente |
-| Issues | Trazabilidad de requerimientos/incidencias |
-| Labels | Clasificación de cambios |
-| Milestones | Agrupación por release o entrega |
-| Releases | Registro de versiones liberadas |
-| Tags | Identificación de versión |
-| Wiki / Markdown docs | Documentación técnica auxiliar |
-| Project templates | Plantillas institucionales para nuevos proyectos |
+Las tres primeras capacidades son **obligatorias**, no recomendadas: son el mecanismo que hace exigibles los principios P2 (no hay cambios directos en ramas protegidas), P3 (revisión obligatoria) y la prohibición de autoaprobación de la [sección 12.1](#121-reglas-minimas). Sin ellas esas reglas dependen de la disciplina individual y no del repositorio. Las demás son recomendadas y se adoptan progresivamente.
+
+| Capacidad | Uso | Carácter |
+|---|---|---|
+| Protected branches | Proteger `main`, `master`, `ONP_QA`, `ONP_PQA`, `ONP_DESA` o equivalentes | **Obligatorio** |
+| Merge Requests | Canal obligatorio de integración | **Obligatorio** |
+| Approval rules | Reglas de aprobación por tipo de cambio; deben configurarse de modo que el autor no pueda aprobar su propio MR | **Obligatorio** |
+| CODEOWNERS | Revisores por carpeta o componente | Recomendado |
+| Issues | Trazabilidad de requerimientos/incidencias | Recomendado |
+| Labels | Clasificación de cambios | Recomendado |
+| Milestones | Agrupación por release o entrega | Recomendado |
+| Releases | Registro de versiones liberadas | Recomendado |
+| Tags | Identificación de versión | Recomendado |
+| Wiki / Markdown docs | Documentación técnica auxiliar | Recomendado |
+| Project templates | Plantillas institucionales para nuevos proyectos | Recomendado |
 
 ### 21.2 Uso posterior
 

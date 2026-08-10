@@ -1,9 +1,9 @@
 # LIN-K8S-001 — Lineamiento de Contenedores y Orquestación ONP
 
 **Código:** LIN-K8S-001  
-**Versión:** v0.1.12  
+**Versión:** v0.1.13  
 **Estado:** Borrador  
-**Fecha:** 2026-07-14  
+**Fecha:** 2026-08-09  
 **Propietario documental:** Arquitectura de Software — OTI  
 **Revisores sugeridos:** Plataforma/Infraestructura, Seguridad Digital, Desarrollo, Arquitectura  
 **Marco rector:** LIN-ARQ-001 — Marco Rector de Arquitectura de Software  
@@ -27,6 +27,7 @@
 | v0.1.9 | 2026-07-09 | Arquitectura OTI | Corrige las citas colgantes hacia el documento congelado `LIN-ARQ-000 §11.1`: el estadio de Transición (Docker Compose) y el runtime containerd de producción ahora citan `LIN-ARQ-001 §5.2` (Marco Rector vigente) |
 | v0.1.10 | 2026-07-09 | Arquitectura OTI | Añade en §10.3 la diferenciación de réplicas mínimas y SLO por estilo arquitectónico (Monolito Modular 99.0% / Microservicio 99.5%), que solo existía en el documento congelado |
 | v0.1.11 | 2026-07-10 | Arquitectura OTI | Corrige el ejemplo de imagen frontend en §5.4 y el Anexo D: reemplaza `nginx:stable-alpine` en puerto 80 (root) por `nginxinc/nginx-unprivileged:1.27-alpine` en puerto 8080 con directorios temporales en `/tmp`, alineando con `LIN-FE-ANG-001 §16` y con la propia regla de este documento (§14.1, `runAsNonRoot: true`) — el ejemplo previo violaba su propia norma y contradecía el anti-patrón explícito de §16.5 |
+| v0.1.13 | 2026-08-09 | Arquitectura OTI | `§9.1` y el Anexo E: la `NetworkPolicy` pasa de *recomendada / obligatoria para críticos* a **obligatoria para todo servicio que reciba tráfico interno**. No es un endurecimiento aislado: `ADR-TLS-INTERNO-001` admite tráfico intra-cluster sobre HTTP y la restricción de red es el control que **sustituye** al cifrado en ese tramo (`GOB-CHK-001` H24.4) |
 | v0.1.12 | 2026-07-14 | Arquitectura OTI | Corrige las 9 citas residuales al documento congelado `LIN-ARQ-000` que quedaron sin migrar en v0.1.9 (que solo corrigió §11.1): §1.3, la cláusula de supremacía jerárquica de §2 (que además decía erróneamente que el marco rector es "Nivel 2" — es Nivel 1), tabla de §2, detonador NoSQL de §5.2, atribución de los patrones Sidecar/Ambassador de §9.4 (son normados por este propio documento, no por el marco rector), reglas de resiliencia y Strangler Fig de §9.4.2/9.4.3, y la cláusula de supremacía del proceso ADR en §20. Todas redirigidas a `LIN-ARQ-001` (§2.1, §2.2, §4.3, §6.2) y `LIN-DIS-001 §6` según corresponda |
 
 ---
@@ -563,9 +564,11 @@ Toda aplicación desplegada en Kubernetes debe contar, como mínimo, con:
 | `Ingress` o publicación vía API Manager | Solo si expone tráfico externo |
 | `HorizontalPodAutoscaler` | Según criticidad y demanda |
 | `ServiceAccount` propio | Recomendado / obligatorio si usa permisos |
-| `NetworkPolicy` | Recomendado; obligatorio para servicios críticos |
+| `NetworkPolicy` | **Obligatorio para todo servicio que reciba tráfico dentro del cluster** (ver nota) |
 | `PodDisruptionBudget` | Recomendado para servicios críticos |
 | `ResourceQuota` / `LimitRange` | Responsabilidad de Plataforma por namespace |
+
+> **Por qué la `NetworkPolicy` dejó de ser recomendada.** `ADR-TLS-INTERNO-001` admite que el tráfico entre el punto de terminación TLS y el pod destino viaje sobre HTTP dentro del cluster. Esa excepción se sostiene **únicamente** porque el acceso a la red interna está restringido: la `NetworkPolicy` es el control que sustituye al cifrado, no un refuerzo opcional. Un servicio sin ella no puede acogerse a la excepción y debe servir HTTPS extremo a extremo. Política mínima en el [Anexo E](#anexo-e-networkpolicy-minima-para-servicio-backend).
 
 ### 9.2 Deployment mínimo de referencia
 
@@ -1332,7 +1335,7 @@ COPY nginx.conf /etc/nginx/nginx.conf
 
 ### Anexo E — NetworkPolicy mínima para servicio backend
 
-La `NetworkPolicy` restringe el tráfico de red a nivel de pod. Para servicios críticos es obligatoria (ver 9.1).
+La `NetworkPolicy` restringe el tráfico de red a nivel de pod. Es **obligatoria para todo servicio que reciba tráfico dentro del cluster** (ver 9.1): es el control que sustituye al cifrado en el tramo interno admitido por `ADR-TLS-INTERNO-001`.
 
 Ejemplo: permitir tráfico solo desde el Ingress Controller y desde otros pods del mismo sistema, bloquear todo lo demás.
 

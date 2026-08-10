@@ -1,8 +1,8 @@
 # Lineamiento de Seguridad en Aplicaciones ONP
 **Código:** LIN-SEC-APP-001
-**Versión:** v0.1.5
+**Versión:** v0.1.7
 **Estado:** En revisión — revisión de contenido cerrada (`GOB-CHK-001` H15); pendiente de graduación
-**Fecha:** 2026-07-10
+**Fecha:** 2026-08-09
 **Propietario:** Arquitectura de Software — OTI
 **Revisores:** Seguridad de la Información, Arquitectura, Desarrollo
 **Marco rector:** LIN-ARQ-001 — Marco Rector de Arquitectura de Software
@@ -18,6 +18,8 @@
 | v0.1.2 | 2026-07-06 | Arquitectura OTI | Declara a LIN-ARQ-000 como marco rector (encabezado y §2), único lineamiento de Nivel 3 que no lo citaba. Corrige mención de Circuit Breaker: el patrón oficial es PT06, no PT07 (PT07 es Bulkhead); actualiza la referencia obsoleta "pendiente LIN-BUS-001" a LIN-ARQ-000 §3.7.3, donde Circuit Breaker ya está normado |
 | v0.1.3 | 2026-07-10 | Arquitectura OTI | Revierte la corrección de v0.1.2: el código correcto de Circuit Breaker es **PT07**, no PT06 — PT06 es Retry y PT08 es Bulkhead, según el catálogo autoritativo `LIN-PAT-001` (fichas PAT-RES-01/02) y `Matriz_Propiedad_Documental_ONP`. Actualiza §8.7 y el glosario. Redirige además la referencia de Circuit Breaker desde el documento congelado `LIN-ARQ-000 §3.7.3` hacia `LIN-DIS-001 §6.2`, donde vive el contenido vigente |
 | v0.1.4 | 2026-07-10 | Arquitectura OTI | Migra Marco rector de `LIN-ARQ-000` (congelado) a `LIN-ARQ-001` (vigente) en encabezado y §2; corrige la clasificación de "Nivel 2" a "Nivel 1" para el marco rector |
+| v0.1.7 | 2026-08-09 | Arquitectura OTI | `§7.1` incorpora la **excepción acotada de tráfico intra-cluster** decidida en `ADR-TLS-INTERNO-001`, con sus tres condiciones (terminación TLS en el perímetro, `NetworkPolicy` obligatoria como control sustitutivo, migración a mTLS al habilitarse la malla) y sus límites explícitos. Resuelve la contradicción que `LIN-API-REST-001 §2.5` mantenía con este documento (`GOB-CHK-001` H24.4) |
+| v0.1.6 | 2026-08-08 | Arquitectura OTI | `SaaTokenValidationFilter` pasa a `@Order(3)`, por dentro de `CanonicalRequestLogFilter` (`@Order(2)`), para que sus rechazos queden registrados en el log canónico (`GOB-CHK-001` H19.1). Publica la identidad también como atributo de request `onp.user.id`, porque el MDC se limpia al desapilarse el filtro. Actualizada la tabla de `§8.7.1`: los 401 y 503 **sí** producen log canónico |
 | v0.1.5 | 2026-08-08 | Arquitectura OTI | Revisión de contenido (`GOB-CHK-001` H15). **(1) §9.3** publicaba un contrato de error paralelo (`ErrorResponse` con códigos `ERR-INTERNAL`/`ERR-FORBIDDEN`) que contradecía el contrato institucional y el catálogo `codDetRespuesta` — reescrito con `ApiResponseWrapper` y códigos `500`/`301`. **(2) §8.4** el cliente SAA usaba `RestTemplate` **sin timeouts**, en la ruta crítica de cada petición y contra el servicio que el propio §8.7 declara dependencia crítica — reescrito con `RestClient` sobre Apache HttpClient 5, con los umbrales de `LIN-DIS-001 §6.1` y Bulkhead de `§6.3`. **(3) §8.3** se documenta que `response.sendError()` no produce `ApiResponseWrapper` y cuál es la forma conforme. **(4) §8.5** el ejemplo DEV publicaba la URL del SAA en claro sobre **HTTP** contra un servidor compartido, violando su propio §7.1 (HTTPS obligatorio fuera de localhost) y §12.1 (esa URL es un secreto) — sustituida por variable de entorno. **(5)** Corrige la cita de PMD `LIN-DEV-JAVA-001 10.3` → `§12.3` |
 
 ---
@@ -251,12 +253,20 @@ Mientras WSO2 API Manager no esté operativo en producción, aplican las siguien
 
 | Regla | Descripción |
 |---|---|
-| HTTPS obligatorio | Todos los ambientes compartidos — DEV-servidor, QA y PROD. Excepción permitida solo para desarrollo local en máquina del desarrollador (localhost). Nunca en ambientes compartidos. |
+| HTTPS obligatorio | Todos los ambientes compartidos — DEV-servidor, QA y PROD. Dos excepciones, y ninguna más: desarrollo local en la máquina del desarrollador (`localhost`), y el tráfico **intra-cluster** en Kubernetes bajo las condiciones de `ADR-TLS-INTERNO-001` (ver nota abajo). |
 | Validación de token en cada servicio | Cada API REST valida el token SAA en su propio filtro (ver 8) |
 | CORS explícito | Configurado en backend, nunca `*` en producción |
 | Headers de seguridad | Ver tabla en 7.3 |
 | No exponer APIs internas directamente | Los servicios internos no tienen endpoint público sin gateway |
 | Rate limiting básico | Configurado en la aplicación si no hay gateway |
+
+> **Excepción acotada — tráfico intra-cluster (`ADR-TLS-INTERNO-001`).** Se admite que el tramo comprendido entre el punto de terminación TLS y el pod destino, dentro del mismo cluster, viaje sobre HTTP. La excepción **sustituye un control por otro, no lo retira**, y exige las tres condiciones del ADR:
+>
+> 1. **TLS termina en el perímetro** —Ingress Controller o gateway WSO2—. Ningún `Service` de tipo `NodePort` o `LoadBalancer` expone un backend sin pasar por él.
+> 2. **`NetworkPolicy` obligatoria** en todo servicio que reciba tráfico interno, con la política mínima del Anexo E de `LIN-K8S-001`: aceptar solo del Ingress Controller y de los pods del mismo sistema, denegar el resto. **Un servicio sin `NetworkPolicy` no puede acogerse a esta excepción** y debe servir HTTPS extremo a extremo.
+> 3. **Migración a mTLS** cuando Plataforma habilite la malla de servicios; en ese momento la excepción queda sin efecto.
+>
+> Lo que **no** cubre: el tráfico hacia servicios fuera del cluster (SAA, RENIEC, SUNAT, Oracle) exige HTTPS sin excepción, igual que cualquier tramo que atraviese el borde del cluster; y no autoriza HTTP en ambientes compartidos fuera de Kubernetes —una aplicación en máquina virtual sigue sujeta a la regla sin matices—.
 
 ### 7.2 Modelo objetivo (WSO2 operativo)
 
@@ -370,10 +380,15 @@ Las aplicaciones nuevas **no reemplazan el SAA ni crean mecanismos paralelos**. 
 
 ### 8.3 Filtro de validación de token SAA
 
+> **Posición en la cadena: `@Order(3)`, por dentro del filtro canónico.** `CanonicalRequestLogFilter` (`@Order(2)`) envuelve a este filtro para que **los rechazos de autenticación queden registrados**: si el filtro de seguridad corriera por fuera, ningún 401 ni 503 aparecería en el log canónico y la tasa de fallos de autenticación sería inmedible — el escenario *OWASP A09* que §13.1 identifica como relevante. Por eso este filtro publica la identidad **también** como atributo de la request: el MDC se limpia al desapilarse, el atributo no. Cadena completa en `LIN-OBS-001 §4.11`.
+
 ```java
 @Component
-@Order(2) // Después de RequestIdFilter (Order 1) de LIN-OBS-001
+@Order(3) // Dentro de CanonicalRequestLogFilter (@Order 2) para que sus rechazos queden registrados
 public class SaaTokenValidationFilter extends OncePerRequestFilter {
+
+    /** Identidad publicada para el log canónico; sobrevive a la limpieza del MDC (LIN-OBS-001 §4.9). */
+    public static final String ATTR_USER_ID = "onp.user.id";
 
     private static final Logger log = LoggerFactory.getLogger(SaaTokenValidationFilter.class);
 
@@ -409,7 +424,8 @@ public class SaaTokenValidationFilter extends OncePerRequestFilter {
             return;
         }
 
-        MDC.put("user.id", result.getUsuarioId()); // LIN-OBS-001 7
+        MDC.put("user.id", result.getUsuarioId());              // LIN-OBS-001 §7 — logs de negocio
+        request.setAttribute(ATTR_USER_ID, result.getUsuarioId()); // LIN-OBS-001 §4.9 — log canónico
 
         SecurityContextHolder.getContext().setAuthentication(
             new SaaAuthentication(result.getUsuarioId(), result.getPermisos())
@@ -418,6 +434,9 @@ public class SaaTokenValidationFilter extends OncePerRequestFilter {
         try {
             chain.doFilter(request, response);
         } finally {
+            // El MDC se limpia aquí para no filtrar identidad al siguiente uso del hilo.
+            // El atributo de la request NO se limpia: CanonicalRequestLogFilter, que envuelve
+            // a este filtro, lo lee después para emitir el log canónico (LIN-OBS-001 §4.9).
             MDC.remove("user.id");
             SecurityContextHolder.clearContext();
         }
@@ -544,10 +563,10 @@ El SAA es una dependencia crítica. Si no responde:
 
 | Escenario | HTTP esperado | `user.id` en MDC | ¿Se ejecuta `CanonicalRequestLogFilter`? | Observación |
 |---|---|---|---|---|
-| No llega header `Authorization` | 401 | No | No | `RequestIdFilter` ya debió ejecutarse antes |
-| Token inválido o expirado | 401 | No | No | La request se corta en seguridad |
-| SAA no disponible | 503 | No | No | El error se registra y la request no continúa |
-| Token válido | Continúa | Sí | Sí | El log canónico final podrá leer `user.id` |
+| No llega header `Authorization` | 401 | No | **Sí** | El log canónico registra el 401 con `user.id: anonymous` |
+| Token inválido o expirado | 401 | No | **Sí** | Ídem — la tasa de rechazos es medible en Kibana |
+| SAA no disponible | 503 | No | **Sí** | El 503 queda registrado con nivel `ERROR` |
+| Token válido | Continúa | Sí | Sí | El log canónico lee la identidad del atributo `onp.user.id` |
 
 ---
 

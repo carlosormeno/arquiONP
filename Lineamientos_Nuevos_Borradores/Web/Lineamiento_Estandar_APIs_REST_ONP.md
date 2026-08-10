@@ -3,9 +3,9 @@
 | | |
 |---|---|
 | **Código** | LIN-API-REST-001 |
-| **Versión** | 0.1.5 |
-| **Fecha** | 2026-08-05 |
-| **Estado** | Borrador |
+| **Versión** | 0.1.7 |
+| **Fecha** | 2026-08-09 |
+| **Estado** | En revisión |
 | **Clasificación** | Uso Interno (Técnico) |
 | **Área responsable** | OTI — Innovación y Desarrollo |
 | **Dirigido a** | Equipos de desarrollo, arquitectura y QA de la OTI |
@@ -23,6 +23,8 @@
 | 0.1.3 | 2026-07-10 | Arquitectura OTI | Migra Marco rector de `LIN-ARQ-000` (congelado) a `LIN-ARQ-001` (vigente). Corrige 5 citas a `LIN-DEV-JAVA-001 sección 11.4[.x]` → `sección 13.4[.x]`/`14` (renumeración interna nunca reflejada aquí) y 2 citas a la sección fantasma `LIN-ARQ-000 sección 9.5` → `LIN-ARQ-001 §5.3` (Four Golden Signals) |
 | 0.1.4 | 2026-07-14 | Arquitectura OTI | Corrige el Apéndice A.3: la cita a Arquitectura Hexagonal decía `LIN-DIS-001 sección 3.2` (introducido por error en la corrección de v0.1.3) — el número real es `sección 2.3` |
 | 0.1.5 | 2026-08-05 | Arquitectura OTI | **§8.3 deja de publicar valores propios de timeout** (Connection 5s / Read 10s), que divergían de la matriz por criticidad de `LIN-DIS-001 §6.1` (documento dueño) y del rango de `LIN-ARQ-001 §4.3` — tres fuentes distintas para el mismo control. Ahora referencia al dueño y conserva solo lo propio del contrato REST: la respuesta `504` / `codDetRespuesta 402` ante vencimiento (`GOB-CHK-001` H3) |
+| 0.1.6 | 2026-08-09 | Arquitectura OTI | Revisión de fondo (`GOB-CHK-001` H24). **Seguridad:** `§7.2` proponía un RBAC propio con `hasRole('ROL_…')` —contrario a `LIN-SEC-APP-001 §5.3` numeral 4 y además inoperante, porque Spring antepone `ROLE_`— ahora usa permisos SAA con `hasAuthority`; `§7.4` daba los headers de seguridad como «recomendados» y los delegaba en el gateway en PoC, siendo **obligatorios** para el servicio según `LIN-SEC-APP-001 §7.3`; `§8.4` eximía a los servicios de rate limiting atribuyéndolo a ese mismo gateway, dejando a toda API sin control alguno. **Coherencia interna:** `§2.2` prohíbe `http://` y `§2.5` daba por sentado tráfico intra-cluster sobre HTTP; `§9.6` ponía las probes en `8080` mientras `§9.5` exige separar el puerto de gestión; `§3.1` y `§2.5` publicaban dos formas de URL canónica distintas. **Contrato:** `§3.3.2` clasificaba como «versión menor» —inexpresable en `/api/v{N}`— la incorporación de un campo obligatorio al request, que rompe a todo consumidor; la tabla se alinea con `LIN-VER-001 §17.2`–`§17.3`. Se añade `codDetRespuesta 302` / `429` para el límite de peticiones. **Gobernanza:** `§10.2` hacía de WSO2 la única vía a producción pese al PoC — se define vía transitoria sin eximir del gate; `§10.3` no pedía la **prueba de contrato** que `LIN-TEST-001 §6` declara obligatoria. **RFC 7807** figuraba como normativa de errores sin serlo: se explicita que la ONP no lo adopta y por qué |
+| 0.1.7 | 2026-08-09 | Arquitectura OTI | Cierre de las dos decisiones que la revisión H24 elevó a Arquitectura. (1) **`codDetRespuesta 302` (HTTP 429) queda ratificado** e incorporado al catálogo normativo conforme al proceso de `§4.2.1(c)`. (2) El tráfico intra-cluster sobre HTTP se resuelve en **`ADR-TLS-INTERNO-001`** como excepción acotada a `LIN-SEC-APP-001 §7.1`, con `NetworkPolicy` obligatoria como control sustitutivo; `§2.2` y `§2.5` retiran la reserva y el gate de `§10.3` verifica la `NetworkPolicy` antes de autorizar producción |
 
 ---
 
@@ -78,7 +80,7 @@ No aplica a:
 | LIN-OBS-001 — Log Centralizado, Trazabilidad y Observabilidad | Trazas OTEL, logging estructurado ECS, métricas, No PII |
 | INFORME-0000XX-2024-OTI.ID — Lineamientos de Servicios Web v2.0 | Antecedente institucional |
 | OpenAPI Specification 3.0 | Especificación de documentación de APIs |
-| RFC 7807 — Problem Details for HTTP APIs | Estándar de respuestas de error |
+| RFC 7807 — Problem Details for HTTP APIs | Referencia de diseño. **La ONP no lo adopta como formato de error**: el contrato institucional es `ApiResponseWrapper` (ver [sección 4.1](#41-estructura-apiresponsewrapper)) |
 | Ley N.° 29733 — Protección de Datos Personales | Marco legal de privacidad |
 
 ### 1.4 Términos y definiciones
@@ -114,7 +116,9 @@ Todos los servicios web nuevos de la ONP deben implementarse siguiendo el estilo
 
 ### 2.2 HTTPS obligatorio
 
-Toda comunicación con APIs de la ONP debe realizarse a través de HTTPS con certificado SSL/TLS válido. Las URLs que inicien con `http://` quedan prohibidas en entornos QA y PROD.
+Toda comunicación con APIs de la ONP debe realizarse a través de HTTPS con certificado SSL/TLS válido. Las URLs que inicien con `http://` quedan prohibidas en entornos QA y PROD, conforme a `LIN-SEC-APP-001 §7.1`, que solo admite excepción para desarrollo local en la máquina del desarrollador.
+
+> **Tráfico intra-cluster.** El tramo comprendido entre el punto de terminación TLS y el pod destino, dentro del mismo cluster, puede viajar sobre HTTP: es la excepción acotada de `LIN-SEC-APP-001 §7.1`, decidida en **`ADR-TLS-INTERNO-001`**. Se sostiene sobre un control sustitutivo, no sobre una dispensa: exige `NetworkPolicy` obligatoria en el servicio (`LIN-K8S-001 §9.1`), terminación TLS en el Ingress o en el gateway, y migración a mTLS cuando exista malla de servicios. **Un servicio sin `NetworkPolicy` no puede acogerse a ella.** El tráfico hacia servicios externos al cluster —SAA, RENIEC, SUNAT, Oracle— exige HTTPS sin excepción.
 
 ### 2.3 Codificación de caracteres
 
@@ -159,12 +163,12 @@ El gateway es responsable de:
 - Inyección de headers de correlación (`X-Request-ID`, `X-Forwarded-For`)
 - Logging de acceso (quién llamó, cuándo, qué endpoint, status de respuesta)
 - Enrutamiento al backend según la versión de la API (`/v1/`, `/v2/`)
-- Terminación TLS — los servicios backend reciben tráfico interno sobre HTTP dentro del cluster
+- Terminación TLS en el perímetro. Los backend reciben tráfico interno sobre HTTP dentro del cluster, conforme a la excepción acotada de `LIN-SEC-APP-001 §7.1` y `ADR-TLS-INTERNO-001`, que exige `NetworkPolicy` en el servicio como control sustitutivo (ver [sección 2.2](#22-https-obligatorio))
 
 #### Validación del token SAA — estado actual y objetivo futuro
 
 > **Estado actual (WSO2 en fase PoC — no operativo como gateway centralizado):**
-> Cada servicio Spring Boot implementa `SaaTokenValidationFilter` (@Order 2), que realiza una llamada síncrona al endpoint de SAA para validar el token opaco en cada petición entrante. Este filtro es **obligatorio** en todos los servicios mientras WSO2 no esté operativo como gateway. Ver [sección 7.1](#71-autenticacion-saa-token) y LIN-SEC-APP-001 sección 8.3.
+> Cada servicio Spring Boot implementa `SaaTokenValidationFilter` (`@Order(3)`), que realiza una llamada síncrona al endpoint de SAA para validar el token opaco en cada petición entrante. Este filtro es **obligatorio** en todos los servicios mientras WSO2 no esté operativo como gateway. Ver [sección 7.1](#71-autenticacion-saa-token) y LIN-SEC-APP-001 sección 8.3.
 >
 > **Objetivo futuro (cuando WSO2 sea el gateway centralizado operativo):**
 > WSO2 Gateway validará el token SAA en el perímetro e inyectará headers de contexto de usuario sanitizados (`X-User-Id`, `X-User-Roles`) hacia el backend. En ese escenario, `SaaTokenValidationFilter` podrá eliminarse de los servicios individuales y el backend confiará en los headers del gateway. Esta transición requerirá ADR y confirmación de Plataforma.
@@ -217,6 +221,8 @@ La estructura estándar de una URL en APIs ONP es:
 ```
 https://<host>/api/v{N}/{recurso-en-plural}/{id}/{sub-recurso}
 ```
+
+> **Esta es la ruta que expone el servicio**, la que el equipo implementa en sus `@RequestMapping`. La URL que ve el consumidor externo puede diferir: cuando WSO2 esté operativo, el gateway publica un *context path* propio por dominio y enruta hacia el backend —`https://apis.onp.gob.pe/pensiones/v1/...` → `mi-servicio.onp.internal:8080/api/v1/...` (ver [sección 2.5](#25-gestion-de-apis-api-gateway-y-api-manager))—. El backend no cambia su ruta para acomodar al gateway.
 
 Ejemplos:
 
@@ -312,14 +318,23 @@ La versión se incluye como primer segmento del path después de `/api/`:
 
 #### 3.3.2 Cuándo incrementar la versión
 
-| Tipo de cambio | Acción |
-|---|---|
-| Agregar campo opcional a la respuesta | Sin cambio de versión |
-| Agregar endpoint nuevo | Sin cambio de versión |
-| Agregar campo obligatorio al request | **Nueva versión menor** |
-| Cambiar tipo de dato de un campo | **Nueva versión mayor** |
-| Eliminar o renombrar campo | **Nueva versión mayor** |
-| Cambiar comportamiento de un endpoint | **Nueva versión mayor** |
+El path solo expresa la versión **mayor** (`/api/v1`, `/api/v2`). Por tanto, la única distinción operativa es si el cambio es compatible —no toca el path— o incompatible —obliga a publicar `/api/v{N+1}`—. La clasificación se alinea con `LIN-VER-001 §17.2`–`§17.3`, documento dueño del control de cambios:
+
+| Tipo de cambio | Compatibilidad | Acción |
+|---|---|---|
+| Agregar campo opcional a la respuesta | Compatible | Sin cambio de versión |
+| Agregar endpoint nuevo | Compatible | Sin cambio de versión |
+| Ampliar descripción o documentar un código de respuesta existente | Compatible | Sin cambio de versión |
+| Agregar campo **obligatorio** al request | **Incompatible** | Nueva versión mayor |
+| Cambiar tipo de dato de un campo | **Incompatible** | Nueva versión mayor |
+| Eliminar o renombrar campo | **Incompatible** | Nueva versión mayor |
+| Cambiar comportamiento o semántica de error de un endpoint | **Incompatible** | Nueva versión mayor |
+| Cambiar ruta o método HTTP | **Incompatible** | Nueva versión mayor |
+| Cambiar reglas de autenticación o autorización | **Incompatible** | Nueva versión mayor |
+
+> Un campo obligatorio nuevo en el request **rompe a todo consumidor existente**, que dejará de recibir `200`. La versión anterior de esta tabla lo clasificaba como «nueva versión menor», categoría que además el esquema `/api/v{N}` no puede representar.
+>
+> **Todo cambio incompatible exige ADR**, evaluación de versionamiento, comunicación a los consumidores y actualización del OpenAPI (`LIN-VER-001 §17.3`).
 
 #### 3.3.3 Coexistencia de versiones
 
@@ -401,9 +416,13 @@ La respuesta con paginación incluye los datos de paginación en el campo `meta`
 
 Todos los servicios REST de la ONP deben retornar sus respuestas usando `ApiResponseWrapper`. Esta estructura es el contrato institucional que garantiza consistencia entre servicios y facilita la correlación con logs y trazas.
 
+> **`codHttp` es informativo; la fuente de verdad es el status line HTTP.** El campo duplica en el body el código que ya viaja en la línea de estado, para comodidad de clientes que solo inspeccionan el JSON. Ambos valores **deben coincidir siempre**: responder `HTTP 200` con `"codHttp": 500` es un defecto —los proxys, el gateway, las métricas `http.server.requests` y las alertas de Kibana leen el status line, no el body, de modo que el error quedaría invisible en toda la cadena de observabilidad—. Un servicio nunca devuelve `200` para señalar un fallo.
+
+> **Relación con RFC 7807 (`application/problem+json`).** La ONP **no** adopta Problem Details como formato de error. Se optó por `ApiResponseWrapper` porque unifica respuestas de éxito y de error en una sola estructura, transporta el catálogo institucional `codDetRespuesta` —que RFC 7807 no contempla— y da continuidad al contrato ya usado por los consumidores existentes. Un servicio no debe emitir `Content-Type: application/problem+json`. Si un consumidor externo lo exige contractualmente, la traducción se resuelve en el gateway o en un adaptador dedicado, con ADR.
+
 | Campo | Tipo | Obligatorio | Descripción |
 |---|---|---|---|
-| `codHttp` | Integer | Sí | Código de estado HTTP de la respuesta |
+| `codHttp` | Integer | Sí | Réplica informativa del status HTTP de la respuesta (ver nota abajo) |
 | `codDetRespuesta` | String | Sí | Código de resultado institucional ONP (ver [sección 4.2](#42-tabla-de-coddetrespuesta)) |
 | `menDetRespuesta` | String | Sí | Mensaje descriptivo del resultado |
 | `data` | Object / Array / null | Sí | Resultado de la operación. `null` en caso de error |
@@ -436,6 +455,7 @@ Todos los servicios REST de la ONP deben retornar sus respuestas usando `ApiResp
 | `203` | Negocio | Estado inválido para la operación | 422 |
 | `300` | Autorización | No autenticado | 401 |
 | `301` | Autorización | No autorizado para esta operación | 403 |
+| `302` | Autorización | Límite de peticiones excedido | 429 | 
 | `400` | Integración | Servicio externo no disponible | 503 |
 | `401` | Integración | Servicio externo respondió con error | 502 |
 | `402` | Integración | Timeout en llamada a servicio externo | 504 |
@@ -583,6 +603,7 @@ Todo nuevo código o cambio de significado debe seguir este proceso mínimo:
 | Datos de entrada inválidos | POST/PUT/PATCH | 400 | 100–103 |
 | No autenticado | Cualquiera | 401 | 300 |
 | No autorizado | Cualquiera | 403 | 301 |
+| Límite de peticiones excedido | Cualquiera | 429 | 302 |
 | Recurso no encontrado | GET/PUT/DELETE | 404 | 201 |
 | Recurso duplicado | POST | 409 | 202 |
 | Regla de negocio | POST/PUT/PATCH | 422 | 200, 203 |
@@ -676,15 +697,19 @@ El token SAA es **opaco** (no es JWT — no es autocontenido ni verificable loca
 | Token inválido | 401 | 300 |
 | Sin permisos para el recurso | 403 | 301 |
 
-### 7.2 Autorización — RBAC
+### 7.2 Autorización — permisos SAA
 
-El control de acceso es basado en roles (RBAC). Cada endpoint debe verificar que el usuario autenticado tiene el rol requerido para ejecutar la operación. La verificación se realiza a nivel del servicio (no solo en el Gateway).
+> **Documento dueño: `LIN-SEC-APP-001 §5.3`–`§5.4`.**
+
+El control de acceso se basa en los **permisos que SAA devuelve para el usuario**, no en un modelo de roles propio de la aplicación: `LIN-SEC-APP-001 §5.3` numeral 4 prohíbe implementar RBAC propio cuando el permiso ya existe en SAA. Cada endpoint declara explícitamente qué permiso requiere, y la verificación se realiza a nivel del servicio, no solo en el Gateway.
 
 ```java
-@PreAuthorize("hasRole('ROL_GESTOR_AFILIACIONES')")
+@PreAuthorize("hasAuthority('REGISTRAR_AFILIACION')")
 @PostMapping
 public ResponseEntity<ApiResponseWrapper> registrar(...) { ... }
 ```
+
+> **Por qué `hasAuthority` y no `hasRole`.** En Spring Security `hasRole('X')` comprueba en realidad el authority `ROLE_X`: antepone el prefijo automáticamente. Los permisos SAA se cargan en el `SecurityContext` con su nombre tal cual (`LIN-SEC-APP-001 §5.4`), sin prefijo `ROLE_`, de modo que un `hasRole('ROL_GESTOR_AFILIACIONES')` buscaría `ROLE_ROL_GESTOR_AFILIACIONES` y **nunca coincidiría** — el endpoint quedaría inaccesible para todos. Usar siempre `hasAuthority` con el nombre exacto del permiso SAA.
 
 ### 7.3 Validación de inputs
 
@@ -704,14 +729,18 @@ El Controller debe anotar el `@RequestBody` con `@Valid` para activar la validac
 
 ### 7.4 Headers de seguridad
 
-El API Gateway debe inyectar los siguientes headers en toda respuesta:
+> **Documento dueño: `LIN-SEC-APP-001 §7.3`.** Estos headers son **obligatorios**, no recomendados.
 
-| Header | Valor recomendado |
+Mientras WSO2 no esté operativo como gateway centralizado, **es el propio servicio Spring Boot quien debe emitirlos** (`LIN-SEC-APP-001 §7.1`: los controles se configuran en la aplicación cuando no hay gateway). Delegarlos en una plataforma que aún está en PoC equivale a no emitirlos.
+
+| Header | Valor obligatorio |
 |---|---|
 | `Strict-Transport-Security` | `max-age=31536000; includeSubDomains` |
 | `X-Content-Type-Options` | `nosniff` |
 | `X-Frame-Options` | `DENY` |
-| `Cache-Control` | `no-store` (para endpoints con datos sensibles) |
+| `Cache-Control` | `no-store` |
+
+Ver la configuración `SecurityConfig` completa en `LIN-SEC-APP-001 §7.3`. Cuando WSO2 sea el gateway operativo, la emisión podrá centralizarse en el perímetro; la transición requiere ADR.
 
 ### 7.5 CORS
 
@@ -778,7 +807,13 @@ Lo que este lineamiento sí norma es la **respuesta del contrato REST ante el ve
 
 ### 8.4 Rate limiting
 
-El API Gateway aplica rate limiting por cliente (IP o token). Los servicios no implementan rate limiting internamente — es responsabilidad del Gateway.
+**Modelo objetivo (WSO2 operativo):** el API Gateway aplica rate limiting por cliente (IP o token) según el plan de suscripción, y los servicios no lo implementan internamente.
+
+**Estado actual (WSO2 en PoC):** dado que no existe gateway centralizado en producción, aplica la regla del documento dueño `LIN-SEC-APP-001 §7.1` — *«Rate limiting básico: configurado en la aplicación si no hay gateway»*. Todo servicio expuesto a consumidores externos (ciudadano o entidad pública) debe implementar un límite básico por cliente hasta que WSO2 gradúe.
+
+Al superarse el límite, el servicio responde `429 Too Many Requests` con `codDetRespuesta: 302` (ver [sección 5.1](#51-mapeo-de-codigo-http-a-coddetrespuesta)).
+
+> La versión anterior de esta sección asignaba el control exclusivamente al gateway. Como el gateway no está operativo, el efecto real era que **ninguna API de la ONP tenía rate limiting** (`GOB-CHK-001` H24).
 
 ---
 
@@ -898,7 +933,7 @@ management:
 livenessProbe:
   httpGet:
     path: /actuator/health/liveness
-    port: 8080
+    port: 8080          # debe coincidir con el puerto donde responde Actuator
   initialDelaySeconds: 30
   periodSeconds: 10
   failureThreshold: 3
@@ -911,6 +946,10 @@ readinessProbe:
   periodSeconds: 5
   failureThreshold: 3
 ```
+
+> **El puerto de la probe debe ser aquel en el que responde Actuator.** La [sección 9.5](#95-metricas) ofrece dos formas de evitar que `/actuator/prometheus` quede publicado en el puerto de la API: separar `management.server.port`, o mantenerlo en el mismo puerto y restringir el acceso a nivel de red. **Los ejemplos de este corpus asumen la segunda opción** (Actuator en `8080`, protegido por red), y por eso las probes apuntan a `8080`.
+>
+> Si un proyecto opta por separar el puerto de gestión, **debe actualizar también las probes**: dejarlas en `8080` mientras Actuator escucha en otro puerto hace que Kubernetes reciba `404`, marque el pod como no listo y el despliegue nunca converja. El valor de `application.yml` y el del `Deployment` se declaran juntos, en el mismo cambio (`LIN-K8S-001`).
 
 Un servicio sin probes declaradas en el Deployment **no puede ser aprobado** para producción.
 
@@ -949,6 +988,15 @@ La OTI.ID administra un catálogo centralizado de todos los servicios web REST d
 
 Los estados de ciclo de vida se gestionan en WSO2 API Manager (Publisher). Solo OTI Arquitectura puede avanzar o retroceder un estado.
 
+> **Vía transitoria mientras WSO2 esté en PoC.** Los estados `CREATED`/`PUBLISHED` son estados **de la plataforma**, no del servicio. Como WSO2 no está operativo en producción (ver [sección 2.5](#25-gestion-de-apis-api-gateway-y-api-manager) y ADR-WSO2-001), exigirlos como condición literal dejaría a toda API nueva sin camino legítimo a producción. Mientras dure el PoC:
+>
+> - los **requisitos** del gate de la [sección 10.3](#103-gate-de-publicacion-en-wso2) se cumplen y se evidencian igual, y OTI Arquitectura los aprueba formalmente;
+> - la evidencia se conserva en el repositorio del servicio y en el catálogo de la [sección 10.1](#101-catalogo-de-servicios), en lugar de en WSO2 Publisher;
+> - los ítems que solo puede satisfacer la plataforma —URL base en Publisher, plan de suscripción, publicación en Dev Portal— quedan **diferidos y registrados como pendientes de migración**, no omitidos;
+> - al graduar el PoC, las APIs ya en producción se registran en WSO2 conservando el estado equivalente.
+>
+> Ningún servicio se exime del gate por esta vía: se exime únicamente del registro en una herramienta que aún no existe.
+
 | Fase | Estado WSO2 | Descripción | Quién activa |
 |---|---|---|---|
 | **Diseño** | — | Definición del contrato OpenAPI y revisión por Arquitectura. La API no está en WSO2 aún | Equipo de desarrollo |
@@ -967,6 +1015,7 @@ Antes de que OTI Arquitectura active el estado `PUBLISHED` en WSO2, el equipo de
 #### Parte A — Requisitos técnicos (equipo de desarrollo)
 
 - [ ] Especificación OpenAPI 3.0 generada, válida y sin errores (verificable en Swagger Editor o Stoplight)
+- [ ] **Prueba de contrato ejecutada y en verde**, conforme a `LIN-TEST-001 §6` — documento dueño. El mínimo aceptable es validar la respuesta contra un JSON Schema derivado del OpenAPI; para APIs publicadas en WSO2 o con consumidores externos, `LIN-TEST-001 §6.2` exige validar request y response contra el `openapi.yml` completo con un OpenAPI validator
 - [ ] Todos los endpoints documentados con `@Operation`, `@ApiResponse` y `@Schema` (ver LIN-DEV-JAVA-001 sección 13.4.6–13.4.7)
 - [ ] Backend desplegado y smoke-tested en el ambiente de destino (QA o PROD)
 - [ ] Endpoint `/actuator/health` responde `{"status":"UP"}` en el ambiente de destino
@@ -974,6 +1023,7 @@ Antes de que OTI Arquitectura active el estado `PUBLISHED` en WSO2, el equipo de
 - [ ] Esquema de autenticación SAA declarado en la especificación OpenAPI (`securitySchemes: bearerAuth`) — cuando WSO2/OAuth2 esté operacional, actualizar a `oauth2`
 - [ ] Swagger deshabilitado en PROD (`SWAGGER_ENABLED=false`) si el ambiente es producción (ver [sección 6.2](#62-configuracion))
 - [ ] URL base interna del backend configurada en WSO2 Publisher apuntando al servicio K8s interno
+- [ ] **`NetworkPolicy` declarada** en los manifiestos del servicio (`LIN-K8S-001 §9.1`, Anexo E). Es la condición que sostiene la excepción de tráfico intra-cluster sobre HTTP de `ADR-TLS-INTERNO-001`: sin ella, el servicio debe servir HTTPS extremo a extremo
 
 #### Parte B — Requisitos de gobernanza (OTI Arquitectura verifica)
 

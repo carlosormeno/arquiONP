@@ -929,7 +929,7 @@ Cobertura mínima: **70% de líneas** en `core/` y `shared/`. Las páginas de fe
 
 ### 14.2 Pruebas e2e
 
-La herramienta institucional preferente para pruebas E2E es **Playwright** (ver `LIN-TEST-001 sección 4.4`). Cypress solo se permite en proyectos donde ya existe; proyectos nuevos deben usar Playwright.
+La herramienta institucional preferente para pruebas E2E es **Playwright** (ver `LIN-TEST-001 §3.3` para la tabla de herramientas y `§12.4` para el capítulo Angular). Cypress solo se permite en proyectos donde ya existe; proyectos nuevos deben usar Playwright.
 
 Estructura de carpetas con Playwright:
 

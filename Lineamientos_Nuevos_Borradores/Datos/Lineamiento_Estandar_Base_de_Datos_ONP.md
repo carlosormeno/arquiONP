@@ -1,6 +1,6 @@
 # LIN-BD-ORA-001 — Estándar de Base de Datos Oracle ONP
 ## Oficina de Normalización Previsional — OTI
-### Código: LIN-BD-ORA-001 | Versión 0.1.10 | Estado: Borrador | Marco rector: LIN-ARQ-001
+### Código: LIN-BD-ORA-001 | Versión 0.1.12 | Estado: Borrador | Marco rector: LIN-ARQ-001
 
 ---
 
@@ -9,35 +9,37 @@
 | Versión | Fecha | Autor | Descripción |
 |---------|-------|-------|-------------|
 | 0.1.0 | 2026-05-22 | OTI | Versión inicial |
-| 0.1.10 | 2026-08-08 | OTI | Incorpora la sección 3.8.1 (Estándar de Búsqueda de texto libre con Oracle Text `CTXSYS`) y la sección 8.4 (Modelo de migraciones automatizadas de BD con Flyway en CI/CD) |
 | 0.1.1 | 2026-05-28 | OTI | Formaliza la estrategia de reversa Oracle, agrega evidencia mínima para pase y define el modelo mínimo del catálogo PL/SQL legacy |
 | 0.1.2 | 2026-05-28 | OTI | Define el modelo operativo de cambios de BD por tipo de sistema y lo alinea con `LIN-VER-001` y la plantilla backend institucional |
 | 0.1.3 | 2026-05-29 | OTI | Agrega condiciones de uso de DBLinks en [sección 4.9.1](#491-condiciones-para-el-uso-de-dblinks): justificación arquitectónica, restricciones técnicas, gobernanza y condiciones de exclusión |
-| 0.1.4 | 2026-05-29 | OTI | Corrige prefijos de columnas (FE_, ID_, DE_), unifica separador en constraints, agrega sinónimos ([sección 4.11](#411-sinonimos)), jobs DBMS_SCHEDULER ([sección 4.12](#412-jobs-de-dbms_scheduler)), vistas materializadas ([sección 4.3](#43-vistas-y-vistas-materializadas)), parámetros de secuencias, particionamiento INTERVAL, TDE con granularidad, monitoreo con AWR/ASH, checklist DBLinks (Anexo D sección D.6) |
+| 0.1.4 | 2026-05-29 | OTI | Corrige prefijos de columnas (FE_, ID_, DE_), unifica separador en constraints, agrega sinónimos ([sección 4.11](#411-sinónimos)), jobs DBMS_SCHEDULER ([sección 4.12](#412-jobs-de-dbms_scheduler)), vistas materializadas ([sección 4.3](#43-vistas-y-vistas-materializadas)), parámetros de secuencias, particionamiento INTERVAL, TDE con granularidad, monitoreo con AWR/ASH, checklist DBLinks (Anexo D sección D.6) |
 | 0.1.5 | 2026-05-29 | OTI | Incorpora mejoras técnicas: control de longitud de constraints, CLIENT_IDENTIFIER para pools, restricciones TDE en columnas, indexación de FKs, optimización de búsquedas y soporte EBR |
 | 0.1.6 | 2026-05-29 | OTI | Refuerza consistencia para desarrollo de software: tipado canónico de claves e indicadores, estrategia de PK/FK, borrado lógico, manejo robusto de errores, auditoría consistente con pools, precisión en planes de ejecución y reglas de uso de sinónimos |
-| 0.1.7 | 2026-05-29 | OTI | Agrega DDL de catálogos centralizados (BD [sección 2.3](#23-catalogo-centralizado-de-bases-de-datos), DBLinks [sección 4.9.1](#491-condiciones-para-el-uso-de-dblinks), Jobs [sección 4.12](#412-jobs-de-dbms_scheduler)), tablespace LOB y sección [sección 3.8](#38-tipos-de-datos-lob) Tipos de datos LOB, [sección 7.6](#76-sentencia-merge-upsert) Sentencia MERGE con manejo de auditoría, [sección 9.5](#95-estadisticas-del-optimizador-dbms_stats) Estadísticas del optimizador DBMS_STATS, documenta excepción canónica de prefijo ID_ para campos de auditoría ([sección 3.4](#34-prefijos-de-columnas)), corrige tipo en borrado lógico Anexo C.2 |
-| 0.1.8 | 2026-07-10 | OTI | Agrega el prefijo técnico `EVT_` ([sección 3.3](#33-tipos-de-tablas--prefijos)) y la [sección 3.10](#310-tabla-técnica-transversal-evt_outbox-transactional-outbox) con el nombre canónico y DDL de `EVT_OUTBOX`, cerrando la brecha donde este documento —dueño normativo de tablas Oracle— no definía la tabla del patrón Transactional Outbox pese a que `LIN-ARQ-001`, `LIN-DIS-001`, `LIN-BUS-001` y `LIN-PAT-001` ya la referenciaban con tres nombres distintos (`OUTBOX`, `TB_OUTBOX`, `EVT_OUTBOX`) |
+| 0.1.7 | 2026-05-29 | OTI | Agrega DDL de catálogos centralizados (BD [sección 2.3](#23-catálogo-centralizado-de-bases-de-datos), DBLinks [sección 4.9.1](#491-condiciones-para-el-uso-de-dblinks), Jobs [sección 4.12](#412-jobs-de-dbms_scheduler)), tablespace LOB y sección [sección 3.8](#38-tipos-de-datos-lob) Tipos de datos LOB, [sección 7.6](#76-sentencia-merge-upsert) Sentencia MERGE con manejo de auditoría, [sección 9.5](#95-estadísticas-del-optimizador-dbms_stats) Estadísticas del optimizador DBMS_STATS, documenta excepción canónica de prefijo ID_ para campos de auditoría ([sección 3.4](#34-prefijos-de-columnas)), corrige tipo en borrado lógico Anexo C.2 |
+| 0.1.8 | 2026-07-10 | OTI | Agrega el prefijo técnico `EVT_` ([sección 3.3](#33-tipos-de-tablas--prefijos)) y la [sección 3.10](#310-tabla-técnica-transversal--evt_outbox-transactional-outbox) con el nombre canónico y DDL de `EVT_OUTBOX`, cerrando la brecha donde este documento —dueño normativo de tablas Oracle— no definía la tabla del patrón Transactional Outbox pese a que `LIN-ARQ-001`, `LIN-DIS-001`, `LIN-BUS-001` y `LIN-PAT-001` ya la referenciaban con tres nombres distintos (`OUTBOX`, `TB_OUTBOX`, `EVT_OUTBOX`) |
 | 0.1.9 | 2026-07-10 | OTI | Migra Marco rector de `LIN-ARQ-000` (congelado) a `LIN-ARQ-001` (vigente) en encabezado; redirige las citas de §3.9 (Monolito Modular por defecto, Saga) desde `LIN-ARQ-000 §3.4` hacia `LIN-ARQ-001 §2.1` y `§3.3` |
+| 0.1.10 | 2026-08-08 | OTI | Incorpora la sección 3.8.1 (Estándar de Búsqueda de texto libre con Oracle Text `CTXSYS`) y la sección 8.4 (Modelo de migraciones automatizadas de BD con Flyway en CI/CD) |
+| 0.1.12 | 2026-08-09 | OTI | Revisión de contenido a profundidad (`GOB-CHK-001` H14). **Tres de los siete ejemplos DDL incumplían las convenciones del propio documento** y son los que las fábricas copian: `EVT_OUTBOX` (§3.10) carecía de prefijos de columna (§3.4) y de campos de auditoría (§5.1) — normalizada y su excepción de auditoría **declarada explícitamente** en §5.2, con la justificación de por qué una tabla técnica de relevo no los lleva; `CATALOGO_PLSQL_LEGACY` (§6.0) omitía el prefijo `CAT_` (§3.3), los prefijos de columna, los campos de auditoría y usaba `GENERATED AS IDENTITY` —sintaxis de Oracle 12c+ que no existe en 11g, contra la promesa de compatibilidad de §2.2 y la regla de §4.6— renombrada a `OTI_ADMIN.CAT_PLSQL_LEGACY` y normalizada; `MOV_APORTE` (§9.2) usaba `N_ID` como PK en vez de `ID_<ENTIDAD> NUMBER(19)`. **§1.3 reescrita**: era la única tabla de referencias del corpus que citaba por nombre sin código, y su primera fila apuntaba al documento congelado con la nomenclatura `CD01`/`CD02` que ya no rige; ahora usa códigos e incorpora `LIN-DIS-001`, `LIN-BUS-001`, `LIN-TEST-001` y `LIN-VER-001`, que faltaban pese a ser consumidores declarados |
+| 0.1.11 | 2026-08-09 | OTI | Normalización de encabezados de sección: `## sección N Título` → `## N. Título` (`GOB-CHK-001` H21.3). El formato anterior generaba anclas `#sección-N-…` mientras el índice enlazaba a `#N-…`, de modo que **ningún enlace de la tabla de contenidos resolvía**. Corregidas además 15 anclas con tilde omitida o guion simple donde el encabezado genera doble. Resultado: 55/55 enlaces internos resuelven. Las citas externas por número de sección (`§6.0`, `§3.10`…) no se ven afectadas |
 
 ---
 
 ## Tabla de contenidos
 
-- [sección 1 Alcance y vigencia](#1-alcance-y-vigencia)
-- [sección 2 Plataforma de base de datos](#2-plataforma-de-base-de-datos)
-- [sección 3 Diseño del modelo de datos](#3-diseño-del-modelo-de-datos)
-  - [sección 3.8 Tipos de datos LOB](#38-tipos-de-datos-lob)
-- [sección 4 Nomenclatura de objetos](#4-nomenclatura-de-objetos)
-- [sección 5 Campos de auditoría](#5-campos-de-auditoría)
-- [sección 6 Objetos programables PL/SQL](#6-objetos-programables-plsql)
-- [sección 7 Estándares de codificación PL/SQL](#7-estándares-de-codificación-plsql)
-  - [sección 7.6 Sentencia MERGE](#76-sentencia-merge)
-- [sección 8 Scripts de despliegue y control de cambios](#8-scripts-de-despliegue-y-control-de-cambios)
-- [sección 9 Optimización y rendimiento](#9-optimización-y-rendimiento)
-  - [sección 9.5 Estadísticas del optimizador (DBMS_STATS)](#95-estadísticas-del-optimizador-dbms_stats)
-- [sección 10 Seguridad](#10-seguridad)
-- [sección 11 Administración y operación](#11-administración-y-operación)
+- [1. Alcance y vigencia](#1-alcance-y-vigencia)
+- [2. Plataforma de base de datos](#2-plataforma-de-base-de-datos)
+- [3. Diseño del modelo de datos](#3-diseño-del-modelo-de-datos)
+  - [3.8. Tipos de datos LOB](#38-tipos-de-datos-lob)
+- [4. Nomenclatura de objetos](#4-nomenclatura-de-objetos)
+- [5. Campos de auditoría](#5-campos-de-auditoría)
+- [6. Objetos programables PL/SQL](#6-objetos-programables-plsql)
+- [7. Estándares de codificación PL/SQL](#7-estándares-de-codificación-plsql)
+  - [7.6. Sentencia MERGE](#76-sentencia-merge-upsert)
+- [8. Scripts de despliegue y control de cambios](#8-scripts-de-despliegue-y-control-de-cambios)
+- [9. Optimización y rendimiento](#9-optimización-y-rendimiento)
+  - [9.5. Estadísticas del optimizador (DBMS_STATS)](#95-estadísticas-del-optimizador-dbms_stats)
+- [10. Seguridad](#10-seguridad)
+- [11. Administración y operación](#11-administración-y-operación)
 - [Anexo A: Tabla de convenciones de nomenclatura](#anexo-a-tabla-de-convenciones-de-nomenclatura)
 - [Anexo B: Plantillas simplificadas de scripts](#anexo-b-plantillas-simplificadas-de-scripts)
 - [Anexo C: Campos de auditoría — definición y reglas de llenado](#anexo-c-campos-de-auditoría--definición-y-reglas-de-llenado)
@@ -45,7 +47,7 @@
 
 ---
 
-## sección 1 Alcance y vigencia
+## 1. Alcance y vigencia
 
 ### 1.1 Propósito
 
@@ -69,16 +71,22 @@ Este estándar aplica a:
 
 ### 1.3 Relación con otros documentos
 
-| Documento | Relación |
-|-----------|----------|
-| Lineamiento de Diseño y Arquitectura de Software ONP | Marco arquitectónico; define CD01 y CD02 en la Capa de Datos |
-| Lineamiento Estándar de Desarrollo Java ONP | Complementa las convenciones de persistencia (JPA/JDBC) |
-| Lineamiento Estándar de APIs REST ONP | Define cómo la capa de aplicación consume la BD |
-| Guía de Diseño y Programación ONP v2.0 | Documento de referencia técnica interno del que este lineamiento es actualización |
+| Documento | Código | Relación |
+|---|---|---|
+| Marco Rector de Arquitectura de Software | `LIN-ARQ-001` | Marco rector de Nivel 1. Declara Oracle como fuente única de verdad transaccional (`§6.1`), regula la adopción de NoSQL complementario (`§6.2`) y prohíbe la reportería masiva sobre el OLTP (`§6.3`) |
+| Estándar de Diseño de Software y Patrones Tácticos | `LIN-DIS-001` | Nivel 2. Consume este estándar en CQRS y elección del *read model* (`§4.2`) |
+| Estándar de Desarrollo Java | `LIN-DEV-JAVA-001` | Complementa las convenciones de persistencia (JPA/JDBC) y aloja el adaptador para PL/SQL legacy (`§13.5.3`) |
+| Estándar de Servicios Web y APIs REST | `LIN-API-REST-001` | Define cómo la capa de aplicación expone los datos |
+| Lineamiento de Mensajería y Bus de Eventos | `LIN-BUS-001` | Consumidor de la tabla `EVT_OUTBOX` ([§3.10](#310-tabla-técnica-transversal--evt_outbox-transactional-outbox)); dueño del proceso de relevo hacia Kafka (`§7.3`) |
+| Estándar de Pruebas | `LIN-TEST-001` | Dueño de la técnica de pruebas de caracterización que este estándar exige para PL/SQL legacy (`§13`) |
+| Estándar de Versionamiento y Control de Cambios | `LIN-VER-001` | Dueño de la obligatoriedad de versionar los scripts de BD en GitLab (`§16`); este estándar define su nomenclatura y estructura ([§8](#8-scripts-de-despliegue-y-control-de-cambios)) |
+| Guía de Diseño y Programación ONP v2.0 | — | Antecedente institucional externo al corpus, del que este lineamiento es actualización |
+
+> El documento `LIN-ARQ-000` (**congelado**) definía los componentes `CD01`/`CD02` de la Capa de Datos. Esa nomenclatura no rige: la topología vigente está en `LIN-ARQ-001 §2.1`.
 
 ---
 
-## sección 2 Plataforma de base de datos
+## 2. Plataforma de base de datos
 
 ### 2.1 Oracle 19c — estándar vigente
 
@@ -154,7 +162,7 @@ Para sistemas nuevos y modernizaciones bajo Oracle 19c que requieran alta dispon
 
 ---
 
-## sección 3 Diseño del modelo de datos
+## 3. Diseño del modelo de datos
 
 ### 3.1 Normalización
 
@@ -224,7 +232,7 @@ Reglas canónicas de tipado:
 - Los indicadores lógicos (`IN_`) usan **`NUMBER(1)`** con valores `1` (verdadero) y `0` (falso). No se debe mezclar `VARCHAR2(1)` y `NUMBER(1)` entre sistemas.
 - Todo indicador `IN_` debe tener un `CHECK` explícito (`IN (0,1)`) salvo que el motor o el diseño imponga una restricción equivalente verificable.
 
-> **Excepción canónica — campos de auditoría:** Los campos `ID_USUA_CREA` e `ID_USUA_MODI` definidos en [sección 5.1](#51-definicion) usan el prefijo `ID_` con tipo `VARCHAR2(30)`. Almacenan el identificador textual del usuario Oracle o del `CLIENT_IDENTIFIER`, no una clave foránea numérica. Esta excepción es parte del estándar institucional y **no requiere ADR**.
+> **Excepción canónica — campos de auditoría:** Los campos `ID_USUA_CREA` e `ID_USUA_MODI` definidos en [sección 5.1](#51-definición) usan el prefijo `ID_` con tipo `VARCHAR2(30)`. Almacenan el identificador textual del usuario Oracle o del `CLIENT_IDENTIFIER`, no una clave foránea numérica. Esta excepción es parte del estándar institucional y **no requiere ADR**.
 
 ### 3.5 Claves primarias, claves foráneas y claves de negocio
 
@@ -280,7 +288,7 @@ LOB (C_CONTENIDO) STORE AS SECUREFILE (
 ```
 
 - No definir columnas LOB en tablas de alta concurrencia transaccional sin análisis previo de rendimiento e impacto en undo/redo.
-- Los campos de auditoría ([sección 5.1](#51-definicion)) aplican a las tablas con columnas LOB del mismo modo que a cualquier tabla permanente.
+- Los campos de auditoría ([sección 5.1](#51-definición)) aplican a las tablas con columnas LOB del mismo modo que a cualquier tabla permanente.
 - Las columnas LOB no participan en índices B-Tree estándar. Para búsqueda de texto libre sobre `CLOB` y `BLOB`, se debe implementar **Oracle Text** (esquema `CTXSYS`) según lo normado en la [sección 3.8.1](#381-búsqueda-de-texto-libre-con-oracle-text-ctxsys).
 
 ### 3.8.1 Búsqueda de texto libre con Oracle Text (`CTXSYS`)
@@ -352,19 +360,26 @@ El patrón **Transactional Outbox** (`LIN-DIS-001 §4.2`, `LIN-BUS-001 §7.3`, f
 
 ```sql
 CREATE TABLE EVT_OUTBOX (
-    ID              VARCHAR2(36)    NOT NULL,
-    EVENTO_TIPO     VARCHAR2(200)   NOT NULL,
-    EVENTO_VERSION  VARCHAR2(10)    NOT NULL,
-    PAYLOAD         CLOB            NOT NULL,
-    ESTADO          VARCHAR2(20)    DEFAULT 'PENDIENTE',
-    CREADO_EN       TIMESTAMP       DEFAULT SYSTIMESTAMP,
-    ENVIADO_EN      TIMESTAMP,
-    INTENTOS        NUMBER(2)       DEFAULT 0,
-    CONSTRAINT PK_EVT_OUTBOX PRIMARY KEY (ID)
+    C_ID_EVENTO      VARCHAR2(36)   CONSTRAINT NN_EVT_OUTBOX_ID   NOT NULL,
+    C_EVENTO_TIPO    VARCHAR2(200)  CONSTRAINT NN_EVT_OUTBOX_TIPO NOT NULL,
+    C_EVENTO_VERSION VARCHAR2(10)   CONSTRAINT NN_EVT_OUTBOX_VER  NOT NULL,
+    C_PAYLOAD        CLOB           CONSTRAINT NN_EVT_OUTBOX_PAY  NOT NULL,
+    C_ESTADO         VARCHAR2(20)   DEFAULT 'PENDIENTE'
+                                    CONSTRAINT NN_EVT_OUTBOX_EST  NOT NULL,
+    FE_CREACION      TIMESTAMP      DEFAULT SYSTIMESTAMP
+                                    CONSTRAINT NN_EVT_OUTBOX_FCR  NOT NULL,
+    FE_ENVIO         TIMESTAMP,
+    N_INTENTOS       NUMBER(2)      DEFAULT 0,
+    CONSTRAINT PK_EVT_OUTBOX PRIMARY KEY (C_ID_EVENTO),
+    CONSTRAINT CK_EVT_OUTBOX_EST CHECK (C_ESTADO IN ('PENDIENTE','ENVIADO'))
 );
 
-CREATE INDEX IDX_EVT_OUTBOX_ESTADO ON EVT_OUTBOX (ESTADO, CREADO_EN);
+CREATE INDEX IDX_EVT_OUTBOX_01 ON EVT_OUTBOX (C_ESTADO, FE_CREACION);
 ```
+
+> **Sobre los campos de auditoría.** `EVT_OUTBOX` está declarada **excepción** a los seis campos obligatorios de [§5.1](#51-definición) — ver [§5.2](#52-excepciones). Es una tabla técnica de relevo, no de negocio: sus filas las escribe la aplicación dentro de la transacción, las consume el proceso de publicación y se purgan; `FE_CREACION` y `C_ESTADO` ya proveen la trazabilidad operativa que necesita, y la identidad del usuario que originó el cambio vive en la tabla de negocio de la misma transacción. Añadir seis columnas a una tabla de alta frecuencia de escritura tendría costo sin valor de auditoría.
+
+> **Nomenclatura.** Las columnas siguen los prefijos de tipo de [§3.4](#34-prefijos-de-columnas), como cualquier otra tabla del estándar. El nombre `C_ID_EVENTO` usa el prefijo `C_` —no `ID_`— porque almacena un UUID textual, según la regla canónica de esa misma sección.
 
 `ESTADO` transita entre `PENDIENTE` y `ENVIADO` (ver también `PROCESADO` como sinónimo aceptado si un proyecto ya lo adoptó antes de esta sección — no requiere migración retroactiva). La lógica del proceso de relevo (*Outbox Relay*, `@Scheduled` o CDC/Debezium) y su integración con Apache Kafka es responsabilidad de `LIN-BUS-001 §7.3`, que es la fuente autoritativa para esa parte; esta sección solo fija el nombre y el DDL de la tabla en Oracle.
 
@@ -374,7 +389,7 @@ Las propiedades ACID son la razón por la que el **Monolito Modular con BD compa
 
 ---
 
-## sección 4 Nomenclatura de objetos
+## 4. Nomenclatura de objetos
 
 Todas las reglas de esta sección aplican a objetos creados bajo los esquemas de la ONP. Los nombres de objetos no deben referenciar proveedores, marcas ni tecnologías externas.
 
@@ -397,7 +412,7 @@ Todas las reglas de esta sección aplican a objetos creados bajo los esquemas de
 | Temporal global (commit) | `<ESQUEMA>.GTT_<NOMBRE>` | `APORTACIONES.GTT_CALCULO_TEMP` |
 | Temporal global (sesión) | `<ESQUEMA>.GTS_<NOMBRE>` | `APORTACIONES.GTS_CARGA_SESION` |
 
-- `<PREFIJO>`: uno de los prefijos de [sección 3.3](#33-tipos-de-tablas-prefijos).
+- `<PREFIJO>`: uno de los prefijos de [sección 3.3](#33-tipos-de-tablas--prefijos).
 - Longitud máxima del nombre: 30 caracteres (límite Oracle 11g/12c; Oracle 19c admite 128 pero se mantiene 30 para portabilidad).
 
 ### 4.3 Vistas y Vistas Materializadas
@@ -664,7 +679,7 @@ TABLESPACE TBS_DAT_OTI_ADMIN_01;
 
 ---
 
-## sección 5 Campos de auditoría
+## 5. Campos de auditoría
 
 ### 5.1 Definición
 
@@ -685,6 +700,9 @@ Los campos de auditoría **no aplican** a:
 
 - `GLOBAL TEMPORARY TABLE` (GTT / GTS).
 - Tablas de carga/staging usadas exclusivamente en procesos batch de carga masiva sin uso transaccional posterior.
+- **Tablas técnicas de relevo de eventos** — `EVT_OUTBOX` ([§3.10](#310-tabla-técnica-transversal--evt_outbox-transactional-outbox)) y equivalentes: sus filas son transitorias, la trazabilidad operativa la dan sus propias columnas de estado y fecha, y la identidad del usuario reside en la tabla de negocio escrita en la misma transacción.
+
+> Toda excepción **debe estar declarada en esta sección**. Una tabla permanente que omita los campos de auditoría sin figurar aquí incumple el estándar, aunque su DDL aparezca en otro documento.
 
 ### 5.3 Reglas de llenado
 
@@ -732,7 +750,7 @@ WHERE ID_<ENTIDAD> = :v_id;
 
 ---
 
-## sección 6 Objetos programables PL/SQL
+## 6. Objetos programables PL/SQL
 
 ### 6.0 Gobierno de lógica de negocio en PL/SQL
 
@@ -774,20 +792,31 @@ Todo procedure, package o function que contenga lógica de negocio debe estar re
 **Modelo mínimo recomendado del catálogo** (tabla institucional o registro equivalente):
 
 ```sql
-CREATE TABLE CATALOGO_PLSQL_LEGACY (
-    ID_CATALOGO           NUMBER GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
-    ESQUEMA               VARCHAR2(30)   NOT NULL,
-    NOMBRE_OBJETO         VARCHAR2(128)  NOT NULL,
-    TIPO_OBJETO           VARCHAR2(20)   NOT NULL,
-    SISTEMA_CONSUMIDOR    VARCHAR2(100)  NOT NULL,
-    RESPONSABLE_TECNICO   VARCHAR2(100)  NOT NULL,
-    DESCRIPCION_FUNCIONAL VARCHAR2(1000) NOT NULL,
-    CATEGORIA_USO         VARCHAR2(30)   NOT NULL,
-    ESTADO_REGISTRO       VARCHAR2(20)   NOT NULL,
-    FECHA_REGISTRO        DATE           NOT NULL,
-    OBSERVACIONES         VARCHAR2(1000)
-);
+CREATE TABLE OTI_ADMIN.CAT_PLSQL_LEGACY (
+    ID_CAT_PLSQL          NUMBER(19)     CONSTRAINT NN_CAT_PLSQL_ID    NOT NULL,
+    C_ESQUEMA             VARCHAR2(30)   CONSTRAINT NN_CAT_PLSQL_ESQ   NOT NULL,
+    C_NOMBRE_OBJETO       VARCHAR2(128)  CONSTRAINT NN_CAT_PLSQL_OBJ   NOT NULL,
+    C_TIPO_OBJETO         VARCHAR2(20)   CONSTRAINT NN_CAT_PLSQL_TIPO  NOT NULL,
+    C_SISTEMA_CONSUMIDOR  VARCHAR2(100)  CONSTRAINT NN_CAT_PLSQL_SIS   NOT NULL,
+    C_RESP_TECNICO        VARCHAR2(100)  CONSTRAINT NN_CAT_PLSQL_RESP  NOT NULL,
+    C_DESCRIPCION_FUNC    VARCHAR2(1000) CONSTRAINT NN_CAT_PLSQL_DESC  NOT NULL,
+    C_CATEGORIA_USO       VARCHAR2(30)   CONSTRAINT NN_CAT_PLSQL_CAT   NOT NULL,
+    C_ESTADO_REGISTRO     VARCHAR2(20)   CONSTRAINT NN_CAT_PLSQL_EST   NOT NULL,
+    FE_REGISTRO           TIMESTAMP      CONSTRAINT NN_CAT_PLSQL_FREG  NOT NULL,
+    C_OBSERVACIONES       VARCHAR2(1000),
+    ID_USUA_CREA          VARCHAR2(30)   CONSTRAINT NN_CAT_PLSQL_UCREA NOT NULL,
+    FE_USUA_CREA          TIMESTAMP      CONSTRAINT NN_CAT_PLSQL_FCREA NOT NULL,
+    DE_TERM_CREA          VARCHAR2(39)   CONSTRAINT NN_CAT_PLSQL_TCREA NOT NULL,
+    ID_USUA_MODI          VARCHAR2(30),
+    FE_USUA_MODI          TIMESTAMP,
+    DE_TERM_MODI          VARCHAR2(39),
+    CONSTRAINT PK_CAT_PLSQL_LEGACY PRIMARY KEY (ID_CAT_PLSQL),
+    CONSTRAINT UK_CAT_PLSQL_01 UNIQUE (C_ESQUEMA, C_NOMBRE_OBJETO)
+)
+TABLESPACE TBS_DAT_OTI_ADMIN_01;
 ```
+
+> Este catálogo sigue las mismas convenciones que el resto del estándar: prefijo de tabla `CAT_` ([§3.3](#33-tipos-de-tablas--prefijos)), prefijos de columna por tipo ([§3.4](#34-prefijos-de-columnas)), clave primaria técnica `NUMBER(19)` poblada por secuencia ([§3.5](#35-claves-primarias-claves-foráneas-y-claves-de-negocio) y [§4.6](#46-secuencias)) y los seis campos de auditoría ([§5.1](#51-definición)). **No usa `GENERATED AS IDENTITY`**: esa sintaxis es de Oracle 12c en adelante y este catálogo debe poder crearse también en instancias 11g del parque legacy que precisamente viene a inventariar ([§4.6](#46-secuencias), regla de uso para claves primarias).
 
 #### Estrategia de convivencia con sistemas Java modernos
 
@@ -891,7 +920,7 @@ Un procedure legacy crítico no tiene especificación formal — su comportamien
 
 ---
 
-## sección 7 Estándares de codificación PL/SQL
+## 7. Estándares de codificación PL/SQL
 
 ### 7.1 Formato y estilo
 
@@ -1029,7 +1058,7 @@ END;
 
 Las siguientes reglas son de cumplimiento obligatorio en todo código PL/SQL y SQL producido para la ONP:
 
-1. **Especificar el esquema por defecto**: `SELECT ... FROM aportaciones.mae_aportante`, nunca `SELECT ... FROM mae_aportante` sin esquema, salvo cuando exista un sinónimo aprobado según [sección 4.11](#411-sinonimos).
+1. **Especificar el esquema por defecto**: `SELECT ... FROM aportaciones.mae_aportante`, nunca `SELECT ... FROM mae_aportante` sin esquema, salvo cuando exista un sinónimo aprobado según [sección 4.11](#411-sinónimos).
 2. **No usar `SELECT *`**: Listar explícitamente las columnas requeridas. Excepción: uso de `COUNT(*)` o cursores con `%ROWTYPE`.
 3. **Columnas explícitas en INSERT**: Siempre especificar la lista de columnas en sentencias INSERT.
 4. **No usar `COMMIT` dentro de objetos almacenados** salvo que sean el punto de cierre documentado de una unidad de trabajo.
@@ -1093,13 +1122,13 @@ WHEN NOT MATCHED THEN
 
 **Restricciones:**
 
-- `MERGE` no emite `COMMIT` implícito. El control transaccional sigue las mismas reglas que `INSERT` y `UPDATE` (ver ítem 4 de [sección 7.5](#75-buenas-practicas-de-codificacion)).
+- `MERGE` no emite `COMMIT` implícito. El control transaccional sigue las mismas reglas que `INSERT` y `UPDATE` (ver ítem 4 de [sección 7.5](#75-buenas-prácticas-de-codificación)).
 - En tablas particionadas donde la clave de partición aparece en la condición `ON`, validar el plan de ejecución para confirmar que Oracle aplica *Partition Pruning*.
-- Incluir evidencia del plan de ejecución en la documentación del pase cuando el `MERGE` afecte tablas con más de 100.000 filas (misma exigencia que [sección 9.3](#93-planes-de-ejecucion)).
+- Incluir evidencia del plan de ejecución en la documentación del pase cuando el `MERGE` afecte tablas con más de 100.000 filas (misma exigencia que [sección 9.3](#93-planes-de-ejecución)).
 
 ---
 
-## sección 8 Scripts de despliegue y control de cambios
+## 8. Scripts de despliegue y control de cambios
 
 ### 8.1 Nomenclatura de scripts
 
@@ -1277,7 +1306,7 @@ Si `flyway validate` detecta que un script versionado previamente aplicado fue m
 
 ---
 
-## sección 9 Optimización y rendimiento
+## 9. Optimización y rendimiento
 
 ### 9.1 Diseño de índices
 
@@ -1315,9 +1344,9 @@ Las estrategias admitidas son:
 ```sql
 -- Particionamiento mensual automático sobre tabla de movimientos
 CREATE TABLE APORTACIONES.MOV_APORTE (
-    N_ID        NUMBER    NOT NULL,
-    FE_PROCESO  DATE      NOT NULL
-    -- resto de columnas ...
+    ID_APORTE   NUMBER(19) NOT NULL,   -- PK técnica: §3.5
+    FE_PROCESO  DATE       NOT NULL    -- clave de partición
+    -- resto de columnas, incluidos los seis campos de auditoría (§5.1) ...
 )
 PARTITION BY RANGE (FE_PROCESO)
 INTERVAL (NUMTOYMINTERVAL(1, 'MONTH'))
@@ -1433,7 +1462,7 @@ ORDER  BY last_analyzed;
 
 ---
 
-## sección 10 Seguridad
+## 10. Seguridad
 
 ### 10.1 Control de acceso basado en roles (RBAC)
 
@@ -1520,7 +1549,7 @@ Los objetos de aplicación no deben residir en el tablespace SYSTEM. Solo los ob
 
 ---
 
-## sección 11 Administración y operación
+## 11. Administración y operación
 
 ### 11.1 Tablespaces
 
@@ -2000,8 +2029,8 @@ Lista de verificación mínima antes de cualquier pase a QA o Producción.
 
 - [ ] El modelo está en 3NF (o se documentó la excepción justificada).
 - [ ] Todas las tablas permanentes tienen los 6 campos de auditoría.
-- [ ] Los nombres de tablas y columnas siguen los prefijos de [sección 3.3](#33-tipos-de-tablas-prefijos) y [sección 3.4](#34-prefijos-de-columnas).
-- [ ] Las claves primarias técnicas y llaves foráneas siguen las reglas de [sección 3.5](#35-claves-primarias-claves-foraneas-y-claves-de-negocio).
+- [ ] Los nombres de tablas y columnas siguen los prefijos de [sección 3.3](#33-tipos-de-tablas--prefijos) y [sección 3.4](#34-prefijos-de-columnas).
+- [ ] Las claves primarias técnicas y llaves foráneas siguen las reglas de [sección 3.5](#35-claves-primarias-claves-foráneas-y-claves-de-negocio).
 - [ ] Los indicadores `IN_` usan `NUMBER(1)` con `CHECK` explícito.
 - [ ] Todas las tablas tienen `COMMENT ON TABLE` y `COMMENT ON COLUMN` para cada columna.
 - [ ] Los constraints están nombrados según [sección 4.5](#45-constraints) (PK, FK, UK, CK, NN).
@@ -2009,8 +2038,8 @@ Lista de verificación mínima antes de cualquier pase a QA o Producción.
 
 ### D.2 Objetos programables
 
-- [ ] Todo SP, FN, PKG y TRG tiene el bloque de encabezado documentado ([sección 7.3](#73-documentacion-de-encabezado)).
-- [ ] No hay `SELECT *` en código de producción (salvo excepciones de [sección 7.5](#75-buenas-practicas-de-codificacion), ítem 2).
+- [ ] Todo SP, FN, PKG y TRG tiene el bloque de encabezado documentado ([sección 7.3](#73-documentación-de-encabezado)).
+- [ ] No hay `SELECT *` en código de producción (salvo excepciones de [sección 7.5](#75-buenas-prácticas-de-codificación), ítem 2).
 - [ ] No hay concatenación de literales en SQL dinámico — se usan bind variables.
 - [ ] No hay `COMMIT` dentro de funciones ni en objetos de uso general.
 - [ ] Todo bloque PL/SQL tiene sección `EXCEPTION` con `RAISE_APPLICATION_ERROR`.

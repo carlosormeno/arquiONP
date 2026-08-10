@@ -4,7 +4,7 @@
 
 **Código:** LIN-BUS-001  
 **Marco rector:** LIN-ARQ-001  
-**Versión:** v0.1.5  
+**Versión:** v0.1.6  
 **Fecha:** 2026-07-14  
 **Propietario documental:** OTI / Arquitectura  
 **Clasificación:** Uso Interno (Técnico)  
@@ -22,6 +22,7 @@
 | v0.1.2 | 2026-07-09 | Arquitectura OTI | Nombra explícitamente el patrón DDD Lenguaje Publicado (*Published Language*) en §5, del cual el envelope CloudEvents y sus reglas de evolución son la implementación institucional |
 | v0.1.3 | 2026-07-09 | Arquitectura OTI | Completa §4.3 con las 2 situaciones faltantes de "cuándo NO usar el bus" (desacoplar sin análisis, observabilidad inmadura) y añade advertencias sobre Event Sourcing (no está en la lista de patrones, no es CQRS), ausentes en todo el ecosistema tras la redistribución del documento congelado |
 | v0.1.4 | 2026-07-09 | Arquitectura OTI | Corrige §8.6: `ExponentialBackOffWithMaxRetries` fue retirada de Spring Framework 6.x — el ejemplo no compilaba contra el stack vigente (Spring Boot 3.x). Se reemplaza por `ExponentialBackOff.setMaxAttempts(int)`, validado con build real de Maven en `template-backend-java-modular` |
+| v0.1.6 | 2026-08-09 | Arquitectura OTI | `§7.3` deja de reproducir el DDL de `EVT_OUTBOX` y remite a su dueño `LIN-BD-ORA-001 §3.10` (`GOB-CHK-001` H14.3). Las dos copias eran idénticas, pero es la misma estructura que ya divergió tres veces en el corpus; este lineamiento conserva lo suyo: el proceso de relevo y el contrato del evento |
 | v0.1.5 | 2026-07-14 | Arquitectura OTI | Corrige 5 citas residuales al documento congelado `LIN-ARQ-000` que quedaron sin migrar en la reconciliación de marco rector: §1.1, §1.3 (Hexagonal → `LIN-DIS-001 §2.3`), tabla de §2, principio P7 y regla de ADR en §9.4 — todas redirigidas a `LIN-ARQ-001 §3.3`/`§4.2` según corresponda |
 
 ---
@@ -374,23 +375,7 @@ El productor **nunca publica directamente al broker** desde la lógica de negoci
 
 **Por qué es obligatorio:** si el productor publica directamente y el proceso falla entre el `COMMIT` de BD y la publicación al broker, el evento se pierde silenciosamente. Con Outbox, la publicación es eventual pero garantizada.
 
-**Estructura mínima de la tabla EVT_OUTBOX:**
-
-```sql
-CREATE TABLE EVT_OUTBOX (
-    ID              VARCHAR2(36)    NOT NULL,
-    EVENTO_TIPO     VARCHAR2(200)   NOT NULL,
-    EVENTO_VERSION  VARCHAR2(10)    NOT NULL,
-    PAYLOAD         CLOB            NOT NULL,
-    ESTADO          VARCHAR2(20)    DEFAULT 'PENDIENTE',
-    CREADO_EN       TIMESTAMP       DEFAULT SYSTIMESTAMP,
-    ENVIADO_EN      TIMESTAMP,
-    INTENTOS        NUMBER(2)       DEFAULT 0,
-    CONSTRAINT PK_EVT_OUTBOX PRIMARY KEY (ID)
-);
-
-CREATE INDEX IDX_EVT_OUTBOX_ESTADO ON EVT_OUTBOX (ESTADO, CREADO_EN);
-```
+**Estructura de la tabla `EVT_OUTBOX`:** el DDL canónico, sus convenciones de nomenclatura y su excepción declarada a los campos de auditoría viven en **`LIN-BD-ORA-001 §3.10`**, dueño del modelo de datos. **Este lineamiento no lo reproduce**: mantenerlo en un único lugar evita que ambas copias diverjan. Lo que sí define aquí es el **proceso de relevo** hacia Kafka (más abajo) y el contrato del evento publicado (`§5.2`).
 
 El Outbox Relay puede implementarse como un `@Scheduled` de Spring que consulta registros en estado `PENDIENTE` y los publica al broker. En volúmenes altos, Plataforma puede configurar CDC (Change Data Capture) sobre la tabla como alternativa.
 

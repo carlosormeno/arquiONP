@@ -10,7 +10,7 @@ resources:
   - deployment.yaml
   - service.yaml
   - configmap.yaml
-  # - networkpolicy.yaml # obligatorio para servicios críticos (LIN-K8S-001 sección 11)
+  # - networkpolicy.yaml # obligatoria para todo servicio que reciba tráfico interno (LIN-K8S-001 sección 9.1 y Anexo E)
 
 commonLabels:
   app.kubernetes.io/name: frontend-nombre-sistema

@@ -4,13 +4,13 @@
 
 **Código:** LIN-OBS-001
 **Marco rector:** LIN-ARQ-001
-**Versión:** v0.1.2
+**Versión:** v0.1.4
 **Fecha:** 2026-07-10
 **Propietario documental:** OTI / Arquitectura
 **Clasificación:** Uso Interno (Técnico)
 **Dirigido a:** Equipo de Desarrollo, Plataforma/Infraestructura
 **Reemplaza:** Guía v0.1.2 [secciones 1](#1-objetivo-y-alcance) y 2 (Telemetría y Trazas / Logging)
-**Estado:** Borrador
+**Estado:** **Vigente** — graduado el 2026-08-09 por Arquitectura OTI (`GOB-MAT-001`, Ciclo de vida documental)
 
 ---
 
@@ -20,6 +20,8 @@
 |---------|-------------|-------------|------------------------------------------|
 | 0.1.0   | 2026-05-25  | Arquitectura OTI | Versión inicial; absorbe Guía v0.1.2 [secciones 1](#1-objetivo-y-alcance)–2 |
 | 0.1.1   | 2026-05-28  | Arquitectura OTI | Declara YAML como formato oficial de configuración, alinea el modelo OTEL con overrides operativos en K8s y documenta el comportamiento de la cadena de filtros ante fallos |
+| 0.1.3 | 2026-08-08 | Arquitectura OTI | Revisión de contenido (`GOB-CHK-001` H19). **(1) Inversión del orden de filtros:** `CanonicalRequestLogFilter` pasa de `@Order(3)` a `@Order(2)` y envuelve a `SaaTokenValidationFilter` (`@Order(3)`). Antes, el filtro de seguridad cortaba la cadena antes del log canónico y **ningún 401 ni 503 quedaba registrado** — la tasa de fallos de autenticación era inmedible y la caída del SAA invisible (*OWASP A09*). La identidad se recupera ahora del atributo de request `onp.user.id`, que sobrevive a la limpieza del MDC. **(2)** Eliminado `StatusCapturingResponse`: `response.getStatus()` (Servlet 3.0+) ya refleja los `sendError` de los filtros internos, y el wrapper reportaba `200` falso ante rutas que no pasaban por `setStatus`/`sendError`. **(3) `Mask.email`** lanzaba `StringIndexOutOfBoundsException` con parte local vacía (`@dominio.com`) o dominio sin punto (`a@b`) — inaceptable en la ruta de logging; se añade regla de robustez: ningún método de `Mask` puede lanzar excepción |
+| 0.1.4 | 2026-08-09 | Arquitectura OTI | Cambio aclaratorio, sin efecto normativo sobre el documento. La nota de `§4.3`–`§4.5` justificaba el transporte OTLP en `http://` remitiendo genéricamente a la plataforma; ahora ancla esa justificación a **`ADR-TLS-INTERNO-001`** y a la `NetworkPolicy` que `LIN-K8S-001 §9.1` declara obligatoria, que es lo que efectivamente sostiene la excepción (`GOB-CHK-001` H24.4) |
 | 0.1.2   | 2026-07-10  | Arquitectura OTI | Migra Marco rector de `LIN-ARQ-000` (congelado) a `LIN-ARQ-001` (vigente) |
 
 ---
@@ -290,6 +292,8 @@ app:
 
 > **NOTA — SPRING_PROFILES_ACTIVE:** Plataforma es responsable de inyectar `SPRING_PROFILES_ACTIVE=dev|qa|prod` como variable de entorno en el `Deployment` de Kubernetes. Sin esta variable el servicio usa únicamente `application.yml` base y no emite telemetría. Ver [sección 10.2](#102-plataforma-infraestructura).
 
+> **NOTA — transporte OTLP en `http://` y Zero Trust:** los endpoints de estas secciones usan `http://` porque el tráfico es **intra-clúster**, del pod al colector, y no sale de la red del clúster. `LIN-ARQ-001 §5.1` establece Zero Trust —la red interna no otorga confianza implícita— y `LIN-SEC-APP-001 §7.1` exige HTTPS en ambientes compartidos; ambas se satisfacen a nivel de plataforma, no de aplicación. Desde 2026-08-09 esto tiene respaldo normativo explícito: **`ADR-TLS-INTERNO-001`** admite el tramo intra-cluster sobre HTTP a condición de que exista `NetworkPolicy`, que `LIN-K8S-001 §9.1` declara **obligatoria** para todo servicio que reciba tráfico interno, y prevé la migración a mTLS cuando Plataforma habilite la malla. **El servicio no configura TLS hacia el colector por su cuenta.** Si Plataforma habilita mTLS, el endpoint no cambia: lo intercepta el sidecar.
+
 > **NOTA — overrides OTEL en Kubernetes:** Variables como `OTEL_EXPORTER_OTLP_ENDPOINT` o `OTEL_SERVICE_NAME` se consideran mecanismos de override operativo administrados por Plataforma en `LIN-K8S-001`. No sustituyen la configuración base versionada del proyecto.
 
 ### 4.6 logback-spring.xml
@@ -394,6 +398,8 @@ public class OpenTelemetryLogbackConfig {
 
 **Dónde:** `src/main/java/<paquete-base>/util/Mask.java`. Sin dependencias de Spring — no lleva `@Component`. Implementa la política No PII ([sección 6.2](#62-politica-no-pii-datos-sensibles)).
 
+> **Regla de robustez:** ningún método de `Mask` puede lanzar excepción, cualquiera que sea la entrada. Vive en la ruta de emisión de logs: una excepción aquí tumba el registro justo cuando se está procesando un dato personal. Ante una forma inesperada se devuelve siempre el valor enmascarado por defecto.
+
 ```java
 public final class Mask {
 
@@ -411,9 +417,13 @@ public final class Mask {
 
     public static String email(String value) {
         if (value == null || !value.contains("@")) return "***@***.***";
-        String[] parts = value.split("@");
-        return parts[0].charAt(0) + "***@***" +
-            parts[1].substring(parts[1].lastIndexOf('.'));
+        String[] parts = value.split("@", 2);
+        // Ante cualquier forma inesperada se devuelve el valor por defecto: esta utilidad
+        // vive en la ruta de logging y nunca debe lanzar excepción por un dato mal formado.
+        if (parts[0].isEmpty() || parts[1].isEmpty()) return "***@***.***";
+        int punto = parts[1].lastIndexOf('.');
+        String tld = (punto >= 0) ? parts[1].substring(punto) : ".***";
+        return parts[0].charAt(0) + "***@***" + tld;
     }
 
     public static String partial(String value, int visibleChars) {
@@ -431,22 +441,23 @@ public final class Mask {
 
 **Orden de ejecución de filtros** — la secuencia correcta es:
 
-| Orden | Filtro | Qué establece en MDC |
+| Orden | Filtro | Rol en la cadena |
 |---|---|---|
-| `@Order(1)` | `RequestIdFilter` ([sección 4.10](#410-requestidfilterjava)) | `http.request.id` |
-| `@Order(2)` | `SaaTokenValidationFilter` (LIN-SEC-APP-001 sección 8.3) | `user.id` |
-| `@Order(3)` | `CanonicalRequestLogFilter` | Lee `user.id` ya disponible en MDC; emite log canónico |
+| `@Order(1)` | `RequestIdFilter` ([sección 4.10](#410-requestidfilterjava)) | Establece `http.request.id` en MDC |
+| `@Order(2)` | `CanonicalRequestLogFilter` | **Envuelve el resto de la cadena**; emite el log canónico en su `finally`, ocurra lo que ocurra dentro |
+| `@Order(3)` | `SaaTokenValidationFilter` (`LIN-SEC-APP-001 §8.3`) | Valida el token; publica la identidad en MDC y en el atributo `onp.user.id` de la request |
 
-`CanonicalRequestLogFilter` debe correr **después** de `SaaTokenValidationFilter` para que `user.id` esté en MDC cuando se emita el log. Si corre antes, el campo registra `"anonymous"` aunque el usuario esté autenticado.
+> **Por qué el filtro canónico va por fuera del de seguridad.** El log canónico debe registrar **todas** las peticiones, incluidas las que el filtro de seguridad rechaza. Si corriera por dentro (`@Order(3)`), un token ausente o inválido cortaría la cadena antes de llegar a él y **ningún 401 ni 503 aparecería en el log canónico**: no se podría medir la tasa de fallos de autenticación, un escaneo de tokens no dejaría rastro y la indisponibilidad del SAA sería invisible — lo que `LIN-SEC-APP-001 §13.1` clasifica como *OWASP A09, Security Logging Failures*.
+>
+> **Cómo se conserva `user.id` estando por fuera.** `SaaTokenValidationFilter` limpia el MDC en su propio `finally`, de modo que al volver el control al filtro canónico el MDC ya no tiene la identidad. Por eso el filtro de seguridad la publica además como **atributo de la request** (`onp.user.id`), que vive todo el ciclo de la petición y sobrevive a la limpieza del MDC. El filtro canónico lo lee al emitir el log.
 
-**Requiere:** `RequestIdFilter` ([sección 4.10](#410-requestidfilterjava)) para que `http.request.id` esté accesible. En servicios con autenticación SAA, requiere también `SaaTokenValidationFilter` (LIN-SEC-APP-001 sección 8.3) para que `user.id` esté en MDC. En servicios sin autenticación (públicos), `user.id` registra `"anonymous"`.
+**Requiere:** `RequestIdFilter` ([sección 4.10](#410-requestidfilterjava)) para que `http.request.id` esté accesible. En servicios con autenticación SAA, `SaaTokenValidationFilter` (`LIN-SEC-APP-001 §8.3`) publica el atributo `onp.user.id`. En servicios públicos, o cuando la petición se rechaza antes de autenticar, `user.id` registra `"anonymous"`.
 
 ```java
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpServletResponseWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
@@ -457,26 +468,31 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 
 @Component
-@Order(3) // Debe correr después de RequestIdFilter (@Order 1) y SaaTokenValidationFilter (@Order 2)
+@Order(2) // Envuelve a SaaTokenValidationFilter (@Order 3) para registrar también los rechazos
 public class CanonicalRequestLogFilter extends OncePerRequestFilter {
 
     private static final Logger log = LoggerFactory.getLogger(CanonicalRequestLogFilter.class);
+
+    /** Atributo publicado por SaaTokenValidationFilter; sobrevive a la limpieza del MDC. */
+    public static final String ATTR_USER_ID = "onp.user.id";
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
                                     FilterChain chain) throws ServletException, IOException {
         long start = System.currentTimeMillis();
-        StatusCapturingResponse wrapped = new StatusCapturingResponse(response);
         try {
-            chain.doFilter(request, wrapped);
+            chain.doFilter(request, response);
         } finally {
-            int status = wrapped.getStatus();
+            // getStatus() del propio response (Servlet 3.0+) refleja también los sendError()
+            // emitidos por los filtros internos: no hace falta envolver la respuesta.
+            int status = response.getStatus();
             long duration = System.currentTimeMillis() - start;
-            // user.id fue puesto en MDC por SaaTokenValidationFilter si el endpoint está protegido.
-            // Si no hay autenticación (endpoint público), MDC.get("user.id") devuelve null → "anonymous".
-            String userId = MDC.get("user.id");
-            if (userId == null) MDC.put("user.id", "anonymous");
+            // SaaTokenValidationFilter ya limpió el MDC al desapilarse; la identidad se recupera
+            // del atributo de la request. Si la petición se rechazó antes de autenticar, no existe.
+            Object attr = request.getAttribute(ATTR_USER_ID);
+            String userId = (attr != null) ? attr.toString() : "anonymous";
+            MDC.put("user.id",                   userId);
             MDC.put("http.request.method",       request.getMethod());
             MDC.put("url.path",                  request.getRequestURI());
             MDC.put("http.response.status_code", String.valueOf(status));
@@ -484,23 +500,12 @@ public class CanonicalRequestLogFilter extends OncePerRequestFilter {
             if      (status >= 500) log.error("REQUEST");
             else if (status >= 400) log.warn("REQUEST");
             else                    log.info("REQUEST");
+            MDC.remove("user.id");
             MDC.remove("http.request.method");
             MDC.remove("url.path");
             MDC.remove("http.response.status_code");
             MDC.remove("duration_ms");
-            if (userId == null) MDC.remove("user.id"); // solo limpia si fue este filtro quien lo puso
         }
-    }
-
-    private static class StatusCapturingResponse extends HttpServletResponseWrapper {
-        private int status = 200;
-
-        StatusCapturingResponse(HttpServletResponse response) { super(response); }
-
-        @Override public void setStatus(int sc)                              { status = sc; super.setStatus(sc); }
-        @Override public void sendError(int sc) throws IOException           { status = sc; super.sendError(sc); }
-        @Override public void sendError(int sc, String m) throws IOException { status = sc; super.sendError(sc, m); }
-        @Override public int  getStatus()                                    { return status; }
     }
 }
 ```
@@ -572,17 +577,20 @@ public class RequestIdFilter extends OncePerRequestFilter {
 La cadena obligatoria es:
 
 1. `RequestIdFilter` (`@Order(1)`)
-2. `SaaTokenValidationFilter` (`@Order(2)`) cuando aplica autenticación
-3. `CanonicalRequestLogFilter` (`@Order(3)`)
+2. `CanonicalRequestLogFilter` (`@Order(2)`) — envuelve todo lo que sigue
+3. `SaaTokenValidationFilter` (`@Order(3)`) cuando aplica autenticación
 
-| Escenario | ¿Existe `http.request.id`? | ¿Existe `user.id`? | ¿Se ejecuta `CanonicalRequestLogFilter`? | Resultado esperado |
+**Garantía de la cadena:** salvo fallo anterior a `RequestIdFilter`, **toda petición produce exactamente un log canónico**, cualquiera que sea su desenlace.
+
+| Escenario | `http.request.id` | `user.id` registrado | ¿Hay log canónico? | Resultado esperado |
 |---|---|---|---|---|
-| Falla antes de entrar a `RequestIdFilter` | No | No | No | Error temprano; no hay correlación garantizada |
-| `RequestIdFilter` genera o propaga ID y continúa | Sí | No o aún no | Sí, si la cadena continúa | Correlación disponible en toda la request |
-| `SaaTokenValidationFilter` rechaza token faltante o inválido | Sí | No | No | Respuesta 401; `requestId` existe para trazabilidad, no hay log canónico de aplicación |
-| `SaaTokenValidationFilter` falla por indisponibilidad del SAA | Sí | No | No | Respuesta 503; `requestId` existe para soporte, no hay log canónico de aplicación |
-| `SaaTokenValidationFilter` valida correctamente | Sí | Sí | Sí | La request continúa con `user.id` disponible en MDC |
-| `CanonicalRequestLogFilter` ejecuta normalmente | Sí | Sí o `anonymous` | Sí | Emite log canónico final con contexto completo disponible |
+| Falla antes de entrar a `RequestIdFilter` | No | — | No | Error temprano en el contenedor; no hay correlación garantizada |
+| `RequestIdFilter` genera o propaga el ID | Sí | — | Sí | Correlación disponible en toda la request |
+| `SaaTokenValidationFilter` rechaza token faltante o inválido | Sí | `anonymous` | **Sí** | Respuesta 401 registrada con `WARN`: la tasa de fallos de autenticación es medible |
+| `SaaTokenValidationFilter` falla por indisponibilidad del SAA | Sí | `anonymous` | **Sí** | Respuesta 503 registrada con `ERROR`: la caída del SAA es visible en el log canónico |
+| `SaaTokenValidationFilter` valida correctamente | Sí | Identidad real | Sí | La request continúa con `user.id` en MDC y en el atributo `onp.user.id` |
+| Endpoint público sin autenticación | Sí | `anonymous` | Sí | Log canónico completo; no hay identidad que registrar |
+| Excepción no controlada en la lógica de negocio | Sí | Identidad real | **Sí** | El `finally` del filtro canónico emite el log con `ERROR` antes de propagar |
 
 ---
 

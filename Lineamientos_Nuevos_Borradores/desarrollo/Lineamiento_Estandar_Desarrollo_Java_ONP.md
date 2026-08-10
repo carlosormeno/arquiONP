@@ -1,6 +1,6 @@
 # LIN-DEV-JAVA-001 — Estándar de Desarrollo Java ONP
 ## Oficina de Normalización Previsional — OTI
-### Código: LIN-DEV-JAVA-001 | Versión 0.1.10 | Estado: En revisión | Marco rector: LIN-ARQ-001 (Nivel 1)
+### Código: LIN-DEV-JAVA-001 | Versión 0.1.11 | Estado: En revisión | Marco rector: LIN-ARQ-001 (Nivel 1)
 
 ---
 
@@ -10,6 +10,7 @@
 |---------|-------|-------|-------------|
 | 0.1.0 | 2026-05-22 | OTI | Versión inicial |
 | 0.1.10 | 2026-08-08 | OTI | Incorpora el Índice CRAP (Change Risk Anti-Patterns) en la sección 12.1 (tabla de métricas) y la sección 12.4.5 como principio de evaluación de riesgo de cambio y refactorización |
+| 0.1.11 | 2026-08-09 | OTI | La sección 16 redefinía reglas de revisión de código que pertenecen a `LIN-VER-001 §12` (autoaprobación, revisor mínimo, tamaño máximo de PR). El efecto era que el límite de **400 líneas** solo existía en el estándar de Java, dejando sin regla de tamaño a los MR de Angular, SQL y manifiestos K8s. La sección ahora remite al documento dueño y conserva únicamente las verificaciones propias del stack Java (`GOB-CHK-001` H23) |
 | 0.1.1 | 2026-05-28 | OTI | Alinea la configuración institucional a YAML, corrige el árbol de proyecto y adopta Checkstyle junto a PMD |
 | 0.1.2 | 2026-07-06 | OTI | Cierre de brechas Nivel 3 (PR01-PR08, PD04-PD06, PA14): Inclusión de secciones 10.4, 11.5, 14.6, catálogo de plantillas Java y reconciliación total con LIN-ARQ-000 y LIN-BD-ORA-001 |
 | 0.1.3 | 2026-07-09 | OTI | Completa el catálogo GoF de la sección 8 con los patrones que quedaron sin sede formal tras la redistribución del documento congelado (`Lineamiento_Diseno_Arquitectura_Software_ONP_v0.1.19`): Adapter (8.1.1), Singleton (8.2.3), Strategy (8.3.1), Command (8.3.3) y Mapper (8.4.1) |
@@ -99,13 +100,13 @@ Al iniciar un proyecto Spring Boot en ONP, configurar los siguientes componentes
 |---|---|---|---|
 | 1 | Dependencias OTEL en `pom.xml` | LIN-OBS-001 sección 4 | Habilita trazas distribuidas, logs estructurados y métricas |
 | 2 | `RequestIdFilter` `@Order(1)` | [sección 13.4.5](#1345-filtro-de-correlacion--requestidfilter) | Genera o propaga `X-Request-ID` y lo pone en el MDC para correlacionar todas las líneas de log de una petición |
-| 3 | `SaaTokenValidationFilter` `@Order(2)` | LIN-SEC-APP-001 sección 8.3 | Valida el token SAA llamando al endpoint institucional y pone `user.id` en el MDC |
-| 4 | `CanonicalRequestLogFilter` `@Order(3)` | LIN-OBS-001 sección 7 | Emite el log canónico al finalizar cada petición leyendo `user.id` del MDC |
+| 3 | `CanonicalRequestLogFilter` `@Order(2)` | `LIN-OBS-001 §4.9` | Envuelve el resto de la cadena y emite el log canónico al finalizar **toda** petición, incluidas las rechazadas por seguridad |
+| 4 | `SaaTokenValidationFilter` `@Order(3)` | `LIN-SEC-APP-001 §8.3` | Valida el token SAA y publica la identidad en el MDC y en el atributo `onp.user.id` |
 | 5 | `ApiResponseWrapper` + `GlobalExceptionHandler` | [sección 13.4.4](#1344-estructura-de-respuesta-estandar--apiresponsewrapper), sección 11 | Contrato estándar de respuesta para todos los endpoints |
 | 6 | `OpenApiConfig` + anotaciones Swagger | LIN-API-REST-001 sección 6, [sección 13.4.1](#1341-dependencia-maven)–13.4.3 | Contrato OpenAPI publicado desde el arranque del servicio |
 | 7 | `AuditoriaBase` extendida en entidades JPA | Anexo D | Pobla automáticamente los 6 campos de auditoría obligatorios (LIN-BD-ORA-001 sección 5) |
 
-> Los pasos 2, 3 y 4 forman la cadena de filtros obligatoria. El orden `@Order` es crítico: si se altera, `user.id` puede no estar disponible en el MDC cuando el log canónico lo necesita.
+> Los pasos 2, 3 y 4 forman la cadena de filtros obligatoria y el orden `@Order` es crítico. El filtro canónico va **por fuera** del de seguridad para que los rechazos de autenticación (401) y las caídas del SAA (503) también queden registrados; la identidad viaja por atributo de request porque el MDC ya se limpió cuando el log se emite. Ver `LIN-OBS-001 §4.11`.
 
 ### 1.4 Relación con otros documentos
 
@@ -3204,7 +3205,7 @@ Existe un POM padre institucional del proyecto (`packaging: pom`) que declara en
 
 ## 15. Pruebas
 
-> Para la estrategia completa de pruebas (pirámide por estilo arquitectónico, proporción unitaria/integración/e2e) ver **`LIN-TEST-001` secciones 4 y 5** (Estándar de Pruebas ONP).
+> Para la estrategia completa de pruebas (pirámide por estilo arquitectónico, proporción unitaria/integración/e2e) ver **`LIN-TEST-001 §4` y `§5`**, dueño del tema. Maven Surefire ejecuta `*Test.java`; Failsafe ejecuta `*IT.java` y `*CT.java` (`LIN-TEST-001 §3.2`).
 
 ### 15.1 Nomenclatura de tests
 
@@ -3212,6 +3213,7 @@ Existe un POM padre institucional del proyecto (`packaging: pom`) que declara en
 |----------|-----------|---------|
 | Clase de test unitario | `<ClaseTesteada>Test` | `ExpedienteServiceImplTest` |
 | Clase de test de integración | `<ClaseTesteada>IT` | `ExpedienteControllerIT` |
+| Clase de test de caracterización | `<ClaseTesteada>CT` | `CalculoPensionLegacyCT` |
 | Método de test | `deberia<Resultado>Cuando<Condicion>` | `deberiaLanzarExcepcionCuandoExpedienteNoExiste` |
 
 ### 15.2 Estructura de test (AAA)
@@ -3312,7 +3314,9 @@ class ExpedienteRepositoryTest {
 
 ### 16.1 Pull Request como gate obligatorio
 
-**Ningún cambio se integra a la rama principal sin Pull Request aprobado.** La autoaprobación está prohibida. Todo PR requiere al menos un revisor técnico distinto al autor.
+> **Documento dueño del proceso: `LIN-VER-001 §12`.** Las reglas generales de revisión —prohibición de autoaprobación, número mínimo de revisores, revisor especializado por tipo de cambio y tamaño máximo del MR— aplican a todo el corpus y **no se redefinen aquí**. Esta sección añade únicamente las verificaciones propias del stack Java.
+
+**Ningún cambio se integra a la rama principal sin Pull Request aprobado**, conforme a `LIN-VER-001 §12.1`.
 
 ### 16.2 Condiciones mínimas para aprobar un PR
 
@@ -3336,7 +3340,7 @@ Un PR no puede aprobarse si alguna de las siguientes condiciones no se cumple:
 
 ### 16.4 Tamaño máximo de PR
 
-Un PR que modifica más de **400 líneas** de código productivo (excluidos tests y configuración) es señal de que debe dividirse. PRs grandes reducen la calidad de la revisión y aumentan el riesgo de integración.
+Normado en **`LIN-VER-001 §12.1`** (máximo 400 líneas de código productivo), aplicable a todo tipo de cambio y no solo a Java.
 
 ### 16.5 Proceso de excepción
 

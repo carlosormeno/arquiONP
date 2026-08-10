@@ -1,6 +1,6 @@
 # LIN-BI-001 — Lineamiento de Explotación y Analítica de Datos (Business Intelligence) ONP
 ## Oficina de Normalización Previsional — OTI
-### Código: LIN-BI-001 | Versión 0.1.1 | Estado: Borrador | Marco rector: LIN-ARQ-001
+### Código: LIN-BI-001 | Versión 0.1.2 | Estado: Borrador | Marco rector: LIN-ARQ-001
 
 ---
 
@@ -9,27 +9,28 @@
 | Versión | Fecha | Autor | Descripción |
 |---------|-------|-------|-------------|
 | 0.1.0   | 2026-06-08 | OTI | Versión inicial del borrador alineado con la Sección 9 del *Lineamiento de Estándares de Tecnología v2.0* de la ONP y el piloto de arquitectura Lakehouse. |
+| 0.1.2   | 2026-08-09 | OTI | Normalización de encabezados de sección: `## Sección N Título` → `## N. Título`, alineando el formato con el resto del corpus (`GOB-CHK-001` H21.3). Actualizadas las 9 anclas del índice, que apuntaban al formato anterior. Resultado: 11/11 enlaces internos resuelven |
 | 0.1.1   | 2026-07-10 | OTI | Migra Marco rector de `LIN-ARQ-000` (congelado) a `LIN-ARQ-001` (vigente) en encabezado y §1.3 |
 
 ---
 
 ## Tabla de contenidos
 
-- [Sección 1 Alcance y vigencia](#sección-1-alcance-y-vigencia)
-- [Sección 2 Arquitectura Lakehouse (Medallion)](#sección-2-arquitectura-lakehouse-medallion)
-- [Sección 3 Plataforma y Stack Tecnológico Homologado](#sección-3-plataforma-y-stack-tecnológico-homologado)
-- [Sección 4 Convenciones de Nomenclatura](#sección-4-convenciones-de-nomenclatura)
-- [Sección 5 Estrategia de Ramificación (Data Version Control) con Nessie](#sección-5-estrategia-de-ramificación-data-version-control-con-nessie)
-- [Sección 6 Evolución del Esquema (Schema Evolution)](#sección-6-evolución-del-esquema-schema-evolution)
-- [Sección 7 Calidad, Gobierno y Linaje de Datos](#sección-7-calidad-gobierno-y-linaje-de-datos)
-- [Sección 8 Seguridad y Control de Acceso](#sección-8-seguridad-y-control-de-acceso)
-- [Sección 9 Gobierno Arquitectónico y Excepciones](#sección-9-gobierno-arquitectónico-y-excepciones)
+- [1. Alcance y vigencia](#1-alcance-y-vigencia)
+- [2. Arquitectura Lakehouse (Medallion)](#2-arquitectura-lakehouse-medallion)
+- [3. Plataforma y Stack Tecnológico Homologado](#3-plataforma-y-stack-tecnológico-homologado)
+- [4. Convenciones de Nomenclatura](#4-convenciones-de-nomenclatura)
+- [5. Estrategia de Ramificación (Data Version Control) con Nessie](#5-estrategia-de-ramificación-data-version-control-con-nessie)
+- [6. Evolución del Esquema (Schema Evolution)](#6-evolución-del-esquema-schema-evolution)
+- [7. Calidad, Gobierno y Linaje de Datos](#7-calidad-gobierno-y-linaje-de-datos)
+- [8. Seguridad y Control de Acceso](#8-seguridad-y-control-de-acceso)
+- [9. Gobierno Arquitectónico y Excepciones](#9-gobierno-arquitectónico-y-excepciones)
 - [Anexo A: Checklist de "Definition of Done" (DoD) para datasets](#anexo-a-checklist-de-definition-of-done-dod-para-datasets)
 - [Anexo B: Consultas y Comandos Útiles de Referencia](#anexo-b-consultas-y-comandos-útiles-de-referencia)
 
 ---
 
-## Sección 1 Alcance y vigencia
+## 1. Alcance y vigencia
 
 ### 1.1 Propósito
 
@@ -57,7 +58,7 @@ Este estándar aplica a:
 
 ---
 
-## Sección 2 Arquitectura Lakehouse (Medallion)
+## 2. Arquitectura Lakehouse (Medallion)
 
 La ONP adopta la **Arquitectura Medallion** (Bronze → Silver → Gold) sobre formato de tablas abiertas Apache Iceberg. Este patrón busca mejorar de forma iterativa y estructurada la calidad de los datos analíticos.
 
@@ -109,7 +110,7 @@ graph LR
 
 ---
 
-## Sección 3 Plataforma y Stack Tecnológico Homologado
+## 3. Plataforma y Stack Tecnológico Homologado
 
 De acuerdo con la **Sección 9 del Lineamiento de Estándares de Tecnología v2.0**, el stack de componentes oficiales que forman la plataforma de datos institucional se define a continuación:
 
@@ -134,7 +135,7 @@ De acuerdo con la **Sección 9 del Lineamiento de Estándares de Tecnología v2.
 
 ---
 
-## Sección 4 Convenciones de Nomenclatura
+## 4. Convenciones de Nomenclatura
 
 El cumplimiento de nomenclatura garantiza la consistencia del catálogo de datos de la ONP.
 
@@ -157,7 +158,7 @@ Los datos persistidos físicamente en MinIO deben organizarse con la estructura:
 
 ---
 
-## Sección 5 Estrategia de Ramificación (Data Version Control) con Nessie
+## 5. Estrategia de Ramificación (Data Version Control) con Nessie
 
 Nessie actúa como un servidor de catálogos versionados para Iceberg, habilitando flujos de trabajo similares a Git para datos físicos. Se norman las siguientes directrices operativas.
 
@@ -193,7 +194,7 @@ Al desarrollar un nuevo pipeline de datos o modificar uno existente:
 
 ---
 
-## Sección 6 Evolución del Esquema (Schema Evolution)
+## 6. Evolución del Esquema (Schema Evolution)
 
 Apache Iceberg y Nessie permiten modificar la estructura de las tablas sin necesidad de reconstruir los datos físicos históricos. Se definen las reglas para mitigar riesgos en consultas activas.
 
@@ -217,7 +218,7 @@ Operaciones de riesgo intermedio que requieren validación de consultas consumid
 
 ---
 
-## Sección 7 Calidad, Gobierno y Linaje de Datos
+## 7. Calidad, Gobierno y Linaje de Datos
 
 ### 7.1 "Quality Gates" en Pipelines
 Todo flujo de datos (DAG) que promueva información desde Bronze a Silver, o de Silver a Gold, debe incluir validaciones de calidad de datos ejecutadas con **Great Expectations**.
@@ -236,7 +237,7 @@ Los pipelines deben estar instrumentados con agentes de **OpenLineage** (Airflow
 
 ---
 
-## Sección 8 Seguridad y Control de Acceso
+## 8. Seguridad y Control de Acceso
 
 ### 8.1 Gestión de Secretos
 Queda estrictamente **prohibido hardcodear credenciales** (nombres de usuario, contraseñas, tokens de S3, tokens de Spark/Nessie) en el código de los DAGs, scripts PySpark o manifiestos YAML. 
@@ -255,7 +256,7 @@ De acuerdo con la legislación de protección de datos personales:
 
 ---
 
-## Sección 9 Gobierno Arquitectónico y Excepciones
+## 9. Gobierno Arquitectónico y Excepciones
 
 ### 9.1 Cumplimiento de Lineamientos
 Cualquier desviación o adopción de componentes no homologados en el presente lineamiento (ej. uso de un catálogo diferente a Nessie, o exclusión de la arquitectura Medallion) requiere iniciar un proceso formal de excepción arquitectónica.

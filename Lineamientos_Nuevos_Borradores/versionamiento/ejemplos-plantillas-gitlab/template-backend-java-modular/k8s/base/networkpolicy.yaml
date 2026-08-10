@@ -1,0 +1,77 @@
+# EJEMPLO DE REFERENCIA — LIN-K8S-001 sección 9.1 y Anexo E
+#
+# OBLIGATORIA para todo servicio que reciba tráfico dentro del cluster.
+# No es un refuerzo opcional: es el control que SUSTITUYE al cifrado en el tramo
+# intra-cluster admitido por ADR-TLS-INTERNO-001. Un servicio sin NetworkPolicy
+# no puede acogerse a esa excepción y debe servir HTTPS extremo a extremo.
+#
+# Ajustar los selectores al sistema real antes de desplegar.
+
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: api-nombre-sistema-netpol
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: api-nombre-sistema
+  policyTypes:
+    - Ingress
+    - Egress
+
+  ingress:
+    # Tráfico desde el Ingress Controller (o el gateway WSO2 cuando gradúe)
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ingress-nginx
+      ports:
+        - protocol: TCP
+          port: 8080
+    # Tráfico desde otros pods del mismo sistema
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/part-of: nombre-sistema
+      ports:
+        - protocol: TCP
+          port: 8080
+    # Scrape de Prometheus hacia /actuator/prometheus
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: monitoring
+      ports:
+        - protocol: TCP
+          port: 8080
+
+  egress:
+    # Resolución DNS dentro del cluster
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    # Colector OTEL (LIN-OBS-001)
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: observability
+      ports:
+        - protocol: TCP
+          port: 4317
+    # Salida fuera del cluster: Oracle, SAA y servicios de terceros.
+    # Reemplazar 0.0.0.0/0 por los CIDR reales — una NetworkPolicy de egress
+    # abierta anula el propósito del control.
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+      ports:
+        - protocol: TCP
+          port: 1521   # Oracle
+        - protocol: TCP
+          port: 443    # SAA y servicios externos sobre HTTPS

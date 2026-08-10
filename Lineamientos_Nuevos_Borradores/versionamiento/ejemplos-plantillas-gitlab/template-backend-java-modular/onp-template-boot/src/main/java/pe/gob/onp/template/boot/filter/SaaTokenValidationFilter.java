@@ -12,7 +12,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 @Component
-@Order(2)
+@Order(3) // Dentro de CanonicalRequestLogFilter (@Order 2) para que sus rechazos queden registrados
 @ConditionalOnProperty(name = "onp.security.saa.enabled", havingValue = "true")
 public class SaaTokenValidationFilter extends OncePerRequestFilter {
 
@@ -26,10 +26,13 @@ public class SaaTokenValidationFilter extends OncePerRequestFilter {
         }
 
         // Plantilla base: reemplazar por cliente real SAA conforme a LIN-SEC-APP-001 sección 8.3.
-        MDC.put("user.id", "usuario-demo");
+        MDC.put("user.id", "usuario-demo");                                  // logs de negocio
+        request.setAttribute(CanonicalRequestLogFilter.ATTR_USER_ID, "usuario-demo"); // log canónico
         try {
             filterChain.doFilter(request, response);
         } finally {
+            // El atributo de la request NO se limpia: lo lee CanonicalRequestLogFilter,
+            // que envuelve a este filtro (LIN-OBS-001 §4.11).
             MDC.remove("user.id");
         }
     }

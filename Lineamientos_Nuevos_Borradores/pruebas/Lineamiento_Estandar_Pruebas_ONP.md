@@ -1,7 +1,7 @@
 # Lineamiento Estándar de Pruebas ONP
 **Código:** LIN-TEST-001
-**Versión:** v0.1.2
-**Estado:** Borrador
+**Versión:** v0.1.3
+**Estado:** **Vigente** — graduado el 2026-08-09 por Arquitectura OTI (`GOB-MAT-001`, Ciclo de vida documental)
 **Fecha:** 2026-05-26
 **Propietario:** Arquitectura de Software — OTI
 **Revisores:** Desarrollo, QA, Seguridad de la Información
@@ -14,6 +14,7 @@
 |---|---|---|---|
 | v0.1.0 | 2026-05-26 | Arquitectura OTI | Borrador inicial |
 | v0.1.1 | 2026-07-09 | Arquitectura OTI | Completa la sección 4 con los estilos Microservicio y EDA (Consumidor Kafka), que quedaron sin cubrir tras la redistribución del documento congelado `LIN-ARQ-000 §10.1` |
+| v0.1.3 | 2026-08-09 | Arquitectura OTI | Revisión de contenido y **graduación a Vigente** (`GOB-CHK-001` H20). Las cinco tablas de `§4` dejan de repetir los umbrales de cobertura y remiten a `§5.1` como fuente única — el mismo dato ya había divergido en `LIN-DEV-JAVA-001 §15.3` (H13.1). Corregido un enlace de `§3.4` que apuntaba a un paso numerado del capítulo PL/SQL en vez de a `§5`. Verificada la alineación con los consumidores exigida por el criterio 3 de graduación, que detectó dos desalineamientos corregidos en sus documentos: `LIN-FE-ANG-001 §14.2` citaba `§4.4` (que es *Microservicio*) para herramientas E2E, y `LIN-DEV-JAVA-001 §15.1` omitía el sufijo `CT` de las pruebas de caracterización |
 | v0.1.2 | 2026-07-09 | Arquitectura OTI | Añade §4.6 (Efecto de la Estrategia de Dominio sobre las Pruebas Unitarias), ausente en todo el ecosistema documental tras la redistribución |
 
 ---
@@ -157,7 +158,7 @@ Este lineamiento diferencia entre **tipos de prueba** y **enfoques de diseño de
 - Los **tipos** definen qué evidencia técnica debe existir: unitarias, integración, contrato, E2E, caracterización. Son verificables y obligatorios según los criterios de [sección 9](#9-criterios-minimos-de-aceptacion-para-paso-a-qa-y-produccion).
 - Los **enfoques** definen cómo el equipo incorpora esas pruebas al proceso de desarrollo. ONP no impone un único enfoque, pero establece recomendaciones por situación.
 
-> **Lo que se audita es el tipo y la cobertura, no el enfoque.** Un equipo puede aplicar TDD o escribir las pruebas al final — lo que se exige es que las pruebas existan, pasen y alcancen los umbrales de [sección 5](#5-si-alguna-falla-y-el-cambio-era-intencional-actualizar-la-ct-y-documentar-en-pr).
+> **Lo que se audita es el tipo y la cobertura, no el enfoque.** Un equipo puede aplicar TDD o escribir las pruebas al final — lo que se exige es que las pruebas existan, pasen y alcancen los umbrales de la [sección 5](#5-cobertura-minima-obligatoria).
 
 #### Enfoques reconocidos
 
@@ -188,6 +189,8 @@ Este lineamiento diferencia entre **tipos de prueba** y **enfoques de diseño de
 
 La pirámide define la distribución relativa de esfuerzo de prueba según el estilo del sistema. No es una regla de porcentajes absolutos, sino una guía de priorización.
 
+> **Los umbrales de cobertura no se repiten aquí.** Esta sección indica *qué tipo de prueba prioriza cada capa*; los porcentajes exigibles viven **solo** en [§5.1](#51-umbrales-por-estilo-backend-java). Mantenerlos en un único lugar evita la divergencia que ya se produjo con este mismo dato en `LIN-DEV-JAVA-001` (`GOB-CHK-001` H13.1).
+
 ### 4.1 Monolito Simple
 
 ```
@@ -198,12 +201,12 @@ La pirámide define la distribución relativa de esfuerzo de prueba según el es
     █████████ Unitaria (obligatorio — capas service y domain)
 ```
 
-| Capa | Tipo de prueba prioritario | Cobertura mínima |
+| Capa | Tipo de prueba prioritario | Alcance mínimo |
 |---|---|---|
 | Controller | Integración (MockMvc) | Happy path + escenarios de seguridad y error aplicables (401, 403, 400, 404 según el endpoint) |
-| Service | Unitaria | ≥75% instrucción |
+| Service | Unitaria | Umbral en [§5.1](#51-umbrales-por-estilo-backend-java) |
 | Repository | Integración (Testcontainers) | 1 test por método personalizado |
-| Entity/Model | Unitaria (validaciones) | ≥80% instrucción |
+| Entity/Model | Unitaria (validaciones) | Umbral en [§5.1](#51-umbrales-por-estilo-backend-java) |
 
 ### 4.2 Monolito Modular (Maven multi-módulo)
 
@@ -215,10 +218,10 @@ La pirámide define la distribución relativa de esfuerzo de prueba según el es
     █████████ Unitaria por módulo (obligatorio)
 ```
 
-| Módulo | Tipo prioritario | Cobertura mínima |
+| Módulo | Tipo prioritario | Alcance mínimo |
 |---|---|---|
-| `domain` | Unitaria | ≥85% instrucción |
-| `application` | Unitaria | ≥80% instrucción |
+| `domain` | Unitaria | Umbral en [§5.1](#51-umbrales-por-estilo-backend-java) |
+| `application` | Unitaria | Umbral en [§5.1](#51-umbrales-por-estilo-backend-java) |
 | `infrastructure` | Integración | 1 test por adaptador externo |
 | `api` | Integración (MockMvc) | Happy path + escenarios de seguridad y error aplicables |
 
@@ -232,10 +235,10 @@ La pirámide define la distribución relativa de esfuerzo de prueba según el es
     ██████████ Unitaria — casos de uso (obligatorio)
 ```
 
-| Componente | Tipo prioritario | Cobertura mínima |
+| Componente | Tipo prioritario | Alcance mínimo |
 |---|---|---|
-| Entidades de dominio | Unitaria | ≥85% instrucción |
-| Casos de uso (Use Cases) | Unitaria | ≥85% instrucción |
+| Entidades de dominio | Unitaria | Umbral en [§5.1](#51-umbrales-por-estilo-backend-java) |
+| Casos de uso (Use Cases) | Unitaria | Umbral en [§5.1](#51-umbrales-por-estilo-backend-java) |
 | Puertos de entrada (interfaces) | Integración | 1 test por contrato de puerto |
 | Adaptadores de salida (BD, HTTP, MQ) | Integración | 1 test por adaptador |
 
@@ -249,9 +252,9 @@ La pirámide define la distribución relativa de esfuerzo de prueba según el es
     █████████ Unitaria (obligatorio — dominio y casos de uso aislados)
 ```
 
-| Componente | Tipo prioritario | Cobertura mínima |
+| Componente | Tipo prioritario | Alcance mínimo |
 |---|---|---|
-| Dominio / casos de uso | Unitaria | ≥85% instrucción |
+| Dominio / casos de uso | Unitaria | Umbral en [§5.1](#51-umbrales-por-estilo-backend-java) |
 | Cliente HTTP/gRPC saliente | Integración (WireMock / Testcontainers) | 1 test por endpoint consumido |
 | Adaptador de persistencia propio | Integración (Testcontainers) | 1 test por método personalizado |
 | Contrato expuesto (API propia) | Prueba de contrato (ver [sección 6](#6-pruebas-de-contrato)) | Obligatorio en todo endpoint publicado |
@@ -268,9 +271,9 @@ La pirámide define la distribución relativa de esfuerzo de prueba según el es
     ██████████ Unitaria (obligatorio — lógica de manejo de mensaje aislada del broker)
 ```
 
-| Componente | Tipo prioritario | Cobertura mínima |
+| Componente | Tipo prioritario | Alcance mínimo |
 |---|---|---|
-| Handler / lógica de procesamiento del mensaje | Unitaria (sin broker) | ≥80% instrucción |
+| Handler / lógica de procesamiento del mensaje | Unitaria (sin broker) | Umbral en [§5.1](#51-umbrales-por-estilo-backend-java) |
 | Deserialización y validación de esquema (CloudEvents) | Unitaria | 1 test por tipo de evento consumido |
 | Consumer end-to-end contra broker | Integración (`Testcontainers` Kafka) | 1 test por topic consumido, incluyendo escenario de mensaje inválido → DLQ |
 | Idempotencia del consumidor | Integración | Obligatorio — reprocesar el mismo mensaje no debe duplicar el efecto de negocio |

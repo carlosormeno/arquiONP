@@ -46,7 +46,7 @@ Plataforma/Infraestructura es responsable de mantener esta plantilla en el proye
 - [ ] Cambia manifiestos K8s
 - [ ] Cambia variables de entorno
 
-## Rollback
+## Plan de reversa
 [Cómo revertir el cambio si falla]
 
 ## Revisores
