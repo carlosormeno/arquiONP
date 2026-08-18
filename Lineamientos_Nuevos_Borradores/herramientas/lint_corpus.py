@@ -67,8 +67,15 @@ ARTEFACTOS_DUPLICADOS = [
 
 # Encabezados de sección que indican historial de cambios. Las citas que aparecen
 # dentro de estas tablas describen numeraciones históricas a propósito y no se validan.
+# Admite numeración ("## 10. Historial de revisiones") y las variantes reales del
+# corpus. La primera versión solo aceptaba tres títulos exactos y sin numerar, de modo
+# que el historial de GOB-BRE-001 —titulado "## 10. Historial de revisiones"— quedaba
+# dentro del análisis: sus filas narran qué brechas se cerraron y con qué números de
+# sección de entonces, ruido que C1 y C3 tomaban por citas vigentes (GOB-CHK-001 H26).
 ENCABEZADOS_HISTORIAL = re.compile(
-    r"^#{1,3}\s+(historial de versiones|control de cambios|control de versiones)",
+    r"^#{1,3}\s+(?:\d+(?:\.\d+)*[.\s]+)?"
+    r"(historial de (?:versiones|revisiones|cambios)"
+    r"|control de (?:cambios|versiones))",
     re.IGNORECASE,
 )
 
@@ -95,6 +102,13 @@ RE_VERSION_ENCABEZADO = re.compile(
     r"Versi[óo]n[\s*:|]+`?v?(\d+\.\d+\.\d+|\d+\.\d+)`?", re.IGNORECASE
 )
 
+# Estado del ciclo de vida documental (GOB-MAT-001). Se admiten los cuatro estados
+# más el terminal, y las formas "Vigente / Operativo" de los documentos de apoyo,
+# que no están sujetos al ciclo de vida normativo.
+RE_ESTADO_ENCABEZADO = re.compile(
+    r"Estado[\s*:|]+\**\s*(Vigente|En revisi[óo]n|Borrador|Congelado)", re.IGNORECASE
+)
+
 # Encabezados: "## 1. Título" / "### 1.2 Título" / "## sección 3 Título" / "#### 13.4.1 Título"
 RE_ENCABEZADO_NUM = re.compile(
     r"^#{2,6}\s+(?:secci[óo]n\s+)?(\d+(?:\.\d+)*)[.\s]", re.IGNORECASE
@@ -114,6 +128,11 @@ RE_CITA = re.compile(
 )
 
 RE_CODIGO_PT = re.compile(r"\b(PT\d{2})\b")
+
+# Códigos del tablero de brechas GOB-BRE-001: PA (arquitectura), PI (infraestructura
+# y resiliencia), PD (diseño/DDD), PR (principios), PG (GoF), E (estilos).
+# No son códigos normativos — son un inventario de vacíos por cerrar. Ver C3.
+RE_CODIGO_BRECHA = re.compile(r"\b((?:PA|PI|PD|PR|PG)\d{2})\b")
 RE_ENLACE_MD = re.compile(r"\[[^\]]*\]\(([^)]+)\)")
 RE_RUTA_ABSOLUTA = re.compile(r"\]\((?:file://|/home/|/Users/|[A-Za-z]:\\)")
 
@@ -164,6 +183,7 @@ def indexar(raiz):
 
         codigo = None
         version = None
+        estado = None
         for linea in lineas[:40]:
             if codigo is None:
                 m = RE_CODIGO_DOC.search(linea)
@@ -173,6 +193,10 @@ def indexar(raiz):
                 m = RE_VERSION_ENCABEZADO.search(linea)
                 if m:
                     version = m.group(1)
+            if estado is None:
+                m = RE_ESTADO_ENCABEZADO.search(linea)
+                if m:
+                    estado = m.group(1)
 
         secciones = set()
         for linea in lineas:
@@ -190,6 +214,7 @@ def indexar(raiz):
             "codigo": codigo,
             "secciones": secciones,
             "version": version,
+            "estado": estado,
             "lineas": lineas,
             "es_corpus": not rel.replace(os.sep, "/").startswith(PREFIJOS_NO_CORPUS),
         }
@@ -288,10 +313,38 @@ def c3_codigos_pt(docs, por_codigo):
     if matriz:
         definidos |= set(RE_CODIGO_PT.findall("\n".join(matriz["lineas"])))
 
+    # Códigos del tablero de brechas, separando los que siguen declarados abiertos.
+    #
+    # Citar un código de brecha NO es un defecto por sí mismo: muchos no tienen `PT`
+    # equivalente porque no son patrones (PR01–PR08 son principios SOLID, PD04–PD06
+    # building blocks DDD). Lo que sí es un defecto es que un lineamiento **norme**
+    # algo usando el código de una brecha que el propio tablero declara `Pendiente`:
+    # se está normando con el identificador de un inventario de vacíos, y el tablero
+    # queda afirmando que falta lo que ya existe. Es el caso real de GOB-CHK-001 H26,
+    # donde LIN-K8S-001 §9.4 normaba Sidecar y Ambassador como `PA12`/`PA13`.
+    tablero = por_codigo.get("GOB-BRE-001")
+    brechas, brechas_abiertas = set(), set()
+    if tablero:
+        # El historial del tablero narra qué se cerró y cuándo: sus filas mencionan
+        # "Pendiente" en prosa junto a códigos ya cerrados. Sin excluirlo, el estado
+        # se lee del relato en vez de las tablas de estado.
+        historial_tablero = marcar_historial(tablero["lineas"])
+        for j, linea in enumerate(tablero["lineas"]):
+            encontrados = RE_CODIGO_BRECHA.findall(linea)
+            if not encontrados:
+                continue
+            brechas.update(encontrados)
+            if j not in historial_tablero and "Pendiente" in linea:
+                brechas_abiertas.update(encontrados)
+
     for doc in docs:
         if not doc["es_corpus"]:
             continue
-        if doc["codigo"] in ("LIN-PAT-001", "GOB-MAT-001") or doc["codigo"] in EXCLUIDOS_CITAS:
+        # El tablero de brechas y la matriz son las fuentes de esos códigos;
+        # el catálogo de patrones los menciona al declarar equivalencias.
+        if doc["codigo"] in ("LIN-PAT-001", "GOB-MAT-001", "GOB-BRE-001"):
+            continue
+        if doc["codigo"] in EXCLUIDOS_CITAS:
             continue
         historial = marcar_historial(doc["lineas"])
         for i, linea in enumerate(doc["lineas"]):
@@ -302,6 +355,20 @@ def c3_codigos_pt(docs, por_codigo):
                     hallazgos.append(Hallazgo(
                         "error", doc["ruta"], i + 1, "C3",
                         f"código `{pt}` no está definido en LIN-PAT-001 (fuente única)"))
+            # Un código de brecha en texto normativo es una inversión de fuentes:
+            # se está normando con el identificador de un inventario de vacíos.
+            for br in RE_CODIGO_BRECHA.findall(linea):
+                if br not in brechas:
+                    hallazgos.append(Hallazgo(
+                        "error", doc["ruta"], i + 1, "C3",
+                        f"código `{br}` no existe en el tablero de brechas GOB-BRE-001"))
+                elif br in brechas_abiertas:
+                    hallazgos.append(Hallazgo(
+                        "aviso", doc["ruta"], i + 1, "C3",
+                        f"`{br}` figura como brecha **Pendiente** en GOB-BRE-001: "
+                        f"si este documento ya lo norma, corresponde darle código `PT` "
+                        f"y ficha en LIN-PAT-001 y cerrar la brecha "
+                        f"(ver GOB-CHK-001 H26)"))
     return hallazgos
 
 
@@ -374,6 +441,66 @@ def c6_catalogo(docs, por_codigo, raiz):
     return hallazgos
 
 
+def _normalizar_estado(texto):
+    """Reduce un estado a forma comparable: sin tildes, negritas ni espacios."""
+    t = texto.lower().replace("ó", "o").replace("*", "").strip()
+    for estado in ("en revision", "vigente", "borrador", "congelado"):
+        if estado in t:
+            return estado
+    return None
+
+
+def c8_catalogo_estado(docs, por_codigo):
+    """
+    El catálogo de GOB-MAT-001 declara, por cada documento, su versión y su estado
+    del ciclo de vida. Verifica que coincidan con el encabezado real del documento.
+
+    Nace de un caso real (GOB-CHK-001 H25): tras veinte y pico de ediciones, 15 de las
+    21 entradas del catálogo estaban desactualizadas —decía que LIN-API-REST-001 era
+    "Borrador v0.1.5" cuando iba por "En revisión v0.1.7"—. C6 no lo detectaba porque
+    valida la ruta y el código, no la versión ni el estado.
+
+    Importa más que un descuadre cosmético: el catálogo es lo que un contratista
+    consulta para saber qué documento rige, y la regla de exigibilidad de GOB-MAT-001
+    se aplica sobre el estado declarado. Un estado equivocado permite dar por exigible
+    lo que aún no lo es.
+
+    La discrepancia se reporta como **error** cuando difiere el estado —cambia qué es
+    contractualmente exigible— y como **aviso** cuando solo difiere la versión.
+    """
+    hallazgos = []
+    matriz = por_codigo.get("GOB-MAT-001")
+    if not matriz:
+        return [Hallazgo("aviso", "-", 1, "C8",
+                         "GOB-MAT-001 no encontrado: no se valida el estado del catálogo")]
+
+    fila = re.compile(r"^\|\s*`([A-Z][A-Z0-9-]+)`\s*\|[^|]*\|([^|]*)\|")
+    for i, linea in enumerate(matriz["lineas"]):
+        m = fila.match(linea)
+        if not m:
+            continue
+        codigo, declarado = m.group(1), m.group(2).strip()
+        doc = por_codigo.get(codigo)
+        if doc is None:
+            continue                      # pendiente de crear, o fuera del corpus
+
+        real_v, real_e = doc["version"], doc["estado"]
+        if real_v and real_v not in declarado:
+            hallazgos.append(Hallazgo(
+                "aviso", matriz["ruta"], i + 1, "C8",
+                f"el catálogo declara `{codigo}` como «{declarado}», "
+                f"pero su encabezado dice v{real_v}"))
+        if real_e:
+            esperado = _normalizar_estado(real_e)
+            if esperado and esperado != _normalizar_estado(declarado):
+                hallazgos.append(Hallazgo(
+                    "error", matriz["ruta"], i + 1, "C8",
+                    f"el catálogo declara `{codigo}` como «{declarado}», "
+                    f"pero su encabezado dice «{real_e}» — el estado determina "
+                    f"qué es exigible"))
+    return hallazgos
+
+
 def c5_enlaces(docs, raiz):
     hallazgos = []
     for doc in docs:
@@ -406,7 +533,7 @@ def main():
     ap = argparse.ArgumentParser(description="Linter del corpus documental ONP")
     ap.add_argument("--raiz", default=os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     ap.add_argument("--formato", choices=["texto", "gitlab"], default="texto")
-    ap.add_argument("--solo", choices=["C1", "C2", "C3", "C4", "C5", "C6"], default=None)
+    ap.add_argument("--solo", choices=["C1", "C2", "C3", "C4", "C5", "C6", "C8"], default=None)
     args = ap.parse_args()
 
     raiz = os.path.abspath(args.raiz)
@@ -423,6 +550,8 @@ def main():
         todos += c4_duplicados(raiz)
     if args.solo in (None, "C5"):
         todos += c5_enlaces(docs, raiz)
+    if args.solo in (None, "C8"):
+        todos += c8_catalogo_estado(docs, por_codigo)
     if args.solo in (None, "C6"):
         todos += c6_catalogo(docs, por_codigo, raiz)
 
@@ -443,9 +572,10 @@ def main():
         "C3": "Códigos PT contra LIN-PAT-001",
         "C4": "Artefactos duplicados vs. fuente canónica",
         "C5": "Enlaces",
-        "C6": "Catálogo de GOB-MAT-001",
+        "C6": "Catálogo de GOB-MAT-001 — rutas y códigos",
+        "C8": "Catálogo de GOB-MAT-001 — versión y estado",
     }
-    for regla in ("C1", "C2", "C3", "C4", "C5", "C6"):
+    for regla in ("C1", "C2", "C3", "C4", "C5", "C6", "C8"):
         hs = por_regla.get(regla, [])
         n_err = sum(1 for h in hs if h.nivel == "error")
         estado = "OK" if not hs else f"{n_err} error(es), {len(hs) - n_err} aviso(s)"

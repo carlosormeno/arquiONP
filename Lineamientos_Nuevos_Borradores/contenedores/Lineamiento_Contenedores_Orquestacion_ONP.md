@@ -1,8 +1,8 @@
 # LIN-K8S-001 — Lineamiento de Contenedores y Orquestación ONP
 
 **Código:** LIN-K8S-001  
-**Versión:** v0.1.13  
-**Estado:** Borrador  
+**Versión:** v0.1.16  
+**Estado:** En revisión  
 **Fecha:** 2026-08-09  
 **Propietario documental:** Arquitectura de Software — OTI  
 **Revisores sugeridos:** Plataforma/Infraestructura, Seguridad Digital, Desarrollo, Arquitectura  
@@ -28,6 +28,9 @@
 | v0.1.10 | 2026-07-09 | Arquitectura OTI | Añade en §10.3 la diferenciación de réplicas mínimas y SLO por estilo arquitectónico (Monolito Modular 99.0% / Microservicio 99.5%), que solo existía en el documento congelado |
 | v0.1.11 | 2026-07-10 | Arquitectura OTI | Corrige el ejemplo de imagen frontend en §5.4 y el Anexo D: reemplaza `nginx:stable-alpine` en puerto 80 (root) por `nginxinc/nginx-unprivileged:1.27-alpine` en puerto 8080 con directorios temporales en `/tmp`, alineando con `LIN-FE-ANG-001 §16` y con la propia regla de este documento (§14.1, `runAsNonRoot: true`) — el ejemplo previo violaba su propia norma y contradecía el anti-patrón explícito de §16.5 |
 | v0.1.13 | 2026-08-09 | Arquitectura OTI | `§9.1` y el Anexo E: la `NetworkPolicy` pasa de *recomendada / obligatoria para críticos* a **obligatoria para todo servicio que reciba tráfico interno**. No es un endurecimiento aislado: `ADR-TLS-INTERNO-001` admite tráfico intra-cluster sobre HTTP y la restricción de red es el control que **sustituye** al cifrado en ese tramo (`GOB-CHK-001` H24.4) |
+| v0.1.14 | 2026-08-17 | Arquitectura OTI | Revisión de fondo (`GOB-CHK-001` H26). **(1) `§9.4` normaba Sidecar y Ambassador con los códigos `PA12`/`PA13` del tablero de brechas `GOB-BRE-001`**, que es un inventario de vacíos: mientras un patrón figura ahí se está declarando que *falta* normarlo. Pasan a `PT17`/`PT18` con fichas `PAT-K8S-01` y `PAT-K8S-02` en `LIN-PAT-001`, y las brechas se cierran. **(2) `§9.4.B` reintroducía el mandato de Resilience4j** que ya se había eliminado de `LIN-ARQ-001 §4.3` y de la Plantilla de Arquitectura: era la quinta fuente del mismo control, y además atribuía el Retry a Resilience4j cuando el dueño (`LIN-DIS-001 §6.3`) usa Spring Retry. Ahora remite al dueño y conserva solo lo propio —*dónde* vive el control, no cuál es—. **(3) El `Deployment` de referencia de `§9.2` no cumplía este documento:** le faltaban dos de las cinco etiquetas obligatorias de `§9.3` y, sobre todo, declaraba `readOnlyRootFilesystem: true` sin el volumen `/tmp` que exige la nota 14.1 — copiado tal cual, **el pod no arranca**. **(4) `§15.1` y `§15.2` degradaban a «cuando aplique»** obligaciones de `LIN-OBS-001`, que es documento **vigente**. `§15.2` fija además la convención de puerto de Actuator que ningún documento del corpus definía, pese a que `LIN-API-REST-001 §9.5` la exige (`GOB-CHK-001` H24.5). **(5)** `§18.2` y el Anexo A no incluían la `NetworkPolicy` que `§9.1` volvió obligatoria; `§20` atribuía los patrones de resiliencia a `LIN-ARQ-001` en vez de a `LIN-DIS-001 §6`; y `§2` no listaba `LIN-DIS-001`, `LIN-PAT-001`, `LIN-VER-001`, `LIN-IAC-001` ni `GOB-MAT-001`. El documento pasa a **En revisión** |
+| v0.1.15 | 2026-08-17 | Arquitectura OTI | La nota de gobernanza de `§4.4` atribuía a `LIN-BUS-001` los namespaces `kafka-dev`/`kafka-qa`/**`kafka`**, cuando ese documento usa `kafka-prod` en producción. La verificación pendiente con Plataforma sigue abierta, pero ahora parte del dato correcto (`GOB-CHK-001` H28) |
+| v0.1.16 | 2026-08-17 | Arquitectura OTI | El `nginx.conf` del Anexo D dirigía `error_log` a `/var/log/nginx/error.log`, incompatible con el `readOnlyRootFilesystem: true` que exige `§14.1` y con la regla de logs a stdout/stderr de `§15.1`. Apunta ahora a `/dev/stderr` (`GOB-CHK-001` H29) |
 | v0.1.12 | 2026-07-14 | Arquitectura OTI | Corrige las 9 citas residuales al documento congelado `LIN-ARQ-000` que quedaron sin migrar en v0.1.9 (que solo corrigió §11.1): §1.3, la cláusula de supremacía jerárquica de §2 (que además decía erróneamente que el marco rector es "Nivel 2" — es Nivel 1), tabla de §2, detonador NoSQL de §5.2, atribución de los patrones Sidecar/Ambassador de §9.4 (son normados por este propio documento, no por el marco rector), reglas de resiliencia y Strangler Fig de §9.4.2/9.4.3, y la cláusula de supremacía del proceso ADR en §20. Todas redirigidas a `LIN-ARQ-001` (§2.1, §2.2, §4.3, §6.2) y `LIN-DIS-001 §6` según corresponda |
 
 ---
@@ -138,6 +141,11 @@ Aplica a:
 | Log, Trazabilidad y Observabilidad | LIN-OBS-001 | Define logs, métricas, health checks y trazas |
 | Seguridad en Aplicaciones | LIN-SEC-APP-001 | Define secretos, escaneo, usuario no root y controles de seguridad |
 | Estándar de Pruebas | LIN-TEST-001 | Define evidencias de pruebas antes de pase |
+| Estándar de Diseño de Software | LIN-DIS-001 | Nivel 2: dueño de la resiliencia táctica (§6), que este lineamiento no redefine |
+| Catálogo Oficial de Patrones | LIN-PAT-001 | Fuente única de los códigos `PT` y de las fichas de decisión, incluidas `PAT-K8S-01` y `PAT-K8S-02` |
+| Versionamiento y Control de Cambios | LIN-VER-001 | Norma el versionado de los manifiestos y la revisión por Merge Request |
+| Infraestructura como Código | LIN-IAC-001 | **Borrador**: dueño de Terraform y del clúster declarativo |
+| Matriz de Propiedad Documental | GOB-MAT-001 | Determina qué documento es dueño de cada tema |
 | Directiva de Desarrollo de Software Seguro | DIR-SEC-SW-001 | Marco superior de controles de seguridad de software |
 | Informe de Lineamientos de Contenedores y Orquestador | INFORME-000082-2023-OTI.ID | Antecedente institucional |
 
@@ -256,7 +264,7 @@ notificacion_electronica-worker
 - La creación, cuotas (`ResourceQuota`/`LimitRange`) y políticas del namespace son responsabilidad de Plataforma (ver RACI en §4.2). Desarrollo **declara** el namespace en sus manifiestos versionados (Kustomize/Helm, ver Anexo A) pero no lo crea ni administra directamente en el clúster.
 - Todo namespace debe quedar documentado en la ficha de despliegue del sistema (ver sección 16).
 
-> **Nota de Gobernanza — Namespaces Compartidos Pendientes de Verificar:** Al existir un clúster independiente por ambiente, incluir el sufijo de ambiente en namespaces de negocio es un anti-patrón redundante — así se norma en esta sección. Para los namespaces de infraestructura compartida ya documentados en `LIN-OBS-001` (`otel-dev`, `otel-qa`, `otel`) y `LIN-BUS-001` (`kafka-dev`, `kafka-qa`, `kafka`), este lineamiento **no asume** la razón del sufijo: se recomienda que Plataforma confirme si esos componentes viven en un clúster de plataforma compartido o híbrido distinto al de las aplicaciones. Si ese es el caso, el sufijo está justificado y debe mantenerse; si no, esos dos documentos deberían normalizarse a `otel` y `kafka` sin sufijo, sin afectar a las aplicaciones consumidoras (que resuelven por DNS interno o configuración de ambiente en `LIN-OBS-001 §10.2`).
+> **Nota de Gobernanza — Namespaces Compartidos Pendientes de Verificar:** Al existir un clúster independiente por ambiente, incluir el sufijo de ambiente en namespaces de negocio es un anti-patrón redundante — así se norma en esta sección. Para los namespaces de infraestructura compartida ya documentados en `LIN-OBS-001` (`otel-dev`, `otel-qa`, `otel`) y `LIN-BUS-001` (`kafka-dev`, `kafka-qa`, `kafka-prod` — ver `LIN-BUS-001 §12.1`; una versión anterior de esta nota los citaba como `kafka` sin sufijo en producción, lo que no correspondía a lo que ese documento dice), este lineamiento **no asume** la razón del sufijo: se recomienda que Plataforma confirme si esos componentes viven en un clúster de plataforma compartido o híbrido distinto al de las aplicaciones. Si ese es el caso, el sufijo está justificado y debe mantenerse; si no, esos dos documentos deberían normalizarse a `otel` y `kafka` sin sufijo, sin afectar a las aplicaciones consumidoras (que resuelven por DNS interno o configuración de ambiente en `LIN-OBS-001 §10.2`).
 
 ---
 
@@ -581,6 +589,8 @@ metadata:
     app.kubernetes.io/name: past-api-afiliacion
     app.kubernetes.io/part-of: past
     app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/component: api
+    app.kubernetes.io/managed-by: kustomize
 spec:
   replicas: 2
   selector:
@@ -592,6 +602,8 @@ spec:
         app.kubernetes.io/name: past-api-afiliacion
         app.kubernetes.io/part-of: past
         app.kubernetes.io/version: "1.0.0"
+        app.kubernetes.io/component: api
+        app.kubernetes.io/managed-by: kustomize
     spec:
       serviceAccountName: past-api-afiliacion
       containers:
@@ -636,7 +648,19 @@ spec:
             capabilities:
               drop:
                 - ALL
+          # readOnlyRootFilesystem exige montar /tmp: Spring Boot escribe ahí
+          # sus temporales y sin este volumen el contenedor no arranca (nota 14.1)
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir:
+            medium: Memory
+            sizeLimit: 64Mi
 ```
+
+> Este manifiesto declara las cinco etiquetas obligatorias de [§9.3](#93-etiquetas-obligatorias) y el volumen temporal que exige la [nota 14.1](#nota-141--readonlyrootfilesystem-con-escritura-temporal). Ambas cosas faltaban en versiones anteriores: copiado tal cual, el pod fallaba al arrancar porque `readOnlyRootFilesystem: true` impedía a Spring Boot escribir en `/tmp`, y el remedio vivía 350 líneas más abajo (`GOB-CHK-001` H26).
 
 ### 9.3 Etiquetas obligatorias
 
@@ -650,13 +674,15 @@ app.kubernetes.io/component: <api|frontend|worker|job>
 app.kubernetes.io/managed-by: <equipo-o-herramienta>
 ```
 
-### 9.4 Patrones Multi-Contenedor en el Pod: Sidecar (PA12) y Ambassador (PA13)
+### 9.4 Patrones Multi-Contenedor en el Pod: Sidecar (PT17) y Ambassador (PT18)
 
 En Kubernetes, la unidad atómica de despliegue es el **Pod**. Por regla general y en estricta coherencia con el principio de separación de responsabilidades (§4.2), **un pod en la ONP debe contener un único contenedor de negocio (estilo 1 Pod = 1 Contenedor)**.
 
-No obstante, este lineamiento norma dos patrones tácticos de despliegue multi-contenedor (*Multi-Container Pod Patterns*) identificados como brecha pendiente en `Brecha_Framework_Arquitectura_ONP`: **Sidecar (PA12)** y **Ambassador (PA13)**. Para prevenir sobre-ingeniería, desperdicio de recursos computacionales (CPU/RAM) y colisiones con otros lineamientos del framework institucional, su adopción se rige por las siguientes reglas binarias de aplicación:
+No obstante, este lineamiento norma dos patrones tácticos de despliegue multi-contenedor (*Multi-Container Pod Patterns*): **Sidecar (`PT17`, ficha `PAT-K8S-01`)** y **Ambassador (`PT18`, ficha `PAT-K8S-02`)**, cuyas fichas de decisión viven en el catálogo oficial `LIN-PAT-001 §6`.
 
-#### A. Patrón Sidecar (PA12) — Co-procesos de Apoyo y Observabilidad
+> **Sobre los códigos.** Versiones anteriores identificaban estos patrones como `PA12` y `PA13`. Esos códigos pertenecen al **tablero de brechas** `GOB-BRE-001`, que es un inventario de vacíos por cerrar, no el catálogo normativo: mientras un patrón figura ahí, se está declarando que *falta* normarlo. Los códigos oficiales de patrón son los `PT`, y su fuente única es `LIN-PAT-001` (`GOB-CHK-001` H26). Para prevenir sobre-ingeniería, desperdicio de recursos computacionales (CPU/RAM) y colisiones con otros lineamientos del framework institucional, su adopción se rige por las siguientes reglas binarias de aplicación:
+
+#### A. Patrón Sidecar (PT17) — Co-procesos de Apoyo y Observabilidad
 
 El patrón **Sidecar** adjunta un contenedor secundario al contenedor principal del pod para extender sus capacidades (recolección de logs, proxying, sincronización de secretos o monitoreo) sin modificar el código de la aplicación principal.
 
@@ -701,7 +727,7 @@ spec:
             limits:
               memory: "1Gi"
               cpu: "500m"
-        # 2. Contenedor Sidecar (PA12 - Agente de reenvío de logs hacia OTEL Collector)
+        # 2. Contenedor Sidecar (PT17 - Agente de reenvío de logs hacia OTEL Collector)
         - name: log-collector-sidecar
           image: registry.gitlab.onp.gob.pe/plataforma/infra/fluent-bit:2.2.0
           volumeMounts:
@@ -720,14 +746,15 @@ spec:
           emptyDir: {}
 ```
 
-#### B. Patrón Ambassador (PA13) — Proxy de Salida para Resiliencia e Integración
+#### B. Patrón Ambassador (PT18) — Proxy de Salida para Resiliencia e Integración
 
 El patrón **Ambassador** actúa como un proxy de red local dentro del pod que media y blinda todo el tráfico saliente (*outbound traffic*) desde la aplicación hacia sistemas externos, APIs, bases de datos o servicios heredados.
 
-1. **Regla General en ONP (Prohibido para Java / Spring Boot 3):** En coherencia con **`LIN-ARQ-001 §4.3`** (Interoperabilidad Gubernamental y SOA) y **`LIN-DIS-001 §6`** (Resiliencia Táctica), para aplicaciones construidas en Java 21 / Spring Boot 3, **está estrictamente prohibido utilizar un Ambassador sidecar para gestionar resiliencia o conectividad saliente**. Toda la resiliencia de integración hacia sistemas externos (RENIEC, SUNAT, PIDE) o servicios WSO2 debe resolverse **dentro de la JVM** en la capa de infraestructura del software (`pe.gob.onp.<sistema>.<modulo>.infrastructure.client.*`):
-   - *Timeouts y Bulkhead (PI08 / PI09):* Mediante configuración nativa de **Apache HttpClient 5** (`setMaxConnPerRoute`).
-   - *Circuit Breaker y Reintentos (PI06 / PI07):* Mediante anotaciones y máquinas de estado de **Resilience4j** en el cliente Java.  
-   Ningún desarrollador Java debe delegar, duplicar ni configurar políticas de reintento o circuit breaker en un proxy de red externo.
+1. **Regla General en ONP (Prohibido para Java / Spring Boot 3):** En coherencia con **`LIN-ARQ-001 §4.3`** (Interoperabilidad Gubernamental y SOA) y **`LIN-DIS-001 §6`** (Resiliencia Táctica), para aplicaciones construidas en Java 21 / Spring Boot 3, **está estrictamente prohibido utilizar un Ambassador sidecar para gestionar resiliencia o conectividad saliente**. Toda la resiliencia de integración hacia sistemas externos (RENIEC, SUNAT, PIDE) o servicios WSO2 debe resolverse **dentro de la JVM**, en la capa de infraestructura del software (`pe.gob.onp.<sistema>.<modulo>.infrastructure.client.*`).
+
+   > **El mecanismo lo define `LIN-DIS-001 §6`, documento dueño de la resiliencia táctica** — este lineamiento no lo redefine. En resumen, y sin sustituir al dueño: *Timeout* siempre obligatorio y *Bulkhead* por defecto con **Apache HttpClient 5** (`setMaxConnPerRoute`); *Retry* con **Spring Retry**; y **Circuit Breaker con Resilience4j solo en Microservicios, o en Monolito Modular bajo ADR** (`LIN-DIS-001 §6.2`). Fichas `PAT-RES-01` y `PAT-RES-02`.
+
+   Lo que este lineamiento sí norma es **dónde** vive ese control: dentro del proceso Java, nunca en un proxy de red adjunto al pod. Ningún desarrollador Java debe delegar, duplicar ni configurar políticas de reintento o circuit breaker en un contenedor Ambassador.
 2. **Única Excepción Legítima (Strangler Fig sobre Monolitos Legacy No-Java):** En el marco de la hoja de ruta de modernización institucional (**`LIN-ARQ-001 §2.2`** Strangler Fig y **§2.1** Estadio 1 — Monolito Tradicional), cuando se contenericen sistemas heredados (ej. monolitos en JBoss, WebLogic, C++ o frameworks antiguos) cuyo código fuente no puede ser refactorizado o modificado para incorporar políticas de resiliencia o seguridad moderna, se autoriza el despliegue de un **Ambassador sidecar** (ej. Envoy, Envoy-based Proxy o WSO2 Microgateway ligero) en el pod. En este escenario —y solo en este—, el Ambassador asumirá la terminación mTLS, rotación de cabeceras, timeouts y reintentos hacia el exterior, protegiendo al monolito heredado sin necesidad de reescribir su lógica interna.
 
 ---
@@ -989,9 +1016,9 @@ Cada aplicación debe usar un `ServiceAccount` específico si requiere permisos 
 
 Las aplicaciones deben escribir logs a `stdout/stderr`. No deben escribir logs en archivos internos del contenedor como mecanismo principal.
 
-Los logs deben cumplir `LIN-OBS-001`:
+Los logs deben cumplir `LIN-OBS-001`, que es documento **vigente** y no admite excepción en estos campos:
 
-- JSON estructurado cuando aplique;
+- JSON estructurado en formato ECS (`LIN-OBS-001 §6`);
 - `trace.id`;
 - `span.id`;
 - `http.request.id`;
@@ -1002,7 +1029,16 @@ Los logs deben cumplir `LIN-OBS-001`:
 
 ### 15.2 Métricas
 
-Servicios Spring Boot deben exponer métricas por Actuator/Prometheus cuando aplique.
+Todo servicio Spring Boot expone métricas por Actuator/Prometheus. No es condicional: `LIN-OBS-001` y `LIN-API-REST-001 §9.5` lo exigen sin excepción, y un servicio sin métricas no está listo para producción.
+
+El endpoint `/actuator/prometheus` **no debe quedar accesible desde fuera del clúster** (§12.2). Para lograrlo hay dos caminos válidos y el proyecto debe elegir uno explícitamente:
+
+| Opción | Cómo | Consecuencia en el manifiesto |
+|---|---|---|
+| **Puerto único** *(la que asumen los ejemplos de este lineamiento y del corpus)* | Actuator en el mismo puerto de la aplicación, protegido por `NetworkPolicy` (§9.1) e Ingress que no publica `/actuator` | Las probes apuntan al puerto `http` — como en §9.2 |
+| **Puerto de gestión separado** | `management.server.port` distinto del puerto de la API | **Las probes deben apuntar a ese puerto**, y el `containerPort` correspondiente debe declararse. Dejarlas en el puerto de la aplicación produce `404`, el pod nunca pasa a *Ready* y el despliegue no converge |
+
+> La convención no estaba fijada en ningún documento del corpus, pese a que `LIN-API-REST-001 §9.5` exige separar el puerto o restringir por red (`GOB-CHK-001` H24.5). Queda fijada aquí, que es el documento dueño de los manifiestos.
 
 ### 15.3 Trazas
 
@@ -1101,6 +1137,7 @@ Mientras `LIN-IAC-001` no esté oficializado:
 [ ] readinessProbe definida
 [ ] livenessProbe definida
 [ ] securityContext definido
+[ ] NetworkPolicy definida (obligatoria si recibe tráfico interno — §9.1)
 [ ] No usa hostNetwork
 [ ] No monta docker.sock
 [ ] No usa privileged
@@ -1141,7 +1178,7 @@ Mientras `LIN-IAC-001` no esté oficializado:
 
 ## 20. Proceso ADR para desviaciones
 
-> **Importante:** **Gobernanza y Supremacía de LIN-ARQ-001:** En estricta coherencia con la supremacía jerárquica del marco rector de **Nivel 1**, ningún ADR podrá ser aprobado ni será válido si contraviene los principios arquitectónicos fundamentales, patrones de resiliencia (PI06–PI09) o mandatos rectores de **LIN-ARQ-001**, salvo autorización expresa y excepcional de la Dirección de Arquitectura de la OTI.
+> **Importante:** **Gobernanza y Supremacía de LIN-ARQ-001:** En estricta coherencia con la supremacía jerárquica del marco rector de **Nivel 1**, ningún ADR podrá ser aprobado ni será válido si contraviene los principios arquitectónicos fundamentales o los mandatos rectores de **LIN-ARQ-001**, ni las reglas de resiliencia táctica de **`LIN-DIS-001 §6`**, que es su documento dueño, salvo autorización expresa y excepcional de la Dirección de Arquitectura de la OTI.
 
 Toda desviación relevante requiere ADR aprobado por Arquitectura. Si afecta seguridad, requiere además validación de Seguridad Digital conforme a la Directiva de Desarrollo de Software Seguro.
 
@@ -1223,6 +1260,7 @@ k8s/
 │   ├── service.yaml
 │   ├── configmap.yaml
 │   ├── secret.example.yaml
+│   ├── networkpolicy.yaml
 │   └── hpa.yaml
 ├── overlays/
 │   ├── dev/
@@ -1270,7 +1308,9 @@ Las aplicaciones Angular son Single Page Applications. Nginx debe redirigir cual
 ```nginx
 # nginx.conf — configuración mínima para Angular SPA (usuario no root, puerto 8080)
 worker_processes auto;
-error_log  /var/log/nginx/error.log warn;
+# stderr explícito: bajo `readOnlyRootFilesystem: true` nginx no puede crear el
+# archivo, y LIN-K8S-001 sección 15.1 exige logs a stdout/stderr de todos modos.
+error_log  /dev/stderr warn;
 pid        /tmp/nginx.pid;
 
 events {

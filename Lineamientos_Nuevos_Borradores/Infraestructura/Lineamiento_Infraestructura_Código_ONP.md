@@ -1,9 +1,9 @@
 # LIN-IAC-001 — Lineamiento de Infraestructura como Código ONP
 
 **Código:** LIN-IAC-001  
-**Versión:** v0.1.2  
-**Estado:** Borrador  
-**Fecha:** 2026-07-10  
+**Versión:** v0.1.3  
+**Estado:** En revisión  
+**Fecha:** 2026-08-17  
 **Propietario documental:** Arquitectura de Software — OTI  
 **Revisores sugeridos:** Plataforma/Infraestructura, Seguridad Digital, Arquitectura, Desarrollo  
 **Marco rector:** LIN-ARQ-001 — Marco Rector de Arquitectura de Software  
@@ -18,6 +18,7 @@
 | v0.1.0 | 2026-05-28 | Arquitectura OTI | Borrador inicial del lineamiento de infraestructura como código |
 | v0.1.1 | 2026-07-09 | Arquitectura OTI | Corrige la referencia al Marco Rector: `LIN-ARQ-000` (congelado) → `LIN-ARQ-001` (vigente) en encabezado y §2 |
 | v0.1.2 | 2026-07-10 | Arquitectura OTI | Corrige contradicción interna: el checklist §12.1 exigía una rama `develop` protegida que §5.4 rechaza explícitamente ("sería redundante y crearía confusión"). El checklist ahora solo exige `main` protegida |
+| v0.1.3 | 2026-08-17 | Arquitectura OTI | Revisión de fondo (`GOB-CHK-001` H32). **(1) `§6` no normaba el respaldo ni la recuperación del estado de Terraform**, que es el activo más crítico del repositorio: perderlo deja a Terraform sin el mapeo entre código y recursos reales, y el siguiente `apply` puede recrear infraestructura existente o destruir la que no reconoce. Nueva `§6.3` con versionado, respaldo externo, retención, **prueba de restauración anual** y control del desbloqueo forzado. **(2) Dos modelos de madurez usaban la misma nomenclatura.** Este lineamiento numera «Fase 0…5» y `LIN-CICD-001` «Fase 0…7»; ambos se citan mutuamente sin calificar la escala, de modo que «Fase 4» en una cita cruzada era ambiguo. Toda referencia queda calificada. **(3) `§10.3` exigía documentar un cambio manual de emergencia «en un ADR»** — instrumento equivocado: un ADR registra una decisión institucional que obliga al corpus, no una desviación operativa puntual. Pasa a `EXC-IAC-NNN`, y `§14` se retitula en consecuencia. **(4)** `§2` no listaba `LIN-BD-ORA-001`, `LIN-OBS-001` ni `GOB-MAT-001`. El documento pasa a **En revisión** |
 
 ---
 
@@ -91,6 +92,9 @@ Aplica a todo recurso de infraestructura aprovisionado o gestionado por el equip
 | Contenedores y Orquestación | LIN-K8S-001 | Clústeres K8s cuya infraestructura se aprovisiona con Terraform |
 | Seguridad en Aplicaciones | LIN-SEC-APP-001 | Controles de secretos, tokens y credenciales en pipelines |
 | Directiva de Desarrollo de Software Seguro | DIR-SEC-SW-001 | Marco superior para controles de seguridad |
+| Estándar de Base de Datos Oracle | LIN-BD-ORA-001 | Infraestructura de base de datos aprovisionada o parametrizada vía IaC |
+| Log, Trazabilidad y Observabilidad | LIN-OBS-001 | Componentes de observabilidad (colector OTEL, namespaces) aprovisionados vía IaC |
+| Matriz de Propiedad Documental | GOB-MAT-001 | Determina qué documento es dueño de cada tema y norma el registro de excepciones |
 
 ---
 
@@ -114,6 +118,8 @@ Aplica a todo recurso de infraestructura aprovisionado o gestionado por el equip
 ## 4. Modelo de madurez IaC ONP
 
 La ONP adopta un modelo de madurez progresivo para IaC. Cada fase tiene criterios de graduación explícitos que deben cumplirse antes de avanzar a la siguiente.
+
+> ⚠️ **Estas fases no son las de `LIN-CICD-001`.** Ese lineamiento tiene su propio modelo de madurez, también numerado «Fase 0…7», y ambos documentos se citan mutuamente. **Son escalas distintas y no comparables**: la Fase 5 de IaC (GitOps pleno) no equivale a la Fase 5 de CI/CD (seguridad dinámica y performance). Toda cita entre ambos documentos debe calificar la escala — «Fase 3 de IaC», «Fase 4 de CI/CD»— y nunca decir «Fase N» a secas.
 
 | Fase | Nombre | Estado objetivo |
 |---:|---|---|
@@ -253,7 +259,7 @@ Aplica `LIN-VER-001` con el **modelo objetivo GitLab Flow simplificado** (discip
 
 ### 6.1 Backend remoto — GitLab-Managed Terraform State
 
-A partir de la Fase 2, el estado de Terraform debe almacenarse en el backend HTTP nativo de GitLab Ultimate. Esto provee:
+A partir de la **Fase 2 de IaC**, el estado de Terraform debe almacenarse en el backend HTTP nativo de GitLab Ultimate. Esto provee:
 
 - *state locking* automático mediante `POST`/`DELETE` HTTP para prevenir sobreescrituras concurrentes;
 - trazabilidad del estado asociada al proyecto GitLab;
@@ -291,7 +297,22 @@ terraform {
 
 **No se deben usar Terraform Workspaces para separar ambientes.** Los Workspaces comparten la misma configuración de backend y aumentan el riesgo de ejecutar `terraform apply` en el ambiente incorrecto. La separación de ambientes se realiza exclusivamente mediante directorios independientes en `environments/`.
 
-### 6.3 Estado local
+### 6.3 Respaldo y recuperación del estado
+
+El archivo de estado es **el activo más crítico del repositorio de IaC**, por encima del propio código: el código puede reescribirse, pero el estado es lo único que mapea cada recurso declarado con el recurso real aprovisionado. Perderlo o corromperlo deja a Terraform sin ese mapeo, y el siguiente `apply` puede intentar **recrear infraestructura que ya existe** o destruir la que no reconoce.
+
+| Regla | Detalle |
+|---|---|
+| **Versionado del estado** | El backend HTTP de GitLab conserva versiones anteriores del estado. Plataforma debe verificar que el versionado esté activo en cada proyecto de IaC antes de graduar a Fase 2. |
+| **Respaldo externo** | Además del versionado de GitLab, se exporta una copia del estado de `prod` mediante `terraform state pull` en el pipeline programado de detección de drift (§10.1), y se almacena en el repositorio de respaldos institucional. Depender de una sola plataforma para el estado y su respaldo es un punto único de fallo. |
+| **Retención** | Mínimo **90 días** de versiones recuperables para `prod`; 30 días para `dev` y `qa`. |
+| **Prueba de recuperación** | Al menos una vez al año Plataforma debe **ejecutar una restauración de prueba** del estado de un ambiente no productivo y dejar constancia. Un respaldo cuya restauración nunca se probó no es un respaldo. |
+| **Antes de un `apply` en `prod`** | Verificar que existe una versión del estado inmediatamente anterior, recuperable. |
+| **Bloqueo huérfano** | Si un pipeline interrumpido deja el estado bloqueado, el desbloqueo (`terraform force-unlock`) lo ejecuta únicamente Plataforma, dejando registro del motivo. Nunca desde una terminal local sin registro. |
+
+> **Relación con la brecha institucional de respaldo.** El corpus ONP **no norma todavía** respaldo, recuperación ante desastres ni valores institucionales de RTO/RPO (`GOB-CHK-001` H11.2). Esta sección cubre **únicamente el estado de Terraform**, que es responsabilidad de este lineamiento. No sustituye a la política institucional pendiente, y los valores de retención de arriba deberán revisarse cuando esa política exista.
+
+### 6.4 Estado local
 
 El archivo `terraform.tfstate` y su backup **no deben versionarse en Git**. El `.gitignore` debe incluir:
 
@@ -551,14 +572,14 @@ data "vsphere_network" "vlan_app" {
 
 ## 9. Pipeline de validación de IaC
 
-### 9.1 Etapas obligatorias (Fase 3 en adelante)
+### 9.1 Etapas obligatorias (Fase 3 de IaC en adelante)
 
 | Etapa | Comando | Obligatorio |
 |---|---|---|
 | Formato | `terraform fmt -check -recursive` | Sí, bloquea MR |
 | Validación | `terraform validate` | Sí, bloquea MR |
 | Plan | `terraform plan -out=tfplan` | Sí, publica como artefacto |
-| Apply | `terraform apply tfplan` | Manual (Fase 3/4); automatizado por ambiente en Fase 5 |
+| Apply | `terraform apply tfplan` | Manual (**Fase 3/4 de IaC**); automatizado por ambiente en **Fase 5 de IaC**, siempre con aprobación en `prod` (§9.3) |
 
 ### 9.2 Pipeline referencial
 
@@ -579,7 +600,7 @@ El *drift* ocurre cuando el estado real de la infraestructura difiere del estado
 
 ### 10.1 Mecanismo
 
-A partir de la Fase 3, se configura un pipeline programado en GitLab (GitLab CI Scheduled Pipeline) que ejecuta `terraform plan` sin apply al menos una vez por semana en cada ambiente activo.
+A partir de la **Fase 3 de IaC**, se configura un pipeline programado en GitLab (GitLab CI Scheduled Pipeline) que ejecuta `terraform plan` sin apply al menos una vez por semana en cada ambiente activo.
 
 ### 10.2 Tratamiento de desvíos
 
@@ -591,7 +612,9 @@ A partir de la Fase 3, se configura un pipeline programado en GitLab (GitLab CI 
 
 ### 10.3 Regla
 
-Ningún cambio manual en infraestructura gestionada por Terraform puede quedar sin trazabilidad en el repositorio de IaC. Si el cambio fue una emergencia, debe documentarse en un ADR y sincronizarse en código dentro de 5 días hábiles.
+Ningún cambio manual en infraestructura gestionada por Terraform puede quedar sin trazabilidad en el repositorio de IaC. Si el cambio fue una emergencia, se registra como **excepción `EXC-IAC-NNN`** (ver §14) y se sincroniza en código dentro de 5 días hábiles.
+
+> Un cambio manual de emergencia **no es un ADR**. Un ADR registra una decisión arquitectónica institucional que obliga al corpus (`LIN-ARQ-001`, Apéndice A); una emergencia operativa es una desviación puntual, con vigencia acotada y fecha de remediación. Confundirlos llena el registro institucional de incidencias y le resta valor.
 
 ---
 
@@ -681,7 +704,9 @@ Ningún cambio manual en infraestructura gestionada por Terraform puede quedar s
 
 ---
 
-## 14. Proceso ADR para excepciones
+## 14. Proceso de excepción
+
+> **Instrumento correcto: `EXC-IAC-NNN`, no un ADR.** Conforme a `GOB-MAT-001` (Registro de decisiones y excepciones), una desviación de este lineamiento en un proyecto concreto se registra como excepción con vigencia acotada y fecha de revisión. El `ADR-NNN` queda reservado a decisiones institucionales del Comité de Arquitectura, que obligan a todo el corpus.
 
 Toda excepción a este lineamiento requiere un ADR aprobado por Arquitectura. Si afecta seguridad, producción o continuidad operativa, requiere validación adicional de Seguridad Digital y/o Plataforma.
 

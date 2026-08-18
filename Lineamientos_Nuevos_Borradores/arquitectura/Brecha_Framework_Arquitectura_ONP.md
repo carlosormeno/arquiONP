@@ -1,7 +1,7 @@
 # Brecha del Framework de Arquitectura ONP
 
 **Código:** GOB-BRE-001
-**Versión:** 0.1.6
+**Versión:** 0.1.7
 **Fecha:** 2026-07-06
 **Responsable:** Arquitectura OTI
 **Estado:** En revisión
@@ -50,8 +50,8 @@ Este documento registra los patrones, estilos, principios y decisiones arquitect
 | PA09 | BFF (Backend for Frontend) | ✅ Documentado | LIN-DIS-001 §5.1 | Patrón oficial **PT11** (ficha `PAT-INT-01`) para adaptación de canales y mediación SSO frente a WSO2. |
 | PA10 | Facade (arquitectura) | ✅ Documentado | LIN-DIS-001 §5.3 | Patrón oficial **PT15** (ficha `PAT-INT-03`) para ocultar complejidad externa/legada en Monolito Modular. |
 | PA11 | Gateway-Aggregation | ✅ Documentado | LIN-DIS-001 §5.2 | Patrón oficial **PT12** (ficha `PAT-INT-02`) intra-JVM para Monolito Modular y vía red en Microservicios. |
-| PA12 | Sidecar | ❌ Pendiente | LIN-K8S-001 | Relevante para observabilidad y mTLS en K8s |
-| PA13 | Ambassador | ❌ Pendiente | LIN-K8S-001 | Proxy de salida en K8s |
+| PA12 | Sidecar | ✅ Documentado | LIN-K8S-001 §9.4.A | Patrón oficial **PT17** (ficha `PAT-K8S-01`). Prohibido en Java/Spring Boot 3; admitido solo para cajas negras que escriben bitácora en archivo, y reservado a la malla de servicios cuando exista |
+| PA13 | Ambassador | ✅ Documentado | LIN-K8S-001 §9.4.B | Patrón oficial **PT18** (ficha `PAT-K8S-02`). Prohibido en Java/Spring Boot 3 —la resiliencia saliente se resuelve en la JVM según `LIN-DIS-001 §6`—; admitido solo en monolitos heredados no-Java bajo Strangler Fig |
 | PA14 | Feature Toggle (Strangler complemento) | ✅ Documentado | LIN-ARQ-001 §2.3 | Normado en 4 variantes para Trunk-Based Development, Kill-Switch y Branch by Abstraction |
 
 ---
@@ -162,7 +162,8 @@ Este documento registra los patrones, estilos, principios y decisiones arquitect
 | PA09 | BFF (Backend for Frontend) — PT11 oficial | ✅ Cerrada (LIN-DIS-001 §5.1) |
 | PA10 | Facade (arquitectura) — PT15 oficial | ✅ Cerrada (LIN-DIS-001 §5.3) |
 | PA11 | Gateway-Aggregation — PT12 oficial | ✅ Cerrada (LIN-DIS-001 §5.2) |
-| PA12 | Sidecar | ❌ Pendiente (LIN-K8S-001) |
+| PA12 | Sidecar — PT17 oficial | ✅ Cerrada (LIN-K8S-001 §9.4.A, ficha `PAT-K8S-01`) |
+| PA13 | Ambassador — PT18 oficial | ✅ Cerrada (LIN-K8S-001 §9.4.B, ficha `PAT-K8S-02`) |
 | PD08 | Context Map | ✅ Cerrada (LIN-DIS-001 §3.1) |
 | PD09 | Shared Kernel | ✅ Cerrada (LIN-DIS-001 §3.4) |
 | PI09 | Bulkhead | ✅ Cerrada (LIN-DIS-001 §6.3) |
@@ -176,7 +177,6 @@ Este documento registra los patrones, estilos, principios y decisiones arquitect
 | PG01–PG03 | Patrones GoF — parcialmente cerrados en LIN-DEV-JAVA-001 §8 (los de mayor uso en Spring); patrones restantes de baja prioridad, se asume conocimiento del equipo |
 | E08–E09 | Serverless, Pipe and Filter |
 | PR10–PR11 | Law of Demeter, Tell Don't Ask |
-| PA13 | Ambassador |
 
 ---
 
@@ -204,4 +204,5 @@ Lineamientos identificados como necesarios para roles que aún no tienen cobertu
 | v0.1.3 | 2026-07-02 | Arquitectura OTI | Cierra brechas de patrones DDD en Monolito Modular PD08 (Context Map) y PD09 (Shared Kernel) normadas en LIN-ARQ-000 §3.9 |
 | v0.1.4 | 2026-07-06 | Arquitectura OTI | Cierra brechas de Nivel 3 en LIN-DEV-JAVA-001 v0.1.2: PR01–PR08 (SOLID + DRY/KISS/YAGNI, §10.4) y PD04–PD06 (Repository/Domain Service/Application Service, §11.5). Actualiza PG01–PG03 de ❌ Pendiente a ⚠️ Parcial tras verificar cobertura de Adapter/Decorator/Facade, Factory Method/Builder/Singleton y Strategy/Observer/Command/State en LIN-DEV-JAVA-001 §8 |
 | v0.1.5 | 2026-07-10 | Arquitectura OTI | Corrige citas a LIN-DEV-JAVA-001 en filas PR01–PR09 y PD04–PD06: las secciones §10.4.x y §11.5.x citadas en v0.1.4 fueron renumeradas internamente en revisiones posteriores de LIN-DEV-JAVA-001 sin que este tablero se actualizara. Ubicación real verificada: SOLID → §7.1–§7.5, DRY/KISS/YAGNI → §12.4.2–§12.4.4, Repository/Domain Service/Application Service → §13.5.1–§13.5.3. Pendiente: el resto de filas de este tablero sigue citando `LIN-ARQ-000` (congelado desde 2026-07-07) en vez de `LIN-ARQ-001`/`LIN-DIS-001`/`LIN-PAT-001` — reconciliación completa fuera de alcance de esta corrección puntual |
+| v0.1.7 | 2026-08-17 | Arquitectura OTI | Cierra **PA12 (Sidecar)** y **PA13 (Ambassador)**, que este tablero seguía marcando `❌ Pendiente` pese a estar normados en detalle en `LIN-K8S-001 §9.4` desde hacía versiones. El caso era además circular: `LIN-K8S-001` los identificaba con los códigos `PA12`/`PA13` **de este tablero de brechas** en vez de con códigos oficiales, porque el catálogo `LIN-PAT-001` no tenía ficha para ellos. Resuelto con las fichas `PAT-K8S-01` (`PT17`) y `PAT-K8S-02` (`PT18`) (`GOB-CHK-001` H26) |
 | v0.1.6 | 2026-08-05 | Arquitectura OTI | Reconciliación completa de citas (`GOB-CHK-001` H6.3): **66 referencias al documento congelado `LIN-ARQ-000`** redirigidas a su documento vigente (`LIN-ARQ-001`, `LIN-DIS-001`, `LIN-DEV-JAVA-001`, `LIN-BUS-001`) — pendiente reconocido desde v0.1.5 y declarado entonces «fuera de alcance». Corregida además la **discrepancia de códigos PT**: el tablero asignaba `PT09` a BFF, `PT10` a Gateway-Aggregation y `PT12` a Facade, contradiciendo a `LIN-PAT-001` (fuente única), que asigna `PT11`=BFF, `PT12`=Gateway-Aggregation y `PT15`=Facade; se añade la referencia a la ficha `PAT-*` de cada uno |

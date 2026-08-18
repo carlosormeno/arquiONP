@@ -4,6 +4,7 @@
 **Fecha:** 2026-06-08
 **Estado:** Aceptada
 **Ámbito:** Mensajería, Arquitectura, Interoperabilidad
+**ID en la matriz institucional:** `ADR-013` (`LIN-ARQ-001`, Apéndice A) — mismo identificador de decisión, no uno adicional  
 
 ## Contexto
 

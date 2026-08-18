@@ -1,0 +1,13 @@
+# Configuración no sensible del frontend.
+# Los valores sensibles van en Secret, nunca aquí (LIN-K8S-001 sección 8.1).
+#
+# Nota: en una SPA Angular la configuración de runtime se resuelve en tiempo de
+# build por entorno (LIN-FE-ANG-001 sección 13.3). Este ConfigMap se usa para
+# parámetros que nginx o el entrypoint necesiten, no para secretos ni para
+# valores que ya están compilados en el bundle.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: frontend-nombre-sistema-config
+data:
+  TZ: "America/Lima"

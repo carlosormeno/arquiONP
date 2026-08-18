@@ -1,8 +1,8 @@
 # LIN-FE-ANG-001 — Estándar de Diseño Web Frontend ONP
 **Código:** LIN-FE-ANG-001  
-**Versión:** 0.1.2  
-**Estado:** Borrador  
-**Fecha:** 2026-07-14  
+**Versión:** 0.1.4  
+**Estado:** En revisión  
+**Fecha:** 2026-08-17  
 **Área responsable:** OTI — Oficina de Tecnologías de la Información  
 **Marco rector:** LIN-ARQ-001 — Marco Rector de Arquitectura de Software  
 
@@ -15,6 +15,8 @@
 | 0.1.0 | 2026-05-22 | Arquitectura OTI | Borrador inicial |
 | 0.1.1 | 2026-07-10 | Arquitectura OTI | Migra Marco rector de `LIN-ARQ-000` (congelado) a `LIN-ARQ-001` (vigente) |
 | 0.1.2 | 2026-07-14 | Arquitectura OTI | Cierra dos brechas de cobertura frente a `LIN-ARQ-001 §7.2` y `LIN-DIS-001 §5.1.1`: agrega la prohibición de manipulación directa del DOM y de `setTimeout` como hack de Change Detection (§15.2), y bifurca la gestión del token SAA en dos escenarios mutuamente excluyentes según haya o no BFF (§9.3.1 sin BFF / §9.3.2 con BFF — Token Handler), actualizando el registro de interceptores en §9.5 |
+| 0.1.3 | 2026-08-17 | Arquitectura OTI | Revisión de fondo (`GOB-CHK-001` H29). **(1) `§16.4` desactivaba `readOnlyRootFilesystem`**, control obligatorio de `LIN-K8S-001 §14.1`, cuya nota 14.1 prohíbe expresamente esa salida y prescribe montar los directorios de escritura. Corregido con `emptyDir` en `/tmp` de 16 MB; se añaden además `capabilities: drop: ALL` y se marca el `securityContext` como obligatorio, no «recomendado». **(2) `§9.6` clasificaba `200` como código de éxito** junto a `000`, y dos filas más abajo como error de negocio: un componente que siguiera la primera lectura trataría un HTTP 422 —regla de negocio rechazada— como operación exitosa, navegando al listado con mensaje de confirmación. El éxito con advertencias es `001`. Incorporado también `302`/429. **(3) `§14.1` publicaba un umbral propio de cobertura** («70% de líneas»), métrica que ni siquiera figura entre las tres de `LIN-TEST-001 §5.2` —documento dueño y vigente—: un proyecto podía cumplirlo con 40% de *branches* y creerse conforme. Ahora remite al dueño. **(4)** `§9.4` no contemplaba el 429; el `error_log` de nginx apuntaba a `/var/log/nginx/error.log`, incompatible con el sistema de archivos de solo lectura y con `LIN-K8S-001 §15.1`. El documento pasa a **En revisión** |
+| 0.1.4 | 2026-08-17 | Arquitectura OTI | `§15.2` republicaba los umbrales de Core Web Vitals sin declarar que su dueño es `LIN-ARQ-001 §7.2` — segunda fuente del mismo dato, el patrón que ya divergió tres veces con los timeouts. Los valores coincidían; se marca la tabla como referencia de trabajo y se señala que el marco rector publica siete umbrales, no cuatro (`GOB-CHK-001` H30) |
 
 ---
 
@@ -641,6 +643,11 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
         case 403:
           router.navigate(['/error/403']);
           break;
+        case 429:
+          // Límite de peticiones excedido (codDetRespuesta 302, LIN-API-REST-001 sección 8.4).
+          // No reintentar automáticamente: agravaría la saturación que disparó el límite.
+          notifier.showError('Demasiadas solicitudes. Espere unos segundos e intente nuevamente.');
+          break;
         case 500:
         case 503:
           notifier.showError('Error del servidor. Intente nuevamente más tarde.');
@@ -687,14 +694,20 @@ export const appConfig: ApplicationConfig = {
 
 El componente que consume un servicio es responsable de interpretar `codDetRespuesta` para determinar el feedback al usuario:
 
+Los códigos son los del catálogo normativo de `LIN-API-REST-001 §4.2`, que es su fuente única.
+
 | Rango `codDetRespuesta` | Significado | Acción en frontend |
 |---|---|---|
-| `000`, `200` | Éxito | Snackbar de éxito o navegar al listado |
+| `000` | Éxito | Snackbar de éxito o navegar al listado |
+| `001` | Éxito parcial — operación completada con advertencias | Snackbar informativo indicando la advertencia |
 | `100`–`103` | Error de validación (400) | Mostrar errores por campo en el formulario |
 | `200`–`203` | Error de negocio (422/409/404) | Mostrar mensaje descriptivo al usuario |
-| `300`–`301` | Error de autenticación (401/403) | Redirigir a login o página de error 403 |
+| `300`–`301` | Error de autenticación o autorización (401/403) | Redirigir a login o página de error 403 |
+| `302` | Límite de peticiones excedido (429) | Snackbar indicando reintentar más tarde; no reintentar automáticamente en bucle |
 | `400`–`402` | Error de integración (503/502/504) | Snackbar de error de servicio externo |
 | `500`–`502` | Error de sistema (500) | Snackbar de error genérico |
+
+> **`200` no es un código de éxito.** La versión anterior de esta tabla lo listaba junto a `000` en la fila de Éxito y, dos filas más abajo, dentro del rango de error de negocio. Con la primera lectura, un componente trataría *«Regla de negocio no cumplida»* (HTTP 422) como una operación exitosa: navegaría al listado y mostraría confirmación de algo que el backend rechazó. El código de éxito con advertencias es `001` (`GOB-CHK-001` H29).
 
 ## 10. Manejo de errores y feedback
 
@@ -925,7 +938,9 @@ Mínimo requerido por tipo de artefacto:
 | Interceptor de errores | Redirige a `/login` ante 401; llama a `NotificationService` ante 500 |
 | Guard de autenticación | Bloquea la ruta sin token; permite con token válido |
 
-Cobertura mínima: **70% de líneas** en `core/` y `shared/`. Las páginas de features se validan con pruebas e2e.
+**Cobertura mínima:** los umbrales los fija `LIN-TEST-001 §5.2`, documento dueño y **vigente** — este lineamiento no los publica. A la fecha son *statements* ≥70%, *branches* ≥65% y *functions* ≥70%, medidos sobre `core/` y `shared/`; las páginas de features se validan con pruebas e2e.
+
+> Hasta la versión anterior este apartado exigía «70% de líneas», una sola métrica que además no es ninguna de las tres del dueño. Un proyecto podía alcanzar 70 % de líneas con 40 % de *branches* —es decir, sin ejercitar la mitad de los caminos condicionales— y considerarse conforme (`GOB-CHK-001` H29).
 
 ### 14.2 Pruebas e2e
 
@@ -1005,6 +1020,8 @@ provideHttpClient(
 ### 15.2 Core Web Vitals
 
 ONP adopta Core Web Vitals como framework de medición de performance frontend. Los umbrales son **obligatorios** y se miden con Lighthouse. Un build que no los cumple **no pasa a producción**.
+
+> **Documento dueño: `LIN-ARQ-001 §7.2`**, que publica siete umbrales — los tres Core Web Vitals más FCP, TTI, TBT y FPS de animaciones. La tabla siguiente reproduce los cuatro de aplicación directa en Angular **como referencia de trabajo, no como fuente**: ante cualquier discrepancia rige el marco rector. `LIN-CICD-001 §9.4` los implementa como gate de bloqueo con Lighthouse CI.
 
 | Métrica | Qué mide | Umbral ONP |
 |---|---|---|
@@ -1211,7 +1228,9 @@ Crear `nginx.conf` en la raíz del proyecto con configuración para puerto 8080 
 
 ```nginx
 worker_processes auto;
-error_log  /var/log/nginx/error.log warn;
+# stderr explícito: bajo `readOnlyRootFilesystem: true` nginx no puede crear el
+# archivo, y LIN-K8S-001 sección 15.1 exige logs a stdout/stderr de todos modos.
+error_log  /dev/stderr warn;
 pid        /tmp/nginx.pid;
 
 events {
@@ -1292,13 +1311,28 @@ spec:
     - port: 80
       targetPort: 8080
 
-# Deployment — SecurityContext recomendado
+# Deployment — securityContext (obligatorio, LIN-K8S-001 sección 14.1)
 securityContext:
   runAsNonRoot: true
   runAsUser: 101
   allowPrivilegeEscalation: false
-  readOnlyRootFilesystem: false   # nginx necesita escribir en /tmp
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop:
+      - ALL
+
+# nginx escribe en /tmp: se monta un volumen, no se desactiva el control
+volumeMounts:
+  - name: tmp
+    mountPath: /tmp
+volumes:
+  - name: tmp
+    emptyDir:
+      medium: Memory
+      sizeLimit: 16Mi
 ```
+
+> **Por qué no `readOnlyRootFilesystem: false`.** Versiones anteriores lo desactivaban con la nota «nginx necesita escribir en /tmp». Es cierto que necesita escribir, pero `LIN-K8S-001` nota 14.1 —documento dueño de los controles de pod— lo prohíbe expresamente como solución general: *«identificar los directorios que necesitan escritura y montarlos explícitamente»*. La propia [sección 16.5](#165-anti-patron) de este documento ya lista como anti-patrón omitir `client_body_temp_path` en `/tmp`, es decir, ya asume que nginx escribe ahí y lo configura — montar el volumen es el paso que faltaba. Desactivar el control deja el sistema de archivos completo escribible para evitar un `emptyDir` de 16 MB (`GOB-CHK-001` H29).
 
 ### 16.5 Anti-patrón
 

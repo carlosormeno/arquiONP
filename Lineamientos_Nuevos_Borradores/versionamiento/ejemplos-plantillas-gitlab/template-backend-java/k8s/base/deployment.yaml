@@ -1,9 +1,18 @@
+# EJEMPLO DE REFERENCIA — LIN-K8S-001 sección 9.2
+# Reemplazar `nombre-sistema` y la versión de imagen por los valores reales.
+
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: api-nombre-sistema
+  labels:
+    app.kubernetes.io/name: api-nombre-sistema
+    app.kubernetes.io/part-of: nombre-sistema
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/component: api
+    app.kubernetes.io/managed-by: kustomize
 spec:
-  replicas: 1
+  replicas: 2
   selector:
     matchLabels:
       app.kubernetes.io/name: api-nombre-sistema
@@ -11,20 +20,65 @@ spec:
     metadata:
       labels:
         app.kubernetes.io/name: api-nombre-sistema
+        app.kubernetes.io/part-of: nombre-sistema
+        app.kubernetes.io/version: "1.0.0"
+        app.kubernetes.io/component: api
+        app.kubernetes.io/managed-by: kustomize
     spec:
+      serviceAccountName: api-nombre-sistema
       containers:
         - name: api-nombre-sistema
-          image: api-nombre-sistema:latest
+          # Tag explícito e inmutable. `latest` está PROHIBIDO en QA y PROD
+          # (LIN-K8S-001 sección 6.3 y anti-patrones de la sección 19).
+          image: registry.gitlab.onp.gob.pe/aplicaciones/nombre-sistema/api-nombre-sistema:1.0.0
+          imagePullPolicy: IfNotPresent
           ports:
-            - containerPort: 8080
+            - name: http
+              containerPort: 8080
           env:
             - name: SPRING_PROFILES_ACTIVE
               value: dev
+          # requests y limits son obligatorios (LIN-K8S-001 P6 y sección 10.1).
+          # Ajustar a la carga real medida, no dejar estos valores por defecto.
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "512Mi"
+            limits:
+              cpu: "1000m"
+              memory: "1Gi"
           livenessProbe:
             httpGet:
               path: /actuator/health/liveness
-              port: 8080
+              port: http
+            initialDelaySeconds: 60
+            periodSeconds: 20
+            timeoutSeconds: 3
+            failureThreshold: 3
           readinessProbe:
             httpGet:
               path: /actuator/health/readiness
-              port: 8080
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          # Controles obligatorios de LIN-K8S-001 sección 14.1
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          # readOnlyRootFilesystem exige montar /tmp: Spring Boot escribe ahí sus
+          # temporales y sin este volumen el contenedor no arranca (nota 14.1).
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir:
+            medium: Memory
+            sizeLimit: 64Mi
+      terminationGracePeriodSeconds: 30

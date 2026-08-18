@@ -1,9 +1,9 @@
 # LIN-PERF-001 — Lineamiento de Pruebas de Rendimiento, Carga y Estrés ONP
 
 **Código:** LIN-PERF-001  
-**Versión:** v0.1.2  
-**Estado:** Borrador  
-**Fecha:** 2026-07-10  
+**Versión:** v0.1.3  
+**Estado:** En revisión  
+**Fecha:** 2026-08-17  
 **Propietario documental:** Arquitectura de Software — OTI  
 **Revisores sugeridos:** Desarrollo, QA, Plataforma/Infraestructura, Seguridad Digital, Arquitectura  
 **Marco rector:** LIN-ARQ-001 — Marco Rector de Arquitectura de Software  
@@ -18,6 +18,7 @@
 | v0.1.0 | 2026-05-28 | Arquitectura OTI | Borrador inicial del lineamiento de pruebas de rendimiento, carga y estrés |
 | v0.1.1 | 2026-07-06 | Arquitectura OTI | §12.1 separa el ambiente `PQA` (etapa de rama legado de `LIN-VER-001 §5`, sin clúster propio) del ambiente `Preproducción`/`UAT` (ambiente real opcional, requiere ADR según `LIN-K8S-001 §4.4`) — antes se listaban como si fueran equivalentes. Actualiza §13 (evidencia mínima del informe) para reflejar el mismo cambio |
 | v0.1.2 | 2026-07-10 | Arquitectura OTI | Migra Marco rector de `LIN-ARQ-000` (congelado) a `LIN-ARQ-001` (vigente) |
+| v0.1.3 | 2026-08-17 | Arquitectura OTI | Revisión de fondo (`GOB-CHK-001` H30). **(1) `§8.3` era una tercera lista de Core Web Vitals**, sin umbrales y bajo la fórmula «cuando aplique», frente al gate **mandatorio** de `LIN-ARQ-001 §7.2`. Remite ahora al dueño y conserva lo que sí le es propio: medir el frontend **con el backend bajo carga**, que es distinto del Lighthouse de laboratorio del gate. **(2) `§11` admitía datos personales reales «con autorización»** y regulaba solo el contenido de los scripts, dejando fuera el riesgo real: restaurar un respaldo de producción en un ambiente de pruebas, que traslada el padrón de afiliados —DNI, nombres, montos, historial de aportes— a un entorno con controles más débiles. Se exige **enmascaramiento previo e irreversible**, con tabla de tratamiento por tipo de dato. **(3)** `§2` no listaba `LIN-DIS-001`, `LIN-BUS-001`, `GOB-MAT-001` ni la Ley N.° 29733. El documento pasa a **En revisión** |
 
 ---
 
@@ -107,6 +108,10 @@ Aplica a:
 | Contenedores y Orquestación | LIN-K8S-001 | Define recursos, límites, réplicas, health checks y despliegue |
 | Versionamiento y Control de Cambios | LIN-VER-001 | Define MR, tags, releases y trazabilidad de cambios |
 | Integración y Entrega Continua | LIN-CICD-001 | Ejecutará y publicará reportes de performance cuando corresponda |
+| Lineamiento de Diseño de Software | LIN-DIS-001 | `§6.1` — matriz de timeouts por criticidad, referencia para interpretar la latencia observada |
+| Lineamiento de Mensajería y Bus de Eventos | LIN-BUS-001 | Consumer lag y throughput del broker en escenarios asíncronos |
+| Matriz de Propiedad Documental | GOB-MAT-001 | Determina qué documento es dueño de cada tema |
+| Ley N.° 29733 — Protección de Datos Personales | — | Marco legal aplicable a los datos usados en pruebas (§11) |
 
 ---
 
@@ -367,16 +372,17 @@ Otras herramientas = requieren justificación.
 
 ### 8.3 Métricas frontend
 
-Para frontend Angular, cuando aplique:
+> **Documento dueño: `LIN-ARQ-001 §7.2`.** Los umbrales de Core Web Vitals y de las métricas Lighthouse complementarias —LCP, INP, CLS, FCP, TTI, TBT y FPS— son **gate de bloqueo mandatorio** para la promoción de un build de frontend a producción. Este lineamiento **no publica esos valores** para no convertirse en una fuente paralela, y no puede relajarlos: no son «cuando aplique».
+
+Además de los umbrales del marco rector, una prueba de performance de un frontend mide:
 
 | Métrica | Uso |
 |---|---|
-| LCP | Tiempo de carga percibida de contenido principal |
-| INP | Interacción y capacidad de respuesta |
-| CLS | Estabilidad visual |
-| Tiempo de carga inicial | Carga de SPA |
-| Errores de red | Fallos HTTP en flujos críticos |
-| Tiempo total de flujo | Duración de operación de usuario extremo a extremo |
+| Tiempo de carga inicial | Carga de la SPA bajo la carga del escenario, no en condiciones de laboratorio |
+| Errores de red | Fallos HTTP en flujos críticos durante la prueba |
+| Tiempo total de flujo | Duración de la operación de usuario extremo a extremo |
+
+> **Qué aporta esta prueba frente a Lighthouse.** El gate de `LIN-ARQ-001 §7.2` se mide con Lighthouse CI sobre un build aislado (`LIN-CICD-001 §9.4`). Lo que aquí se mide es distinto y complementario: cómo se comporta el frontend **cuando el backend está bajo la carga del escenario**. Un LCP conforme en laboratorio puede degradarse cuando la API tarda cinco veces más por saturación.
 
 ---
 
@@ -490,8 +496,8 @@ Los datos deben ser representativos y seguros.
 
 Reglas:
 
-- no usar datos personales reales sin autorización;
-- preferir datos anonimizados o sintéticos;
+- **no usar datos personales reales**: se usan datos sintéticos o anonimizados, sin excepción por conveniencia. Ley N.° 29733 de Protección de Datos Personales;
+- preferir datos sintéticos sobre anonimizados cuando el escenario lo permita;
 - documentar volumen y distribución de datos;
 - evitar que todos los usuarios consulten el mismo registro si eso distorsiona la prueba;
 - asegurar que los datos permitan repetir la prueba;
@@ -511,6 +517,24 @@ Para pruebas de volumen se debe documentar:
 - supuestos relevantes.
 
 ### 11.3 Datos sensibles
+
+#### El riesgo principal no está en el script, está en la base de datos
+
+Una prueba de volumen necesita datos realistas, y el atajo habitual es **restaurar un respaldo de producción en el ambiente de pruebas**. Para una entidad previsional eso traslada a un ambiente con controles más débiles el padrón de afiliados completo: DNI, nombres, montos de pensión e historial de aportes. Es la vía por la que se materializa una fuga de datos personales, y ningún control sobre el contenido del script la detiene.
+
+**Regla:** restaurar datos productivos en DEV, QA o cualquier ambiente no productivo requiere **enmascaramiento previo e irreversible** de los datos personales, ejecutado antes de que el respaldo sea accesible desde el ambiente destino. La autorización de Seguridad de la Información no sustituye al enmascaramiento: lo condiciona.
+
+| Dato | Tratamiento obligatorio antes de exponerlo en un ambiente no productivo |
+|---|---|
+| DNI | Sustitución por identificador sintético con el mismo formato y dígito verificador válido |
+| Nombres y apellidos | Sustitución por datos sintéticos |
+| Dirección, teléfono, correo | Sustitución por datos sintéticos |
+| Montos de pensión y aportes | Se conservan si el escenario lo exige, **desligados** de la identidad real |
+| Datos de salud y bancarios | Sustitución o exclusión |
+
+> **Alcance de esta sección.** Aquí se norma el tratamiento de datos para **pruebas de rendimiento**, que es donde el volumen hace tentador el atajo. Una política transversal de datos de prueba y enmascaramiento para todos los ambientes no productivos sigue **pendiente** en el corpus (`GOB-CHK-001` H11.3) y corresponde a `LIN-SEC-APP-001` como dueño de la protección de datos.
+
+#### Contenido de los scripts
 
 Los scripts de prueba no deben contener:
 

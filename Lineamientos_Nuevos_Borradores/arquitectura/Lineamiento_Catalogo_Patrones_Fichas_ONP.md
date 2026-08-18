@@ -1,7 +1,7 @@
 # Catálogo Oficial de Patrones y Fichas Técnicas de Arquitectura, Diseño Táctico y Programación en la ONP
 
 **Código:** LIN-PAT-001  
-**Versión:** 0.1.5  
+**Versión:** 0.1.6  
 **Fecha:** 2026-08-05  
 **Autor:** Oficina de Tecnologías de la Información — ONP  
 **Estado:** En revisión / Catálogo Institucional Transversal — pendiente de graduación a Vigente (`GOB-MAT-001`, Ciclo de vida documental)  
@@ -17,6 +17,7 @@
 |---|---|---|---|
 | 0.1.0 – 0.1.4 | 2026-07-08 a 2026-07-10 | Arquitectura OTI | Versiones iniciales del catálogo de fichas de decisión. *(Detalle por versión no registrado — este historial se incorpora en v0.1.5.)* |
 | 0.1.5 | 2026-08-05 | Arquitectura OTI | Corrige 4 fichas (`PAT-TOP-01`, `PAT-TOP-03`, `PAT-INT-04`, `PAT-DAT-03`) que usaban "Estadio 0" para legacy: la escala oficial de `LIN-ARQ-001 §2.1` es Estadio 1 = Legacy, 2 = Monolito Modular, 3 = Microservicios (`GOB-CHK-001` H1). Declara explícitamente al catálogo como fuente única de códigos `PT`, tras detectarse asignaciones contradictorias en el tablero de Brechas (`GOB-CHK-001` H6.3). Se incorpora este historial de versiones |
+| 0.1.6 | 2026-08-17 | Arquitectura OTI | Incorpora las fichas **`PAT-K8S-01` (Sidecar — `PT17`)** y **`PAT-K8S-02` (Ambassador — `PT18`)**. La Familia 4 declaraba a `LIN-K8S-001` entre sus dueños normativos pero **no contenía ninguna ficha de los dos únicos patrones que ese lineamiento norma por sí mismo**: `LIN-K8S-001 §9.4` los identificaba con los códigos `PA12`/`PA13` del tablero de brechas `GOB-BRE-001`, que es un inventario de vacíos, no el catálogo oficial. Es el mismo caso ya resuelto en v0.1.5 para BFF, Facade y Gateway-Aggregation, que quedó a medias (`GOB-CHK-001` H26) |
 
 ---
 
@@ -53,6 +54,8 @@ Cada vez que un Arquitecto de Software, Diseñador/Tech Lead o Desarrollador ana
 | **`PAT-INT-05`** | API Gateway y Publicación WSO2 (*PT05*) | Transversal — Seguridad y Red | `LIN-API-REST-001` / `LIN-ARQ-001` |
 | **`PAT-RES-01`** | Circuit Breaker (*PT07 — Resilience4j*) | Nivel 2 — Resiliencia Táctica | `LIN-DIS-001` / `LIN-API-REST-001` |
 | **`PAT-RES-02`** | Bulkhead (*PT08 — Aislamiento de Hilos*) | Nivel 2 / K8s — Resiliencia | `LIN-DIS-001` / `LIN-K8S-001` |
+| **`PAT-K8S-01`** | Sidecar — Co-proceso de apoyo en el Pod (*PT17*) | Nivel 3 / K8s — Despliegue | `LIN-K8S-001` |
+| **`PAT-K8S-02`** | Ambassador — Proxy de salida en el Pod (*PT18*) | Nivel 3 / K8s — Despliegue | `LIN-K8S-001` |
 | **`PAT-MSG-01`** | Publisher/Subscriber en Kafka (*PT01*) | Transversal — Mensajería | `LIN-BUS-001` |
 | **`PAT-MSG-02`** | Dead Letter Queue (*DLQ — PT02*) | Transversal — Resiliencia Asíncrona | `LIN-BUS-001` |
 | **`PAT-MSG-03`** | Sagas Distribuidas (*PT09*) | Nivel 1 / Mensajería — Transacción | `LIN-ARQ-001` / `LIN-BUS-001` |
@@ -280,6 +283,36 @@ Cada vez que un Arquitecto de Software, Diseñador/Tech Lead o Desarrollador ana
 | **❌ Criterio de Exclusión<br>*(¿Cuándo NO usar?)*** | **NO usar Resilience4j Bulkhead cuando:**<br>• El aislamiento ya está resuelto por `setMaxConnPerRoute` de HttpClient 5 y no existe ADR aprobado para la excepción.<br>• El microservicio es altamente especializado, tiene una sola tarea y se ejecuta en un *Pod* dedicado de K8s donde la compartimentación ya la garantiza el límite de CPU/Memoria del contenedor del orquestador (`LIN-K8S-001`). |
 | **🛠️ Stack / Herramienta<br>Homologada en ONP** | **Por defecto:** Apache HttpClient 5 (`setMaxConnPerRoute`). **Bajo ADR o en Microservicios:** Resilience4j `ThreadPoolBulkhead` / `SemaphoreBulkhead` con máximos concurrentes estrictos y colas acotadas (`maxThreadPoolSize = 15`). |
 | **📖 Referencia Oficial** | `LIN-DIS-001 §6.3` y `LIN-K8S-001` |
+
+---
+
+### Ficha PAT-K8S-01: Patrón Sidecar (*PT17*)
+
+| Campo | Especificación Normativa ONP |
+|---|---|
+| **Código** | `PAT-K8S-01` / `PT17` (Nivel 3 / K8s — Patrón multi-contenedor en el Pod) |
+| **Nombre** | **Sidecar (*Co-proceso de Apoyo y Observabilidad*)** |
+| **Capa / Dominio** | Composición del Pod en Kubernetes (`LIN-K8S-001 §9.4.A`) |
+| **Descripción** | Contenedor secundario adjunto al contenedor principal del Pod que extiende sus capacidades —recolección de bitácoras, proxy, sincronización de secretos— sin modificar el código de la aplicación. Comparte red y volúmenes con el contenedor principal. |
+| **✅ Criterio de Selección<br>*(¿Cuándo usar en ONP?)*** | **Solo en dos escenarios:**<br>• **Caja negra / COTS / legacy no-Java** que escribe bitácoras en archivo y no soporta OTLP: sidecar ligero (Fluent Bit) sobre `emptyDir` compartido, reenviando al OTEL Collector centralizado.<br>• **Malla de servicios**, cuando Plataforma la habilite formalmente: el proxy lo inyecta la infraestructura, no el equipo de desarrollo. |
+| **❌ Criterio de Exclusión<br>*(¿Cuándo NO usar?)*** | **Prohibido en aplicaciones Java 21 / Spring Boot 3.** El SDK de OpenTelemetry embebido emite telemetría por OTLP directamente al colector centralizado (`LIN-OBS-001 §9.1`); un sidecar por pod duplica memoria y satura la red sin aportar nada. **La regla por defecto en ONP es 1 Pod = 1 contenedor de negocio.** |
+| **🛠️ Stack / Herramienta<br>Homologada en ONP** | Fluent Bit (bitácoras de caja negra). Envoy/Istio queda reservado a la malla institucional cuando exista. |
+| **📖 Referencia Oficial** | `LIN-K8S-001 §9.4.A` |
+
+---
+
+### Ficha PAT-K8S-02: Patrón Ambassador (*PT18*)
+
+| Campo | Especificación Normativa ONP |
+|---|---|
+| **Código** | `PAT-K8S-02` / `PT18` (Nivel 3 / K8s — Patrón multi-contenedor en el Pod) |
+| **Nombre** | **Ambassador (*Proxy de Salida del Pod*)** |
+| **Capa / Dominio** | Composición del Pod en Kubernetes (`LIN-K8S-001 §9.4.B`) |
+| **Descripción** | Proxy de red local dentro del Pod que media todo el tráfico saliente de la aplicación hacia sistemas externos, asumiendo mTLS, cabeceras, timeouts y reintentos fuera del proceso de negocio. |
+| **✅ Criterio de Selección<br>*(¿Cuándo usar en ONP?)*** | **Un único escenario:** contenerización de monolitos heredados **no-Java** (JBoss, WebLogic, C++) en el marco de Strangler Fig (`LIN-ARQ-001 §2.2`), cuyo código no puede modificarse para incorporar resiliencia o seguridad moderna. |
+| **❌ Criterio de Exclusión<br>*(¿Cuándo NO usar?)*** | **Prohibido en aplicaciones Java 21 / Spring Boot 3.** La resiliencia saliente se resuelve dentro de la JVM según `LIN-DIS-001 §6`, que es el documento dueño: Timeout y Bulkhead siempre con Apache HttpClient 5, Retry con Spring Retry, y Circuit Breaker con Resilience4j **solo** en Microservicios o bajo ADR. Delegar esas políticas a un proxy de red las duplica y las saca del control del equipo. |
+| **🛠️ Stack / Herramienta<br>Homologada en ONP** | Envoy o WSO2 Microgateway ligero, únicamente en el escenario de excepción. |
+| **📖 Referencia Oficial** | `LIN-K8S-001 §9.4.B` y `LIN-DIS-001 §6` |
 
 ---
 

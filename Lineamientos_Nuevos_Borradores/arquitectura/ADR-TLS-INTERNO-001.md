@@ -4,6 +4,7 @@
 **Fecha:** 2026-08-09  
 **Estado:** Propuesta de ADR  
 **Ámbito:** Seguridad, Plataforma, APIs, Arquitectura
+**ID en la matriz institucional:** `ADR-016` (`LIN-ARQ-001`, Apéndice A) — mismo identificador de decisión, no uno adicional  
 
 ## Contexto
 

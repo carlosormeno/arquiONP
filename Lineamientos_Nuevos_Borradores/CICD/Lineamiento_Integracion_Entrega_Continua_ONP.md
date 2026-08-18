@@ -1,9 +1,9 @@
 # LIN-CICD-001 — Lineamiento de Integración y Entrega Continua ONP
 
 **Código:** LIN-CICD-001  
-**Versión:** v0.1.5  
-**Estado:** Borrador  
-**Fecha:** 2026-07-10  
+**Versión:** v0.1.6  
+**Estado:** En revisión  
+**Fecha:** 2026-08-17  
 **Propietario documental:** Arquitectura de Software — OTI  
 **Revisores sugeridos:** Desarrollo, QA, Plataforma/Infraestructura, Seguridad Digital, Arquitectura  
 **Marco rector:** LIN-ARQ-001 — Marco Rector de Arquitectura de Software  
@@ -21,6 +21,7 @@
 | v0.1.3 | 2026-07-10 | Arquitectura OTI | Corrige el Anexo F: reemplaza la variable sugerida `TERRAFORM_WORKSPACE` por `ENV_NAME`, que es la que realmente usa el pipeline referencial de `LIN-IAC-001` (Anexo B) para seleccionar el directorio de ambiente. La variable anterior sugería implícitamente el uso de Terraform Workspaces, práctica que `LIN-IAC-001 §6.2`/§13/§14.1 prohíbe expresamente para separar ambientes |
 | v0.1.4 | 2026-07-10 | Arquitectura OTI | Migra Marco rector de `LIN-ARQ-000` (congelado) a `LIN-ARQ-001` (vigente) en encabezado y §2 |
 | v0.1.5 | 2026-07-10 | Arquitectura OTI | Implementa 4 gates mandatorios de `LIN-ARQ-001` que hasta ahora no tenían dueño en el pipeline: (1) Core Web Vitals vía Lighthouse CI como gate de bloqueo (§9.4, `LIN-ARQ-001 §7.2`); (2) condición explícita de SonarQube "0 vulnerabilidades Blocker/Critical" (§12.3, `LIN-ARQ-001 §8.3`); (3) verificación de deuda técnica de Feature Toggles vía API de Unleash (§12.4, `LIN-ARQ-001 §2.3`); (4) verificación de presencia de la Declaración de Conformidad con LIN-ARQ-001 en README (§12.5, `LIN-ARQ-001 §8.3` punto 4). Actualiza §7.2, §9.1, §19.2, §20, §23.1, §23.3, Anexo B y Anexo F en consecuencia |
+| v0.1.6 | 2026-08-17 | Arquitectura OTI | Revisión de fondo (`GOB-CHK-001` H27). **(1) `§19.2` se titulaba «criterios de bloqueo *sugeridos*» y omitía siete de los once que `LIN-TEST-001 §9` —documento vigente— declara bloqueantes**: cobertura Angular, caracterización fallida o faltante ante PL/SQL crítico, prueba de contrato, E2E de *happy path*, reporte de cobertura ausente y opinión de UFSD. Otros tres figuraban degradados a «según fase». Reescrito separando lo que proviene del dueño —que no escala por fase y solo admite ADR— de lo propio del pipeline. **(2) `§11` y `§12.3`** presentaban la cobertura como capacidad de Fase 2 sin umbral; ahora remiten a `LIN-TEST-001 §5.1` y se explicita que **la fase determina si el control se automatiza, no si es exigible**. **(3) `§17.2` listaba `PQA` como ambiente de despliegue** entre DEV y QA: es una **rama** del modelo de promoción de `LIN-VER-001 §5`, y `LIN-K8S-001 §4.4` advierte expresamente contra esa confusión. Sustituido por UAT/Preproducción, que requiere ADR. **(4) `§13.3`** trataba los hallazgos altos como «plan de remediación» cuando `LIN-TEST-001 §9.2` los sitúa junto a los críticos para el pase a Producción, sin retest de UFSD. **(5)** El encabezado de `§18` arrastraba la nota editorial interna «(Validarlo con AD)», visible también en la tabla de contenido. El documento pasa a **En revisión** |
 
 ---
 
@@ -565,9 +566,11 @@ latest
 |---|---|---|
 | Unitarias | JUnit 5 / Mockito | Fase 1 |
 | Integración | Spring Boot Test / Testcontainers | Fase 2 |
-| Contrato | OpenAPI validator / Pact / Spring Cloud Contract | Fase 2/3 |
+| Contrato | OpenAPI validator / Pact / Spring Cloud Contract | Fase 2/3 — **la obligatoriedad no es por fase**: la fija `LIN-TEST-001 §6.2` |
 | Caracterización | JUnit + BD controlada | Según legacy |
-| Cobertura | JaCoCo | Fase 2 |
+| Cobertura | JaCoCo | Fase 2 — **el umbral lo fija `LIN-TEST-001 §5.1`**, no este documento |
+
+> **La fase indica cuándo se automatiza el control, no si el control es exigible.** Un proyecto en Fase 1 no queda eximido de los umbrales de cobertura de `LIN-TEST-001 §5.1` ni de las pruebas de contrato de `§6.2`: lo que cambia es que la verificación se hace de forma manual o semiautomática con evidencia en el Merge Request (`LIN-VER-001 §13`), en lugar de en el pipeline.
 
 ### 11.2 Pruebas frontend
 
@@ -618,7 +621,7 @@ El quality gate debe considerar progresivamente:
 
 - build exitoso;
 - pruebas exitosas;
-- cobertura mínima;
+- cobertura mínima **según los umbrales de `LIN-TEST-001 §5.1`** — no es un valor que este documento fije ni que escale por fase;
 - ausencia de violaciones críticas;
 - ausencia de duplicación crítica;
 - deuda técnica controlada;
@@ -734,12 +737,14 @@ Se recomienda ejecutar DAST:
 
 ### 13.3 Criterio de bloqueo
 
-| Hallazgo | Tratamiento |
-|---|---|
-| Crítico | Bloquea pase salvo excepción formal |
-| Alto | Requiere remediación o plan aprobado |
-| Medio | Registrar y planificar |
-| Bajo | Monitorear |
+| Hallazgo | Tratamiento durante el ciclo | Paso a Producción |
+|---|---|---|
+| Crítico | Bloquea el pase salvo excepción formal | **Bloquea** sin subsanación ni retest aprobado por UFSD |
+| Alto | Requiere remediación o plan aprobado | **Bloquea** sin subsanación ni retest aprobado por UFSD |
+| Medio | Registrar y planificar | No bloquea |
+| Bajo | Monitorear | No bloquea |
+
+> La columna de Producción no es una interpretación de este documento: la fija `LIN-TEST-001 §9.2`, que es el dueño **vigente** de los criterios de aceptación y sitúa **crítico y alto** en el mismo plano. Un plan de remediación aprobado permite seguir trabajando, pero no habilita el pase a Producción sin el retest de UFSD.
 
 ### 13.4 Gestión de variables de pipeline
 
@@ -904,9 +909,11 @@ La diferencia entre ambientes se gestiona mediante configuración externa, secre
 | Ambiente | Tratamiento |
 |---|---|
 | DEV | Despliegue automático o semiautomático permitido |
-| PQA | Despliegue controlado si existe |
 | QA | Despliegue con evidencias mínimas |
+| UAT / Preproducción | Solo si el proyecto lo tiene aprobado por ADR (`LIN-K8S-001 §4.4`). Mismo tratamiento que QA, con evidencias completas |
 | PROD | Requiere aprobación y controles según criticidad |
+
+> **`PQA` no es un ambiente.** Versiones anteriores lo listaban aquí entre DEV y QA. `ONP_PQA` es una **rama** de precalidad del modelo de promoción de `LIN-VER-001 §5`, no un destino de despliegue con clúster propio, y `LIN-K8S-001 §4.4` advierte expresamente contra confundir ambas cosas. El único ambiente adicional admitido es UAT/Preproducción, entre QA y PROD, y requiere ADR (`GOB-CHK-001` H27).
 
 ### 17.3 Producción
 
@@ -925,7 +932,7 @@ Para habilitarlo se requiere:
 
 ---
 
-## 18. IaC y Terraform en CI/CD (Validarlo con AD)
+## 18. IaC y Terraform en CI/CD
 
 ### 18.1 Estado
 
@@ -974,13 +981,38 @@ Debe requerir:
 | 6 | Gates automáticos integrados |
 | 7 | Operación avanzada y plan de reversa automatizado |
 
-### 19.2 Criterios de bloqueo sugeridos
+### 19.2 Criterios de bloqueo
+
+> **Dos orígenes distintos, con fuerza distinta.** Los criterios marcados **`LIN-TEST-001 §9`** provienen del documento **dueño y vigente** de los criterios de aceptación: bloquean sin escalamiento por fase y sin excepción de madurez. Su documento dueño solo admite excepción mediante **ADR firmado por Arquitectura** con control compensatorio y fecha de revisión (`LIN-TEST-001 §9.3`); la excepción genérica de [§19.3](#193-excepciones) no los alcanza. El resto de criterios sí escalan progresivamente según la fase del proyecto.
+>
+> Hasta la versión anterior este apartado se titulaba «criterios de bloqueo **sugeridos**» y omitía siete de los once criterios que `LIN-TEST-001 §9` declara bloqueantes (`GOB-CHK-001` H27).
+
+**Criterios de paso a QA — `LIN-TEST-001 §9.1`, bloquean sin excepción de fase:**
+
+| Criterio | Bloquea |
+|---|---|
+| Cobertura JaCoCo inferior al umbral de `LIN-TEST-001 §5.1` | **Sí** |
+| Cobertura Angular inferior al umbral de `LIN-TEST-001 §5.1` | **Sí** |
+| Prueba unitaria o de integración fallida | **Sí** |
+| Prueba de caracterización (`CT`) fallida | **Sí** |
+| Prueba de caracterización faltante antes de modificar un procedure legacy con lógica crítica | **Sí** |
+| Prueba de contrato fallida, cuando es obligatoria (`LIN-TEST-001 §6.2`) | **Sí** |
+
+**Criterios adicionales de paso a Producción — `LIN-TEST-001 §9.2`:**
+
+| Criterio | Bloquea |
+|---|---|
+| Prueba E2E de *happy path* fallida | **Sí** |
+| Validación de esquema OpenAPI fallida | **Sí** |
+| Reporte de cobertura no generado (evidencia ausente) | **Sí** |
+| Opinión favorable de UFSD ausente cuando el proyecto requiere Ethical Hacking | **Sí** |
+| Vulnerabilidades críticas o altas sin subsanar ni retest aprobado por UFSD | **Sí** |
+
+**Criterios propios del pipeline** — escalan por fase salvo donde se indica:
 
 | Criterio | Bloquea |
 |---|---|
 | Build falla | Sí |
-| Pruebas unitarias fallan | Sí |
-| Cobertura menor al umbral | Según fase |
 | PMD crítico | Sí desde Fase 2 madura |
 | CPD duplicación crítica | Según umbral |
 | SonarQube quality gate falla | Según fase |

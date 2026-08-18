@@ -1,7 +1,7 @@
 # Lineamiento Marco Rector de Arquitectura de Software en la ONP
 
 **Código:** LIN-ARQ-001  
-**Versión:** 0.1.10  
+**Versión:** 0.1.11  
 **Fecha:** 2026-08-05  
 **Autor:** Oficina de Tecnologías de la Información — ONP  
 **Estado:** En revisión / Estándar de Nivel 1 — pendiente de graduación a Vigente (`GOB-MAT-001`, Ciclo de vida documental)  
@@ -14,9 +14,10 @@
 | Versión | Fecha | Autor | Descripción |
 |---|---|---|---|
 | 0.1.0 – 0.1.7 | 2026-05-21 a 2026-07-14 | Arquitectura OTI | Versiones iniciales del Marco Rector derivadas del desglose de `LIN-ARQ-000` en el modelo de 3 niveles. *(Detalle por versión no registrado — este historial se incorpora en v0.1.8.)* |
-| 0.1.10 | 2026-08-08 | Arquitectura OTI | Correcciones menores (`GOB-CHK-001` H10): unifica el nombre del modelo de ramas con su documento dueño — `§2.3` y `§8.1` decían «Trunk-Based Development» cuando `LIN-VER-001 §6` lo denomina **GitLab Flow simplificado**, disciplinado con principios TBD; corrige tres erratas (`oquestado`→`orquestado` en `§3.3`; «Estándar por Defectos»→«por Defecto» en `§2.1` y `§8.2`) |
-| 0.1.9 | 2026-08-05 | Arquitectura OTI | `§2.3`: incorpora **Experiment Toggle** como cuarta categoría de Feature Toggle y acota **Permission Toggle** al control de acceso por rol/perfil (SAA). La taxonomía anterior mezclaba en una sola categoría dos ciclos de vida opuestos —el experimento caduca obligatoriamente con su veredicto, el permiso puede ser permanente— lo que llevaba a que flags temporales quedaran clasificados como permanentes. Alinea el Nivel 1 con `LIN-DEV-JAVA-001 §16.6`, que ya operaba con las cuatro categorías sin respaldo normativo del marco rector. Ampliación anotada en `ADR-014` (`GOB-CHK-001` H13.3) |
 | 0.1.8 | 2026-08-05 | Arquitectura OTI | Corrige `§4.3` numeral 3, que contradecía al Nivel 2: exigía **Circuit Breaker con Resilience4j** como mandatorio para integraciones con el Estado, mientras `LIN-DIS-001 §6.2` lo declara excepcional bajo ADR en Monolito Modular — por la Regla de Supremacía, el mandato de Nivel 1 forzaba justamente lo que el Nivel 2 buscaba evitar. El numeral pasa a exigir el **resultado** (aislamiento ante caídas: timeout estricto + Bulkhead + degraded mode) y delega el mecanismo y los umbrales en `LIN-DIS-001 §6`, eliminando además el rango propio de timeout "3 a 5 segundos" que divergía de la matriz por criticidad del dueño (`GOB-CHK-001` H2 y H3). Se incorpora este historial de versiones |
+| 0.1.9 | 2026-08-05 | Arquitectura OTI | `§2.3`: incorpora **Experiment Toggle** como cuarta categoría de Feature Toggle y acota **Permission Toggle** al control de acceso por rol/perfil (SAA). La taxonomía anterior mezclaba en una sola categoría dos ciclos de vida opuestos —el experimento caduca obligatoriamente con su veredicto, el permiso puede ser permanente— lo que llevaba a que flags temporales quedaran clasificados como permanentes. Alinea el Nivel 1 con `LIN-DEV-JAVA-001 §16.6`, que ya operaba con las cuatro categorías sin respaldo normativo del marco rector. Ampliación anotada en `ADR-014` (`GOB-CHK-001` H13.3) |
+| 0.1.10 | 2026-08-08 | Arquitectura OTI | Correcciones menores (`GOB-CHK-001` H10): unifica el nombre del modelo de ramas con su documento dueño — `§2.3` y `§8.1` decían «Trunk-Based Development» cuando `LIN-VER-001 §6` lo denomina **GitLab Flow simplificado**, disciplinado con principios TBD; corrige tres erratas (`oquestado`→`orquestado` en `§3.3`; «Estándar por Defectos»→«por Defecto» en `§2.1` y `§8.2`) |
+| 0.1.11 | 2026-08-17 | Arquitectura OTI | El **Apéndice A** (Matriz de Decisiones Arquitectónicas) y los ADR en archivo eran dos registros desconectados: `ADR-013` y `ADR-CLOUDEVENTS-001` documentaban **la misma decisión** —misma fecha, mismo asunto— sin referenciarse, y `ADR-WSO2-001` y `ADR-TLS-INTERNO-001` no figuraban en la matriz pese a ser decisiones institucionales vigentes. Se declara la matriz como registro único, se incorporan como `ADR-015` y `ADR-016`, y cada ADR en archivo declara su identificador de matriz (`GOB-CHK-001` H31) |
 
 ---
 
@@ -507,7 +508,9 @@ Prueba técnica recomendada por perfil, a aplicar durante la evaluación de ingr
 
 ## Apéndice A — Matriz de Decisiones Arquitectónicas (ADRs de Referencia Institucional)
 
-La siguiente tabla compendia las decisiones históricas y vigentes adoptadas por el Comité de Arquitectura de la OTI, las cuales sustentan y dan fuerza normativa al presente Marco Rector (`LIN-ARQ-001`) y sus lineamientos derivados:
+La siguiente tabla compendia las decisiones históricas y vigentes adoptadas por el Comité de Arquitectura de la OTI, las cuales sustentan y dan fuerza normativa al presente Marco Rector (`LIN-ARQ-001`) y sus lineamientos derivados.
+
+> **Esta matriz es el registro único de ADRs institucionales.** Una decisión puede constar aquí como entrada resumida o, cuando requiere desarrollo extenso —contexto, alternativas, controles compensatorios, criterios de revisión—, como **documento propio** en `arquitectura/ADR-<TEMA>-NNN.md`. En ese caso la entrada de esta tabla **debe enlazar al documento**, y ambos identificadores designan la misma decisión: no son decisiones distintas. Las decisiones de alcance de un solo proyecto no entran aquí — se registran como `AD-XXX` en el documento de arquitectura de ese sistema (`GOB-PLA-001`, Anexo B).
 
 | ID del ADR | Título y Decisión Arquitectónica Registrada | Fecha | Estado |
 |---|---|---|---|
@@ -523,7 +526,9 @@ La siguiente tabla compendia las decisiones históricas y vigentes adoptadas por
 | **ADR-010** | **Observabilidad como Pilar de Producción:** Trazas distribuidas, logs estructurados JSON, métricas (Four Golden Signals) y probes K8s son obligatorios antes del go-live. | 2026-05-21 | Aceptada / Vigente |
 | **ADR-011** | **Kubernetes como Destino por Defecto:** K8s es el destino habitual; el uso de Máquinas Virtuales dedicadas se limita a 4 criterios técnicos excepcionales con ADR. | 2026-05-21 | Aceptada / Vigente |
 | **ADR-012** | **Apache Kafka como Broker Institucional:** Se oficializa a Apache Kafka (`LIN-BUS-001`) como el único canal institucional de mensajería y eventos asíncronos para EDA. | 2026-06-05 | Aceptada / Vigente |
-| **ADR-013** | **CloudEvents v1.0 como Estándar de Eventos:** Todo evento publicado en los tópicos institucionales de Kafka debe ajustarse a la especificación estándar CNCF CloudEvents v1.0. | 2026-06-08 | Aceptada / Vigente |
+| **ADR-013** | **CloudEvents v1.0 como Estándar de Eventos:** Todo evento publicado en los tópicos institucionales de Kafka debe ajustarse a la especificación estándar CNCF CloudEvents v1.0. **Desarrollo completo en [`ADR-CLOUDEVENTS-001`](ADR-CLOUDEVENTS-001.md)** — misma decisión, no una adicional. | 2026-06-08 | Aceptada / Vigente |
+| **ADR-015** | **Transición de SAA hacia WSO2 API Manager:** SAA sigue siendo el mecanismo institucional obligatorio; WSO2 permanece en PoC hasta comunicación formal de Arquitectura y Plataforma. Desarrollo completo en [`ADR-WSO2-001`](ADR-WSO2-001.md). | 2026-05-28 | Propuesta |
+| **ADR-016** | **Terminación TLS en el perímetro y tráfico intra-cluster sobre HTTP:** excepción acotada a `LIN-SEC-APP-001 §7.1`, condicionada a `NetworkPolicy` obligatoria como control sustitutivo. Desarrollo completo en [`ADR-TLS-INTERNO-001`](ADR-TLS-INTERNO-001.md). | 2026-08-09 | Propuesta |
 | **ADR-014** | **Unleash para Feature Toggles On-Premise:** Se adopta Unleash self-hosted como herramienta oficial para Feature Toggles en Trunk-Based Development (*LIN-VER-001*). **Ampliación 2026-08-05:** la taxonomía de `§2.3` incorpora **Experiment Toggle** como cuarta categoría y acota **Permission Toggle** al control de acceso por rol/perfil — antes una sola categoría mezclaba ambos ciclos de vida (el experimento caduca con su veredicto; el permiso puede ser permanente). Alinea el Nivel 1 con la taxonomía operativa de `LIN-DEV-JAVA-001 §16.6`. | 2026-07-02 | Aceptada / Vigente |
 
 ---

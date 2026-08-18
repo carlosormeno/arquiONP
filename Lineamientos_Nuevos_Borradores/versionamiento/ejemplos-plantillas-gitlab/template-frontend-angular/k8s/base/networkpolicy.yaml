@@ -1,0 +1,45 @@
+# EJEMPLO DE REFERENCIA — LIN-K8S-001 sección 9.1 y Anexo E
+#
+# OBLIGATORIA para todo servicio que reciba tráfico dentro del cluster.
+# Es el control que SUSTITUYE al cifrado en el tramo intra-cluster admitido por
+# ADR-TLS-INTERNO-001. Un servicio sin NetworkPolicy no puede acogerse a esa
+# excepción y debe servir HTTPS extremo a extremo.
+
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: frontend-nombre-sistema-netpol
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: frontend-nombre-sistema
+  policyTypes:
+    - Ingress
+    - Egress
+
+  ingress:
+    # Solo el Ingress Controller alcanza al frontend: es la puerta de entrada
+    # del usuario. Ningún otro pod necesita consumirlo.
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ingress-nginx
+      ports:
+        - protocol: TCP
+          port: 8080
+
+  egress:
+    # Resolución DNS dentro del cluster
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    # El bundle Angular se ejecuta en el navegador del usuario, no en el pod:
+    # las llamadas a la API salen del navegador, no de aquí. Este egress cubre
+    # solo lo que nginx necesite server-side (por defecto, nada más que DNS).
+    # Si el proyecto configura proxy_pass hacia el backend, declararlo aquí.

@@ -29,15 +29,23 @@ Código de salida `0` si no hay errores, `1` si los hay. Los **avisos no rompen 
 |---|---|---|---|
 | **C1** | Toda cita `LIN-XXX §N.N` o `LIN-XXX sección N.N` resuelve a una sección real del documento citado | Error | H1, H5.3, H6, H7 — 17 citas rotas corregidas a mano |
 | **C2** | La versión del encabezado coincide con la embebida en el nombre de archivo | Aviso | H8 — divergencia sistémica, 19 documentos afectados |
-| **C3** | Todo código `PT` citado está definido en `LIN-PAT-001` (fuente única) | Error | H10.3 — el ida y vuelta PT06↔PT07 de `LIN-SEC-APP-001` |
+| **C3** | Todo código `PT` citado está definido en `LIN-PAT-001` (fuente única). Además, un código de brecha (`PA`/`PI`/`PD`/`PR`/`PG`) inexistente en `GOB-BRE-001` es error, y uno que el tablero declare `Pendiente` es aviso | Error / Aviso | H10.3 — el ida y vuelta PT06↔PT07. **Ampliada en H26:** `LIN-K8S-001 §9.4` normaba Sidecar y Ambassador con los códigos `PA12`/`PA13` del tablero de brechas, invisible para el linter |
 | **C4** | Las copias controladas son idénticas a su fuente canónica | Error | H4.4 — los templates enviaban un `checkstyle-onp.xml` mutilado |
 | **C5** | Sin rutas absolutas de máquina; los enlaces relativos resuelven | Error | H10.5, H13.5 — 13 enlaces `file:///home/carlos/...` |
+| **C6** | Las rutas del catálogo de `GOB-MAT-001` existen y contienen el código atribuido | Error | H8.3 — al renombrar el documento congelado, la ruta del catálogo quedó apuntando a un archivo inexistente |
+| **C8** | La versión y el estado que el catálogo declara coinciden con el encabezado real | Error (estado) / Aviso (versión) | H25 — **15 de 21 entradas desactualizadas**; el catálogo daba `LIN-API-REST-001` por «Borrador v0.1.5» cuando iba por «En revisión v0.1.7» |
 
 ### Decisiones de diseño
 
-**Las tablas de historial se excluyen de C1 y C3.** Un `Historial de versiones` o `Control de cambios` cita a propósito numeraciones antiguas para documentar qué se corrigió; validarlas produciría ruido permanente. El linter detecta esos encabezados y omite sus líneas.
+**Un código de brecha no es un código normativo.** `GOB-BRE-001` inventaría vacíos: mientras un patrón figura ahí como `Pendiente`, se está afirmando que *falta* normarlo. Si un lineamiento lo norma citando ese código, el tablero queda contradiciendo a la norma. C3 lo detecta, pero solo para brechas abiertas: muchos códigos (`PR01`–`PR08` son principios SOLID, `PD04`–`PD06` building blocks DDD) no tienen ni deben tener equivalente `PT`.
+
+**Las tablas de historial se excluyen de C1 y C3.** Un `Historial de versiones`, `Control de cambios` o `Historial de revisiones` —con o sin numeración— cita a propósito numeraciones antiguas para documentar qué se corrigió; validarlas produciría ruido permanente. El linter detecta esos encabezados y omite sus líneas.
 
 **`LIN-ARQ-000` está excluido de las citas salientes.** Es cantera histórica congelada: sus referencias apuntan a su propia estructura y no deben corregirse. Sí se le aplican C5 (enlaces) y las comprobaciones entrantes — otros documentos no pueden citarlo como norma vigente.
+
+**El estado desviado es error; la versión desviada, aviso.** C8 distingue ambos casos porque no cuestan lo mismo. Una versión desfasada en el catálogo desorienta; un **estado** desfasado cambia qué es contractualmente exigible, porque la regla de exigibilidad de `GOB-MAT-001` se aplica sobre el estado declarado — dar por `Vigente` lo que sigue en `Borrador` permite exigir en un TDR algo que aún no obliga.
+
+**No hay C7.** El número está reservado para la comprobación de anclas internas (`GOB-CHK-001` H21.2), pendiente de validar el algoritmo de generación contra el renderizador real del GitLab de la ONP. C8 se numeró después para no ocupar ese hueco.
 
 **Una sección padre existe si existe una hija.** Si el documento declara `### 13.4.4`, el linter acepta citas a `§13`, `§13.4` y `§13.4.4`, aunque no haya un encabezado literal `## 13.4`.
 

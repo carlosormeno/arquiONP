@@ -1,6 +1,6 @@
 # LIN-BI-001 — Lineamiento de Explotación y Analítica de Datos (Business Intelligence) ONP
 ## Oficina de Normalización Previsional — OTI
-### Código: LIN-BI-001 | Versión 0.1.2 | Estado: Borrador | Marco rector: LIN-ARQ-001
+### Código: LIN-BI-001 | Versión 0.1.3 | Estado: En revisión | Marco rector: LIN-ARQ-001
 
 ---
 
@@ -9,8 +9,9 @@
 | Versión | Fecha | Autor | Descripción |
 |---------|-------|-------|-------------|
 | 0.1.0   | 2026-06-08 | OTI | Versión inicial del borrador alineado con la Sección 9 del *Lineamiento de Estándares de Tecnología v2.0* de la ONP y el piloto de arquitectura Lakehouse. |
-| 0.1.2   | 2026-08-09 | OTI | Normalización de encabezados de sección: `## Sección N Título` → `## N. Título`, alineando el formato con el resto del corpus (`GOB-CHK-001` H21.3). Actualizadas las 9 anclas del índice, que apuntaban al formato anterior. Resultado: 11/11 enlaces internos resuelven |
 | 0.1.1   | 2026-07-10 | OTI | Migra Marco rector de `LIN-ARQ-000` (congelado) a `LIN-ARQ-001` (vigente) en encabezado y §1.3 |
+| 0.1.2   | 2026-08-09 | OTI | Normalización de encabezados de sección: `## Sección N Título` → `## N. Título`, alineando el formato con el resto del corpus (`GOB-CHK-001` H21.3). Actualizadas las 9 anclas del índice, que apuntaban al formato anterior. Resultado: 11/11 enlaces internos resuelven |
+| 0.1.3   | 2026-08-17 | OTI | Revisión de fondo (`GOB-CHK-001` H32). **(1) `§8.3` protegía solo al consumidor analítico.** El enmascaramiento dinámico de Trino cubre la capa Gold, pero **Bronze es por diseño una réplica cruda de las bases transaccionales** —padrón de afiliados con DNI, nombres, domicilios, montos e historial de aportes— y `§8.2` autoriza a Ingeniería de Datos a leerla entera. Nueva `§8.3.1`: clasificación PII desde la ingesta, cifrado en reposo, acceso nominal auditado, retención declarada por dominio y enmascaramiento previo obligatorio al replicar hacia ambientes no productivos. **(2) `§9.2` usaba el ADR como instrumento de excepción de proyecto**; pasa a `EXC-BI-NNN` conforme a la convención normada en `GOB-MAT-001`, con fecha de revisión obligatoria. **(3) `§1.3` citaba el «Lineamiento de Estándares de Tecnología v2.0» sin código** como autoridad de todo el stack homologado, sin declarar que es externo al corpus y por tanto no sujeto al ciclo de vida documental ni al linter. Se incorporan además `LIN-PAT-001` (ficha `PAT-BI-01`/`PT16`), `LIN-BUS-001`, `LIN-K8S-001`, `LIN-CICD-001`, `LIN-OBS-001` y `GOB-MAT-001`. El documento pasa a **En revisión** |
 
 ---
 
@@ -54,7 +55,13 @@ Este estándar aplica a:
 | Estándar de Base de Datos Oracle | `LIN-BD-ORA-001` | Regula las fuentes transaccionales core de donde se extraen los datos analíticos. |
 | Estándar de Seguridad en Aplicaciones | `LIN-SEC-APP-001` | Define las políticas de cifrado, gestión de secretos (Vault) y clasificación PII. |
 | Estándar de Versionamiento y Control de Cambios | `LIN-VER-001` | Alinea la estrategia de ramas de código con la estrategia de ramas de datos (Nessie). |
-| Lineamiento de Estándares de Tecnología v2.0 | N/A | La Sección 9 define el stack de productos oficial para Ingeniería de Datos en la ONP. |
+| Catálogo Oficial de Patrones | `LIN-PAT-001` | Ficha `PAT-BI-01` (`PT16`) — Arquitectura Medallión. |
+| Lineamiento de Mensajería y Bus de Eventos | `LIN-BUS-001` | Change Data Capture como mecanismo de ingesta alternativo (ficha `PAT-DAT-03`). |
+| Contenedores y Orquestación | `LIN-K8S-001` | Despliegue de Airflow, Spark, Trino y MinIO en Kubernetes. |
+| Integración y Entrega Continua | `LIN-CICD-001` | Pipeline de validación de DAGs y modelos dbt. |
+| Log, Trazabilidad y Observabilidad | `LIN-OBS-001` | Métricas y alertas de los pipelines de datos. |
+| Matriz de Propiedad Documental | `GOB-MAT-001` | Determina qué documento es dueño de cada tema y norma el registro de excepciones. |
+| Lineamiento de Estándares de Tecnología v2.0 | *(sin código; externo al corpus)* | Su Sección 9 define el stack de productos homologado para Ingeniería de Datos. **No forma parte del corpus de Arquitectura**: no está sujeto al ciclo de vida documental ni al linter, y sus cambios no se propagan automáticamente aquí. Al incorporarse al corpus deberá asignársele código en `GOB-MAT-001`. |
 
 ---
 
@@ -254,6 +261,22 @@ De acuerdo con la legislación de protección de datos personales:
 - Las columnas que contengan datos PII (ej. Nombres, correos electrónicos, números telefónicos) deben clasificarse con tags correspondientes en el catálogo.
 - Trino debe implementar políticas de enmascaramiento dinámico (*Dynamic Data Masking*) para que los usuarios analistas visualicen datos anonimizados u ofuscados (ej. `XXXX-XXXX`), a menos que requieran explícitamente el acceso bajo justificación y rol autorizado.
 
+#### 8.3.1 La capa Bronze es una réplica del dato productivo — y requiere el mismo trato
+
+El enmascaramiento dinámico de Trino protege al **consumidor analítico**, pero por diseño la capa Bronze contiene una copia cruda e inalterada de las bases transaccionales: el padrón de afiliados con DNI, nombres, domicilios, montos de pensión e historial de aportes. Proteger solo la capa Gold deja el dato completo accesible en la capa donde no hay ninguna transformación que lo oculte, y a un rol —Ingeniero de Datos— que `§8.2` autoriza a leerlo entero.
+
+Reglas mínimas mientras exista la brecha institucional de protección de datos (`GOB-CHK-001` H11.3):
+
+| Control | Regla |
+|---|---|
+| **Clasificación desde la ingesta** | El etiquetado PII en OpenMetadata se aplica **en Bronze**, no solo en Gold. Un dataset de Bronze sin clasificar no puede promoverse a Silver. |
+| **Cifrado en reposo** | Los buckets de Bronze, Silver y Gold deben estar cifrados en reposo. Sin cifrado, un acceso al almacenamiento de objetos elude todo control de Trino. |
+| **Acceso nominal y auditado** | El acceso de Ingeniería de Datos a Bronze es **nominal** —no por cuenta compartida— y queda registrado. `§8.2` define qué puede hacer cada rol; esto define que quede constancia de quién lo hizo. |
+| **Retención** | Bronze no crece indefinidamente: cada dominio declara un período de retención en el catálogo. Conservar indefinidamente una réplica cruda del padrón amplía la superficie de exposición sin beneficio analítico. |
+| **Ambientes no productivos** | Replicar Bronze hacia un entorno de desarrollo o pruebas exige **enmascaramiento previo e irreversible**, en los mismos términos de `LIN-PERF-001 §11.3`. |
+
+> Estas reglas cubren el Lakehouse. La **política transversal de protección y enmascaramiento de datos personales** para todo el corpus sigue pendiente y su dueño natural es `LIN-SEC-APP-001` (`GOB-CHK-001` H11.3).
+
 ---
 
 ## 9. Gobierno Arquitectónico y Excepciones
@@ -261,10 +284,13 @@ De acuerdo con la legislación de protección de datos personales:
 ### 9.1 Cumplimiento de Lineamientos
 Cualquier desviación o adopción de componentes no homologados en el presente lineamiento (ej. uso de un catálogo diferente a Nessie, o exclusión de la arquitectura Medallion) requiere iniciar un proceso formal de excepción arquitectónica.
 
-### 9.2 Proceso de Excepción (ADR)
-1. El equipo del proyecto debe redactar un **ADR (Architecture Decision Record)** justificando la necesidad técnica de la desviación.
-2. El ADR debe ser presentado y aprobado por la Oficina de Arquitectura de la OTI.
-3. El documento de ADR aprobado se adjuntará obligatoriamente como parte de las evidencias de entrega del proyecto antes del despliegue en entornos productivos.
+### 9.2 Proceso de Excepción (`EXC-BI-NNN`)
+
+> **Instrumento correcto: una excepción, no un ADR.** Conforme a `GOB-MAT-001` (Registro de decisiones y excepciones), una desviación de este lineamiento en un proyecto concreto se registra como `EXC-BI-NNN`, con vigencia acotada y fecha de revisión. El `ADR-NNN` queda reservado a decisiones institucionales del Comité de Arquitectura, que obligan a todo el corpus.
+
+1. El equipo del proyecto redacta la excepción `EXC-BI-NNN` justificando la necesidad técnica de la desviación, el riesgo aceptado, el control compensatorio y la **fecha de revisión** — nunca indefinida.
+2. La excepción debe ser presentada y aprobada por la Oficina de Arquitectura de la OTI. Si afecta protección de datos personales, requiere además validación de Seguridad Digital.
+3. La excepción aprobada se adjunta obligatoriamente como parte de las evidencias de entrega del proyecto antes del despliegue en entornos productivos.
 
 ---
 

@@ -1,7 +1,7 @@
 # Matriz de Propiedad Documental — ONP
 
 **Código:** GOB-MAT-001  
-**Versión:** 0.9.0 (ver "Historial de versiones")  
+**Versión:** 0.17.0 (ver "Historial de versiones")  
 **Fecha:** 2026-08-05  
 **Autor:** OTI — Oficina de Tecnologías de la Información  
 **Estado:** Vigente / Operativo  
@@ -105,6 +105,22 @@ Un hallazgo puede ser propio de un documento o estar distribuido por todo el cor
 
 La graduación se registra en el historial de versiones del documento y en el catálogo de esta matriz, con fecha.
 
+### Registro de decisiones y excepciones — tres instrumentos distintos
+
+El corpus usa la palabra «ADR» para tres cosas que no son lo mismo, y confundirlas tiene consecuencias: o se llena el registro institucional de incidencias operativas, o un proyecto cree que puede dispensarse a sí mismo de un lineamiento.
+
+| Instrumento | Identificador | Alcance | Quién lo aprueba | Dónde vive |
+|---|---|---|---|---|
+| **Decisión arquitectónica institucional** | `ADR-NNN` | Obliga a todo el corpus | Comité de Arquitectura | Matriz de `LIN-ARQ-001`, Apéndice A. Si requiere desarrollo extenso, además como `ADR-<TEMA>-NNN.md`, con el mismo identificador de decisión |
+| **Decisión de diseño de un proyecto** | `AD-NNN` | Solo ese sistema | Arquitecto del proyecto | Anexo B del documento de arquitectura (`GOB-PLA-001`) |
+| **Excepción a un lineamiento** | `EXC-<CÓDIGO>-NNN` | Solo ese sistema, con vigencia acotada | Arquitectura OTI; Seguridad Digital si afecta seguridad | Documento de arquitectura del proyecto y registro de excepciones del lineamiento afectado |
+
+**Regla:** un `AD-NNN` **no puede dispensar del cumplimiento de un lineamiento**. Toda desviación de una norma se registra como `EXC-`, con justificación, riesgo aceptado, control compensatorio y **fecha de revisión** — nunca indefinida. El código del lineamiento afectado va en el identificador: `EXC-IAC-001`, `EXC-K8S-004`, `EXC-VER-002`.
+
+> **Estado de adopción.** `LIN-VER-001 §24.2` fue el primer documento en definir este formato y `LIN-IAC-001 §14` lo adoptó. Los demás lineamientos siguen titulando su apartado «Proceso ADR para excepciones» sin identificador propio; su alineación está registrada como deuda en `GOB-CHK-001` H32.
+
+---
+
 ### Coherencia de dependencias — regla de exigibilidad
 
 > **Un documento `Vigente` puede referenciar un documento que no lo esté, pero no puede hacerlo exigible.**
@@ -122,25 +138,25 @@ Las referencias informativas o de contexto no tienen esta restricción.
 | Código | Documento | Estado | Archivo |
 |---|---|---|---|
 | `LIN-ARQ-000` | Cantera Histórica Congelada de Arquitectura | Congelado v0.1.19 | `arquitectura/Lineamiento_Diseno_Arquitectura_Software_ONP_OLD.md` |
-| `LIN-ARQ-001` | Marco Rector de Arquitectura de Software (Nivel 1) | **En revisión** v0.1.10 | `arquitectura/Lineamiento_Marco_Rector_Arquitectura_ONP.md` |
-| `LIN-DIS-001` | Estándar de Diseño de Software y Patrones Tácticos (Nivel 2) | **En revisión** v0.1.5 | `arquitectura/Lineamiento_Diseno_Software_Patrones_Tacticos_ONP.md` |
-| `LIN-PAT-001` | Catálogo Oficial de Patrones y Fichas Técnicas de Decisión | **En revisión** v0.1.5 | `arquitectura/Lineamiento_Catalogo_Patrones_Fichas_ONP.md` |
-| `LIN-API-REST-001` | Estándar de Servicios Web y APIs REST | Borrador v0.1.5 | `Web/Lineamiento_Estandar_APIs_REST_ONP.md` |
-| `LIN-DEV-JAVA-001` | Estándar de Desarrollo Java | **En revisión** v0.1.9 | `desarrollo/Lineamiento_Estandar_Desarrollo_Java_ONP.md` |
-| `LIN-BD-ORA-001` | Estándar de Base de Datos Oracle | **En revisión** v0.1.12 | `Datos/Lineamiento_Estandar_Base_de_Datos_ONP.md` |
-| `LIN-BI-001` | Lineamiento de Explotación y Analítica de Datos (BI) | Borrador v0.1.2 | `Datos/Lineamiento_Explotacion_Analitica_Datos_BI_ONP.md` |
-| `LIN-FE-ANG-001` | Estándar de Diseño Web Frontend Angular | Borrador | `Web/Lineamiento_Estandar_Diseno_Web_Frontend_ONP.md` |
-| `LIN-OBS-001` | Lineamiento de Log Centralizado, Trazabilidad y Observabilidad | **Vigente v0.1.3** (2026-08-09) | `observabilidad/Lineamiento_Log_Trazabilidad_Observabilidad_ONP.md` |
-| `LIN-SEC-APP-001` | Estándar de Seguridad en Aplicaciones | **En revisión** v0.1.5 | `seguridad/Lineamiento_Seguridad_Aplicaciones_ONP.md` |
-| `LIN-TEST-001` | Estándar de Pruebas | **Vigente v0.1.3** (2026-08-09) | `pruebas/Lineamiento_Estandar_Pruebas_ONP.md` |
-| `LIN-CICD-001` | Estándar de CI/CD | Borrador | `CICD/Lineamiento_Integracion_Entrega_Continua_ONP.md` |
-| `LIN-K8S-001` | Estándar de Contenedores y Orquestación | Borrador | `contenedores/Lineamiento_Contenedores_Orquestacion_ONP.md` |
-| `LIN-IAC-001` | Estándar de Infraestructura como Código | Borrador v0.1.2 | `Infraestructura/Lineamiento_Infraestructura_Código_ONP.md` |
-| `LIN-BUS-001` | Lineamiento de Mensajería y Bus de Eventos | Borrador v0.1.6 | `mensajeria/Lineamiento_Mensajeria_Bus_Eventos_ONP.md` |
-| `LIN-VER-001` | Estándar de Versionamiento y Control de Cambios | Borrador v0.1.7 | `versionamiento/Lineamiento_Versionamiento_Control_Cambios_ONP.md` |
-| `LIN-PERF-001` | Estándar de Pruebas de Rendimiento, Carga y Estrés | Borrador | `pruebas/Lineamiento_Pruebas_Rendimiento_Carga_Estres_ONP.md` |
+| `LIN-ARQ-001` | Marco Rector de Arquitectura de Software (Nivel 1) | **En revisión** v0.1.11 | `arquitectura/Lineamiento_Marco_Rector_Arquitectura_ONP.md` |
+| `LIN-DIS-001` | Estándar de Diseño de Software y Patrones Tácticos (Nivel 2) | **En revisión** v0.1.6 | `arquitectura/Lineamiento_Diseno_Software_Patrones_Tacticos_ONP.md` |
+| `LIN-PAT-001` | Catálogo Oficial de Patrones y Fichas Técnicas de Decisión | **En revisión** v0.1.6 | `arquitectura/Lineamiento_Catalogo_Patrones_Fichas_ONP.md` |
+| `LIN-API-REST-001` | Estándar de Servicios Web y APIs REST | **En revisión** v0.1.7 | `Web/Lineamiento_Estandar_APIs_REST_ONP.md` |
+| `LIN-DEV-JAVA-001` | Estándar de Desarrollo Java | **En revisión** v0.1.11 | `desarrollo/Lineamiento_Estandar_Desarrollo_Java_ONP.md` |
+| `LIN-BD-ORA-001` | Estándar de Base de Datos Oracle | **En revisión** v0.1.13 | `Datos/Lineamiento_Estandar_Base_de_Datos_ONP.md` |
+| `LIN-BI-001` | Lineamiento de Explotación y Analítica de Datos (BI) | **En revisión** v0.1.3 | `Datos/Lineamiento_Explotacion_Analitica_Datos_BI_ONP.md` |
+| `LIN-FE-ANG-001` | Estándar de Diseño Web Frontend Angular | **En revisión** v0.1.4 | `Web/Lineamiento_Estandar_Diseno_Web_Frontend_ONP.md` |
+| `LIN-OBS-001` | Lineamiento de Log Centralizado, Trazabilidad y Observabilidad | **Vigente v0.1.4** (graduado 2026-08-09) | `observabilidad/Lineamiento_Log_Trazabilidad_Observabilidad_ONP.md` |
+| `LIN-SEC-APP-001` | Estándar de Seguridad en Aplicaciones | **En revisión** v0.1.7 | `seguridad/Lineamiento_Seguridad_Aplicaciones_ONP.md` |
+| `LIN-TEST-001` | Estándar de Pruebas | **Vigente v0.1.4** (graduado 2026-08-09) | `pruebas/Lineamiento_Estandar_Pruebas_ONP.md` |
+| `LIN-CICD-001` | Estándar de CI/CD | **En revisión** v0.1.6 | `CICD/Lineamiento_Integracion_Entrega_Continua_ONP.md` |
+| `LIN-K8S-001` | Estándar de Contenedores y Orquestación | **En revisión** v0.1.16 | `contenedores/Lineamiento_Contenedores_Orquestacion_ONP.md` |
+| `LIN-IAC-001` | Estándar de Infraestructura como Código | **En revisión** v0.1.3 | `Infraestructura/Lineamiento_Infraestructura_Código_ONP.md` |
+| `LIN-BUS-001` | Lineamiento de Mensajería y Bus de Eventos | **En revisión** v0.1.7 | `mensajeria/Lineamiento_Mensajeria_Bus_Eventos_ONP.md` |
+| `LIN-VER-001` | Estándar de Versionamiento y Control de Cambios | **En revisión** v0.1.8 | `versionamiento/Lineamiento_Versionamiento_Control_Cambios_ONP.md` |
+| `LIN-PERF-001` | Estándar de Pruebas de Rendimiento, Carga y Estrés | **En revisión** v0.1.3 | `pruebas/Lineamiento_Pruebas_Rendimiento_Carga_Estres_ONP.md` |
 | `LIN-DOC-001` | Estándar de Documentación y Modelado | **Pendiente** | — |
-| `GLOSARIO-ONP` | Glosario transversal operativo | Borrador operativo v0.2.2 | `GLOSARIO_ONP.md` |
+| `GLOSARIO-ONP` | Glosario transversal operativo | Vigente / Operativo v0.2.2 | `GLOSARIO_ONP.md` |
 
 ### Documentos de gobierno y apoyo
 
@@ -148,10 +164,10 @@ Documentos que no norman un tema técnico pero forman parte del corpus: son dest
 
 | Código | Documento | Estado | Archivo |
 |---|---|---|---|
-| `GOB-MAT-001` | Matriz de Propiedad Documental (este documento) | Vigente v0.8.0 | `Matriz_Propiedad_Documental_ONP.md` |
-| `GOB-INI-001` | START HERE — punto de entrada para proyectos Java | Vigente v0.2.0 | `START_HERE_Proyecto_Java_ONP.md` |
-| `GOB-PLA-001` | Plantilla institucional de Documento de Arquitectura de TI | Vigente v2.1 | `arquitectura/Plantilla_Documento_Arquitectura_ONP.md` |
-| `GOB-BRE-001` | Tablero de Brechas del Framework de Arquitectura | En revisión v0.1.5 | `arquitectura/Brecha_Framework_Arquitectura_ONP.md` |
+| `GOB-MAT-001` | Matriz de Propiedad Documental (este documento) | Vigente v0.17.0 | `Matriz_Propiedad_Documental_ONP.md` |
+| `GOB-INI-001` | START HERE — punto de entrada para proyectos Java | Vigente / Operativo v0.3.0 | `START_HERE_Proyecto_Java_ONP.md` |
+| `GOB-PLA-001` | Plantilla institucional de Documento de Arquitectura de TI | Vigente v2.3 | `arquitectura/Plantilla_Documento_Arquitectura_ONP.md` |
+| `GOB-BRE-001` | Tablero de Brechas del Framework de Arquitectura | En revisión v0.1.7 | `arquitectura/Brecha_Framework_Arquitectura_ONP.md` |
 | `GOB-CHK-001` | Checklist de Mejora del Corpus Documental | En ejecución v0.1.0 | `CHECKLIST_Mejora_Corpus_ONP.md` |
 
 ### Ruta de graduación (situación al 2026-08-08)
@@ -180,9 +196,9 @@ Los ADR numerados `ADR-001`–`ADR-014` viven en el Apéndice A de `LIN-ARQ-001`
 
 | Código | Documento | Estado | Archivo |
 |---|---|---|---|
-| `ADR-WSO2-001` | Transición de SAA hacia WSO2 API Manager | Propuesta | `arquitectura/ADR-WSO2-001.md` |
-| `ADR-CLOUDEVENTS-001` | Adopción de CloudEvents v1.0 como envelope del bus | Aceptada | `arquitectura/ADR-CLOUDEVENTS-001.md` |
-| `ADR-TLS-INTERNO-001` | Terminación TLS en el perímetro y tráfico intra-cluster sobre HTTP | Propuesta | `arquitectura/ADR-TLS-INTERNO-001.md` |
+| `ADR-WSO2-001` | Transición de SAA hacia WSO2 API Manager (= `ADR-015` en la matriz de `LIN-ARQ-001`) | Propuesta | `arquitectura/ADR-WSO2-001.md` |
+| `ADR-CLOUDEVENTS-001` | Adopción de CloudEvents v1.0 como envelope del bus (= `ADR-013` en la matriz de `LIN-ARQ-001` — misma decisión) | Aceptada | `arquitectura/ADR-CLOUDEVENTS-001.md` |
+| `ADR-TLS-INTERNO-001` | Terminación TLS en el perímetro y tráfico intra-cluster sobre HTTP (= `ADR-016` en la matriz de `LIN-ARQ-001`) | Propuesta | `arquitectura/ADR-TLS-INTERNO-001.md` |
 
 ---
 
@@ -316,7 +332,7 @@ Los ADR numerados `ADR-001`–`ADR-014` viven en el Apéndice A de `LIN-ARQ-001`
 | Pruebas de contrato — obligatoriedad y herramientas | `LIN-TEST-001` | `LIN-API-REST-001`, `LIN-DEV-JAVA-001` | Conforme | `LIN-TEST-001 §6` — tabla de casos obligatorio/recomendado; OpenAPI validation como mínimo siempre. **Desbloqueado 2026-08-09** (`GOB-CHK-001` H22.3): el gate de publicación de `LIN-API-REST-001 §10.3` no pedía evidencia de prueba de contrato pese a declararla obligatoria el dueño; incorporada al gate |
 | Pruebas de caracterización — técnica y criterios | `LIN-TEST-001` | `LIN-BD-ORA-001`, `LIN-DEV-JAVA-001` | Conforme | `LIN-TEST-001` sección 13 — dueño de la técnica; `LIN-BD-ORA-001` sección 6.0 declara cuándo es obligatorio |
 | Naming conventions de tests (sufijos IT, CT, Test) | `LIN-TEST-001` | `LIN-DEV-JAVA-001` | Resuelto | `LIN-TEST-001` sección 3.2 — `*Test.java` (Surefire), `*IT.java` y `*CT.java` (Failsafe) |
-| Evidencias obligatorias y criterios de paso a QA/PROD | `LIN-TEST-001` | `LIN-CICD-001` | En borrador | `LIN-TEST-001` secciones 8–9 — qué artefactos deben existir; LIN-CICD-001 define cuándo se validan |
+| Evidencias obligatorias y criterios de paso a QA/PROD | `LIN-TEST-001` | `LIN-CICD-001` | Conforme | `LIN-TEST-001 §8`–`§9` define qué debe cumplirse; `LIN-CICD-001 §19.2` lo implementa como gate. **Desbloqueado 2026-08-17** (`GOB-CHK-001` H22.3 → H27): el pipeline llamaba «sugeridos» a sus criterios y omitía siete de los once del dueño. Alineados en ambos sentidos — `LIN-TEST-001 §9` dejó además de expresarse solo en el modelo de ramas legado |
 | Gates automáticos de pruebas en pipeline | `LIN-CICD-001` | `LIN-TEST-001` | En borrador | `LIN-TEST-001` sección 7 declara que las pruebas deben ser automatizables; el gate lo define LIN-CICD-001 |
 | Herramientas E2E y accesibilidad Angular | `LIN-TEST-001` | `LIN-FE-ANG-001` | Resuelto | Playwright preferente; Cypress solo donde ya existe (`LIN-TEST-001` sección 3.3 tabla de herramientas y sección 12.4; `LIN-FE-ANG-001` sección 14.2); axe-core para accesibilidad (`LIN-TEST-001` sección 12.5) |
 | Pruebas de carga, estrés, resistencia, spike y smoke performance | `LIN-PERF-001` | `LIN-TEST-001`, `LIN-CICD-001` | En borrador | `LIN-TEST-001` sección 1 delega a `LIN-PERF-001`; `LIN-PERF-001` sección 5 define tipos |
@@ -362,7 +378,7 @@ Los ADR numerados `ADR-001`–`ADR-014` viven en el Apéndice A de `LIN-ARQ-001`
 | Angular como framework SPA primario | `LIN-ARQ-001` | `LIN-FE-ANG-001` | Conforme | — |
 | Estructura de proyecto Angular | `LIN-FE-ANG-001` | — | Conforme | — |
 | Standalone components | `LIN-FE-ANG-001` | — | Conforme | — |
-| Core Web Vitals — umbrales obligatorios | `LIN-ARQ-001` | `LIN-FE-ANG-001`, `LIN-CICD-001` | Conforme | — |
+| Core Web Vitals — umbrales obligatorios | `LIN-ARQ-001` | `LIN-FE-ANG-001`, `LIN-CICD-001`, `LIN-PERF-001` | Conforme | `LIN-ARQ-001 §7.2` publica los siete umbrales (LCP, INP, CLS, FCP, TTI, TBT, FPS). `LIN-FE-ANG-001 §15.2` reproduce cuatro como referencia declarada; `LIN-CICD-001 §9.4` los implementa como gate. **Corregido 2026-08-17:** la fila no citaba sección y omitía a `LIN-PERF-001`, que listaba las métricas por tercera vez y sin umbrales (`GOB-CHK-001` H30) |
 | Interceptores HTTP (auth, errores, request ID) | `LIN-FE-ANG-001` | — | Conforme | — |
 | Modelos TypeScript de respuesta API | `LIN-FE-ANG-001` | — | Resuelto | `LIN-FE-ANG-001` corregido: `ApiMeta` completo con `timestamp`, `requestId`, `version`; errores con `campo`/`mensaje` |
 | Estrategia de estado (Signals, store global) | `LIN-FE-ANG-001` | — | Pendiente | Pendiente de desarrollar en `LIN-FE-ANG-001` |
@@ -464,6 +480,8 @@ Correcciones a aplicar sobre los documentos existentes antes de redactar nuevos 
 | PT14 | Adapter / Decorator / Strategy (GoF) | `PAT-DEV-01` | `LIN-DEV-JAVA-001` / `LIN-DIS-001` |
 | PT15 | Facade Arquitectónico de Integración | `PAT-INT-03` | `LIN-DIS-001` |
 | PT16 | Arquitectura Medallón | `PAT-BI-01` | `LIN-BI-001` |
+| PT17 | Sidecar (multi-contenedor en el Pod) | `PAT-K8S-01` | `LIN-K8S-001` §9.4.A — prohibido en Java/Spring Boot 3 |
+| PT18 | Ambassador (proxy de salida del Pod) | `PAT-K8S-02` | `LIN-K8S-001` §9.4.B — prohibido en Java/Spring Boot 3 |
 
 **Fichas sin código PT** (patrones institucionales incorporados después de la numeración PT original): `PAT-TOP-01` (Monolito Modular), `PAT-TOP-02` (Microservicios), `PAT-DIS-01` (Hexagonal), `PAT-DIS-02` (Capas), `PAT-DIS-03` (Bounded Context y Agregados DDD), `PAT-DEV-02` (`SaaTokenValidationFilter`), `PAT-DAT-01` (Adapter PL/SQL), `PAT-DAT-02` (Transactional Outbox), `PAT-DAT-03` (CDC).
 
@@ -493,6 +511,14 @@ Cada vez que se redacte un lineamiento nuevo o se modifique uno existente, esta 
 | 0.1.x | 2026-05-28 | Arquitectura OTI | Versiones iniciales de la matriz de propiedad y plan de correcciones |
 | 0.2.0 | 2026-07-08 | Arquitectura OTI | Alineación al modelo de 3 Niveles de Arquitectura (`LIN-ARQ-001`, `LIN-DIS-001`, `LIN-DEV-JAVA-001`) |
 | 0.8.0 | 2026-08-09 | Arquitectura OTI | **Alcance del criterio 2 precisado** (`GOB-CHK-001` H22.5): se distingue entre hallazgos **de documento** —que bloquean la graduación— y **de corpus** —que se registran como deuda con responsable y fecha—, con una **excepción por severidad**: un hallazgo transversal que comprometa el uso normativo de un documento concreto se escala y sí bloquea. Sin esta distinción el criterio se rompía por ambos extremos: exigirlo todo congelaba la graduación del corpus entero, y no exigir nada permitiría declarar `Vigente` un documento inutilizable. Aplicado a las anclas internas rotas: no bloquea en general, **sí bloquea a `LIN-BD-ORA-001` y `LIN-BI-001`**, cuyos índices completos no resuelven por titular las secciones como `## sección N` |
+| 0.17.0 | 2026-08-17 | Arquitectura OTI | `LIN-BI-001` v0.1.3 pasa a **En revisión**. **Con ello ningún lineamiento del corpus queda en `Borrador`** — cierra H14.6, la lectura de contenido de los 19 documentos (`GOB-CHK-001` H32) |
+| 0.16.0 | 2026-08-17 | Arquitectura OTI | Se norma el **registro de decisiones y excepciones** distinguiendo tres instrumentos que el corpus venía llamando «ADR» indistintamente: `ADR-NNN` institucional, `AD-NNN` de proyecto y `EXC-<CÓDIGO>-NNN` para desviaciones de un lineamiento. Doce de los trece documentos titulaban su apartado «Proceso ADR para excepciones» sin identificador propio; solo `LIN-VER-001` había definido el formato. Sincroniza `LIN-IAC-001` v0.1.3, **En revisión** (`GOB-CHK-001` H32) |
+| 0.15.0 | 2026-08-17 | Arquitectura OTI | Revisión de `GOB-PLA-001` v2.3 y reconciliación del registro de ADRs (`GOB-CHK-001` H31): el catálogo de ADRs de esta matriz y el **Apéndice A de `LIN-ARQ-001`** eran dos listas desconectadas, con una misma decisión —CloudEvents— registrada bajo dos identificadores. Cada ADR en archivo declara ahora su equivalencia con la matriz institucional |
+| 0.14.0 | 2026-08-17 | Arquitectura OTI | Revisiones de `LIN-FE-ANG-001` v0.1.4 y `LIN-PERF-001` v0.1.3, ambos **En revisión** (`GOB-CHK-001` H29 y H30). La fila de **Core Web Vitals** no citaba sección de referencia —única del catálogo en ese estado— y omitía a `LIN-PERF-001` como consumidor, que listaba las métricas por tercera vez sin umbrales |
+| 0.13.0 | 2026-08-17 | Arquitectura OTI | Sincroniza el catálogo tras la revisión de fondo de `LIN-BUS-001` v0.1.7 (**En revisión**) y la corrección derivada en `LIN-K8S-001` v0.1.15, que citaba mal los namespaces de Kafka (`GOB-CHK-001` H28) |
+| 0.12.0 | 2026-08-17 | Arquitectura OTI | **«Evidencias obligatorias y criterios de paso a QA/PROD» pasa de `En borrador` a `Conforme`** (`GOB-CHK-001` H27). Era el segundo de los dos temas que la Fase 1 dejó deliberadamente abiertos por no poder confirmar alineación con su consumidor: `LIN-CICD-001 §19.2` titulaba «sugeridos» sus criterios de bloqueo y omitía siete de los once que `LIN-TEST-001 §9` declara bloqueantes. **Con esto no queda ningún tema abierto de la Fase 1.** Sincroniza el catálogo con `LIN-CICD-001` v0.1.6 (**En revisión**) y `LIN-TEST-001` v0.1.4 |
+| 0.11.0 | 2026-08-17 | Arquitectura OTI | Incorpora `PT17` (Sidecar) y `PT18` (Ambassador) al índice de trazabilidad `PT → ficha → dueño`, tras detectarse que `LIN-K8S-001 §9.4` los normaba con los códigos `PA12`/`PA13` del **tablero de brechas**, no del catálogo oficial (`GOB-CHK-001` H26). Sincroniza el catálogo con `LIN-DIS-001` v0.1.6, `LIN-PAT-001` v0.1.6, `LIN-K8S-001` v0.1.14 (que pasa a **En revisión**) y `GOB-BRE-001` v0.1.7 |
+| 0.10.0 | 2026-08-14 | Arquitectura OTI | **El catálogo estaba desactualizado en 15 de sus 21 entradas** (`GOB-CHK-001` H25): declaraba `LIN-API-REST-001` como «Borrador v0.1.5» cuando iba por «En revisión v0.1.7», y `LIN-VER-001` como Borrador tras su graduación a En revisión. No es un descuadre cosmético — el catálogo es lo que un tercero consulta para saber qué documento rige, y la **regla de exigibilidad se aplica sobre el estado declarado**: un estado equivocado permite dar por exigible lo que aún no lo es. La causa era una brecha del linter, cuya comprobación C6 valida la ruta y el código del catálogo pero no la versión ni el estado; se añade **C8** para cerrarla. Se corrige además el sentido inverso en `LIN-BD-ORA-001`, cuyo encabezado seguía en `Borrador` pese a tener la revisión cerrada |
 | 0.9.0 | 2026-08-09 | Arquitectura OTI | Cierre de las dos decisiones elevadas por la revisión de `LIN-API-REST-001` (`GOB-CHK-001` H24). Se registra **`ADR-TLS-INTERNO-001`** en el catálogo de ADRs y se abre el tema **«Cifrado en tránsito — HTTPS y límite de confianza de red»**, con dueño `LIN-SEC-APP-001`: el tramo intra-cluster sobre HTTP queda admitido a condición de `NetworkPolicy` obligatoria, que **sustituye** al cifrado como control. Se actualizan además cuatro temas cuyo estado no reflejaba la realidad —rate limiting (cambia de dueño de `LIN-API-REST-001` a `LIN-SEC-APP-001`), autorización, headers de seguridad y pruebas de contrato—, este último desbloqueando uno de los dos casos que la Fase 1 dejó abiertos |
 | 0.7.0 | 2026-08-09 | Arquitectura OTI | **Primeras graduaciones a Vigente** (`GOB-CHK-001` Fase 1): `LIN-OBS-001` v0.1.3 y `LIN-TEST-001` v0.1.3, tras verificar los cinco criterios. La verificación del **criterio 3** —alineación con consumidores— no fue un trámite: detectó dos desalineamientos reales que se corrigieron antes de graduar (`LIN-FE-ANG-001` citaba `LIN-TEST-001 §4.4`, que es *Microservicio*, para herramientas E2E; y `LIN-DEV-JAVA-001 §15.1` omitía el sufijo `CT`). Se actualizan los temas de la matriz cuyo dueño es `LIN-TEST-001`: cuatro pasan a `Conforme`/`Resuelto` con evidencia verificada; **dos permanecen `En borrador`** —pruebas de contrato y evidencias de paso a QA/PROD— porque no se pudo confirmar alineación real con sus consumidores, aplicando la regla editorial que exige no usar `Conforme` ante duda razonable |
 | 0.6.0 | 2026-08-08 | Arquitectura OTI | **Ciclo de vida documental definido** (`GOB-CHK-001` H17). El corpus se declaraba de aplicación obligatoria para fábricas y terceros (`LIN-ARQ-001 §1.1` y `§8`) mientras **14 de 22 documentos figuraban como borrador** y no existía en ningún lugar un proceso de graduación: ni `LIN-VER-001` (versiona código, no normativa), ni la regla de mantenimiento de esta matriz, ni `LIN-DOC-001` (pendiente sin archivo). Se define: 4 estados de flujo (`Borrador → En revisión → Vigente → Deprecado`) más `Congelado` terminal; 5 criterios de graduación, 4 de ellos automatizables; aprobación por Comité de Arquitectura para Nivel 1–2 y por Arquitectura OTI para el resto; y la **regla de exigibilidad**: un documento vigente puede referenciar un borrador pero no hacerlo exigible. Esa regla revela una infracción abierta —`LIN-ARQ-001 §8.3` exige contractualmente `LIN-OBS-001` y `LIN-TEST-001`, ambos borrador— y de ella se deriva la ruta de graduación priorizada |

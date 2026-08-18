@@ -1,78 +1,76 @@
-# EJEMPLO DE REFERENCIA — LIN-K8S-001 sección 9.2
+# EJEMPLO DE REFERENCIA — LIN-FE-ANG-001 sección 16.4 y LIN-K8S-001 sección 9.2
 # Reemplazar `nombre-sistema` y la versión de imagen por los valores reales.
 
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: api-nombre-sistema
+  name: frontend-nombre-sistema
   labels:
-    app.kubernetes.io/name: api-nombre-sistema
+    app.kubernetes.io/name: frontend-nombre-sistema
     app.kubernetes.io/part-of: nombre-sistema
     app.kubernetes.io/version: "1.0.0"
-    app.kubernetes.io/component: api
+    app.kubernetes.io/component: frontend
     app.kubernetes.io/managed-by: kustomize
 spec:
   replicas: 2
   selector:
     matchLabels:
-      app.kubernetes.io/name: api-nombre-sistema
+      app.kubernetes.io/name: frontend-nombre-sistema
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: api-nombre-sistema
+        app.kubernetes.io/name: frontend-nombre-sistema
         app.kubernetes.io/part-of: nombre-sistema
         app.kubernetes.io/version: "1.0.0"
-        app.kubernetes.io/component: api
+        app.kubernetes.io/component: frontend
         app.kubernetes.io/managed-by: kustomize
     spec:
-      serviceAccountName: api-nombre-sistema
+      serviceAccountName: frontend-nombre-sistema
       containers:
-        - name: api-nombre-sistema
+        - name: frontend-nombre-sistema
           # Tag explícito e inmutable. `latest` está PROHIBIDO en QA y PROD
           # (LIN-K8S-001 sección 6.3 y anti-patrones de la sección 19).
-          image: registry.gitlab.onp.gob.pe/aplicaciones/nombre-sistema/api-nombre-sistema:1.0.0
+          image: registry.gitlab.onp.gob.pe/aplicaciones/nombre-sistema/frontend-nombre-sistema:1.0.0
           imagePullPolicy: IfNotPresent
+          # 8080, no 80: la imagen nginx-unprivileged corre como uid 101 y no
+          # puede bindear puertos < 1024 (LIN-FE-ANG-001 sección 16.5).
           ports:
             - name: http
               containerPort: 8080
-          env:
-            - name: SPRING_PROFILES_ACTIVE
-              value: dev
-          # requests y limits son obligatorios (LIN-K8S-001 P6 y sección 10.1).
-          # Ajustar a la carga real medida, no dejar estos valores por defecto.
           resources:
             requests:
-              cpu: "250m"
-              memory: "512Mi"
+              cpu: "50m"
+              memory: "64Mi"
             limits:
-              cpu: "1000m"
-              memory: "1Gi"
+              cpu: "250m"
+              memory: "128Mi"
           livenessProbe:
             httpGet:
-              path: /actuator/health/liveness
+              path: /
               port: http
-            initialDelaySeconds: 60
+            initialDelaySeconds: 10
             periodSeconds: 20
             timeoutSeconds: 3
             failureThreshold: 3
           readinessProbe:
             httpGet:
-              path: /actuator/health/readiness
+              path: /
               port: http
-            initialDelaySeconds: 20
+            initialDelaySeconds: 5
             periodSeconds: 10
             timeoutSeconds: 3
             failureThreshold: 3
           # Controles obligatorios de LIN-K8S-001 sección 14.1
           securityContext:
-            allowPrivilegeEscalation: false
             runAsNonRoot: true
+            runAsUser: 101
+            allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
             capabilities:
               drop:
                 - ALL
-          # readOnlyRootFilesystem exige montar /tmp: Spring Boot escribe ahí sus
-          # temporales y sin este volumen el contenedor no arranca (nota 14.1).
+          # nginx escribe sus temporales en /tmp (ver nginx.conf del template).
+          # Se monta un volumen; NO se desactiva readOnlyRootFilesystem.
           volumeMounts:
             - name: tmp
               mountPath: /tmp
@@ -80,5 +78,5 @@ spec:
         - name: tmp
           emptyDir:
             medium: Memory
-            sizeLimit: 64Mi
+            sizeLimit: 16Mi
       terminationGracePeriodSeconds: 30

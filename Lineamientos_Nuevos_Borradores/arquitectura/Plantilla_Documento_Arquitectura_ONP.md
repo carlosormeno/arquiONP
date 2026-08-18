@@ -2,7 +2,7 @@
 **OFICINA DE TECNOLOGÍAS DE LA INFORMACIÓN**
 
 > **Identidad de esta plantilla — no copiar al documento derivado.**
-> **Código:** GOB-PLA-001 · **Versión:** v2.2 · **Estado:** Vigente · **Propietario:** Arquitectura OTI
+> **Código:** GOB-PLA-001 · **Versión:** v2.3 · **Estado:** Vigente · **Propietario:** Arquitectura OTI
 >
 > Estos datos identifican a la **plantilla institucional**. El documento de arquitectura que se produzca a partir de ella lleva su propia identidad en la tabla de abajo, y su versión evoluciona de forma independiente de la versión de la plantilla. Al completar el documento, elimina este bloque.
 
@@ -28,6 +28,7 @@
 | v2.0 | Alineación normativa total con los 3 Niveles de Arquitectura ONP (`LIN-ARQ-001`, `LIN-DIS-001`, `LIN-DEV-JAVA-001`), mandatos K8s/containerd, SRE Four Golden Signals y Política de Deuda Técnica Cero / Excepciones ADR | OTI / Arquitectura | [DD/MM/AAAA] |
 | v2.1 | Corrige la escala de Estadios a la oficial de `LIN-ARQ-001 §2.1` (1 = Legacy, 2 = Monolito Modular, 3 = Microservicios) en las guías de las vistas A.1, A.2 y A.3 — antes usaba una numeración 0/1/2 inexistente en el marco rector — y redirige las citas de ACL (`LIN-DIS-001 §5.4`) y Strangler Fig (`LIN-ARQ-001 §2.2`) | OTI / Arquitectura | 2026-08-05 |
 | v2.2 | Corrige la cita de Kubernetes/`containerd`: decía `LIN-ARQ-001 §7` (que es *Estrategia Macro de Frontend*) — el destino real es `§5.2` (`GOB-CHK-001` H10.2) | OTI / Arquitectura | 2026-08-08 |
+| v2.3 | Revisión de fondo (`GOB-CHK-001` H31). **(1)** El ejemplo de Seguridad de `C.1` describía el token SAA como **JWT**, cuando `LIN-API-REST-001 §7.1` afirma expresamente que es **opaco** y no verificable localmente — un arquitecto que lo copiara diseñaría validación local de un token que no la admite. **(2)** El mismo cuadro trataba `codDetRespuesta` como *header*, siendo un campo del cuerpo de `ApiResponseWrapper`. **(3)** La fila de **Recuperabilidad** exige RTO/RPO sin que exista lineamiento al que remitirse (`H11.2`): se explicita cómo proceder mientras la brecha siga abierta. **(4)** `D.2` citaba «Feature Toggles (**PA14**)», código del tablero de brechas y no del catálogo normativo — redirigido a `LIN-ARQ-001 §2.3` y `ADR-014`. **(5)** `B.1` no distinguía `AD-XXX` (proyecto) de `ADR-XXX` (institucional), de modo que un proyecto podía creer que se autodispensa de un lineamiento con una decisión propia | OTI / Arquitectura | 2026-08-17 |
 
 ---
 
@@ -593,6 +594,10 @@ Este anexo registra las decisiones arquitectónicas significativas tomadas duran
 
 **Estados posibles:** Propuesto / En revisión / Aprobado / Descartado / Reemplazado por [AD-XXX]
 
+> **`AD-XXX` es del proyecto; `ADR-XXX` es institucional — no se mezclan.** Las decisiones que registras aquí llevan el prefijo **`AD-`** y su alcance es este sistema. Las decisiones institucionales, que obligan a todo el corpus, llevan **`ADR-`** y no se crean desde un documento de proyecto: viven en la **Matriz de Decisiones Arquitectónicas de `LIN-ARQ-001` (Apéndice A)** con numeración correlativa (`ADR-001`…`ADR-014`), o como documento propio con identificador temático (`ADR-WSO2-001`, `ADR-CLOUDEVENTS-001`, `ADR-TLS-INTERNO-001`) cuando la decisión requiere desarrollo extenso.
+>
+> Si tu proyecto necesita una **excepción a un lineamiento institucional**, no basta con un `AD-XXX`: se eleva al Comité de Arquitectura y, de aprobarse, se registra como `ADR-` en la matriz del marco rector. Un `AD-XXX` no puede, por sí solo, dispensar del cumplimiento de un lineamiento.
+
 ---
 
 ## B.2 Detalle de decisiones
@@ -652,12 +657,14 @@ Este anexo describe los atributos de calidad relevantes para el sistema y cómo 
 | Atributo | Requisito / Expectativa | Decisión arquitectónica que lo aborda |
 |---|---|---|
 | **Disponibilidad y Resiliencia** | [ej. 99.5% uptime en horario hábil y tolerancia a fallos transaccionales] | [ej. Despliegue en K8s con réplicas/probes; aislamiento de fallos en llamadas externas según la matriz por criticidad de `LIN-DIS-001 §6` — timeout estricto y Bulkhead siempre, Circuit Breaker con Resilience4j solo en Microservicios o bajo ADR (`§6.2`) — Ver AD-00X] |
-| **Seguridad** | [ej. Autenticación obligatoria en todas las APIs públicas y Zero Trust] | [ej. WAF + JWT vía SAA/token para APIs internas (`LIN-SEC-APP-001`); autenticación SBS para EAF] |
+| **Seguridad** | [ej. Autenticación obligatoria en todas las APIs públicas y Zero Trust] | [ej. Validación del **token opaco de SAA** en cada servicio mediante `SaaTokenValidationFilter` (`LIN-SEC-APP-001 §8.3`) — **el token SAA no es JWT**: no es autocontenido ni verificable localmente (`LIN-API-REST-001 §7.1`); autorización por permisos SAA con `hasAuthority` (`LIN-SEC-APP-001 §5.4`) — Ver AD-00X] |
 | **Escalabilidad** | [ej. Soporte para N usuarios concurrentes en pico electoral] | [ej. Contenedorización inmutable en K8s con autoescalado horizontal (HPA) — Ver AD-00X] |
-| **Observabilidad (Google SRE 4 Golden Signals)** | [ej. Monitoreo obligatorio de las 4 Señales Doradas: Latencia, Tráfico, Errores y Saturación (`LIN-ARQ-001 §5.3`)] | [ej. OpenTelemetry + centralización de logs ECS con `trace_id` y propagación de headers `X-Request-ID` / `CodDetRespuesta` (`LIN-API-REST-001`) — Ver AD-00X] |
+| **Observabilidad (Google SRE 4 Golden Signals)** | [ej. Monitoreo obligatorio de las 4 Señales Doradas: Latencia, Tráfico, Errores y Saturación (`LIN-ARQ-001 §5.3`)] | [ej. OpenTelemetry + centralización de logs ECS con `trace.id`, propagación del header `X-Request-ID` (`LIN-OBS-001 §4.10`) y `codDetRespuesta` en el cuerpo de `ApiResponseWrapper` — **es un campo del body, no un header** (`LIN-API-REST-001 §4.1`) — Ver AD-00X] |
 | **Mantenibilidad** | [ej. Capacidad de actualizar o reemplazar un servicio sin afectar los demás] | [ej. Bounded Contexts independientes con contratos OpenAPI 3.0 Code-First (`LIN-API-REST-001`)] |
 | **Interoperabilidad** | [ej. Integración con 10+ entidades externas del Estado y legados internos] | [ej. Servicio de fachada para Entidades Externas y Capa Anticorrupción (**ACL**) para legados ONP] |
 | **Recuperabilidad** | [ej. RTO máximo de X horas, RPO máximo de Y horas] | [ej. Estrategia de backup inmutable y recuperación coordinada sobre Oracle 19c / K8s PV] |
+
+> ⚠️ **Recuperabilidad — no existe todavía un lineamiento al que remitirse.** El corpus ONP **no norma aún** respaldo, recuperación ante desastres ni valores institucionales de RTO/RPO (`GOB-CHK-001` H11.2). Mientras esa brecha siga abierta, el arquitecto debe: (a) **acordar los valores de RTO y RPO con el área usuaria y con Plataforma**, no proponerlos por su cuenta ni copiarlos de otro proyecto; (b) dejar constancia en un **ADR** de cómo se obtuvieron y quién los validó; y (c) registrar la ausencia de norma institucional como **riesgo** en `D.1`. Para un sistema previsional, un RTO/RPO no acordado formalmente no es un dato técnico menor: determina cuánta información de aportes o pagos se puede perder ante un desastre.
 
 ---
 ---
@@ -710,7 +717,7 @@ Este anexo registra los riesgos arquitectónicos identificados y la deuda técni
 > **MANDATO INSTITUCIONAL DE DEUDA TÉCNICA CERO (`LIN-ARQ-001 §2.3` / `LIN-DEV-JAVA-001 §16.6`):**
 > Toda deuda técnica admitida por compromisos de cronograma o dependencias externas debe:
 > 1. Estar asociada obligatoriamente a un **Ticket de Refactorización registrado en el Backlog** oficial de GitLab / Jira del proyecto.
-> 2. Contar con una **estrategia de mitigación de bajo riesgo**, como el uso de **Feature Toggles (PA14)** para encender/apagar el comportamiento temporal sin re-despliegues complejos.
+> 2. Contar con una **estrategia de mitigación de bajo riesgo**, como el uso de **Feature Toggles** (`LIN-ARQ-001 §2.3` y `ADR-014` — Unleash; cuatro categorías, de las cuales solo *Release* y *Experiment* caducan obligatoriamente) para encender/apagar el comportamiento temporal sin re-despliegues complejos.
 > 3. Tener un **horizonte de remediación acotado en Sprints** (prioridad alta/media) pactado formalmente antes de obtener la conformidad de paso a Producción.
 
 | ID | Descripción | Prioridad | Plan de resolución (y Ticket en Backlog) |

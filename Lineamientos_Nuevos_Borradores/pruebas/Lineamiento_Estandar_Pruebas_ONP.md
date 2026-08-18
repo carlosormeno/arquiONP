@@ -1,6 +1,6 @@
 # Lineamiento Estándar de Pruebas ONP
 **Código:** LIN-TEST-001
-**Versión:** v0.1.3
+**Versión:** v0.1.4
 **Estado:** **Vigente** — graduado el 2026-08-09 por Arquitectura OTI (`GOB-MAT-001`, Ciclo de vida documental)
 **Fecha:** 2026-05-26
 **Propietario:** Arquitectura de Software — OTI
@@ -14,8 +14,9 @@
 |---|---|---|---|
 | v0.1.0 | 2026-05-26 | Arquitectura OTI | Borrador inicial |
 | v0.1.1 | 2026-07-09 | Arquitectura OTI | Completa la sección 4 con los estilos Microservicio y EDA (Consumidor Kafka), que quedaron sin cubrir tras la redistribución del documento congelado `LIN-ARQ-000 §10.1` |
-| v0.1.3 | 2026-08-09 | Arquitectura OTI | Revisión de contenido y **graduación a Vigente** (`GOB-CHK-001` H20). Las cinco tablas de `§4` dejan de repetir los umbrales de cobertura y remiten a `§5.1` como fuente única — el mismo dato ya había divergido en `LIN-DEV-JAVA-001 §15.3` (H13.1). Corregido un enlace de `§3.4` que apuntaba a un paso numerado del capítulo PL/SQL en vez de a `§5`. Verificada la alineación con los consumidores exigida por el criterio 3 de graduación, que detectó dos desalineamientos corregidos en sus documentos: `LIN-FE-ANG-001 §14.2` citaba `§4.4` (que es *Microservicio*) para herramientas E2E, y `LIN-DEV-JAVA-001 §15.1` omitía el sufijo `CT` de las pruebas de caracterización |
 | v0.1.2 | 2026-07-09 | Arquitectura OTI | Añade §4.6 (Efecto de la Estrategia de Dominio sobre las Pruebas Unitarias), ausente en todo el ecosistema documental tras la redistribución |
+| v0.1.3 | 2026-08-09 | Arquitectura OTI | Revisión de contenido y **graduación a Vigente** (`GOB-CHK-001` H20). Las cinco tablas de `§4` dejan de repetir los umbrales de cobertura y remiten a `§5.1` como fuente única — el mismo dato ya había divergido en `LIN-DEV-JAVA-001 §15.3` (H13.1). Corregido un enlace de `§3.4` que apuntaba a un paso numerado del capítulo PL/SQL en vez de a `§5`. Verificada la alineación con los consumidores exigida por el criterio 3 de graduación, que detectó dos desalineamientos corregidos en sus documentos: `LIN-FE-ANG-001 §14.2` citaba `§4.4` (que es *Microservicio*) para herramientas E2E, y `LIN-DEV-JAVA-001 §15.1` omitía el sufijo `CT` de las pruebas de caracterización |
+| v0.1.4 | 2026-08-17 | Arquitectura OTI | `§9` expresaba sus criterios de aceptación **únicamente en el modelo de ramas legado** (`ONP_DESA` → `ONP_QA`, `master`), de modo que un proyecto nuevo bajo GitLab Flow simplificado —el modelo objetivo de `LIN-VER-001 §6`— podía leerse fuera de su alcance por no tener esas ramas. Los criterios pasan a expresarse por **promoción de ambiente**, válida en ambos modelos. Se explicita además que la fase de madurez CI/CD determina si la verificación es automática o manual con evidencia, **no si el criterio es exigible** (`GOB-CHK-001` H27) |
 
 ---
 
@@ -482,9 +483,11 @@ Estas evidencias se adjuntan al expediente del proyecto y son requisito para el 
 
 ## 9. Criterios mínimos de aceptación para paso a QA y Producción
 
-> Estos criterios definen las condiciones técnicas mínimas verificables. LIN-CICD-001 los consume para configurar los gates automáticos en pipeline — este lineamiento no define cuándo ni cómo se ejecutan las validaciones automáticas.
+> Estos criterios definen las condiciones técnicas mínimas verificables. `LIN-CICD-001 §19.2` los consume para configurar los gates automáticos en pipeline — este lineamiento no define cuándo ni cómo se ejecutan las validaciones automáticas. **La fase de madurez CI/CD del proyecto determina si la verificación es automática o manual con evidencia en el Merge Request; no determina si el criterio es exigible.**
 
-### 9.1 Criterios de paso a QA (merge a rama `ONP_DESA` → `ONP_QA`)
+> **Los criterios se aplican por promoción de ambiente, no por nombre de rama.** `LIN-VER-001` reconoce dos modelos vigentes: el de ramas por promoción (`ONP_DESA` → `ONP_QA` → `master`, `§5`) y GitLab Flow simplificado basado en `main`, que es el modelo objetivo para todo proyecto nuevo (`§6`). Las tablas siguientes nombran el ambiente de destino; en el modelo vigente eso corresponde al merge a la rama del ambiente, y en GitLab Flow simplificado al despliegue del artefacto construido desde `main` hacia ese ambiente. Un proyecto nuevo **no queda fuera de estos criterios** por no tener ramas `ONP_*`.
+
+### 9.1 Criterios de paso a QA
 
 Un artefacto **no puede pasar a QA** si:
 
@@ -497,7 +500,7 @@ Un artefacto **no puede pasar a QA** si:
 | Prueba de contrato fallida (si es obligatorio) | Sí |
 | Prueba de caracterización faltante antes de modificar procedure legacy con lógica crítica | Sí |
 
-### 9.2 Criterios de paso a Producción (merge a rama `master`)
+### 9.2 Criterios de paso a Producción
 
 Además de los criterios de QA:
 

@@ -1,7 +1,7 @@
 # Lineamiento de Estándar de Diseño de Software y Patrones Tácticos en la ONP
 
 **Código:** LIN-DIS-001  
-**Versión:** 0.1.5  
+**Versión:** 0.1.6  
 **Fecha:** 2026-08-05  
 **Autor:** Oficina de Tecnologías de la Información — ONP  
 **Estado:** En revisión / Estándar de Nivel 2 — pendiente de graduación a Vigente (`GOB-MAT-001`, Ciclo de vida documental)  
@@ -15,6 +15,7 @@
 |---|---|---|---|
 | 0.1.0 – 0.1.4 | 2026-07-08 a 2026-07-09 | Arquitectura OTI | Versiones iniciales del estándar táctico derivadas del desglose de `LIN-ARQ-000` en el modelo de 3 niveles. *(Detalle por versión no registrado — este historial se incorpora en v0.1.5.)* |
 | 0.1.5 | 2026-08-05 | Arquitectura OTI | Declara explícitamente a `§6` como **documento dueño** de la resiliencia táctica (umbrales de timeout, Bulkhead, Retry y condiciones de adopción de Circuit Breaker), tras corregirse en `LIN-ARQ-001 §4.3` un mandato de Resilience4j que contradecía a `§6.2` y un rango de timeout propio que divergía de la matriz de `§6.1`. Se deja constancia de qué delega el Nivel 1 y qué conserva `LIN-API-REST-001 §8.3` (`GOB-CHK-001` H2 y H3) |
+| 0.1.6 | 2026-08-17 | Arquitectura OTI | **El diagrama de decisión de `§2.1` contradecía a `§6`, dentro de este mismo documento.** Decía «MANDATORIO RESILIENCE4J: Timeouts (2s/3s), Circuit Breaker y Bulkhead» —justo lo que v0.1.5 había eliminado de `LIN-ARQ-001 §4.3`— y publicaba umbrales fijos que `§6.1` sustituyó por una matriz por criticidad. El defecto estaba en la parte más leída del documento: el árbol de decisión que un desarrollador consulta antes que el cuerpo normativo. Corregido para reflejar `§6.1`–`§6.3` (`GOB-CHK-001` H26) |
 
 ---
 
@@ -105,8 +106,10 @@ Antes de crear un nuevo paquete, clase o servicio, el Arquitecto y el Tech Lead 
 │ PREGUNTA 5: ¿Qué umbrales de Resiliencia Táctica enciendo (`§6`)?                          │
 │                                                                                            │
 │  ¿Llamo a un servicio por red (RENIEC, SUNAT, pasarela, WS externo)?                       │
-│    ├── SÍ ──► MANDATORIO RESILIENCE4J: Timeouts (2s/3s), Circuit Breaker y Bulkhead (`§6`).│
-│    └── NO ──► (Llamada interna en memoria o BD local) -> No aplica Circuit Breaker.        │
+│    ├── SÍ ──► SIEMPRE: Timeout (`§6.1`, matriz por criticidad) + Bulkhead vía HttpClient 5.│
+│    │          Retry con Spring Retry (`§6.3`). Circuit Breaker con Resilience4j SOLO si    │
+│    │          es Microservicio (Estadio 3) o hay ADR aprobado (`§6.2`).                    │
+│    └── NO ──► (Llamada interna en memoria o BD local) -> No aplica resiliencia de red.     │
 └────────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
