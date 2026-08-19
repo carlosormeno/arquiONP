@@ -1,7 +1,7 @@
 # LIN-PERF-001 — Lineamiento de Pruebas de Rendimiento, Carga y Estrés ONP
 
 **Código:** LIN-PERF-001  
-**Versión:** v0.1.3  
+**Versión:** v0.1.5  
 **Estado:** En revisión  
 **Fecha:** 2026-08-17  
 **Propietario documental:** Arquitectura de Software — OTI  
@@ -19,6 +19,8 @@
 | v0.1.1 | 2026-07-06 | Arquitectura OTI | §12.1 separa el ambiente `PQA` (etapa de rama legado de `LIN-VER-001 §5`, sin clúster propio) del ambiente `Preproducción`/`UAT` (ambiente real opcional, requiere ADR según `LIN-K8S-001 §4.4`) — antes se listaban como si fueran equivalentes. Actualiza §13 (evidencia mínima del informe) para reflejar el mismo cambio |
 | v0.1.2 | 2026-07-10 | Arquitectura OTI | Migra Marco rector de `LIN-ARQ-000` (congelado) a `LIN-ARQ-001` (vigente) |
 | v0.1.3 | 2026-08-17 | Arquitectura OTI | Revisión de fondo (`GOB-CHK-001` H30). **(1) `§8.3` era una tercera lista de Core Web Vitals**, sin umbrales y bajo la fórmula «cuando aplique», frente al gate **mandatorio** de `LIN-ARQ-001 §7.2`. Remite ahora al dueño y conserva lo que sí le es propio: medir el frontend **con el backend bajo carga**, que es distinto del Lighthouse de laboratorio del gate. **(2) `§11` admitía datos personales reales «con autorización»** y regulaba solo el contenido de los scripts, dejando fuera el riesgo real: restaurar un respaldo de producción en un ambiente de pruebas, que traslada el padrón de afiliados —DNI, nombres, montos, historial de aportes— a un entorno con controles más débiles. Se exige **enmascaramiento previo e irreversible**, con tabla de tratamiento por tipo de dato. **(3)** `§2` no listaba `LIN-DIS-001`, `LIN-BUS-001`, `GOB-MAT-001` ni la Ley N.° 29733. El documento pasa a **En revisión** |
+| v0.1.4 | 2026-08-17 | Arquitectura OTI | `§6.4` normaba cómo determinar la criticidad de un sistema, pero la escala Alta/Media/Baja se usaba sin dueño en `LIN-CICD-001` y `LIN-K8S-001`. Se declara a `LIN-ARQ-001 §5.4.1` fuente institucional de las bandas; este lineamiento conserva los criterios de determinación (`GOB-CHK-001` H11.2) |
+| v0.1.5 | 2026-08-18 | Arquitectura OTI | El apartado de excepción titulaba «Proceso ADR para excepciones» y no definía identificador: una desviación de este lineamiento se registraba como «un ADR», instrumento que `GOB-MAT-001` reserva a las decisiones **institucionales** del Comité. Pasa a **`EXC-PERF-NNN`**, con vigencia acotada y fecha de revisión obligatoria (`GOB-CHK-001` H38) |
 
 ---
 
@@ -270,6 +272,8 @@ Objetivo: detectar fugas de memoria, agotamiento de conexiones, degradación pro
 | Legacy sin intervención funcional | No aplica, salvo evaluación |
 
 ### 6.4 Determinación de criticidad
+
+> **La escala de criticidad y sus bandas son institucionales: `LIN-ARQ-001 §5.4.1`.** Este lineamiento norma **cómo se determina** la criticidad de un sistema; el marco rector define las tres bandas —Alta, Media, Baja— y qué exigencias de continuidad conlleva cada una. La criticidad se asigna una vez y rige transversalmente: pruebas de rendimiento, resiliencia, fases de CI/CD, recursos de despliegue y objetivos de recuperación.
 
 La criticidad se determina considerando:
 
@@ -834,7 +838,10 @@ performance/
 
 ---
 
-## 20. Proceso ADR para excepciones
+## 20. Proceso de excepción (`EXC-PERF-NNN`)
+
+> **Instrumento correcto: `EXC-PERF-NNN`, no un ADR.** Conforme a `GOB-MAT-001` (Registro de decisiones y excepciones), la desviación de un lineamiento **en un proyecto concreto** se registra como excepción con vigencia acotada y **fecha de revisión**, nunca indefinida. El `ADR-NNN` queda reservado a decisiones **institucionales** del Comité de Arquitectura, que obligan a todo el corpus; llevar allí cada desviación de cada sistema vaciaría de valor ese registro. La excepción se aprueba por Arquitectura OTI y se registra en el documento de arquitectura del sistema (`GOB-PLA-001`, Anexo E, criterio 14).
+
 
 Toda excepción relevante requiere ADR aprobado por Arquitectura. Si la excepción afecta seguridad, datos sensibles, producción o infraestructura crítica, requiere además validación de Seguridad Digital y/o Plataforma.
 

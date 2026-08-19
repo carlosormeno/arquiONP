@@ -1,7 +1,7 @@
 # LIN-IAC-001 — Lineamiento de Infraestructura como Código ONP
 
 **Código:** LIN-IAC-001  
-**Versión:** v0.1.3  
+**Versión:** v0.1.4  
 **Estado:** En revisión  
 **Fecha:** 2026-08-17  
 **Propietario documental:** Arquitectura de Software — OTI  
@@ -19,6 +19,7 @@
 | v0.1.1 | 2026-07-09 | Arquitectura OTI | Corrige la referencia al Marco Rector: `LIN-ARQ-000` (congelado) → `LIN-ARQ-001` (vigente) en encabezado y §2 |
 | v0.1.2 | 2026-07-10 | Arquitectura OTI | Corrige contradicción interna: el checklist §12.1 exigía una rama `develop` protegida que §5.4 rechaza explícitamente ("sería redundante y crearía confusión"). El checklist ahora solo exige `main` protegida |
 | v0.1.3 | 2026-08-17 | Arquitectura OTI | Revisión de fondo (`GOB-CHK-001` H32). **(1) `§6` no normaba el respaldo ni la recuperación del estado de Terraform**, que es el activo más crítico del repositorio: perderlo deja a Terraform sin el mapeo entre código y recursos reales, y el siguiente `apply` puede recrear infraestructura existente o destruir la que no reconoce. Nueva `§6.3` con versionado, respaldo externo, retención, **prueba de restauración anual** y control del desbloqueo forzado. **(2) Dos modelos de madurez usaban la misma nomenclatura.** Este lineamiento numera «Fase 0…5» y `LIN-CICD-001` «Fase 0…7»; ambos se citan mutuamente sin calificar la escala, de modo que «Fase 4» en una cita cruzada era ambiguo. Toda referencia queda calificada. **(3) `§10.3` exigía documentar un cambio manual de emergencia «en un ADR»** — instrumento equivocado: un ADR registra una decisión institucional que obliga al corpus, no una desviación operativa puntual. Pasa a `EXC-IAC-NNN`, y `§14` se retitula en consecuencia. **(4)** `§2` no listaba `LIN-BD-ORA-001`, `LIN-OBS-001` ni `GOB-MAT-001`. El documento pasa a **En revisión** |
+| v0.1.4 | 2026-08-17 | Arquitectura OTI | La nota de `§6.3` sobre la brecha institucional de respaldo se actualiza: `LIN-ARQ-001 §5.4` ya es el dueño de la continuidad operativa. La prueba anual del estado se eleva a **semestral** si la infraestructura soporta sistemas de criticidad Alta (`GOB-CHK-001` H11.2) |
 
 ---
 
@@ -310,7 +311,7 @@ El archivo de estado es **el activo más crítico del repositorio de IaC**, por 
 | **Antes de un `apply` en `prod`** | Verificar que existe una versión del estado inmediatamente anterior, recuperable. |
 | **Bloqueo huérfano** | Si un pipeline interrumpido deja el estado bloqueado, el desbloqueo (`terraform force-unlock`) lo ejecuta únicamente Plataforma, dejando registro del motivo. Nunca desde una terminal local sin registro. |
 
-> **Relación con la brecha institucional de respaldo.** El corpus ONP **no norma todavía** respaldo, recuperación ante desastres ni valores institucionales de RTO/RPO (`GOB-CHK-001` H11.2). Esta sección cubre **únicamente el estado de Terraform**, que es responsabilidad de este lineamiento. No sustituye a la política institucional pendiente, y los valores de retención de arriba deberán revisarse cuando esa política exista.
+> **Relación con la política institucional.** `LIN-ARQ-001 §5.4` es el documento dueño de la continuidad operativa: fija las bandas de criticidad, los objetivos de RTO/RPO y el régimen de pruebas de recuperación. Esta sección cubre **únicamente el estado de Terraform**, cuyo mecanismo le corresponde a este lineamiento. La prueba anual de `§6.3` es coherente con la banda que aplique al clúster; si la infraestructura soporta sistemas de criticidad **Alta**, la periodicidad se eleva a semestral conforme a `LIN-ARQ-001 §5.4.4`.
 
 ### 6.4 Estado local
 

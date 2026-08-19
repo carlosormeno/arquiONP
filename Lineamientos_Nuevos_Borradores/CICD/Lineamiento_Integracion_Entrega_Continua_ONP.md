@@ -1,7 +1,7 @@
 # LIN-CICD-001 — Lineamiento de Integración y Entrega Continua ONP
 
 **Código:** LIN-CICD-001  
-**Versión:** v0.1.6  
+**Versión:** v0.1.8  
 **Estado:** En revisión  
 **Fecha:** 2026-08-17  
 **Propietario documental:** Arquitectura de Software — OTI  
@@ -21,6 +21,8 @@
 | v0.1.3 | 2026-07-10 | Arquitectura OTI | Corrige el Anexo F: reemplaza la variable sugerida `TERRAFORM_WORKSPACE` por `ENV_NAME`, que es la que realmente usa el pipeline referencial de `LIN-IAC-001` (Anexo B) para seleccionar el directorio de ambiente. La variable anterior sugería implícitamente el uso de Terraform Workspaces, práctica que `LIN-IAC-001 §6.2`/§13/§14.1 prohíbe expresamente para separar ambientes |
 | v0.1.4 | 2026-07-10 | Arquitectura OTI | Migra Marco rector de `LIN-ARQ-000` (congelado) a `LIN-ARQ-001` (vigente) en encabezado y §2 |
 | v0.1.5 | 2026-07-10 | Arquitectura OTI | Implementa 4 gates mandatorios de `LIN-ARQ-001` que hasta ahora no tenían dueño en el pipeline: (1) Core Web Vitals vía Lighthouse CI como gate de bloqueo (§9.4, `LIN-ARQ-001 §7.2`); (2) condición explícita de SonarQube "0 vulnerabilidades Blocker/Critical" (§12.3, `LIN-ARQ-001 §8.3`); (3) verificación de deuda técnica de Feature Toggles vía API de Unleash (§12.4, `LIN-ARQ-001 §2.3`); (4) verificación de presencia de la Declaración de Conformidad con LIN-ARQ-001 en README (§12.5, `LIN-ARQ-001 §8.3` punto 4). Actualiza §7.2, §9.1, §19.2, §20, §23.1, §23.3, Anexo B y Anexo F en consecuencia |
+| v0.1.7 | 2026-08-18 | Arquitectura OTI | `§12.5` declaraba que la verificación automática de fronteras de paquetes quedaba «fuera del alcance»; con `LIN-DEV-JAVA-001 §15.5` ya existe y se ejecuta en la fase de pruebas, de modo que el límite admitido se acota a lo que efectivamente no es automatizable. Las pruebas de arquitectura (`AT`) se incorporan a los criterios de bloqueo de `§19.2` (`GOB-CHK-001` H37) |
+| v0.1.8 | 2026-08-18 | Arquitectura OTI | El apartado de excepción titulaba «Proceso ADR para excepciones» y no definía identificador: una desviación de este lineamiento se registraba como «un ADR», instrumento que `GOB-MAT-001` reserva a las decisiones **institucionales** del Comité. Pasa a **`EXC-CICD-NNN`**, con vigencia acotada y fecha de revisión obligatoria (`GOB-CHK-001` H38) |
 | v0.1.6 | 2026-08-17 | Arquitectura OTI | Revisión de fondo (`GOB-CHK-001` H27). **(1) `§19.2` se titulaba «criterios de bloqueo *sugeridos*» y omitía siete de los once que `LIN-TEST-001 §9` —documento vigente— declara bloqueantes**: cobertura Angular, caracterización fallida o faltante ante PL/SQL crítico, prueba de contrato, E2E de *happy path*, reporte de cobertura ausente y opinión de UFSD. Otros tres figuraban degradados a «según fase». Reescrito separando lo que proviene del dueño —que no escala por fase y solo admite ADR— de lo propio del pipeline. **(2) `§11` y `§12.3`** presentaban la cobertura como capacidad de Fase 2 sin umbral; ahora remiten a `LIN-TEST-001 §5.1` y se explicita que **la fase determina si el control se automatiza, no si es exigible**. **(3) `§17.2` listaba `PQA` como ambiente de despliegue** entre DEV y QA: es una **rama** del modelo de promoción de `LIN-VER-001 §5`, y `LIN-K8S-001 §4.4` advierte expresamente contra esa confusión. Sustituido por UAT/Preproducción, que requiere ADR. **(4) `§13.3`** trataba los hallazgos altos como «plan de remediación» cuando `LIN-TEST-001 §9.2` los sitúa junto a los críticos para el pase a Producción, sin retest de UFSD. **(5)** El encabezado de `§18` arrastraba la nota editorial interna «(Validarlo con AD)», visible también en la tabla de contenido. El documento pasa a **En revisión** |
 
 ---
@@ -703,7 +705,9 @@ readme-conformance-check:
     - if: '$CI_COMMIT_BRANCH == "main"'
 ```
 
-**Límite explícito:** este job certifica que la declaración *existe y está firmada* — no certifica que sea cierta. La veracidad de "sin importaciones prohibidas" sigue siendo responsabilidad del Tech Lead y, si se requiere verificación automática de fronteras de paquetes, es un control aparte (análisis estático de dependencias entre módulos Maven, fuera del alcance de este job).
+**Límite explícito:** este job certifica que la declaración *existe y está firmada* — no certifica que sea cierta.
+
+> **Desde 2026-08-18 la veracidad sí tiene verificación.** `LIN-DEV-JAVA-001 §15.5` normaliza las **pruebas de arquitectura ArchUnit** (tipo `AT` de `LIN-TEST-001 §3.1`), que comprueban por análisis de bytecode las fronteras entre Bounded Contexts y el contenido del Shared Kernel. Se ejecutan en la fase de pruebas del pipeline y **su fallo bloquea igual que una prueba unitaria** — no requieren job dedicado. La declaración jurada conserva su valor: cubre los juicios que ninguna regla automática puede emitir, pero ya no es el **único** control (`GOB-CHK-001` H37).
 
 ---
 
@@ -994,6 +998,7 @@ Debe requerir:
 | Cobertura JaCoCo inferior al umbral de `LIN-TEST-001 §5.1` | **Sí** |
 | Cobertura Angular inferior al umbral de `LIN-TEST-001 §5.1` | **Sí** |
 | Prueba unitaria o de integración fallida | **Sí** |
+| **Prueba de arquitectura (`AT`) fallida** — frontera entre módulos o Shared Kernel violados | **Sí** |
 | Prueba de caracterización (`CT`) fallida | **Sí** |
 | Prueba de caracterización faltante antes de modificar un procedure legacy con lógica crítica | **Sí** |
 | Prueba de contrato fallida, cuando es obligatoria (`LIN-TEST-001 §6.2`) | **Sí** |
@@ -1182,7 +1187,10 @@ Las aprobaciones manuales deben quedar registradas en GitLab o en el expediente 
 
 ---
 
-## 25. Proceso ADR para excepciones
+## 25. Proceso de excepción (`EXC-CICD-NNN`)
+
+> **Instrumento correcto: `EXC-CICD-NNN`, no un ADR.** Conforme a `GOB-MAT-001` (Registro de decisiones y excepciones), la desviación de un lineamiento **en un proyecto concreto** se registra como excepción con vigencia acotada y **fecha de revisión**, nunca indefinida. El `ADR-NNN` queda reservado a decisiones **institucionales** del Comité de Arquitectura, que obligan a todo el corpus; llevar allí cada desviación de cada sistema vaciaría de valor ese registro. La excepción se aprueba por Arquitectura OTI y se registra en el documento de arquitectura del sistema (`GOB-PLA-001`, Anexo E, criterio 14).
+
 
 Toda excepción relevante a este lineamiento requiere ADR aprobado por Arquitectura. Si afecta seguridad, producción, infraestructura, datos sensibles o continuidad operativa, requiere validación adicional de Seguridad Digital y/o Plataforma.
 

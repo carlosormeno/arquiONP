@@ -2,7 +2,7 @@
 **OFICINA DE TECNOLOGÍAS DE LA INFORMACIÓN**
 
 > **Identidad de esta plantilla — no copiar al documento derivado.**
-> **Código:** GOB-PLA-001 · **Versión:** v2.3 · **Estado:** Vigente · **Propietario:** Arquitectura OTI
+> **Código:** GOB-PLA-001 · **Versión:** v2.7 · **Estado:** Vigente · **Propietario:** Arquitectura OTI
 >
 > Estos datos identifican a la **plantilla institucional**. El documento de arquitectura que se produzca a partir de ella lleva su propia identidad en la tabla de abajo, y su versión evoluciona de forma independiente de la versión de la plantilla. Al completar el documento, elimina este bloque.
 
@@ -17,6 +17,8 @@
 | **Elaborado por** | [Nombre del Arquitecto] |
 | **Revisado por** | [Nombre del Revisor] |
 | **Aprobado por** | [Nombre del Aprobador] |
+| **Línea base normativa** | [Corpus según `GOB-MAT-001` vX.Y.Z, consultada el DD/MM/AAAA] |
+| **Próxima revisión normativa** | [DD/MM/AAAA — máximo 12 meses, o antes si se activa un disparador de `§1.5`] |
 
 ---
 
@@ -29,6 +31,10 @@
 | v2.1 | Corrige la escala de Estadios a la oficial de `LIN-ARQ-001 §2.1` (1 = Legacy, 2 = Monolito Modular, 3 = Microservicios) en las guías de las vistas A.1, A.2 y A.3 — antes usaba una numeración 0/1/2 inexistente en el marco rector — y redirige las citas de ACL (`LIN-DIS-001 §5.4`) y Strangler Fig (`LIN-ARQ-001 §2.2`) | OTI / Arquitectura | 2026-08-05 |
 | v2.2 | Corrige la cita de Kubernetes/`containerd`: decía `LIN-ARQ-001 §7` (que es *Estrategia Macro de Frontend*) — el destino real es `§5.2` (`GOB-CHK-001` H10.2) | OTI / Arquitectura | 2026-08-08 |
 | v2.3 | Revisión de fondo (`GOB-CHK-001` H31). **(1)** El ejemplo de Seguridad de `C.1` describía el token SAA como **JWT**, cuando `LIN-API-REST-001 §7.1` afirma expresamente que es **opaco** y no verificable localmente — un arquitecto que lo copiara diseñaría validación local de un token que no la admite. **(2)** El mismo cuadro trataba `codDetRespuesta` como *header*, siendo un campo del cuerpo de `ApiResponseWrapper`. **(3)** La fila de **Recuperabilidad** exige RTO/RPO sin que exista lineamiento al que remitirse (`H11.2`): se explicita cómo proceder mientras la brecha siga abierta. **(4)** `D.2` citaba «Feature Toggles (**PA14**)», código del tablero de brechas y no del catálogo normativo — redirigido a `LIN-ARQ-001 §2.3` y `ADR-014`. **(5)** `B.1` no distinguía `AD-XXX` (proyecto) de `ADR-XXX` (institucional), de modo que un proyecto podía creer que se autodispensa de un lineamiento con una decisión propia | OTI / Arquitectura | 2026-08-17 |
+| v2.4 | El atributo **Recuperabilidad** deja de ser una exigencia huérfana: remite a `LIN-ARQ-001 §5.4`, que fija las bandas de criticidad y sus objetivos de RTO/RPO. Se precisa qué debe declararse —criticidad, RTO/RPO con el validador del área usuaria, verificación de dependencias y procedimiento de recuperación— y que un documento de criticidad **Alta** no puede aprobarse sin ello (`GOB-CHK-001` H11.2) | OTI / Arquitectura | 2026-08-17 |
+| v2.5 | Evaluación de la plantilla como instrumento normativo (`GOB-CHK-001` H34). **(1)** Se incorpora el **Anexo E — Conformidad y Criterios de Aprobación**: la plantilla enseñaba a redactar pero no definía cuándo un documento está listo para aprobarse, de modo que la aprobación dependía del criterio de quien firmara. Es el único anexo que **no se elimina** del entregable. **(2)** Nueva `§1.4` con las cuatro **declaraciones obligatorias** que el corpus exige y la plantilla no pedía —Estadio, criterios de microservicio, DDD y **CAP**— más la Declaración de Conformidad del `README.md`, cuya ausencia **bloquea el pipeline** (`LIN-CICD-001 §12.5`) sin que el arquitecto tuviera forma de enterarse. **(3)** `§5.2` listaba 6 de 19 documentos del corpus, omitiendo `LIN-K8S-001`, `LIN-TEST-001` y `LIN-VER-001`; ahora lista el corpus completo con su estado y exige declarar cuáles no aplican y por qué | OTI / Arquitectura | 2026-08-17 |
+| v2.6 | Cierra los dos hallazgos de diseño de la evaluación (`GOB-CHK-001` H34.4 y H34.5). **(1) Regla de precedencia entre `§3` y el Anexo A:** eran dos representaciones del mismo sistema mantenidas por separado y sin regla de cuál prevalece. El **Anexo A pasa a ser la fuente autoritativa** —es el modelo ArchiMate versionable— y `§3` queda como lectura derivada para las audiencias que no leen ArchiMate, con prohibición de introducir elementos ausentes del modelo y obligación de actualizarse después de él. Se resuelve además el caso de la Capa de Seguridad, única sin vista propia. **(2) Vigencia frente al corpus:** el documento declaraba conformidad con lineamientos que cambian sin que nada indicara cuándo revisarlo. La tabla de identidad incorpora **línea base normativa** y **próxima revisión**; la nueva `§1.5` define cinco disparadores de revisión obligatoria —el principal, que un documento del que el sistema depende **gradúe a `Vigente`**— y qué explícitamente *no* obliga, para que la regla no degenere en revisar por cada errata | OTI / Arquitectura | 2026-08-18 |
+| v2.7 | El Anexo A advierte que el modelo **será contrastado contra la arquitectura observada** (`LIN-ARQ-001 §5.5`) mediante el grafo de servicios, y que una dependencia real no modelada se resuelve corrigiendo el documento o el código, no normalizando la desviación. Nuevo criterio 13c en el Anexo E para criticidad Alta y Media (`GOB-CHK-001` H35) | OTI / Arquitectura | 2026-08-18 |
 
 ---
 
@@ -43,6 +49,7 @@
 - [Anexo B: Decisiones Arquitectónicas (ADRs)](#anexo-b-decisiones-arquitectónicas-adrs)
 - [Anexo C: Atributos de Calidad](#anexo-c-atributos-de-calidad)
 - [Anexo D: Riesgos y Deuda Técnica](#anexo-d-riesgos-y-deuda-técnica)
+- [Anexo E: Conformidad y Criterios de Aprobación](#anexo-e-conformidad-y-criterios-de-aprobación) — *no se elimina del entregable*
 
 ---
 
@@ -105,6 +112,70 @@ El presente documento describe la arquitectura de TI propuesta para **[Nombre de
 | Desarrolladores | Comprensión de los componentes internos y decisiones técnicas | Secciones 3, 4; Anexo A - Vista de Componentes; Anexo B |
 | Equipo de Soporte | Comprensión del entorno de ejecución | Sección 3; Anexo A - Vista de Infraestructura |
 
+### 1.4 Declaraciones arquitectónicas obligatorias
+
+> 📋 **Orientación para el arquitecto**
+>
+> Estas cuatro declaraciones **no son opcionales ni derivables del resto del documento**: el corpus las exige de forma expresa y un revisor las busca antes que nada. Complétalas al inicio, no al final — condicionan todo el diseño posterior.
+>
+> Una vez completada esta sección, elimina este bloque de orientación.
+
+| Declaración | Valor | Fundamento |
+|---|---|---|
+| **Estadio de topología** | [1 — Legacy / 2 — Monolito Modular / 3 — Microservicios] | `LIN-ARQ-001 §2.1`. El Estadio 2 es el **por defecto** para todo sistema nuevo |
+| **Criterios de extracción a microservicio** | [No aplica (Estadio 1 o 2) / Cumplidos los 6, ver AD-00X] | `LIN-ARQ-001 §2.1` — los seis criterios se cumplen **simultáneamente** o el sistema no es candidato |
+| **Adopción de DDD táctico** | [Sí, ver AD-00X / No] | `LIN-DIS-001 §3.0` — seis criterios propios, **independientes** de los de microservicio: cumplir unos no implica cumplir los otros |
+| **Declaración CAP** | [CP / AP / No aplica (no distribuido)] | `LIN-ARQ-001 §3.1` — **obligatoria** para todo microservicio o módulo distribuido, con su sustento |
+| **Criticidad y objetivos de recuperación** | [Alta / Media / Baja + RTO y RPO] | `LIN-ARQ-001 §5.4.1`. Se detalla en el Anexo C — Recuperabilidad |
+
+#### Declaración de Conformidad en el `README.md` del repositorio
+
+Además de este documento, `LIN-ARQ-001 §8.3` numeral 4 exige una **declaración jurada técnica firmada por el Tech Lead** en el `README.md` del repositorio. **`LIN-CICD-001 §12.5` la verifica en el pipeline y bloquea el pase si falta** — un documento de arquitectura impecable no evita ese bloqueo.
+
+```markdown
+## Declaración de Conformidad con LIN-ARQ-001
+
+- **Tech Lead responsable:** <nombre completo>
+- **Fecha:** <YYYY-MM-DD>
+- **Declaro que** el presente repositorio no contiene importaciones entre fronteras
+  prohibidas del Monolito Modular según LIN-DIS-001 §3.4, y que la arquitectura
+  implementada es conforme con LIN-ARQ-001.
+```
+
+> El pipeline verifica que la declaración **exista y esté firmada**, no que sea cierta. La veracidad sigue siendo responsabilidad del Tech Lead.
+
+### 1.5 Vigencia del documento frente al corpus normativo
+
+> 📋 **Orientación para el arquitecto**
+>
+> Este documento declara conformidad con el corpus **en la versión y fecha registradas en la tabla de identidad**, no con el corpus perpetuo. Los lineamientos evolucionan, y un documento aprobado hace un año puede estar declarando conformidad con reglas que cambiaron.
+>
+> Registra en la tabla de identidad la versión de `GOB-MAT-001` que consultaste: su catálogo es el índice del corpus con el estado de cada documento en esa fecha.
+>
+> Una vez completada esta sección, elimina este bloque de orientación.
+
+#### Disparadores de revisión obligatoria
+
+El documento **debe revisarse y volver a aprobarse** cuando ocurra cualquiera de estos hechos, sin esperar a la revisión programada:
+
+| Disparador | Por qué obliga |
+|---|---|
+| Un documento del que este sistema depende **gradúa a `Vigente`** | Cambia lo que es exigible: lo que era criterio técnico pasa a ser exigible contractualmente (`GOB-MAT-001`, regla de exigibilidad) |
+| Cambia una regla que este documento **cita como sustento** de una decisión | El fundamento de un `AD-NNN` deja de existir o dice otra cosa |
+| El sistema **cambia de Estadio** o de **criticidad** | Se alteran las declaraciones obligatorias de `§1.4` y, con la criticidad, los objetivos de RTO/RPO |
+| **Vence una excepción `EXC-`** registrada en este documento | Toda excepción tiene fecha de revisión; al vencer, o se subsana o se renueva con justificación |
+| Intervención mayor sobre el sistema | Modernización, migración de estadio o cambio de topología de despliegue |
+
+**No obligan a revisión:** correcciones editoriales o de erratas en un lineamiento, cambios en documentos que `§5.2` declara no aplicables, y cambios de versión que no alteren una regla que este documento invoque.
+
+#### Revisión programada
+
+Con independencia de los disparadores, el documento se revisa **al menos cada 12 meses**. La revisión puede concluir «sin cambios», pero debe quedar registrada en el historial con la nueva línea base consultada.
+
+#### Responsabilidad
+
+Detectar los disparadores es responsabilidad del **arquitecto responsable del sistema**, apoyándose en el historial de versiones de `GOB-MAT-001`. Arquitectura OTI comunica las graduaciones a `Vigente`, que es el disparador de mayor impacto.
+
 ---
 
 ## 2. GLOSARIO TÉCNICO
@@ -150,7 +221,19 @@ A continuación se presenta la Vista General de la arquitectura de **[Nombre del
 >
 > Una vez completada esta sección, elimina este bloque de orientación.
 
-> **Nota:** Esta es una vista de referencia rápida. Para vistas con distintos niveles de abstracción modeladas en ArchiMate, consultar el **Anexo A**.
+> ### 📐 Regla de precedencia — esta sección es **derivada**, no autónoma
+>
+> El **Anexo A es la fuente autoritativa** de la arquitectura: es el modelo ArchiMate mantenido en Archi, versionable y con niveles de abstracción explícitos. Esta sección `§3` es una **lectura derivada de ese modelo**, dirigida a las audiencias que no leen ArchiMate (Gerencia, Stakeholders, Soporte).
+>
+> De ello se siguen tres reglas de obligado cumplimiento:
+>
+> 1. **Ante cualquier divergencia entre `§3` y el Anexo A, prevalece el Anexo A.** Esta sección no crea arquitectura: la describe.
+> 2. **`§3` no puede contener ningún elemento que no exista en el Anexo A.** Si al redactarla aparece un componente, una integración o un origen de datos que no está modelado, el error está en el modelo — se corrige allí primero, no aquí. Es la vía por la que las dos representaciones divergen.
+> 3. **`§3` se actualiza siempre después del Anexo A**, nunca antes ni en paralelo. Un cambio arquitectónico se modela y luego se narra.
+>
+> El Anexo E verifica la correspondencia (ítem 18).
+>
+> **Sobre la Capa de Seguridad (`B`):** es la única que no tiene vista propia en el Anexo A — sus elementos aparecen distribuidos entre la Vista de Contexto (actores y perímetro de acceso) y la Vista de Infraestructura (zonas de seguridad y red). Esta capa **agrupa esa lectura**; tampoco puede introducir componentes ausentes del modelo.
 
 ---
 
@@ -294,14 +377,37 @@ Cualquier modificación en los requisitos funcionales o no funcionales podrá re
 - [Documento de Análisis — Nombre y versión]
 - [Documento de Análisis — Nombre y versión]
 
-### 5.2 Otros documentos de referencia
+### 5.2 Corpus normativo de Arquitectura aplicable
 
-- **`LIN-ARQ-001`**: Lineamiento Marco Rector de Arquitectura de Software ONP (Estadios de Topología, Gobernanza y K8s)
-- **`LIN-DIS-001`**: Lineamiento de Diseño de Software y Patrones Tácticos ONP (Hexagonal, DDD, CQRS, Resiliencia)
-- **`LIN-DEV-JAVA-001`**: Lineamiento Estándar de Desarrollo Java / GoF / SOLID ONP
-- **`LIN-OBS-001`**: Lineamiento de Log Centralizado, Trazabilidad y Observabilidad
-- **`LIN-API-REST-001`**: Lineamiento de Diseño de APIs RESTful y Contratos OpenAPI
-- **`LIN-SEC-APP-001`**: Lineamiento de Seguridad en Aplicaciones de TI
+> 📋 **Orientación para el arquitecto**
+>
+> Esta tabla es el corpus completo, no una selección. Marca en la última columna qué documentos aplican a tu sistema y por qué los que no aplican quedan fuera — un sistema sin frontend no necesita `LIN-FE-ANG-001`, pero **debe decirlo**, no omitirlo en silencio.
+>
+> **Lee la columna de estado.** Un documento `Vigente` es **exigible contractualmente** y puede invocarse en un TDR. Uno `En revisión` obliga como criterio técnico pero, conforme a la regla de exigibilidad de `GOB-MAT-001`, **no puede usarse como criterio de aceptación formal** mientras no gradúe. Consulta `GOB-MAT-001` para el estado del día: esta tabla refleja el corpus a la fecha de la plantilla y los documentos evolucionan.
+
+| Código | Documento | Estado a la fecha de esta plantilla | ¿Aplica al sistema? |
+|---|---|---|---|
+| `LIN-ARQ-001` | Marco Rector de Arquitectura (Nivel 1) | En revisión | **Siempre** |
+| `LIN-DIS-001` | Diseño de Software y Patrones Tácticos (Nivel 2) | En revisión | **Siempre** |
+| `LIN-PAT-001` | Catálogo Oficial de Patrones y Fichas de Decisión | En revisión | **Siempre** |
+| `LIN-VER-001` | Versionamiento, Control de Cambios y Revisión de Código | En revisión | **Siempre** |
+| `LIN-TEST-001` | Estándar de Pruebas | **Vigente** | **Siempre** |
+| `LIN-OBS-001` | Log, Trazabilidad y Observabilidad | **Vigente** | **Siempre** |
+| `LIN-SEC-APP-001` | Seguridad en Aplicaciones | En revisión | **Siempre** |
+| `LIN-K8S-001` | Contenedores y Orquestación | En revisión | Sí, salvo excepción de despliegue en VM (`LIN-ARQ-001 §5.2`) |
+| `LIN-CICD-001` | Integración y Entrega Continua | En revisión | **Siempre** |
+| `LIN-DEV-JAVA-001` | Estándar de Desarrollo Java | En revisión | Si hay backend Java |
+| `LIN-API-REST-001` | Servicios Web y APIs REST | En revisión | Si expone o consume APIs REST |
+| `LIN-FE-ANG-001` | Diseño Web Frontend Angular | En revisión | Si hay frontend web |
+| `LIN-BD-ORA-001` | Base de Datos Oracle | En revisión | Si persiste en Oracle |
+| `LIN-BUS-001` | Mensajería y Bus de Eventos | En revisión | Si publica o consume eventos Kafka |
+| `LIN-BI-001` | Explotación y Analítica de Datos (BI) | En revisión | Si alimenta o consume el Lakehouse |
+| `LIN-PERF-001` | Pruebas de Rendimiento, Carga y Estrés | En revisión | Según criticidad (`LIN-PERF-001 §6.1`) |
+| `LIN-IAC-001` | Infraestructura como Código | En revisión | Si aprovisiona infraestructura con Terraform |
+| `GOB-MAT-001` | Matriz de Propiedad Documental | **Vigente** | Referencia — resuelve qué documento es dueño de cada tema |
+| `GLOSARIO-ONP` | Glosario transversal | Vigente / Operativo | Referencia |
+
+> **`LIN-ARQ-000`** es cantera histórica **congelada**: no se cita como norma vigente. **`LIN-DOC-001`** (Documentación y Modelado) está pendiente de elaboración.
 
 ---
 ---
@@ -311,6 +417,8 @@ Cualquier modificación en los requisitos funcionales o no funcionales podrá re
 Este anexo presenta la arquitectura de **[Nombre del Sistema]** mediante cuatro vistas modeladas en ArchiMate, cada una orientada a una audiencia y propósito específico. El uso de múltiples vistas permite comunicar la arquitectura de forma apropiada según el nivel de abstracción requerido.
 
 > **Herramienta de modelado:** Archi (ArchiMate 3.x) — estándar aprobado en la ONP.
+
+> 🔍 **Este modelo será contrastado contra la arquitectura observada.** `LIN-ARQ-001 §5.5` establece que, para sistemas de criticidad **Alta o Media**, Arquitectura OTI compara semestralmente estas vistas contra el **grafo de servicios** derivado de las trazas en producción (`LIN-OBS-001 §5.8`). Una dependencia que exista en ejecución y no esté modelada aquí es una divergencia que se resuelve **corrigiendo este documento o el código** — nunca dando por buena la desviación por el hecho de estar en producción. Modela las integraciones reales, incluidas las de baja frecuencia.
 
 > **Para el arquitecto que elabora este documento:** cada vista tiene una sección de orientación marcada con 📋 que explica qué se espera modelar, qué elementos incluir y qué evitar. Una vez completada la vista, esa orientación puede eliminarse del documento final.
 
@@ -662,9 +770,11 @@ Este anexo describe los atributos de calidad relevantes para el sistema y cómo 
 | **Observabilidad (Google SRE 4 Golden Signals)** | [ej. Monitoreo obligatorio de las 4 Señales Doradas: Latencia, Tráfico, Errores y Saturación (`LIN-ARQ-001 §5.3`)] | [ej. OpenTelemetry + centralización de logs ECS con `trace.id`, propagación del header `X-Request-ID` (`LIN-OBS-001 §4.10`) y `codDetRespuesta` en el cuerpo de `ApiResponseWrapper` — **es un campo del body, no un header** (`LIN-API-REST-001 §4.1`) — Ver AD-00X] |
 | **Mantenibilidad** | [ej. Capacidad de actualizar o reemplazar un servicio sin afectar los demás] | [ej. Bounded Contexts independientes con contratos OpenAPI 3.0 Code-First (`LIN-API-REST-001`)] |
 | **Interoperabilidad** | [ej. Integración con 10+ entidades externas del Estado y legados internos] | [ej. Servicio de fachada para Entidades Externas y Capa Anticorrupción (**ACL**) para legados ONP] |
-| **Recuperabilidad** | [ej. RTO máximo de X horas, RPO máximo de Y horas] | [ej. Estrategia de backup inmutable y recuperación coordinada sobre Oracle 19c / K8s PV] |
+| **Recuperabilidad** | [Criticidad asignada + RTO y RPO de su banda (`LIN-ARQ-001 §5.4.1`), con el nombre de quien los validó por el área usuaria] | [ej. Respaldo RMAN según `LIN-BD-ORA-001 §11.2` con frecuencia coherente al RPO; procedimiento de recuperación con orden de dependencias (`LIN-ARQ-001 §5.4.3`); prueba de restauración semestral — Ver AD-00X] |
 
-> ⚠️ **Recuperabilidad — no existe todavía un lineamiento al que remitirse.** El corpus ONP **no norma aún** respaldo, recuperación ante desastres ni valores institucionales de RTO/RPO (`GOB-CHK-001` H11.2). Mientras esa brecha siga abierta, el arquitecto debe: (a) **acordar los valores de RTO y RPO con el área usuaria y con Plataforma**, no proponerlos por su cuenta ni copiarlos de otro proyecto; (b) dejar constancia en un **ADR** de cómo se obtuvieron y quién los validó; y (c) registrar la ausencia de norma institucional como **riesgo** en `D.1`. Para un sistema previsional, un RTO/RPO no acordado formalmente no es un dato técnico menor: determina cuánta información de aportes o pagos se puede perder ante un desastre.
+> 📌 **Recuperabilidad — documento dueño: `LIN-ARQ-001 §5.4`.** Los valores no se inventan por proyecto: se derivan de la **banda de criticidad** asignada al sistema (`§5.4.1`). Este atributo debe declarar: la criticidad asignada; el RTO y RPO comprometidos y **quién los validó por el área usuaria**; la verificación de que ninguna dependencia tiene un RTO/RPO peor que el declarado (regla 2 de `§5.4.1`); y, para criticidad **Alta o Media**, el procedimiento de recuperación de `§5.4.3`.
+>
+> **Un documento de arquitectura de criticidad Alta no puede aprobarse sin estos elementos.**
 
 ---
 ---
@@ -724,6 +834,75 @@ Este anexo registra los riesgos arquitectónicos identificados y la deuda técni
 |---|---|---|---|
 | DT-001 | [Qué se hizo de forma subóptima, por qué se tomó esa decisión y cuál es el impacto de no resolverlo] | Alta / Media / Baja | [Acción concreta, Ticket en Jira/GitLab (`ONP-XXXX`) y horizonte de tiempo en Sprints para resolverlo] |
 | DT-002 | [Descripción de la deuda técnica] | Alta / Media / Baja | [Plan de resolución con Ticket e Hito de remediación] |
+
+---
+---
+
+# ANEXO E: CONFORMIDAD Y CRITERIOS DE APROBACIÓN
+
+Este anexo es la lista de verificación del **revisor y del aprobador**, no del autor. Su propósito es que la aprobación de un documento de arquitectura dependa de criterios verificables y no del criterio individual de quien firma.
+
+> 📋 **Cómo se usa**
+>
+> El arquitecto lo completa antes de someter el documento a revisión; el revisor lo verifica; el aprobador exige que esté completo antes de firmar. **A diferencia de los demás bloques de orientación, este anexo NO se elimina**: forma parte del entregable y queda como evidencia de la revisión.
+>
+> Un ítem no aplicable se marca `N/A` **con la razón** — nunca se deja en blanco ni se borra la fila.
+
+## E.1 Completitud del documento
+
+| # | Criterio | Estado |
+|---|---|---|
+| 1 | Todos los bloques de orientación 📋 fueron eliminados del documento final (salvo este anexo) | ☐ |
+| 2 | No quedan *placeholders* sin reemplazar (`[Nombre del Sistema]`, `[DD/MM/AAAA]`, `AD-00X`) | ☐ |
+| 3 | El bloque de identidad de la plantilla fue eliminado y la tabla de identidad del documento está completa | ☐ |
+| 4 | El glosario define todas las siglas que aparecen en el documento | ☐ |
+| 5 | El alcance declara explícitamente qué queda **fuera**, no solo qué queda dentro | ☐ |
+
+## E.2 Declaraciones obligatorias (`§1.4`)
+
+| # | Criterio | Fundamento | Estado |
+|---|---|---|---|
+| 6 | **Estadio de topología** declarado | `LIN-ARQ-001 §2.1` | ☐ |
+| 7 | Si declara Estadio 3: los **6 criterios de extracción** se sustentan uno a uno en un ADR | `LIN-ARQ-001 §2.1` | ☐ |
+| 8 | **Adopción de DDD** declarada, evaluada de forma independiente de la anterior | `LIN-DIS-001 §3.0` | ☐ |
+| 9 | **Declaración CAP** (CP/AP) presente y sustentada, o justificado que el sistema no es distribuido | `LIN-ARQ-001 §3.1` | ☐ |
+| 10 | **Criticidad** asignada, con RTO y RPO de su banda y **nombre de quien los validó por el área usuaria** | `LIN-ARQ-001 §5.4` | ☐ |
+| 11 | Verificado que **ninguna dependencia tiene un RTO/RPO peor** que el declarado | `LIN-ARQ-001 §5.4.1` regla 2 | ☐ |
+| 12 | Si la criticidad es **Alta o Media**: procedimiento de recuperación con orden de dependencias | `LIN-ARQ-001 §5.4.3` | ☐ |
+
+## E.3 Conformidad normativa
+
+| # | Criterio | Fundamento | Estado |
+|---|---|---|---|
+| 13 | `§5.2` indica, para **cada** documento del corpus, si aplica o por qué no | — | ☐ |
+| 13b | **Línea base normativa** registrada en la tabla de identidad (versión de `GOB-MAT-001` y fecha) y **próxima revisión** fijada a 12 meses o menos | `GOB-PLA-001 §1.5` | ☐ |
+| 13c | Si la criticidad es **Alta o Media**: las vistas del Anexo A incluyen **todas** las dependencias externas, incluidas las de baja frecuencia (batches, integraciones periódicas), porque serán contrastadas contra el grafo observado | `LIN-ARQ-001 §5.5` | ☐ |
+| 14 | Toda desviación de un lineamiento está registrada como **`EXC-<CÓDIGO>-NNN`** con riesgo aceptado, control compensatorio y **fecha de revisión** | `GOB-MAT-001` | ☐ |
+| 15 | Ningún `AD-NNN` de este documento pretende dispensar del cumplimiento de un lineamiento institucional | `GOB-MAT-001` | ☐ |
+| 16 | Ningún criterio de aceptación del proyecto se apoya en un documento que **no esté `Vigente`** | `GOB-MAT-001`, regla de exigibilidad | ☐ |
+| 17 | La **Declaración de Conformidad** existe y está firmada en el `README.md` del repositorio | `LIN-ARQ-001 §8.3`; verificada por `LIN-CICD-001 §12.5` | ☐ |
+
+## E.4 Consistencia interna
+
+| # | Criterio | Estado |
+|---|---|---|
+| 18 | **`§3` no contiene ningún elemento ausente del Anexo A.** La verificación es en un solo sentido: el Anexo A puede tener detalle que `§3` no narre, pero nunca al revés (regla de precedencia de `§3`) | ☐ |
+| 19 | Todo ADR listado en `B.1` tiene su ficha completa en `B.2`, y ninguna ficha existe sin estar en el índice | ☐ |
+| 20 | Cada atributo de calidad de `C.1` referencia el `AD-NNN` que lo aborda | ☐ |
+| 21 | Cada ADR tiene al menos **dos alternativas reales** evaluadas | ☐ |
+| 22 | Toda deuda técnica de `D.2` tiene ticket en el backlog y horizonte de remediación acotado | `LIN-ARQ-001 §2.3` | ☐ |
+| 23 | Los riesgos de `D.1` son **arquitectónicos**, no de gestión de proyecto | ☐ |
+
+## E.5 Registro de la revisión
+
+| Campo | Valor |
+|---|---|
+| **Revisado por** | [Nombre, área, fecha] |
+| **Ítems marcados `N/A`** | [Número de ítem y razón, uno por línea] |
+| **Observaciones que no bloquean** | [Lista, o «ninguna»] |
+| **Resultado** | ☐ Aprobado ☐ Aprobado con observaciones ☐ Devuelto |
+
+> **Regla de aprobación.** Un documento de arquitectura de un sistema de criticidad **Alta** no puede aprobarse con ítems de `E.2` o `E.3` sin marcar. Para criticidad Media y Baja, un ítem pendiente puede admitirse como observación con fecha de subsanación, salvo los ítems **9, 14 y 17**, que bloquean en toda criticidad — el primero porque una decisión CAP no declarada se descubre en producción, y los otros dos porque son verificados por el pipeline.
 
 ---
 

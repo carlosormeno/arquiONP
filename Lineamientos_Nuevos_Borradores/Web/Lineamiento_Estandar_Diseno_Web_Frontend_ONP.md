@@ -1,6 +1,6 @@
 # LIN-FE-ANG-001 — Estándar de Diseño Web Frontend ONP
 **Código:** LIN-FE-ANG-001  
-**Versión:** 0.1.4  
+**Versión:** 0.1.5  
 **Estado:** En revisión  
 **Fecha:** 2026-08-17  
 **Área responsable:** OTI — Oficina de Tecnologías de la Información  
@@ -17,6 +17,7 @@
 | 0.1.2 | 2026-07-14 | Arquitectura OTI | Cierra dos brechas de cobertura frente a `LIN-ARQ-001 §7.2` y `LIN-DIS-001 §5.1.1`: agrega la prohibición de manipulación directa del DOM y de `setTimeout` como hack de Change Detection (§15.2), y bifurca la gestión del token SAA en dos escenarios mutuamente excluyentes según haya o no BFF (§9.3.1 sin BFF / §9.3.2 con BFF — Token Handler), actualizando el registro de interceptores en §9.5 |
 | 0.1.3 | 2026-08-17 | Arquitectura OTI | Revisión de fondo (`GOB-CHK-001` H29). **(1) `§16.4` desactivaba `readOnlyRootFilesystem`**, control obligatorio de `LIN-K8S-001 §14.1`, cuya nota 14.1 prohíbe expresamente esa salida y prescribe montar los directorios de escritura. Corregido con `emptyDir` en `/tmp` de 16 MB; se añaden además `capabilities: drop: ALL` y se marca el `securityContext` como obligatorio, no «recomendado». **(2) `§9.6` clasificaba `200` como código de éxito** junto a `000`, y dos filas más abajo como error de negocio: un componente que siguiera la primera lectura trataría un HTTP 422 —regla de negocio rechazada— como operación exitosa, navegando al listado con mensaje de confirmación. El éxito con advertencias es `001`. Incorporado también `302`/429. **(3) `§14.1` publicaba un umbral propio de cobertura** («70% de líneas»), métrica que ni siquiera figura entre las tres de `LIN-TEST-001 §5.2` —documento dueño y vigente—: un proyecto podía cumplirlo con 40% de *branches* y creerse conforme. Ahora remite al dueño. **(4)** `§9.4` no contemplaba el 429; el `error_log` de nginx apuntaba a `/var/log/nginx/error.log`, incompatible con el sistema de archivos de solo lectura y con `LIN-K8S-001 §15.1`. El documento pasa a **En revisión** |
 | 0.1.4 | 2026-08-17 | Arquitectura OTI | `§15.2` republicaba los umbrales de Core Web Vitals sin declarar que su dueño es `LIN-ARQ-001 §7.2` — segunda fuente del mismo dato, el patrón que ya divergió tres veces con los timeouts. Los valores coincidían; se marca la tabla como referencia de trabajo y se señala que el marco rector publica siete umbrales, no cuatro (`GOB-CHK-001` H30) |
+| 0.1.5 | 2026-08-18 | Arquitectura OTI | El apartado de excepción titulaba «Proceso de excepción a este estándar» y no definía identificador: una desviación de este lineamiento se registraba como «un ADR», instrumento que `GOB-MAT-001` reserva a las decisiones **institucionales** del Comité. Pasa a **`EXC-FE-NNN`**, con vigencia acotada y fecha de revisión obligatoria (`GOB-CHK-001` H38) |
 
 ---
 
@@ -1344,7 +1345,10 @@ volumes:
 
 ---
 
-## Proceso de excepción a este estándar
+## Proceso de excepción a este estándar (`EXC-FE-NNN`)
+
+> **Instrumento correcto: `EXC-FE-NNN`, no un ADR.** Conforme a `GOB-MAT-001` (Registro de decisiones y excepciones), la desviación de un lineamiento **en un proyecto concreto** se registra como excepción con vigencia acotada y **fecha de revisión**, nunca indefinida. El `ADR-NNN` queda reservado a decisiones **institucionales** del Comité de Arquitectura, que obligan a todo el corpus; llevar allí cada desviación de cada sistema vaciaría de valor ese registro. La excepción se aprueba por Arquitectura OTI y se registra en el documento de arquitectura del sistema (`GOB-PLA-001`, Anexo E, criterio 14).
+
 
 Toda desviación de las reglas establecidas en este documento requiere un ADR (Architecture Decision Record) aprobado formalmente por el equipo de Arquitectura de la OTI antes de implementarse.
 

@@ -1,6 +1,6 @@
 # Lineamiento Estándar de Pruebas ONP
 **Código:** LIN-TEST-001
-**Versión:** v0.1.4
+**Versión:** v0.1.6
 **Estado:** **Vigente** — graduado el 2026-08-09 por Arquitectura OTI (`GOB-MAT-001`, Ciclo de vida documental)
 **Fecha:** 2026-05-26
 **Propietario:** Arquitectura de Software — OTI
@@ -16,6 +16,8 @@
 | v0.1.1 | 2026-07-09 | Arquitectura OTI | Completa la sección 4 con los estilos Microservicio y EDA (Consumidor Kafka), que quedaron sin cubrir tras la redistribución del documento congelado `LIN-ARQ-000 §10.1` |
 | v0.1.2 | 2026-07-09 | Arquitectura OTI | Añade §4.6 (Efecto de la Estrategia de Dominio sobre las Pruebas Unitarias), ausente en todo el ecosistema documental tras la redistribución |
 | v0.1.3 | 2026-08-09 | Arquitectura OTI | Revisión de contenido y **graduación a Vigente** (`GOB-CHK-001` H20). Las cinco tablas de `§4` dejan de repetir los umbrales de cobertura y remiten a `§5.1` como fuente única — el mismo dato ya había divergido en `LIN-DEV-JAVA-001 §15.3` (H13.1). Corregido un enlace de `§3.4` que apuntaba a un paso numerado del capítulo PL/SQL en vez de a `§5`. Verificada la alineación con los consumidores exigida por el criterio 3 de graduación, que detectó dos desalineamientos corregidos en sus documentos: `LIN-FE-ANG-001 §14.2` citaba `§4.4` (que es *Microservicio*) para herramientas E2E, y `LIN-DEV-JAVA-001 §15.1` omitía el sufijo `CT` de las pruebas de caracterización |
+| v0.1.5 | 2026-08-18 | Arquitectura OTI | Incorpora el tipo **`AT` (Arquitectura)** a la clasificación de `§3.1`: pruebas que verifican reglas estructurales del código —fronteras entre Bounded Contexts, contenido del Shared Kernel, pureza del dominio— mediante análisis de bytecode. Implementación en `LIN-DEV-JAVA-001 §15.5` (`GOB-CHK-001` H37) |
+| v0.1.6 | 2026-08-18 | Arquitectura OTI | El apartado de excepción titulaba «Proceso ADR para desviaciones» y no definía identificador: una desviación de este lineamiento se registraba como «un ADR», instrumento que `GOB-MAT-001` reserva a las decisiones **institucionales** del Comité. Pasa a **`EXC-TEST-NNN`**, con vigencia acotada y fecha de revisión obligatoria (`GOB-CHK-001` H38) |
 | v0.1.4 | 2026-08-17 | Arquitectura OTI | `§9` expresaba sus criterios de aceptación **únicamente en el modelo de ramas legado** (`ONP_DESA` → `ONP_QA`, `master`), de modo que un proyecto nuevo bajo GitLab Flow simplificado —el modelo objetivo de `LIN-VER-001 §6`— podía leerse fuera de su alcance por no tener esas ramas. Los criterios pasan a expresarse por **promoción de ambiente**, válida en ambos modelos. Se explicita además que la fase de madurez CI/CD determina si la verificación es automática o manual con evidencia, **no si el criterio es exigible** (`GOB-CHK-001` H27) |
 
 ---
@@ -123,6 +125,7 @@ Este principio aplica especialmente a sistemas legacy: el objetivo de una prueba
 | **Contrato** | CONT | Acuerdo entre proveedor y consumidor de una API | Depende del enfoque (ver [sección 6](#6-pruebas-de-contrato)) |
 | **E2E** (Extremo a Extremo) | E2E | Flujo de negocio completo desde UI hasta BD | Stack completo levantado |
 | **Accesibilidad** | ACC | Cumplimiento básico de estándares WCAG (frontend) | Navegador |
+| **Arquitectura** | AT | Reglas estructurales del código: fronteras entre módulos, contenido del Shared Kernel, pureza del dominio | Ninguna — analiza bytecode |
 
 ### 3.2 Convenciones de nomenclatura
 
@@ -1267,7 +1270,10 @@ EVIDENCIAS
 
 ---
 
-## 16. Proceso ADR para desviaciones
+## 16. Proceso de excepción (`EXC-TEST-NNN`)
+
+> **Instrumento correcto: `EXC-TEST-NNN`, no un ADR.** Conforme a `GOB-MAT-001` (Registro de decisiones y excepciones), la desviación de un lineamiento **en un proyecto concreto** se registra como excepción con vigencia acotada y **fecha de revisión**, nunca indefinida. El `ADR-NNN` queda reservado a decisiones **institucionales** del Comité de Arquitectura, que obligan a todo el corpus; llevar allí cada desviación de cada sistema vaciaría de valor ese registro. La excepción se aprueba por Arquitectura OTI y se registra en el documento de arquitectura del sistema (`GOB-PLA-001`, Anexo E, criterio 14).
+
 
 Cualquier desviación a los umbrales, tipos de prueba obligatorios o herramientas definidas en este lineamiento requiere ADR aprobado por Arquitectura de Software.
 

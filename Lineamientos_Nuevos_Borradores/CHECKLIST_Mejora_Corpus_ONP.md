@@ -397,9 +397,140 @@ Los dos últimos documentos en `Borrador`. **Con esta revisión ningún lineamie
 ### Hallazgo transversal — tres instrumentos llamados «ADR»
 
 - [x] **H32.6** **Doce de trece documentos usaban el ADR como instrumento de excepción de proyecto.** Solo `LIN-VER-001 §24.2` había definido un identificador propio (`EXC-VER-NNN`); el resto titula su apartado «Proceso ADR para excepciones» sin identificador. Tras H31.6 —que estableció `ADR-NNN` como registro **institucional** del Comité— eso dejaba un vacío: la excepción de un proyecto no cabe en el registro institucional (sería absurdo llevar allí cada desviación de cada sistema) y tampoco es un `AD-NNN` de diseño, porque H31.5 estableció que un `AD-NNN` no dispensa de un lineamiento. Normados los tres instrumentos en `GOB-MAT-001` con su alcance, aprobador y ubicación. `LIN-IAC-001` y `LIN-BI-001` ya adoptan `EXC-<CÓDIGO>-NNN`.
-- [ ] **H32.7** Alinear los diez documentos restantes a la convención `EXC-<CÓDIGO>-NNN`. Es mecánico —retitular el apartado y remitir a `GOB-MAT-001`— pero toca diez archivos y conviene hacerlo en un solo cambio.
+- [x] **H32.7** **Cerrado en H38.** Los once lineamientos restantes usan `EXC-<SUFIJO>-NNN`, con tabla de sufijos en `GOB-MAT-001` para que el identificador no quede a criterio de cada equipo.
 
 **Estado:** `LIN-IAC-001` v0.1.3 y `LIN-BI-001` v0.1.3 pasan a **En revisión**; `GOB-MAT-001` v0.17.0. **Ningún lineamiento del corpus queda en `Borrador`.** Linter en verde.
+
+
+---
+
+## H33 — Continuidad operativa: cierre de H11.2 (2026-08-17)
+
+La mayor brecha de contenido del corpus. **Decisión de Arquitectura (2026-08-17):** el contenido va íntegro a `LIN-ARQ-001 §5.4`, sin crear documento nuevo. *(Se planteó la alternativa de un `LIN-DRP-001` transversal, argumentando que el Nivel 1 exige resultados y delega mecanismos; Arquitectura optó por no ampliar el mapa documental. La sección se estructuró para acotar el efecto: la política por componente **delega el mecanismo** a cada dueño en vez de reproducirlo.)*
+
+### El diagnóstico era menos grave y más preciso de lo registrado
+
+- [x] **H33.1** **No era cierto que el corpus no normara nada.** `LIN-BD-ORA-001 §11.2` ya tenía respaldo de Oracle bien normado —RMAN, completo semanal con 4 semanas de retención, incremental diario, archive logs continuos y **prueba de restauración semestral**— y `LIN-IAC-001 §6.3` acababa de cubrir el estado de Terraform. Lo que faltaba era lo que hacía inaplicables esas piezas: **una clasificación institucional de criticidad con RTO/RPO objetivo**. Los tres documentos que tocaban el tema remitían a «acordarlo con el área de negocio», de modo que cada proyecto inventaba cifras, no había forma de evaluar un TDR y Plataforma no podía dimensionar.
+
+### Lo que se incorporó
+
+- [x] **H33.2** **Tres bandas de criticidad con RTO/RPO objetivo** (`§5.4.1`), reutilizando la escala Alta/Media/Baja que `LIN-PERF-001 §9.3` ya usaba — **no se creó una cuarta clasificación**. Alta: RTO ≤ 4 h, RPO ≤ 15 min (cálculo y pago de pensiones). Media: ≤ 8 h / ≤ 1 h (afiliación, expedientes, ventanilla). Baja: ≤ 24 h / ≤ 24 h.
+- [x] **H33.3** 🔑 **La regla que más valor aporta: un sistema no puede comprometer un RTO/RPO mejor que el de sus dependencias.** Si el cálculo de pensión se apoya en una base con RPO de 1 hora, su RPO real es 1 hora por mucho que declare 15 minutos. La verificación es obligatoria al declarar el atributo en `GOB-PLA-001 C.1`. Sin esta regla, los RTO/RPO declarados serían aspiraciones no verificables.
+- [x] **H33.4** **Política de respaldo por componente** (`§5.4.2`) que delega el mecanismo a cada dueño y señala los puntos ciegos: la retención de un tópico Kafka **no es un respaldo** sino una ventana de reproceso; Bronze del Lakehouse es reconstruible pero **el tiempo de reconstrucción es el RTO real** del BI; y un respaldo de datos sin los secretos para levantar el servicio no permite recuperar.
+- [x] **H33.5** **Recuperación a nivel de sistema** (`§5.4.3`): respaldar componentes no es recuperar un servicio. Obligatorio para criticidad Alta y Media declarar orden de recuperación y dependencias, comportamiento esperado de las dependencias fuera del control de la ONP (SAA, RENIEC, PIDE), punto de recuperación verificable y responsable.
+- [x] **H33.6** **Régimen de pruebas de restauración obligatorio** (`§5.4.4`), con una exigencia que cambia su naturaleza: la prueba debe **medir el tiempo real de recuperación** y contrastarlo con el RTO declarado. *Un RTO declarado que nunca se midió es una aspiración, no un compromiso.*
+
+### Propagación
+
+- [x] **H33.7** Cerradas las tres exigencias huérfanas que motivaron el hallazgo: `GOB-PLA-001 C.1` ya remite al dueño y precisa qué declarar; `LIN-K8S-001 §13.3` deriva su «política de backup» de la banda de criticidad; `LIN-IAC-001 §6.3` actualiza su nota de brecha abierta.
+- [x] **H33.8** **`LIN-BD-ORA-001 §11.2` recibió una advertencia que no tenía:** sus mínimos de respaldo **no satisfacen un RPO de 15 minutos**, que es el de la banda Alta. Una base que soporte cálculo o pago de pensiones necesita archive logs más frecuentes o replicación, y no puede acogerse solo a esos mínimos. Es el tipo de desalineamiento que solo aparece al confrontar dos documentos.
+- [x] **H33.9** **La escala de criticidad pasa a tener dueño.** `LIN-PERF-001`, `LIN-CICD-001` y `LIN-K8S-001` usaban Alta/Media/Baja sin fuente común. `LIN-ARQ-001 §5.4.1` define las bandas; `LIN-PERF-001 §6.4` conserva cómo se determinan.
+
+### Lo que queda fuera de mi alcance
+
+- [ ] **H33.10** 🔴 **Ratificar los valores de RTO/RPO.** Están marcados en el documento como **propuesta técnica**. RTO y RPO no son decisiones de arquitectura: expresan cuánto puede estar caído un servicio y cuánta información puede perderse, y eso lo decide el negocio. Requiere **Comité de Arquitectura con Pensiones, Aportes y Atención al Ciudadano**, y validación de Plataforma sobre viabilidad. Mientras no se ratifiquen rigen como valores por defecto.
+
+**Estado:** `LIN-ARQ-001` v0.1.12, `GOB-PLA-001` v2.4, `LIN-BD-ORA-001` v0.1.14, `LIN-K8S-001` v0.1.17, `LIN-IAC-001` v0.1.4, `LIN-PERF-001` v0.1.4, `GOB-MAT-001` v0.18.0. Linter en verde.
+
+
+---
+
+## H34 — `GOB-PLA-001`: de guía de redacción a instrumento verificable (2026-08-17)
+
+Evaluación de la plantilla **como instrumento normativo**, no como texto. El diagnóstico: es un excelente documento pedagógico —26 bloques de orientación que anticipan el error real, no lo obvio— y una plantilla normativa incompleta. **Enseñaba a redactar y no permitía verificar lo redactado**, siendo el artefacto que las fábricas entregan y Arquitectura aprueba.
+
+- [x] **H34.1** 🔴 **No tenía criterios de aceptación.** Existía el campo «Aprobado por» y nada que le dijera al aprobador qué verificar; la aprobación dependía del criterio de quien firmara, que es justo lo que un marco normativo debe eliminar. Siete lineamientos del corpus tienen «Checklist de conformidad»; la plantilla no. Nuevo **Anexo E** con 23 criterios verificables agrupados en completitud, declaraciones obligatorias, conformidad normativa y consistencia interna, más registro de la revisión. Es el **único anexo que no se elimina** del entregable: queda como evidencia. Incluye regla de bloqueo — criticidad Alta no aprueba con ítems pendientes; los ítems 9, 14 y 17 bloquean en toda criticidad.
+- [x] **H34.2** 🔴 **Omitía cuatro declaraciones que el corpus exige.** No pedía el **Estadio** del sistema —clasificación primaria de `LIN-ARQ-001 §2.1`, de la que cuelgan los 6 criterios de microservicio—, ni la **declaración CAP** que `§3.1` hace obligatoria para todo módulo distribuido, ni la evaluación de **DDD** de `LIN-DIS-001 §3.0`, ni la **Declaración de Conformidad del `README.md`**. Esta última es la más grave en la práctica: `LIN-CICD-001 §12.5` **la verifica en el pipeline y bloquea el pase**, de modo que un arquitecto podía completar la plantilla entera y correctamente y aun así fallar el gate sin haberse enterado de que la obligación existía. Nueva `§1.4`.
+- [x] **H34.3** **`§5.2` listaba 6 de 19 documentos del corpus** — omitiendo `LIN-K8S-001` pese a ser Kubernetes el destino mandatorio, y `LIN-TEST-001` y `LIN-VER-001`, ambos con obligaciones exigibles. Sustituida por el corpus completo con su estado, la advertencia de qué significa `Vigente` frente a `En revisión` para un TDR, y la exigencia de declarar **por qué** un documento no aplica en vez de omitirlo en silencio.
+
+**Dos hallazgos de diseño quedan a decisión de Arquitectura, no corregidos:**
+
+- [x] **H34.4** **Resuelto (2026-08-18) haciendo `§3` derivado, no eliminándolo.** Suprimirlo habría dejado sin lectura a Gerencia y Stakeholders, que la propia tabla de audiencias dirige allí y que no leen ArchiMate. El **Anexo A pasa a ser la fuente autoritativa** —es el modelo mantenido en Archi, versionable y con niveles de abstracción explícitos— y `§3` queda como lectura derivada con tres reglas: ante divergencia prevalece el Anexo A; `§3` **no puede contener ningún elemento ausente del modelo** (la vía por la que ambas representaciones divergen es la adición, no la contradicción); y se actualiza siempre después. Resuelto además el caso de la **Capa de Seguridad**, única sin vista propia en el Anexo A: sus elementos viven distribuidos entre las vistas de Contexto e Infraestructura, y `§3.B` agrupa esa lectura. El ítem 18 del Anexo E se corrigió para verificar en **un solo sentido** — el modelo puede tener detalle que la narrativa no recoja, nunca al revés.
+- [x] **H34.5** **Resuelto (2026-08-18) con línea base declarada y disparadores de revisión.** La tabla de identidad incorpora **línea base normativa** —la versión de `GOB-MAT-001` consultada— y **próxima revisión** a 12 meses o menos. La nueva `§1.5` define cinco disparadores de revisión obligatoria, siendo el de mayor impacto que **un documento del que el sistema depende gradúe a `Vigente`**: en ese momento lo que era criterio técnico pasa a ser exigible contractualmente. Igual de importante es lo que se declaró que **no** obliga —erratas, cambios en documentos no aplicables, versiones que no alteran una regla invocada—, porque sin ese límite la regla degeneraría en revisar por cada parche y se incumpliría por inaplicable. La regla marco quedó en `GOB-MAT-001`, dueño del ciclo de vida, con la obligación de que **Arquitectura OTI comunique cada graduación**.
+
+**Dato de composición:** 733 líneas, de las cuales 292 eran orientación (40%) y 108 *placeholders*. La plantilla estaba optimizada para quien escribe, no para quien revisa — de ahí H34.1 y H34.2.
+
+**Estado:** `GOB-PLA-001` v2.5 (sigue **Vigente**), `GOB-MAT-001` v0.19.0. Linter en verde; anclas del índice verificadas.
+
+
+---
+
+## H35 — Grafo de servicios y arquitectura observada (2026-08-18)
+
+Propuesta de Arquitectura (Carlos Ormeño): incorporar el *service graph* al corpus aprovechando OTEL y las trazas existentes. Se adoptó con **propiedad dividida** — mecanismo en `LIN-OBS-001 §5.8`, gobierno en `LIN-ARQ-001 §5.5` — porque son dos temas con dueños naturalmente distintos.
+
+### Por qué aporta
+
+- [x] **H35.1** **Cierra un vacío de verificación que la revisión de `GOB-PLA-001` había dejado abierto.** El Anexo A es una arquitectura **declarada**: refleja lo que el arquitecto dibujó en Archi, no lo que el sistema hace. El corpus no tenía forma de detectar la deriva entre ambas. El grafo derivado de trazas provee la topología **observada**, y contrastarla es a la arquitectura lo que el `terraform plan` programado de `LIN-IAC-001 §10` es a la infraestructura.
+- [x] **H35.2** **Refuerza la regla de dependencias de H33.3, cuya verificación era puramente documental.** «Un sistema no puede comprometer un RTO/RPO mejor que el de sus dependencias» dependía de que el arquitecto recordara todas sus dependencias. Ahora una dependencia observada y no declarada **invalida** esa verificación. `LIN-ARQ-001 §5.5.1` fija cinco contrastes obligatorios semestrales para criticidad Alta y Media: dependencias no declaradas, integridad del inventario de recuperación, **elusión del ACL**, servicios fuera del catálogo de `LIN-API-REST-001 §10.1` y exposición sin gateway.
+- [x] **H35.3** **Regla de tratamiento explícita:** ante una dependencia observada y no declarada se corrige el documento **o el código** — nunca se normaliza la desviación por el hecho de estar en producción. Sin esa regla, el contraste degeneraría en actualizar el diagrama para que coincida con lo que haya.
+
+### El hallazgo técnico que condicionaba todo
+
+- [x] **H35.4** 🔑 **Con el `sampling 0.1` de `LIN-OBS-001 §4.5`, un grafo ingenuo habría sido engañoso.** Un endpoint de alto tráfico aparece siempre; **un batch nocturno hacia SUNAT tendría un 10% de probabilidad de aparecer**. Una arista ausente sería ambigua entre «no existe» y «se descartó» — y las dependencias de baja frecuencia son justamente las que nadie recuerda y las que rompen un plan de recuperación. **Regla incorporada:** el conector `servicegraph` se sitúa en el pipeline que recibe **todos** los spans y el muestreo se aplica solo en el exportador hacia Jaeger. El coste de almacenamiento no aumenta, porque el grafo produce métricas agregadas. Con el stack actual —Collector, Prometheus, Grafana— **no hace falta añadir Tempo ni ningún componente**.
+
+### Límites declarados, para que no se le pida lo que no puede dar
+
+- [x] **H35.5** **No ve las fronteras internas del Monolito Modular.** Las llamadas entre módulos ocurren en el mismo proceso y no generan spans. Como el Estadio 2 es la topología por defecto, el grafo de un sistema típico de la ONP tendrá pocos nodos internos y muchas aristas externas — ahí está su valor, no en el interior.
+- [x] **H35.6** **No sustituye al análisis estático.** Las importaciones entre fronteras prohibidas de `LIN-DIS-001 §3.4` son una propiedad del código, no del tráfico. `LIN-CICD-001 §12.5` ya reconocía que el pipeline no puede validar el contenido de la Declaración de Conformidad; el grafo tampoco.
+- [x] **H35.7** **No es un quinto catálogo.** El corpus ya mantiene cuatro registros declarativos —bases de datos y PL/SQL, servicios REST, tópicos de eventos y datasets en OpenMetadata—. El grafo es la contraparte **observada** que los valida, no otro inventario que mantener a mano.
+
+### Deuda que este trabajo dejó a la vista
+
+- [x] **H35.8** **Cerrado en H37.** `LIN-DEV-JAVA-001 §15.5` normaliza las pruebas de arquitectura con ArchUnit; nuevo tipo `AT` en `LIN-TEST-001` y criterio de bloqueo en `LIN-CICD-001 §19.2`.
+
+**Estado:** `LIN-OBS-001` v0.1.5 (sigue **Vigente**), `LIN-ARQ-001` v0.1.13, `GOB-PLA-001` v2.7, `GOB-MAT-001` v0.21.0. Linter en verde — de hecho **C1 detectó la referencia adelantada a `LIN-ARQ-001 §5.5`** mientras aún no existía, que es exactamente para lo que se construyó.
+
+
+---
+
+## H36 — Identidad de los nodos del grafo (2026-08-18)
+
+Surge de una pregunta de Arquitectura al revisar H35: *«¿no hay que validar que las APIs expongan el grafo en sus metadatos, para obtener la información de manera dinámica?»*. La respuesta directa es **no** —el grafo se deriva de las trazas, no de los contratos; pedirlo vía OpenAPI sería el quinto catálogo manual que H35.7 descartó, y además OpenAPI declara lo que una API *ofrece*, no lo que *consume*—. Pero la pregunta apuntaba a un problema real de metadatos, desplazado del contrato a la telemetría, y **la verificación lo confirmó**.
+
+- [x] **H36.1** 🔴 **El corpus tenía tres convenciones para el mismo identificador.** `LIN-OBS-001 §5.7` ilustraba `service.name` como `onp-<sistema>-<modulo>`; `LIN-VER-001 §9.1` nombra el proyecto GitLab `<sistema>-<tipo-componente>`; `LIN-K8S-001 §9.3` usa `app.kubernetes.io/name` con otra forma. El grafo agrupa nodos por `service.name`, de modo que **un nodo observado no se podía casar automáticamente** con su entrada en el catálogo de servicios ni con su Deployment — y las cinco verificaciones de `LIN-ARQ-001 §5.5.1` que acabábamos de normar habrían sido manuales y frágiles. Se adopta como canónica la forma del proyecto GitLab y se **elimina el prefijo `onp-`**, redundante dentro de la institución. Nuevo tema en la matriz con dueño `LIN-VER-001`.
+- [x] **H36.2** **Los servicios externos no tenían nombre lógico.** RENIEC, SUNAT, PIDE y SAA no emiten trazas: aparecen solo por los atributos del span del cliente. El corpus definía `net.peer.name` (el host) pero no `peer.service`, así que RENIEC figuraría como `api.reniec.gob.pe` y una entidad con varios hosts o balanceadores produciría **varios nodos distintos** — arruinando justamente el inventario de dependencias externas, que es donde vive el riesgo de la ONP y lo que H33.3 obliga a verificar. Añadido `peer.service` como atributo obligatorio en clientes salientes, con lista cerrada: `reniec`, `sunat`, `sbs`, `mef`, `pide`, `saa`, `wso2`.
+
+**Por qué importa el orden:** sin H36, el grafo de H35 se habría configurado y habría producido un mapa visualmente correcto pero **no reconciliable** con los registros del corpus. Es el tipo de defecto que solo aparece al preguntarse cómo se automatiza la verificación, no al diseñar la captura.
+
+**Estado:** `LIN-OBS-001` v0.1.6 (sigue **Vigente**), `GOB-MAT-001` v0.22.0. Linter en verde.
+
+
+---
+
+## H37 — Pruebas de arquitectura: el Monolito Modular pasa a ser verificable (2026-08-18)
+
+Cierra **H35.8**, la deuda que dejó a la vista el trabajo del grafo de servicios. Es el hallazgo de gobierno más incómodo de todo el ejercicio: **la topología por defecto de la ONP descansaba entera en la palabra de una persona.**
+
+### El vacío
+
+- [x] **H37.1** 🔴 **El único control de las fronteras del Monolito Modular era una declaración jurada, sin verificación de ninguna clase.** `LIN-ARQ-001 §8.3` numeral 4 exige al Tech Lead certificar en el `README.md` la ausencia de importaciones entre fronteras prohibidas (`LIN-DIS-001 §3.4`). Los tres controles del corpus que podrían comprobarlo, no podían: `LIN-CICD-001 §12.5` **lo admitía por escrito** —solo verifica que el texto exista—, el grafo de servicios no lo ve porque las llamadas entre módulos son in-process (H35.6), y Maven tampoco, por la razón que importa: **basta añadir la dependencia al `pom.xml` para que el compilador la acepte**. La frontera entre Bounded Contexts es una decisión de diseño, no una barrera técnica.
+
+### La solución
+
+- [x] **H37.2** **`LIN-DEV-JAVA-001 §15.5` normaliza las pruebas de arquitectura con ArchUnit**, escritas contra la estructura real de los templates (`pe.gob.onp.<sistema>.<módulo>.<capa>`, módulos `onp-<modulo>-{api,application,domain,infrastructure,messaging}` y `onp-common-domain`). Seis reglas mínimas: tres de gobierno del Shared Kernel —sin `@Entity`, sin `*Service` de negocio, sin puertos ni clientes—, una de **aislamiento entre Bounded Contexts** y dos de pureza del dominio. Son pruebas JUnit: se ejecutan en la fase de pruebas y **fallan como cualquier otra**, sin job dedicado.
+- [x] **H37.3** **Se documentó explícitamente qué añade ArchUnit sobre lo que Maven ya impide**, con tabla comparativa. Sin esa distinción la sección parecería redundante en un reactor multi-módulo, y se habría descartado por eso — cuando en realidad cubre justo lo que el compilador no ve.
+- [x] **H37.4** **Nuevo tipo de prueba `AT` en `LIN-TEST-001 §3.1`** (documento **Vigente**), y criterio de bloqueo incorporado a `LIN-CICD-001 §19.2`.
+- [x] **H37.5** **Corregido el límite que `LIN-CICD-001 §12.5` daba por permanente.** Decía que la verificación automática de fronteras quedaba «fuera del alcance»; ahora existe, y el límite admitido se acota a lo que efectivamente no es automatizable. `LIN-ARQ-001 §8.3` deja constancia de que la declaración jurada **conserva su valor pero deja de ser el único control**.
+- [x] **H37.6** **Las excepciones no pueden ser silenciosas.** Un `@ArchIgnore` exige una excepción `EXC-DIS-NNN` registrada con control compensatorio y fecha de revisión. Sin esa regla, desactivar una regla de arquitectura sería un cambio de una línea que nadie vuelve a mirar — el modo habitual en que estos controles mueren.
+
+**Estado:** `LIN-DEV-JAVA-001` v0.1.12, `LIN-TEST-001` v0.1.5 (**Vigente**), `LIN-DIS-001` v0.1.7, `LIN-CICD-001` v0.1.7, `LIN-ARQ-001` v0.1.14, `GOB-MAT-001` v0.23.0. Linter en verde.
+
+
+---
+
+## H38 — Alineación completa del registro de excepciones (2026-08-18)
+
+Cierra **H32.7**. Once lineamientos titulaban su apartado «Proceso ADR para excepciones» o «para desviaciones» **sin definir identificador**, de modo que una desviación de proyecto se registraba genéricamente como «un ADR» — instrumento que H31.6 y H32.6 reservaron a las decisiones **institucionales** del Comité. Sin corregirlo, la distinción de los tres instrumentos quedaba escrita en `GOB-MAT-001` y desmentida en once documentos.
+
+- [x] **H38.1** **Los once alineados a `EXC-<SUFIJO>-NNN`**: `LIN-FE-ANG-001`, `LIN-API-REST-001`, `LIN-BD-ORA-001`, `LIN-DEV-JAVA-001`, `LIN-SEC-APP-001`, `LIN-CICD-001`, `LIN-BUS-001`, `LIN-TEST-001`, `LIN-PERF-001`, `LIN-K8S-001` y `LIN-OBS-001`. Los dieciséis lineamientos con apartado de excepción usan ya el formato. Dos recibieron aprobador adicional por la naturaleza de lo que norman: `LIN-SEC-APP-001` exige validación de **Seguridad Digital**, y `LIN-K8S-001` la de **Plataforma y Seguridad** cuando la desviación afecta al clúster.
+- [x] **H38.2** **Añadida la tabla de sufijos por lineamiento en `GOB-MAT-001`.** Sin ella, cada equipo habría inventado el suyo —`EXC-JAVA` o `EXC-DEV`, `EXC-K8S` o `EXC-CONT`— y el identificador dejaría de ser inequívoco. Se fija además que la **numeración es correlativa por lineamiento y por sistema**, no global: `EXC-K8S-001` de PAST y `EXC-K8S-001` de Notificaciones son excepciones distintas, porque la excepción pertenece al sistema que la solicita.
+
+### Un fallo del linter, no del corpus
+
+- [x] **H38.3** **La tabla de sufijos disparó 16 errores falsos.** C6 y C8 reconocían como entrada de catálogo **cualquier fila que empezara por un código entre comillas invertidas**, en cualquier parte de `GOB-MAT-001`. La nueva tabla tiene esa forma, así que el linter concluyó que el catálogo declaraba a `LIN-ARQ-001` en un archivo llamado `K8S`. El defecto era del linter y ya afectaba en potencia al índice `PT → ficha`, que tiene la misma estructura. Corregido acotando ambas comprobaciones a las líneas comprendidas en las secciones de catálogo. Verificado con dos pruebas: una desviación real dentro del catálogo **sí** se detecta, y una fila con forma de catálogo fuera de él **no** dispara.
+
+**Estado:** once documentos versionados, entre ellos los dos **Vigentes** (`LIN-OBS-001` v0.1.7, `LIN-TEST-001` v0.1.6). `GOB-MAT-001` v0.24.0. Linter en verde con las siete comprobaciones.
 
 
 ---
@@ -461,7 +592,7 @@ Los dos últimos documentos en `Borrador`. **Con esta revisión ningún lineamie
 ### H11 — Posicionamiento y contenido nuevo
 
 - [x] **H11.1** **Cerrado en H24.** `§1.3` dejó de presentar RFC 7807 como «estándar de respuestas de error» —lo citaba como normativa sin adoptarlo— y `§4.1` explica ahora por qué la ONP no usa `application/problem+json`. Añadida la regla de que `codHttp` es réplica informativa y el status line HTTP es la fuente de verdad, con el motivo operativo: proxys, gateway, `http.server.requests` y las alertas de Kibana leen el status line, así que un `200` con `codHttp: 500` deja el error invisible en toda la cadena.
-- [ ] **H11.2** Nuevo lineamiento (o sección en dueño existente): **backup/DR, RTO/RPO y gestión de capacidad** — vacío mayor para una entidad de pago de pensiones. Priorizar sobre brechas de baja prioridad (Serverless, Ambassador).
+- [x] **H11.2** **Cerrado en H33.** `LIN-ARQ-001 §5.4` asume la continuidad operativa: bandas de criticidad con RTO/RPO objetivo, política de respaldo por componente, recuperación a nivel de sistema y pruebas de restauración con medición del tiempo real. **Pendiente la ratificación de los valores por el Comité con las áreas usuarias (H33.10)** — los números son propuesta técnica, no decisión de arquitectura.
 - [ ] **H11.3** Política transversal de **datos de prueba y enmascaramiento de PII** para ambientes no productivos (Ley 29733). **Avance en H30.2:** `LIN-PERF-001 §11.3` ya norma el enmascaramiento previo e irreversible al restaurar respaldos productivos, con tabla por tipo de dato — pero solo para su ámbito. Falta la política transversal, cuyo dueño natural es `LIN-SEC-APP-001`.<br>**Avance adicional en H32.4:** `LIN-BI-001 §8.3.1` cubre la capa Bronze del Lakehouse, que es la mayor concentración de datos personales replicados del corpus. Sigue faltando la política transversal.
 - [x] **H11.4** **Cerrado en H24, y era peor de lo registrado.** No es que faltara definir el mecanismo: `LIN-SEC-APP-001 §7.1` ya lo exigía —«rate limiting básico configurado en la aplicación si no hay gateway»— pero `LIN-API-REST-001 §8.4` afirmaba lo contrario, que *«los servicios no implementan rate limiting internamente»*, atribuyéndolo a un gateway que sigue en PoC. La contradicción dejaba a **toda** API sin control, no solo a las internas. Corregido, con `codDetRespuesta 302` / `429` incorporado al catálogo.
 - [ ] **H11.5** `LIN-DOC-001` (documentación y modelado): sigue Pendiente en la Matriz pero la `Plantilla_Documento_Arquitectura` ya existe — hay dueño natural para arrancarlo.

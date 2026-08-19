@@ -1,7 +1,7 @@
 # LIN-K8S-001 — Lineamiento de Contenedores y Orquestación ONP
 
 **Código:** LIN-K8S-001  
-**Versión:** v0.1.16  
+**Versión:** v0.1.18  
 **Estado:** En revisión  
 **Fecha:** 2026-08-09  
 **Propietario documental:** Arquitectura de Software — OTI  
@@ -31,6 +31,8 @@
 | v0.1.14 | 2026-08-17 | Arquitectura OTI | Revisión de fondo (`GOB-CHK-001` H26). **(1) `§9.4` normaba Sidecar y Ambassador con los códigos `PA12`/`PA13` del tablero de brechas `GOB-BRE-001`**, que es un inventario de vacíos: mientras un patrón figura ahí se está declarando que *falta* normarlo. Pasan a `PT17`/`PT18` con fichas `PAT-K8S-01` y `PAT-K8S-02` en `LIN-PAT-001`, y las brechas se cierran. **(2) `§9.4.B` reintroducía el mandato de Resilience4j** que ya se había eliminado de `LIN-ARQ-001 §4.3` y de la Plantilla de Arquitectura: era la quinta fuente del mismo control, y además atribuía el Retry a Resilience4j cuando el dueño (`LIN-DIS-001 §6.3`) usa Spring Retry. Ahora remite al dueño y conserva solo lo propio —*dónde* vive el control, no cuál es—. **(3) El `Deployment` de referencia de `§9.2` no cumplía este documento:** le faltaban dos de las cinco etiquetas obligatorias de `§9.3` y, sobre todo, declaraba `readOnlyRootFilesystem: true` sin el volumen `/tmp` que exige la nota 14.1 — copiado tal cual, **el pod no arranca**. **(4) `§15.1` y `§15.2` degradaban a «cuando aplique»** obligaciones de `LIN-OBS-001`, que es documento **vigente**. `§15.2` fija además la convención de puerto de Actuator que ningún documento del corpus definía, pese a que `LIN-API-REST-001 §9.5` la exige (`GOB-CHK-001` H24.5). **(5)** `§18.2` y el Anexo A no incluían la `NetworkPolicy` que `§9.1` volvió obligatoria; `§20` atribuía los patrones de resiliencia a `LIN-ARQ-001` en vez de a `LIN-DIS-001 §6`; y `§2` no listaba `LIN-DIS-001`, `LIN-PAT-001`, `LIN-VER-001`, `LIN-IAC-001` ni `GOB-MAT-001`. El documento pasa a **En revisión** |
 | v0.1.15 | 2026-08-17 | Arquitectura OTI | La nota de gobernanza de `§4.4` atribuía a `LIN-BUS-001` los namespaces `kafka-dev`/`kafka-qa`/**`kafka`**, cuando ese documento usa `kafka-prod` en producción. La verificación pendiente con Plataforma sigue abierta, pero ahora parte del dato correcto (`GOB-CHK-001` H28) |
 | v0.1.16 | 2026-08-17 | Arquitectura OTI | El `nginx.conf` del Anexo D dirigía `error_log` a `/var/log/nginx/error.log`, incompatible con el `readOnlyRootFilesystem: true` que exige `§14.1` y con la regla de logs a stdout/stderr de `§15.1`. Apunta ahora a `/dev/stderr` (`GOB-CHK-001` H29) |
+| v0.1.17 | 2026-08-17 | Arquitectura OTI | `§13.3` exigía declarar una «política de backup» para todo PVC sin que ningún documento del corpus la definiera. Ahora se deriva de la banda de criticidad de `LIN-ARQ-001 §5.4.1`: todo PVC de un sistema de criticidad Alta o Media requiere respaldo acorde a su RPO **o** justificación documentada de que el dato es reconstruible (`GOB-CHK-001` H11.2) |
+| v0.1.18 | 2026-08-18 | Arquitectura OTI | El apartado de excepción titulaba «Proceso ADR para desviaciones» y no definía identificador: una desviación de este lineamiento se registraba como «un ADR», instrumento que `GOB-MAT-001` reserva a las decisiones **institucionales** del Comité. Pasa a **`EXC-K8S-NNN`**, con vigencia acotada y fecha de revisión obligatoria (`GOB-CHK-001` H38) |
 | v0.1.12 | 2026-07-14 | Arquitectura OTI | Corrige las 9 citas residuales al documento congelado `LIN-ARQ-000` que quedaron sin migrar en v0.1.9 (que solo corrigió §11.1): §1.3, la cláusula de supremacía jerárquica de §2 (que además decía erróneamente que el marco rector es "Nivel 2" — es Nivel 1), tabla de §2, detonador NoSQL de §5.2, atribución de los patrones Sidecar/Ambassador de §9.4 (son normados por este propio documento, no por el marco rector), reglas de resiliencia y Strangler Fig de §9.4.2/9.4.3, y la cláusula de supremacía del proceso ADR en §20. Todas redirigidas a `LIN-ARQ-001` (§2.1, §2.2, §4.3, §6.2) y `LIN-DIS-001 §6` según corresponda |
 
 ---
@@ -949,6 +951,8 @@ El uso de `PersistentVolumeClaim` requiere justificación:
 - responsable.
 ```
 
+> **La «política de backup» se deriva de la banda de criticidad del sistema** (`LIN-ARQ-001 §5.4.1`), no se define por proyecto. Todo PVC de un sistema de criticidad **Alta o Media** requiere respaldo con frecuencia coherente con su RPO, **o** justificación documentada de por qué el dato es reconstruible sin él. Un PVC sin ninguna de las dos cosas no puede aprobarse para producción.
+
 ---
 
 ## 14. Seguridad del contenedor y del pod
@@ -1176,7 +1180,10 @@ Mientras `LIN-IAC-001` no esté oficializado:
 
 ---
 
-## 20. Proceso ADR para desviaciones
+## 20. Proceso de excepción (`EXC-K8S-NNN`)
+
+> **Instrumento correcto: `EXC-K8S-NNN`, no un ADR.** Conforme a `GOB-MAT-001` (Registro de decisiones y excepciones), la desviación de un lineamiento **en un proyecto concreto** se registra como excepción con vigencia acotada y **fecha de revisión**, nunca indefinida. El `ADR-NNN` queda reservado a decisiones **institucionales** del Comité de Arquitectura, que obligan a todo el corpus; llevar allí cada desviación de cada sistema vaciaría de valor ese registro. La excepción se aprueba por Arquitectura OTI, con **Plataforma y Seguridad** cuando la desviación afecte al clúster y se registra en el documento de arquitectura del sistema (`GOB-PLA-001`, Anexo E, criterio 14).
+
 
 > **Importante:** **Gobernanza y Supremacía de LIN-ARQ-001:** En estricta coherencia con la supremacía jerárquica del marco rector de **Nivel 1**, ningún ADR podrá ser aprobado ni será válido si contraviene los principios arquitectónicos fundamentales o los mandatos rectores de **LIN-ARQ-001**, ni las reglas de resiliencia táctica de **`LIN-DIS-001 §6`**, que es su documento dueño, salvo autorización expresa y excepcional de la Dirección de Arquitectura de la OTI.
 

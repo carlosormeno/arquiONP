@@ -4,7 +4,7 @@
 
 **Código:** LIN-OBS-001
 **Marco rector:** LIN-ARQ-001
-**Versión:** v0.1.4
+**Versión:** v0.1.7
 **Fecha:** 2026-07-10
 **Propietario documental:** OTI / Arquitectura
 **Clasificación:** Uso Interno (Técnico)
@@ -22,6 +22,9 @@
 | 0.1.1   | 2026-05-28  | Arquitectura OTI | Declara YAML como formato oficial de configuración, alinea el modelo OTEL con overrides operativos en K8s y documenta el comportamiento de la cadena de filtros ante fallos |
 | 0.1.3 | 2026-08-08 | Arquitectura OTI | Revisión de contenido (`GOB-CHK-001` H19). **(1) Inversión del orden de filtros:** `CanonicalRequestLogFilter` pasa de `@Order(3)` a `@Order(2)` y envuelve a `SaaTokenValidationFilter` (`@Order(3)`). Antes, el filtro de seguridad cortaba la cadena antes del log canónico y **ningún 401 ni 503 quedaba registrado** — la tasa de fallos de autenticación era inmedible y la caída del SAA invisible (*OWASP A09*). La identidad se recupera ahora del atributo de request `onp.user.id`, que sobrevive a la limpieza del MDC. **(2)** Eliminado `StatusCapturingResponse`: `response.getStatus()` (Servlet 3.0+) ya refleja los `sendError` de los filtros internos, y el wrapper reportaba `200` falso ante rutas que no pasaban por `setStatus`/`sendError`. **(3) `Mask.email`** lanzaba `StringIndexOutOfBoundsException` con parte local vacía (`@dominio.com`) o dominio sin punto (`a@b`) — inaceptable en la ruta de logging; se añade regla de robustez: ningún método de `Mask` puede lanzar excepción |
 | 0.1.4 | 2026-08-09 | Arquitectura OTI | Cambio aclaratorio, sin efecto normativo sobre el documento. La nota de `§4.3`–`§4.5` justificaba el transporte OTLP en `http://` remitiendo genéricamente a la plataforma; ahora ancla esa justificación a **`ADR-TLS-INTERNO-001`** y a la `NetworkPolicy` que `LIN-K8S-001 §9.1` declara obligatoria, que es lo que efectivamente sostiene la excepción (`GOB-CHK-001` H24.4) |
+| 0.1.5 | 2026-08-18 | Arquitectura OTI | Incorpora **`§5.8` Grafo de servicios**, derivado de las trazas ya existentes mediante el conector `servicegraph` del Collector — sin instrumentación adicional ni componentes nuevos (`GOB-CHK-001` H35). La regla central es de diseño: **las métricas del grafo se generan antes del muestreo**, porque con el `sampling 0.1` de `§4.5` una integración de baja frecuencia tendría 10% de probabilidad de aparecer y su ausencia sería ambigua entre «no existe» y «se descartó». Se declara explícitamente qué **no** muestra —fronteras internas del Monolito Modular e importaciones prohibidas de `LIN-DIS-001 §3.4`, que son propiedades del código y no del tráfico— y que el grafo **no es un quinto catálogo** sino la contraparte observada de los cuatro registros declarativos del corpus |
+| 0.1.6 | 2026-08-18 | Arquitectura OTI | **`§5.8.4` Identidad de los nodos** (`GOB-CHK-001` H36). El corpus mantenía **tres convenciones para el mismo identificador**: `onp-<sistema>-<modulo>` en la telemetría de este documento, `<sistema>-<componente>` en el proyecto GitLab (`LIN-VER-001 §9.1`) y otra en `app.kubernetes.io/name`. Un nodo del grafo así nombrado no se puede reconciliar con el catálogo de servicios ni con su Deployment, de modo que las verificaciones de `LIN-ARQ-001 §5.5` serían manuales. Se adopta la forma del proyecto GitLab como canónica y se **elimina el prefijo `onp-`**, redundante dentro de la institución. Se añade además `peer.service` como atributo obligatorio en clientes salientes, con lista cerrada de nombres lógicos: sin él, RENIEC con varios hosts produce varios nodos y el inventario de dependencias externas queda inservible |
+| 0.1.7 | 2026-08-18 | Arquitectura OTI | El apartado de excepción titulaba «Proceso de excepción (ADR)» y no definía identificador: una desviación de este lineamiento se registraba como «un ADR», instrumento que `GOB-MAT-001` reserva a las decisiones **institucionales** del Comité. Pasa a **`EXC-OBS-NNN`**, con vigencia acotada y fecha de revisión obligatoria (`GOB-CHK-001` H38) |
 | 0.1.2   | 2026-07-10  | Arquitectura OTI | Migra Marco rector de `LIN-ARQ-000` (congelado) a `LIN-ARQ-001` (vigente) |
 
 ---
@@ -524,7 +527,7 @@ public class CanonicalRequestLogFilter extends OncePerRequestFilter {
   "user.id": "jperez",
   "http.request.id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
   "trace.id": "4bf92f3577b34da6a3ce929d0e0e4736",
-  "service.name": "onp-pensiones-afiliacion"
+  "service.name": "pensiones-backend"
 }
 ```
 
@@ -781,7 +784,7 @@ Ver tabla completa en **Apéndice C**.
   "message": "Operacion completada",
   "traceId": "d611cfa9851c9f00b36acf61b2d68b93",
   "spanId": "33e564c7ce255b35",
-  "service.name": "onp-<sistema>-<modulo>"
+  "service.name": "<sistema>-<tipo-componente>"   // ver §5.8.4 — mismo nombre que el proyecto GitLab y la etiqueta K8s
 }
 ```
 
@@ -803,6 +806,107 @@ Ver tabla completa en **Apéndice C**.
 | `<sistema>.<modulo>.<operacion>` | Operación de negocio con `@NewSpan` | Manual |
 
 > **ADVERTENCIA:** Si el servicio no aparece en Jaeger: (1) verificar que el OTEL Collector está corriendo en el namespace correspondiente; (2) verificar la URL del Collector en `application-{env}.yml`; (3) revisar logs del Collector con `kubectl logs -n otel-{env} deployment/otel-collector`.
+
+---
+
+### 5.8 Grafo de servicios (*service graph*)
+
+El grafo de servicios se **deriva de las trazas ya existentes**: cada span lleva `service.name` y su relación padre-hijo, de modo que agregarlos produce el mapa de qué componente llama a cuál, con tasa de peticiones, tasa de error y latencia por arista. **No requiere instrumentación adicional en la aplicación** ni una herramienta nueva: es una configuración del OTEL Collector, responsabilidad de Plataforma (§10.2).
+
+#### 5.8.1 Regla crítica — las métricas se generan ANTES del muestreo
+
+`§4.5` fija `sampling.probability: 0.1` en producción. Aplicado también al grafo, ese muestreo lo vuelve **engañoso**: un endpoint de alto tráfico aparecería siempre, pero **una llamada de baja frecuencia —un batch nocturno hacia SUNAT, una integración que se ejecuta una vez al día— tendría un 10% de probabilidad de aparecer**. Una arista ausente sería ambigua entre «esa dependencia no existe» y «se descartó por muestreo», y precisamente las dependencias de baja frecuencia son las que nadie recuerda y las que rompen un plan de recuperación.
+
+**Regla:** el conector `servicegraph` se sitúa en el pipeline que recibe **todos** los spans, y el muestreo se aplica únicamente en el exportador que persiste hacia Jaeger.
+
+```yaml
+# Configuración del OTEL Collector — responsabilidad de Plataforma
+connectors:
+  servicegraph:
+    latency_histogram_buckets: [0.1s, 0.5s, 1s, 2s, 5s, 10s]
+    dimensions: [deployment.environment]
+    store: { ttl: 5s, max_items: 10000 }
+
+service:
+  pipelines:
+    # Todos los spans alimentan el grafo — sin muestreo
+    traces/grafo:
+      receivers:  [otlp]
+      processors: [batch]
+      exporters:  [servicegraph]
+
+    # El muestreo aplica solo a la persistencia en Jaeger
+    traces/almacenamiento:
+      receivers:  [otlp]
+      processors: [probabilistic_sampler, batch]
+      exporters:  [otlp/jaeger]
+
+    metrics/grafo:
+      receivers:  [servicegraph]
+      exporters:  [prometheus]
+```
+
+> El muestreo del `§4.5` se mantiene: lo que cambia es **dónde** se aplica. El coste de almacenamiento en Elasticsearch no aumenta, porque el grafo produce métricas agregadas, no trazas.
+
+#### 5.8.2 Métricas resultantes
+
+| Métrica | Qué expresa |
+|---|---|
+| `traces_service_graph_request_total` | Peticiones por arista (origen → destino) |
+| `traces_service_graph_request_failed_total` | Peticiones fallidas por arista |
+| `traces_service_graph_request_server_seconds` | Latencia por arista |
+
+Se exponen a Prometheus y se visualizan en Grafana con el panel **Node Graph**. Con el stack actual —Collector, Prometheus, Grafana, Jaeger— **no se requiere ningún componente adicional**.
+
+#### 5.8.3 Alcance y límites
+
+**Qué muestra:** dependencias entre procesos —servicio → servicio, servicio → base de datos, servicio → API externa (RENIEC, SUNAT, PIDE, SAA)— y, si la propagación de `traceparent` está correctamente implementada (`LIN-BUS-001 §11.1`), también las aristas asíncronas productor → consumidor a través de Kafka.
+
+**Qué NO muestra, y es importante no confundirlo:**
+
+- **Las fronteras internas de un Monolito Modular.** Las llamadas entre módulos ocurren dentro del mismo proceso y no generan spans salvo instrumentación deliberada con `@NewSpan` (§5.3). Dado que el Estadio 2 es la topología por defecto (`LIN-ARQ-001 §2.1`), el grafo de un sistema típico de la ONP tendrá **pocos nodos internos y muchas aristas externas** — ahí está su valor.
+- **Las importaciones entre fronteras prohibidas** de `LIN-DIS-001 §3.4`. Eso es una propiedad del código, no del tráfico: la verifica el análisis estático de dependencias entre módulos Maven, no la telemetría. `LIN-CICD-001 §12.5` ya declara este límite para la Declaración de Conformidad.
+- **Dependencias que no se ejercitaron** en la ventana observada. Un grafo vacío en una arista significa «no se usó», no «no existe».
+
+#### 5.8.4 Identidad de los nodos — condición para que el grafo sea reconciliable
+
+Un grafo cuyos nodos no se pueden casar con los registros declarativos del corpus no permite las verificaciones de `LIN-ARQ-001 §5.5`. Dos reglas lo garantizan:
+
+**a) `service.name` es el mismo identificador en todo el corpus.** El grafo agrupa por este atributo, de modo que debe coincidir **exactamente** con:
+
+| Dónde aparece | Documento |
+|---|---|
+| Nombre del proyecto GitLab | `LIN-VER-001 §9.1` |
+| Etiqueta `app.kubernetes.io/name` del Deployment | `LIN-K8S-001 §9.3` |
+| Entrada en el catálogo institucional de servicios | `LIN-API-REST-001 §10.1` |
+| `spring.application.name` y `service.name` de la telemetría | `§4.2` de este lineamiento |
+
+Se adopta como forma canónica la del proyecto GitLab (`LIN-VER-001 §9.1`): `<sistema>-<tipo-componente>[-<canal>]`, por ejemplo `past-backend` o `notificaciones-front-ciudadano`. **No se antepone `onp-`**: el prefijo es redundante dentro de la institución y era la causa de que la telemetría usara un nombre distinto al del despliegue y al del catálogo.
+
+> **Corrección respecto de versiones anteriores.** `§5.7` y `§4.10` ilustraban `service.name` como `onp-<sistema>-<modulo>` y `onp-pensiones-afiliacion`, formas que no coinciden con el nombre del proyecto GitLab ni con la etiqueta de Kubernetes. Un nodo del grafo así nombrado **no se puede reconciliar automáticamente** con el catálogo de servicios ni con su Deployment (`GOB-CHK-001` H36).
+
+**b) Los servicios externos se identifican por `peer.service`, no por host.** RENIEC, SUNAT, PIDE y SAA no emiten trazas: aparecen en el grafo únicamente por los atributos del span del cliente. Sin `peer.service`, un nodo externo se identifica por `net.peer.name` y una misma entidad con varios hosts o balanceadores produce **varios nodos distintos**, arruinando el inventario de dependencias.
+
+```java
+// Todo cliente saliente hacia un tercero declara el nombre lógico del destino
+@Bean
+RestClientCustomizer reniecClientCustomizer(ObservationRegistry registry) {
+    return builder -> builder.observationRegistry(registry)
+        .observationConvention(new DefaultClientRequestObservationConvention() {
+            @Override
+            public KeyValues getLowCardinalityKeyValues(ClientRequestObservationContext ctx) {
+                return super.getLowCardinalityKeyValues(ctx)
+                    .and("peer.service", "reniec");   // nombre lógico, no host
+            }
+        });
+}
+```
+
+**Nombres lógicos institucionales** (lista cerrada; ampliarla requiere registro en el catálogo de `LIN-API-REST-001 §10.1`): `reniec`, `sunat`, `sbs`, `mef`, `pide`, `saa`, `wso2`.
+
+#### 5.8.5 El grafo no es un catálogo
+
+El corpus mantiene cuatro registros **declarativos**: bases de datos y objetos PL/SQL (`LIN-BD-ORA-001`), servicios REST (`LIN-API-REST-001 §10.1`), tópicos de eventos (`LIN-BUS-001` Apéndice B) y datasets analíticos en OpenMetadata (`LIN-BI-001 §7.2`). El grafo de servicios **no es un quinto registro que mantener a mano**: es la contraparte **observada** que permite contrastar los cuatro anteriores contra la realidad. Su uso para gobierno arquitectónico está normado en `LIN-ARQ-001 §5.5`, y su reconciliación con esos registros depende de la identidad de nodos de `§5.8.4`.
 
 ---
 
@@ -1228,7 +1332,10 @@ El siguiente checklist debe completarse antes del pase a DEV de cualquier servic
 
 ---
 
-## 13. Proceso de excepción (ADR)
+## 13. Proceso de excepción (`EXC-OBS-NNN`)
+
+> **Instrumento correcto: `EXC-OBS-NNN`, no un ADR.** Conforme a `GOB-MAT-001` (Registro de decisiones y excepciones), la desviación de un lineamiento **en un proyecto concreto** se registra como excepción con vigencia acotada y **fecha de revisión**, nunca indefinida. El `ADR-NNN` queda reservado a decisiones **institucionales** del Comité de Arquitectura, que obligan a todo el corpus; llevar allí cada desviación de cada sistema vaciaría de valor ese registro. La excepción se aprueba por Arquitectura OTI y se registra en el documento de arquitectura del sistema (`GOB-PLA-001`, Anexo E, criterio 14).
+
 
 Toda desviación a este lineamiento requiere un **Architecture Decision Record (ADR)** aprobado por Arquitectura antes de implementarse.
 
@@ -1297,6 +1404,7 @@ Toda desviación a este lineamiento requiere un **Architecture Decision Record (
 | `db.operation` | Tipo de operación SQL | `SELECT`, `INSERT`, `UPDATE` |
 | `db.statement` | Sentencia SQL (parámetros enmascarados) | `SELECT ... WHERE dni=?` |
 | `net.peer.name` | Host del servicio externo | `api.reniec.gob.pe` |
+| `peer.service` | **Nombre lógico** del servicio externo — obligatorio en todo cliente saliente (ver §5.8.5) | `reniec`, `sunat`, `saa`, `pide` |
 | `exception.type` | Clase de la excepción | `java.lang.NullPointerException` |
 | `otel.status_code` | Estado del span | `OK` / `ERROR` |
 

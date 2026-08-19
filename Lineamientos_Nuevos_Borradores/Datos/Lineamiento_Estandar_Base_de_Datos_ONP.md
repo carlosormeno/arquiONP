@@ -1,6 +1,6 @@
 # LIN-BD-ORA-001 — Estándar de Base de Datos Oracle ONP
 ## Oficina de Normalización Previsional — OTI
-### Código: LIN-BD-ORA-001 | Versión 0.1.13 | Estado: En revisión | Marco rector: LIN-ARQ-001
+### Código: LIN-BD-ORA-001 | Versión 0.1.15 | Estado: En revisión | Marco rector: LIN-ARQ-001
 
 ---
 
@@ -22,6 +22,8 @@
 | 0.1.11 | 2026-08-09 | OTI | Normalización de encabezados de sección: `## sección N Título` → `## N. Título` (`GOB-CHK-001` H21.3). El formato anterior generaba anclas `#sección-N-…` mientras el índice enlazaba a `#N-…`, de modo que **ningún enlace de la tabla de contenidos resolvía**. Corregidas además 15 anclas con tilde omitida o guion simple donde el encabezado genera doble. Resultado: 55/55 enlaces internos resuelven. Las citas externas por número de sección (`§6.0`, `§3.10`…) no se ven afectadas |
 | 0.1.12 | 2026-08-09 | OTI | Revisión de contenido a profundidad (`GOB-CHK-001` H14). **Tres de los siete ejemplos DDL incumplían las convenciones del propio documento** y son los que las fábricas copian: `EVT_OUTBOX` (§3.10) carecía de prefijos de columna (§3.4) y de campos de auditoría (§5.1) — normalizada y su excepción de auditoría **declarada explícitamente** en §5.2, con la justificación de por qué una tabla técnica de relevo no los lleva; `CATALOGO_PLSQL_LEGACY` (§6.0) omitía el prefijo `CAT_` (§3.3), los prefijos de columna, los campos de auditoría y usaba `GENERATED AS IDENTITY` —sintaxis de Oracle 12c+ que no existe en 11g, contra la promesa de compatibilidad de §2.2 y la regla de §4.6— renombrada a `OTI_ADMIN.CAT_PLSQL_LEGACY` y normalizada; `MOV_APORTE` (§9.2) usaba `N_ID` como PK en vez de `ID_<ENTIDAD> NUMBER(19)`. **§1.3 reescrita**: era la única tabla de referencias del corpus que citaba por nombre sin código, y su primera fila apuntaba al documento congelado con la nomenclatura `CD01`/`CD02` que ya no rige; ahora usa códigos e incorpora `LIN-DIS-001`, `LIN-BUS-001`, `LIN-TEST-001` y `LIN-VER-001`, que faltaban pese a ser consumidores declarados |
 | 0.1.13 | 2026-08-14 | OTI | Corrige el **estado del encabezado**, que seguía en `Borrador` pese a tener la revisión de contenido cerrada desde H20 y a que `GOB-MAT-001` ya lo declaraba `En revisión`. La discrepancia era invisible: el linter validaba la ruta y el código del catálogo, no el estado (`GOB-CHK-001` H25) |
+| 0.1.14 | 2026-08-17 | OTI | `§11.2` remitía el RTO/RPO a un acuerdo con el área de negocio sin escala institucional; ahora se derivan de las bandas de `LIN-ARQ-001 §5.4.1`. Se advierte además que **los mínimos de respaldo de esta sección no satisfacen un RPO de 15 minutos** —el de la banda de criticidad Alta—: una base que soporte cálculo o pago de pensiones requiere archive logs más frecuentes o replicación (`GOB-CHK-001` H11.2) |
+| 0.1.15 | 2026-08-18 | OTI | El apartado de excepción titulaba «Proceso de excepción a este estándar» y no definía identificador: una desviación de este lineamiento se registraba como «un ADR», instrumento que `GOB-MAT-001` reserva a las decisiones **institucionales** del Comité. Pasa a **`EXC-BD-NNN`**, con vigencia acotada y fecha de revisión obligatoria (`GOB-CHK-001` H38) |
 
 ---
 
@@ -1570,7 +1572,9 @@ La estrategia de backup de cada base de datos debe estar definida y documentada 
 
 - Los backups se realizan con Oracle RMAN.
 - Se debe probar la recuperación (restore + recovery) al menos una vez por semestre por cada base de datos productiva.
-- El RTO (Recovery Time Objective) y RPO (Recovery Point Objective) de cada base de datos deben estar acordados con el área de negocio y documentados.
+- El RTO (Recovery Time Objective) y RPO (Recovery Point Objective) de cada base de datos **se derivan de la banda de criticidad del sistema que soporta** (`LIN-ARQ-001 §5.4.1`), se validan con el área de negocio y se documentan.
+
+> **La frecuencia de respaldo debe ser coherente con el RPO comprometido.** Los mínimos de la tabla anterior satisfacen un RPO de horas; **no satisfacen un RPO de 15 minutos**, que es el de la banda de criticidad Alta. Una base que soporte cálculo o pago de pensiones requiere archive logs con frecuencia acorde —o replicación— y no puede acogerse solo a los mínimos de esta sección.
 
 ### 11.3 Monitoreo y diagnóstico
 
@@ -2085,7 +2089,10 @@ Lista de verificación mínima antes de cualquier pase a QA o Producción.
 
 ---
 
-## Proceso de excepción a este estándar
+## Proceso de excepción a este estándar (`EXC-BD-NNN`)
+
+> **Instrumento correcto: `EXC-BD-NNN`, no un ADR.** Conforme a `GOB-MAT-001` (Registro de decisiones y excepciones), la desviación de un lineamiento **en un proyecto concreto** se registra como excepción con vigencia acotada y **fecha de revisión**, nunca indefinida. El `ADR-NNN` queda reservado a decisiones **institucionales** del Comité de Arquitectura, que obligan a todo el corpus; llevar allí cada desviación de cada sistema vaciaría de valor ese registro. La excepción se aprueba por Arquitectura OTI y se registra en el documento de arquitectura del sistema (`GOB-PLA-001`, Anexo E, criterio 14).
+
 
 Toda desviación de las reglas establecidas en este documento requiere un ADR (Architecture Decision Record) aprobado formalmente por el equipo de Arquitectura de la OTI antes de implementarse.
 

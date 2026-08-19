@@ -1,7 +1,7 @@
 # Lineamiento Marco Rector de Arquitectura de Software en la ONP
 
 **Código:** LIN-ARQ-001  
-**Versión:** 0.1.11  
+**Versión:** 0.1.14  
 **Fecha:** 2026-08-05  
 **Autor:** Oficina de Tecnologías de la Información — ONP  
 **Estado:** En revisión / Estándar de Nivel 1 — pendiente de graduación a Vigente (`GOB-MAT-001`, Ciclo de vida documental)  
@@ -18,6 +18,9 @@
 | 0.1.9 | 2026-08-05 | Arquitectura OTI | `§2.3`: incorpora **Experiment Toggle** como cuarta categoría de Feature Toggle y acota **Permission Toggle** al control de acceso por rol/perfil (SAA). La taxonomía anterior mezclaba en una sola categoría dos ciclos de vida opuestos —el experimento caduca obligatoriamente con su veredicto, el permiso puede ser permanente— lo que llevaba a que flags temporales quedaran clasificados como permanentes. Alinea el Nivel 1 con `LIN-DEV-JAVA-001 §16.6`, que ya operaba con las cuatro categorías sin respaldo normativo del marco rector. Ampliación anotada en `ADR-014` (`GOB-CHK-001` H13.3) |
 | 0.1.10 | 2026-08-08 | Arquitectura OTI | Correcciones menores (`GOB-CHK-001` H10): unifica el nombre del modelo de ramas con su documento dueño — `§2.3` y `§8.1` decían «Trunk-Based Development» cuando `LIN-VER-001 §6` lo denomina **GitLab Flow simplificado**, disciplinado con principios TBD; corrige tres erratas (`oquestado`→`orquestado` en `§3.3`; «Estándar por Defectos»→«por Defecto» en `§2.1` y `§8.2`) |
 | 0.1.11 | 2026-08-17 | Arquitectura OTI | El **Apéndice A** (Matriz de Decisiones Arquitectónicas) y los ADR en archivo eran dos registros desconectados: `ADR-013` y `ADR-CLOUDEVENTS-001` documentaban **la misma decisión** —misma fecha, mismo asunto— sin referenciarse, y `ADR-WSO2-001` y `ADR-TLS-INTERNO-001` no figuraban en la matriz pese a ser decisiones institucionales vigentes. Se declara la matriz como registro único, se incorporan como `ADR-015` y `ADR-016`, y cada ADR en archivo declara su identificador de matriz (`GOB-CHK-001` H31) |
+| 0.1.12 | 2026-08-17 | Arquitectura OTI | Incorpora **`§5.4` Continuidad Operativa**, que cierra la mayor brecha de contenido del corpus (`GOB-CHK-001` H11.2): no existía clasificación institucional de criticidad ni objetivos de RTO/RPO, de modo que `GOB-PLA-001 C.1` obligaba a declararlos sin referencia y `LIN-K8S-001 §13.3` exigía una «política de backup» que ningún documento definía. La sección fija tres bandas de criticidad con RTO/RPO objetivo, la regla de que **ningún sistema puede comprometer un RTO/RPO mejor que el de sus dependencias**, la política de respaldo por componente delegando el mecanismo a cada dueño, el procedimiento de recuperación a nivel de sistema y el régimen obligatorio de pruebas de restauración. **Los valores son propuesta técnica sujeta a ratificación del Comité con las áreas usuarias.** Se declara además a esta sección dueña de la escala de criticidad, que `LIN-PERF-001`, `LIN-CICD-001` y `LIN-K8S-001` usaban sin fuente común |
+| 0.1.13 | 2026-08-18 | Arquitectura OTI | Incorpora **`§5.5` Arquitectura Observada**, que cierra un vacío de verificación: el Anexo A de `GOB-PLA-001` es una arquitectura **declarada** y el corpus no tenía forma de detectar su deriva respecto de la real. El grafo de servicios de `LIN-OBS-001 §5.8` provee la topología observada, y se fijan cinco verificaciones obligatorias semestrales para criticidad Alta y Media — dependencias no declaradas, integridad del inventario de recuperación de `§5.4.1`, elusión del ACL, servicios fuera de catálogo y exposición sin gateway. La regla de tratamiento es explícita: ante una dependencia observada y no declarada **se corrige el documento o el código, nunca se normaliza por estar en producción**. Se declaran también los límites: el grafo no ve fronteras internas del Monolito Modular ni sustituye al análisis estático, del que el corpus aún no dispone (`GOB-CHK-001` H35) |
+| 0.1.14 | 2026-08-18 | Arquitectura OTI | `§8.3` numeral 4: la declaración jurada de conformidad deja de ser el único control de las fronteras del Monolito Modular — su contenido lo verifican ahora las pruebas de arquitectura de `LIN-DEV-JAVA-001 §15.5` (`GOB-CHK-001` H37) |
 
 ---
 
@@ -386,6 +389,108 @@ La instrumentación técnica debe integrarse al ecosistema de observabilidad ins
 
 ---
 
+### 5.4 Continuidad Operativa: Criticidad, RTO/RPO y Recuperación
+
+> ⚠️ **Los valores de esta sección son una propuesta técnica que requiere ratificación.** Arquitectura OTI puede proponer la escala y los objetivos, pero **RTO y RPO son decisiones de negocio**: expresan cuánto tiempo puede estar caído un servicio y cuánta información puede perderse. Su ratificación corresponde al **Comité de Arquitectura con las áreas usuarias** (Pensiones, Aportes, Atención al Ciudadano) y a Plataforma en cuanto a viabilidad. Mientras no se ratifiquen, rigen como **valores por defecto** que un proyecto debe cumplir o justificar por excepción.
+
+#### 5.4.1 Clasificación institucional de criticidad
+
+La criticidad de un sistema es un atributo **institucional, no del proyecto**: la declara Arquitectura al aprobar el documento de arquitectura y determina exigencias en resiliencia, pruebas de rendimiento (`LIN-PERF-001 §9.3`), fases de CI/CD (`LIN-CICD-001 §5`) y recursos de despliegue (`LIN-K8S-001 §10`). Los criterios para determinarla están en `LIN-PERF-001 §6.4`.
+
+| Criticidad | Qué la define | Ejemplos en ONP | RTO objetivo | RPO objetivo |
+|---|---|---|---|---|
+| **Alta** | Su interrupción impide cumplir la misión previsional o tiene consecuencia legal o económica directa sobre el pensionista | Cálculo y pago de pensiones, generación de planilla, liquidación de aportes | **≤ 4 horas** | **≤ 15 minutos** |
+| **Media** | Su interrupción bloquea la atención al ciudadano o la tramitación, sin impedir el pago | Afiliación, expedientes, ventanilla virtual, notificaciones | **≤ 8 horas** | **≤ 1 hora** |
+| **Baja** | Su interrupción degrada el servicio pero admite operación manual o diferida | Portales informativos, tableros de BI, herramientas internas de apoyo | **≤ 24 horas** | **≤ 24 horas** |
+
+**Reglas de aplicación:**
+
+1. Un sistema **hereda la criticidad más alta de los procesos de negocio que soporta**. Un módulo de consulta dentro del sistema de pensiones es Alta, no Baja.
+2. Un sistema **no puede tener un RTO/RPO mejor que el de sus dependencias**. Si el cálculo de pensión depende de una base de datos con RPO de 1 hora, su RPO real es 1 hora por mucho que declare 15 minutos. Esta verificación es obligatoria al declarar el atributo en `GOB-PLA-001 C.1`.
+3. Un RTO/RPO **más exigente** que el de su banda requiere justificación y validación de Plataforma sobre su viabilidad; uno **menos exigente** requiere excepción `EXC-ARQ-NNN` aprobada por Arquitectura y el área usuaria.
+
+#### 5.4.2 Política de respaldo por componente
+
+El Nivel 1 exige el **resultado** —que el componente sea recuperable dentro de su banda— y delega el **mecanismo** al documento dueño de cada tecnología:
+
+| Componente | Documento dueño del mecanismo | Exigencia de este marco |
+|---|---|---|
+| Base de datos Oracle | `LIN-BD-ORA-001 §11.2` (RMAN, frecuencias y retención ya normadas) | Frecuencia de respaldo coherente con el RPO de la banda: un RPO de 15 minutos no se satisface con archive logs cada hora |
+| Estado de Terraform | `LIN-IAC-001 §6.3` | Ya normado; retenciones sujetas a revisión contra esta tabla |
+| `PersistentVolume` de Kubernetes | `LIN-K8S-001 §13.3` | **Pendiente de normar.** `§13.3` exige declarar «política de backup» sin definirla. Mientras tanto: todo PVC de un sistema de criticidad Alta o Media requiere respaldo con frecuencia acorde a su RPO, o justificación de por qué el dato es reconstruible |
+| Buckets del Lakehouse | `LIN-BI-001 §8.3.1` | Bronze es reconstruible desde el origen transaccional; Silver y Gold requieren respaldo o procedimiento de reconstrucción documentado y **medido** — si reconstruir Gold toma 12 horas, el RTO real del BI es 12 horas |
+| Tópicos de Kafka | `LIN-BUS-001 §6.2` | La retención del tópico **no es un respaldo**: es una ventana de reproceso. Un sistema cuyo estado dependa de reproducir eventos debe declarar que su RPO está acotado por esa retención |
+| Secretos (Vault, K8s Secrets) | `LIN-SEC-APP-001` | Un respaldo de datos sin los secretos para levantar el servicio no permite recuperar. El respaldo de secretos y su custodia se tratan con el mismo régimen que el dato |
+| Manifiestos y configuración | `LIN-VER-001`, `LIN-IAC-001` | Git es la fuente de verdad; la recuperación exige que el repositorio esté disponible, lo que lo convierte en dependencia de recuperación |
+
+#### 5.4.3 Recuperación a nivel de sistema
+
+**Respaldar componentes no es recuperar un servicio.** Todo sistema de criticidad **Alta o Media** debe declarar en su documento de arquitectura (`GOB-PLA-001`, Anexo C) un **procedimiento de recuperación** que incluya:
+
+1. **Orden de recuperación y dependencias:** qué debe estar operativo antes de qué. Un backend no se recupera antes que su base de datos, ni valida tokens antes de que SAA esté disponible.
+2. **Dependencias fuera del control de la ONP** —SAA, RENIEC, PIDE, SUNAT— con su comportamiento esperado durante la contingencia: si el servicio puede operar degradado sin ellas, o no puede operar.
+3. **Punto de recuperación verificable:** cómo se comprueba que el dato restaurado es consistente, no solo que el servicio responde.
+4. **Responsable declarado** y vía de escalamiento.
+
+#### 5.4.4 Régimen de pruebas de recuperación
+
+Un respaldo cuya restauración nunca se probó no es un respaldo. La periodicidad mínima de prueba se fija por criticidad y **es obligatoria**:
+
+| Criticidad | Prueba de restauración | Alcance mínimo |
+|---|---|---|
+| **Alta** | Semestral | Restauración completa en ambiente aislado, con verificación de consistencia del dato y medición del tiempo real de recuperación |
+| **Media** | Anual | Restauración de los componentes con estado y verificación de arranque del servicio |
+| **Baja** | Anual | Verificación de que el respaldo existe y es legible |
+
+La prueba debe **medir el tiempo real de recuperación** y contrastarlo con el RTO declarado. Un RTO declarado que nunca se midió es una aspiración, no un compromiso. Si la medición lo excede, se registra como riesgo en el documento de arquitectura y se acuerda un plan con Plataforma.
+
+> `LIN-BD-ORA-001 §11.2` ya exige prueba semestral por base productiva, coherente con la banda Alta. `LIN-IAC-001 §6.3` exige prueba anual del estado de Terraform.
+
+#### 5.4.5 Qué debe declarar cada sistema
+
+En el atributo **Recuperabilidad** de `GOB-PLA-001 C.1`, todo documento de arquitectura declara: la **criticidad** asignada; el **RTO y RPO** comprometidos y quién los validó por el área usuaria; la **verificación de dependencias** de la regla 2 de `§5.4.1`; y, para criticidad Alta o Media, el **procedimiento de recuperación** de `§5.4.3`.
+
+Un documento de arquitectura de un sistema de criticidad Alta **no puede aprobarse** sin estos elementos.
+
+---
+
+### 5.5 Arquitectura Observada: Contraste entre lo Declarado y lo Real
+
+La arquitectura de un sistema se documenta en su Anexo A (`GOB-PLA-001`) como un modelo dibujado a mano. Ese modelo es una **declaración**: refleja lo que el arquitecto diseñó, no necesariamente lo que el sistema hace en ejecución. Entre ambos aparece deriva —integraciones añadidas sin actualizar el documento, llamadas que esquivan un ACL, dependencias que nadie recuerda— y hasta ahora el corpus **no tenía forma de detectarla**.
+
+El **grafo de servicios** (`LIN-OBS-001 §5.8`), derivado de las trazas que los sistemas ya emiten, provee la topología **observada**. Contrastarla contra la declarada es a la arquitectura lo que el `terraform plan` programado (`LIN-IAC-001 §10`) es a la infraestructura: detección de deriva.
+
+#### 5.5.1 Verificaciones obligatorias
+
+Para todo sistema de criticidad **Alta o Media** (`§5.4.1`), Arquitectura OTI contrasta **al menos semestralmente** el grafo observado contra lo declarado:
+
+| Verificación | Qué se busca | Fundamento |
+|---|---|---|
+| **Dependencias no declaradas** | Aristas en el grafo que no aparecen en el Anexo A del documento de arquitectura | `GOB-PLA-001` Anexo A |
+| **Integridad del inventario de recuperación** | Toda dependencia observada está considerada en el RTO/RPO declarado. Una dependencia desconocida **invalida** la verificación de la regla 2 de `§5.4.1` | `§5.4.1` |
+| **Elusión del ACL** | Llamadas directas de un módulo a un sistema legado (Estadio 1) o a una entidad externa sin pasar por su Capa Anticorrupción | `§4.3`, `LIN-DIS-001 §5.4` |
+| **Servicios fuera de catálogo** | Aristas hacia APIs REST no registradas en el catálogo institucional | `LIN-API-REST-001 §10.1` |
+| **Exposición sin gateway** | Tráfico entrante que no proviene del Ingress o de WSO2 cuando gradúe | `LIN-API-REST-001 §2.5` |
+
+#### 5.5.2 Tratamiento de las divergencias
+
+| Resultado | Acción |
+|---|---|
+| Sin divergencias | Evidencia de conformidad; se registra en la revisión del documento de arquitectura |
+| Dependencia observada y no declarada | **Se actualiza el documento de arquitectura**, no el grafo. El grafo describe la realidad; si la realidad no debía ser así, el problema es de diseño y se corrige en el código |
+| Divergencia que viola un lineamiento (ACL eludido, exposición sin gateway) | Se subsana o se registra como excepción `EXC-` con fecha de revisión. **No se normaliza por el hecho de estar en producción** |
+| Divergencia que altera el inventario de dependencias | Dispara revisión del documento conforme a `GOB-PLA-001 §1.5` |
+
+#### 5.5.3 Límites de la verificación
+
+Esta verificación **no sustituye** a la revisión del documento ni al análisis estático:
+
+- El grafo solo muestra lo **ejercitado** en la ventana observada. Una arista ausente significa «no se usó», no «no existe»: una integración trimestral puede no aparecer en un contraste semestral.
+- **No observa las fronteras internas** de un Monolito Modular, que ocurren en el mismo proceso. Las importaciones prohibidas de `LIN-DIS-001 §3.4` siguen dependiendo de la Declaración de Conformidad del Tech Lead (`§8.3` numeral 4) y requerirían análisis estático de dependencias entre módulos Maven, control del que el corpus **aún no dispone**.
+- La calidad del grafo depende de que la regla de `LIN-OBS-001 §5.8.1` se cumpla: métricas generadas **antes** del muestreo. Con muestreo aplicado, la ausencia de una arista de baja frecuencia carece de valor probatorio.
+
+---
+
 ## 6. Estrategia Macro de Datos y Base de Datos
 
 ### 6.1 Oracle como Estándar Transaccional ACID
@@ -491,6 +596,8 @@ Para que la OTI o el Área Usuaria otorgue la **conformidad técnica y aceptaci�
 2. **Evidencia de Cumplimiento Core Web Vitals:** Reporte automatizado de Lighthouse en el pipeline CI/CD demostrando un LCP < 2.5s, INP < 200ms y CLS < 0.1 en las pantallas entregadas.
 3. **Evidencia de Observabilidad Completa:** Captura de pantalla y traza de prueba funcional ejecutada en el clúster de QA donde se compruebe la presencia simultánea de las cuatro señales en el Dashboard de Grafana (`LIN-OBS-001`) y la traza distribuida continua en Jaeger sin cortes de context propagation.
 4. **Declaración de Conformidad con LIN-ARQ-001:** Declaración jurada técnica en el `README.md` del repositorio firmada por el Tech Lead de la fábrica, certificando la ausencia de importaciones entre fronteras prohibidas en el Monolito Modular (`LIN-DIS-001 §3.4`).
+
+   > **Verificación asociada.** La presencia de la declaración la comprueba `LIN-CICD-001 §12.5`; su contenido sustantivo —ausencia de importaciones entre fronteras prohibidas— lo verifican desde 2026-08-18 las **pruebas de arquitectura** de `LIN-DEV-JAVA-001 §15.5`, que fallan la compilación ante una violación. La declaración conserva su valor para los juicios que ninguna regla automática puede emitir, pero deja de ser el único control.
 
 ### 8.4 Validación Técnica en el Proceso de Contratación
 

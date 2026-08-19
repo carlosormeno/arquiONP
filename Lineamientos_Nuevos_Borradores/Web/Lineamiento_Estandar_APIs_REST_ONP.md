@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Código** | LIN-API-REST-001 |
-| **Versión** | 0.1.7 |
+| **Versión** | 0.1.8 |
 | **Fecha** | 2026-08-09 |
 | **Estado** | En revisión |
 | **Clasificación** | Uso Interno (Técnico) |
@@ -25,6 +25,7 @@
 | 0.1.5 | 2026-08-05 | Arquitectura OTI | **§8.3 deja de publicar valores propios de timeout** (Connection 5s / Read 10s), que divergían de la matriz por criticidad de `LIN-DIS-001 §6.1` (documento dueño) y del rango de `LIN-ARQ-001 §4.3` — tres fuentes distintas para el mismo control. Ahora referencia al dueño y conserva solo lo propio del contrato REST: la respuesta `504` / `codDetRespuesta 402` ante vencimiento (`GOB-CHK-001` H3) |
 | 0.1.6 | 2026-08-09 | Arquitectura OTI | Revisión de fondo (`GOB-CHK-001` H24). **Seguridad:** `§7.2` proponía un RBAC propio con `hasRole('ROL_…')` —contrario a `LIN-SEC-APP-001 §5.3` numeral 4 y además inoperante, porque Spring antepone `ROLE_`— ahora usa permisos SAA con `hasAuthority`; `§7.4` daba los headers de seguridad como «recomendados» y los delegaba en el gateway en PoC, siendo **obligatorios** para el servicio según `LIN-SEC-APP-001 §7.3`; `§8.4` eximía a los servicios de rate limiting atribuyéndolo a ese mismo gateway, dejando a toda API sin control alguno. **Coherencia interna:** `§2.2` prohíbe `http://` y `§2.5` daba por sentado tráfico intra-cluster sobre HTTP; `§9.6` ponía las probes en `8080` mientras `§9.5` exige separar el puerto de gestión; `§3.1` y `§2.5` publicaban dos formas de URL canónica distintas. **Contrato:** `§3.3.2` clasificaba como «versión menor» —inexpresable en `/api/v{N}`— la incorporación de un campo obligatorio al request, que rompe a todo consumidor; la tabla se alinea con `LIN-VER-001 §17.2`–`§17.3`. Se añade `codDetRespuesta 302` / `429` para el límite de peticiones. **Gobernanza:** `§10.2` hacía de WSO2 la única vía a producción pese al PoC — se define vía transitoria sin eximir del gate; `§10.3` no pedía la **prueba de contrato** que `LIN-TEST-001 §6` declara obligatoria. **RFC 7807** figuraba como normativa de errores sin serlo: se explicita que la ONP no lo adopta y por qué |
 | 0.1.7 | 2026-08-09 | Arquitectura OTI | Cierre de las dos decisiones que la revisión H24 elevó a Arquitectura. (1) **`codDetRespuesta 302` (HTTP 429) queda ratificado** e incorporado al catálogo normativo conforme al proceso de `§4.2.1(c)`. (2) El tráfico intra-cluster sobre HTTP se resuelve en **`ADR-TLS-INTERNO-001`** como excepción acotada a `LIN-SEC-APP-001 §7.1`, con `NetworkPolicy` obligatoria como control sustitutivo; `§2.2` y `§2.5` retiran la reserva y el gate de `§10.3` verifica la `NetworkPolicy` antes de autorizar producción |
+| 0.1.8 | 2026-08-18 | Arquitectura OTI | El apartado de excepción titulaba «Proceso de excepción a este estándar» y no definía identificador: una desviación de este lineamiento se registraba como «un ADR», instrumento que `GOB-MAT-001` reserva a las decisiones **institucionales** del Comité. Pasa a **`EXC-API-NNN`**, con vigencia acotada y fecha de revisión obligatoria (`GOB-CHK-001` H38) |
 
 ---
 
@@ -1110,7 +1111,10 @@ https://<host>/api/v{N}/{recurso-plural}/{id}/{sub-recurso}?param=valor
 
 ---
 
-## Proceso de excepción a este estándar
+## Proceso de excepción a este estándar (`EXC-API-NNN`)
+
+> **Instrumento correcto: `EXC-API-NNN`, no un ADR.** Conforme a `GOB-MAT-001` (Registro de decisiones y excepciones), la desviación de un lineamiento **en un proyecto concreto** se registra como excepción con vigencia acotada y **fecha de revisión**, nunca indefinida. El `ADR-NNN` queda reservado a decisiones **institucionales** del Comité de Arquitectura, que obligan a todo el corpus; llevar allí cada desviación de cada sistema vaciaría de valor ese registro. La excepción se aprueba por Arquitectura OTI y se registra en el documento de arquitectura del sistema (`GOB-PLA-001`, Anexo E, criterio 14).
+
 
 Toda desviación de las reglas establecidas en este documento requiere un ADR (Architecture Decision Record) aprobado formalmente por el equipo de Arquitectura de la OTI antes de implementarse.
 

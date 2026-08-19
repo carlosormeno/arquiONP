@@ -1,6 +1,6 @@
 # LIN-DEV-JAVA-001 — Estándar de Desarrollo Java ONP
 ## Oficina de Normalización Previsional — OTI
-### Código: LIN-DEV-JAVA-001 | Versión 0.1.11 | Estado: En revisión | Marco rector: LIN-ARQ-001 (Nivel 1)
+### Código: LIN-DEV-JAVA-001 | Versión 0.1.13 | Estado: En revisión | Marco rector: LIN-ARQ-001 (Nivel 1)
 
 ---
 
@@ -11,6 +11,8 @@
 | 0.1.0 | 2026-05-22 | OTI | Versión inicial |
 | 0.1.10 | 2026-08-08 | OTI | Incorpora el Índice CRAP (Change Risk Anti-Patterns) en la sección 12.1 (tabla de métricas) y la sección 12.4.5 como principio de evaluación de riesgo de cambio y refactorización |
 | 0.1.11 | 2026-08-09 | OTI | La sección 16 redefinía reglas de revisión de código que pertenecen a `LIN-VER-001 §12` (autoaprobación, revisor mínimo, tamaño máximo de PR). El efecto era que el límite de **400 líneas** solo existía en el estándar de Java, dejando sin regla de tamaño a los MR de Angular, SQL y manifiestos K8s. La sección ahora remite al documento dueño y conserva únicamente las verificaciones propias del stack Java (`GOB-CHK-001` H23) |
+| 0.1.12 | 2026-08-18 | OTI | Incorpora **`§15.5` Pruebas de arquitectura (ArchUnit)**, que cierran el único control del Monolito Modular que carecía de verificación automática (`GOB-CHK-001` H37). La declaración jurada de `LIN-ARQ-001 §8.3` numeral 4 era hasta ahora la palabra del Tech Lead: `LIN-CICD-001 §12.5` solo comprueba que el texto exista y el grafo de servicios no puede verlo porque las llamadas entre módulos son in-process. Seis reglas mínimas obligatorias: tres de gobierno del Shared Kernel (`LIN-DIS-001 §3.4`), una de aislamiento entre Bounded Contexts —la frontera que Maven **no** impide, porque basta añadir la dependencia al `pom.xml`— y dos de pureza del dominio |
+| 0.1.13 | 2026-08-18 | OTI | El apartado de excepción titulaba «Proceso de excepción a este estándar» y no definía identificador: una desviación de este lineamiento se registraba como «un ADR», instrumento que `GOB-MAT-001` reserva a las decisiones **institucionales** del Comité. Pasa a **`EXC-JAVA-NNN`**, con vigencia acotada y fecha de revisión obligatoria (`GOB-CHK-001` H38) |
 | 0.1.1 | 2026-05-28 | OTI | Alinea la configuración institucional a YAML, corrige el árbol de proyecto y adopta Checkstyle junto a PMD |
 | 0.1.2 | 2026-07-06 | OTI | Cierre de brechas Nivel 3 (PR01-PR08, PD04-PD06, PA14): Inclusión de secciones 10.4, 11.5, 14.6, catálogo de plantillas Java y reconciliación total con LIN-ARQ-000 y LIN-BD-ORA-001 |
 | 0.1.3 | 2026-07-09 | OTI | Completa el catálogo GoF de la sección 8 con los patrones que quedaron sin sede formal tras la redistribución del documento congelado (`Lineamiento_Diseno_Arquitectura_Software_ONP_v0.1.19`): Adapter (8.1.1), Singleton (8.2.3), Strategy (8.3.1), Command (8.3.3) y Mapper (8.4.1) |
@@ -3310,6 +3312,109 @@ class ExpedienteRepositoryTest {
 
 ---
 
+### 15.5 Pruebas de arquitectura (ArchUnit)
+
+`LIN-ARQ-001 §8.3` numeral 4 exige una **declaración jurada** del Tech Lead certificando la ausencia de importaciones entre fronteras prohibidas del Monolito Modular. Hasta ahora esa declaración no tenía verificación de ninguna clase: `LIN-CICD-001 §12.5` admite que el pipeline solo comprueba que el texto **exista**, y el grafo de servicios tampoco puede verlo (`LIN-OBS-001 §5.8.3`), porque las llamadas entre módulos ocurren dentro del mismo proceso.
+
+Las **pruebas de arquitectura** cierran ese hueco: son pruebas JUnit ordinarias que analizan el bytecode y fallan la compilación cuando una regla estructural se viola. Tipo `AT` en la clasificación de `LIN-TEST-001 §3.1`.
+
+#### 15.5.1 Qué añade ArchUnit sobre lo que Maven ya impide
+
+En un reactor multi-módulo, el compilador **ya impide** que un módulo use clases de otro que no haya declarado como dependencia. ArchUnit no duplica eso: cubre lo que el compilador no ve.
+
+| Regla | ¿La detecta Maven? | Por qué hace falta ArchUnit |
+|---|---|---|
+| Dependencia declarada entre dos *bounded contexts* | ❌ | Si alguien **añade la dependencia al `pom.xml`**, el compilador la acepta sin más. La frontera es una decisión de diseño, no del compilador |
+| Contenido prohibido en el *Shared Kernel* (`LIN-DIS-001 §3.4`) | ❌ | Una `@Entity` o un `CalculoPensionService` en `onp-common-domain` compila perfectamente |
+| Dominio acoplado a Spring o JPA | ❌ | Si el módulo `-domain` declara Spring como dependencia, el compilador no objeta |
+| Reglas dentro de un mismo módulo Maven | ❌ | Proyectos que separan capas por paquete y no por módulo no tienen ninguna barrera |
+
+#### 15.5.2 Dependencia y ubicación
+
+```xml
+<dependency>
+    <groupId>com.tngtech.archunit</groupId>
+    <artifactId>archunit-junit5</artifactId>
+    <scope>test</scope>
+</dependency>
+```
+
+La clase de pruebas vive en el módulo agregador (`onp-<sistema>-boot`), único que ve el classpath completo del reactor. Nombre: `ArquitecturaTest`.
+
+#### 15.5.3 Reglas mínimas obligatorias
+
+```java
+@AnalyzeClasses(packages = "pe.gob.onp", importOptions = ImportOption.DoNotIncludeTests.class)
+class ArquitecturaTest {
+
+    private static final DescribedPredicate<JavaClass> ES_SHARED_KERNEL =
+            resideInAPackage("pe.gob.onp.common..");
+
+    // ── R1-R3: gobierno del Shared Kernel (LIN-DIS-001 §3.4) ──────────────────
+
+    @ArchTest
+    static final ArchRule kernel_sin_entidades_jpa =
+        noClasses().that().resideInAPackage("pe.gob.onp.common.domain..")
+            .should().beAnnotatedWith(jakarta.persistence.Entity.class)
+            .because("ninguna tabla de Oracle se mapea en el Shared Kernel: "
+                   + "cada módulo es dueño exclusivo de sus entidades (LIN-DIS-001 §3.4)");
+
+    @ArchTest
+    static final ArchRule kernel_sin_logica_previsional =
+        noClasses().that().resideInAPackage("pe.gob.onp.common.domain..")
+            .should().haveSimpleNameEndingWith("Service")
+            .because("la lógica previsional pertenece a su Bounded Context, "
+                   + "no al núcleo compartido (LIN-DIS-001 §3.4)");
+
+    @ArchTest
+    static final ArchRule kernel_sin_puertos_ni_clientes =
+        noClasses().that().resideInAPackage("pe.gob.onp.common.domain..")
+            .should().haveSimpleNameEndingWith("Repository")
+            .orShould().haveSimpleNameEndingWith("Port")
+            .orShould().haveSimpleNameEndingWith("Client")
+            .because("los puertos de persistencia y los clientes HTTP no viven "
+                   + "en el Shared Kernel (LIN-DIS-001 §3.4)");
+
+    // ── R4: aislamiento entre Bounded Contexts — la frontera del Monolito ─────
+
+    @ArchTest
+    static final ArchRule modulos_no_se_referencian_entre_si =
+        SlicesRuleDefinition.slices()
+            .matching("pe.gob.onp.(*).(*)..")      // (sistema).(módulo)
+            .namingSlices("módulo $2")
+            .that(DescribedPredicate.not(ES_SHARED_KERNEL))
+            .should().notDependOnEachOther()
+            .because("un módulo se comunica con otro por sus puertos publicados "
+                   + "o por eventos, nunca importando sus clases (LIN-DIS-001 §3)");
+
+    // ── R5-R6: pureza del dominio (Hexagonal, LIN-DIS-001 §2.3) ──────────────
+
+    @ArchTest
+    static final ArchRule dominio_no_depende_de_infraestructura =
+        noClasses().that().resideInAPackage("..domain..")
+            .should().dependOnClassesThat()
+            .resideInAnyPackage("..infrastructure..", "..api..", "..messaging..")
+            .because("la dependencia apunta hacia adentro: la infraestructura "
+                   + "implementa los puertos del dominio, no al revés");
+
+    @ArchTest
+    static final ArchRule dominio_libre_de_framework =
+        noClasses().that().resideInAPackage("..domain.model..")
+            .should().dependOnClassesThat()
+            .resideInAnyPackage("org.springframework..", "jakarta.persistence..")
+            .because("el modelo de dominio no se acopla al framework ni al ORM; "
+                   + "el mapeo vive en el adaptador de persistencia");
+}
+```
+
+> **Sobre `..domain.model..` en la última regla:** se acota al modelo y no a todo `..domain..` porque `domain.port.out` puede necesitar tipos del framework en firmas de puerto. Un proyecto que mantenga los puertos completamente libres puede endurecerla a `..domain..`.
+
+#### 15.5.4 Excepciones
+
+Una regla que un módulo no puede cumplir —típicamente durante una migración Strangler Fig— se exime con `@ArchIgnore` **acompañado de una excepción `EXC-DIS-NNN`** registrada conforme a `GOB-MAT-001`, con control compensatorio y fecha de revisión. Un `@ArchIgnore` sin excepción registrada es un incumplimiento, no una dispensa: la regla se desactiva en silencio y nadie vuelve a mirarla.
+
+---
+
 ## 16. Revisión de código
 
 ### 16.1 Pull Request como gate obligatorio
@@ -3425,7 +3530,10 @@ Durante la revisión de código ([sección 16.2](#162-condiciones-minimas-para-a
 
 ---
 
-## 17. Proceso de excepción a este estándar
+## 17. Proceso de excepción a este estándar (`EXC-JAVA-NNN`)
+
+> **Instrumento correcto: `EXC-JAVA-NNN`, no un ADR.** Conforme a `GOB-MAT-001` (Registro de decisiones y excepciones), la desviación de un lineamiento **en un proyecto concreto** se registra como excepción con vigencia acotada y **fecha de revisión**, nunca indefinida. El `ADR-NNN` queda reservado a decisiones **institucionales** del Comité de Arquitectura, que obligan a todo el corpus; llevar allí cada desviación de cada sistema vaciaría de valor ese registro. La excepción se aprueba por Arquitectura OTI y se registra en el documento de arquitectura del sistema (`GOB-PLA-001`, Anexo E, criterio 14).
+
 
 > **Importante:** **Gobernanza y Supremacía de LIN-ARQ-001:** En estricta coherencia con la supremacía jerárquica del marco rector de **Nivel 1**, ningún ADR podrá ser aprobado ni será válido si contraviene los principios arquitectónicos fundamentales (PR01–PR08) o mandatos rectores de **LIN-ARQ-001**, salvo autorización expresa y excepcional de la Dirección de Arquitectura de la OTI.
 

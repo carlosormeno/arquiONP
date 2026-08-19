@@ -1,7 +1,7 @@
 # Lineamiento de Estándar de Diseño de Software y Patrones Tácticos en la ONP
 
 **Código:** LIN-DIS-001  
-**Versión:** 0.1.6  
+**Versión:** 0.1.7  
 **Fecha:** 2026-08-05  
 **Autor:** Oficina de Tecnologías de la Información — ONP  
 **Estado:** En revisión / Estándar de Nivel 2 — pendiente de graduación a Vigente (`GOB-MAT-001`, Ciclo de vida documental)  
@@ -15,6 +15,7 @@
 |---|---|---|---|
 | 0.1.0 – 0.1.4 | 2026-07-08 a 2026-07-09 | Arquitectura OTI | Versiones iniciales del estándar táctico derivadas del desglose de `LIN-ARQ-000` en el modelo de 3 niveles. *(Detalle por versión no registrado — este historial se incorpora en v0.1.5.)* |
 | 0.1.5 | 2026-08-05 | Arquitectura OTI | Declara explícitamente a `§6` como **documento dueño** de la resiliencia táctica (umbrales de timeout, Bulkhead, Retry y condiciones de adopción de Circuit Breaker), tras corregirse en `LIN-ARQ-001 §4.3` un mandato de Resilience4j que contradecía a `§6.2` y un rango de timeout propio que divergía de la matriz de `§6.1`. Se deja constancia de qué delega el Nivel 1 y qué conserva `LIN-API-REST-001 §8.3` (`GOB-CHK-001` H2 y H3) |
+| 0.1.7 | 2026-08-18 | Arquitectura OTI | `§3.4` deja constancia de que el gobierno del Shared Kernel pasa a ser **verificable automáticamente** mediante las pruebas de arquitectura de `LIN-DEV-JAVA-001 §15.5`, y de que el aislamiento entre Bounded Contexts —que Maven no impide, porque basta declarar la dependencia— tiene ahora una regla que lo comprueba (`GOB-CHK-001` H37) |
 | 0.1.6 | 2026-08-17 | Arquitectura OTI | **El diagrama de decisión de `§2.1` contradecía a `§6`, dentro de este mismo documento.** Decía «MANDATORIO RESILIENCE4J: Timeouts (2s/3s), Circuit Breaker y Bulkhead» —justo lo que v0.1.5 había eliminado de `LIN-ARQ-001 §4.3`— y publicaba umbrales fijos que `§6.1` sustituyó por una matriz por criticidad. El defecto estaba en la parte más leída del documento: el árbol de decisión que un desarrollador consulta antes que el cuerpo normativo. Corregido para reflejar `§6.1`–`§6.3` (`GOB-CHK-001` H26) |
 
 ---
@@ -293,6 +294,8 @@ En el Monolito Modular, para no duplicar código transversal pero evitar introdu
 | **Entidades JPA (`@Entity`)** | **❌ PROHIBIDO TERMINANTEMENTE** | Ninguna tabla de Oracle puede mapearse en la librería común. Cada módulo (`onp-expedientes`, `onp-aportes`) es dueño exclusivo de sus entidades JPA. |
 | **Lógica / Servicios Previsionales** | **❌ PROHIBIDO TERMINANTEMENTE** | Clases como `CalculoPensionService` o `ValidadorDeudaService` deben pertenecer exclusivamente a sus *Bounded Contexts*. |
 | **Puertos de Persistencia o JPA** | **❌ PROHIBIDO TERMINANTEMENTE** | Prohibido poner interfaces de repositorios o clientes HTTP en el *Shared Kernel*. |
+
+> **Estas prohibiciones son verificables automáticamente.** `LIN-DEV-JAVA-001 §15.5` implementa las reglas de esta tabla como pruebas de arquitectura ArchUnit (tipo `AT`), que fallan la compilación ante una `@Entity`, un `*Service` de negocio o un puerto en `onp-common-domain`. Hasta 2026-08-18 el cumplimiento dependía únicamente de la declaración jurada del Tech Lead (`LIN-ARQ-001 §8.3` numeral 4), sin verificación de ninguna clase.
 
 ---
 

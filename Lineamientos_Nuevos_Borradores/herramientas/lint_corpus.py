@@ -396,6 +396,33 @@ def c4_duplicados(raiz):
     return hallazgos
 
 
+# Encabezados que delimitan las tablas de catálogo dentro de GOB-MAT-001.
+RE_SECCION_CATALOGO = re.compile(
+    r"^#{2,3}\s+(cat[áa]logo de documentos|documentos de gobierno y apoyo)",
+    re.IGNORECASE,
+)
+
+
+def lineas_del_catalogo(matriz):
+    """
+    Índices de línea que pertenecen a las tablas de catálogo de GOB-MAT-001.
+
+    C6 y C8 deben mirar SOLO esas tablas. Sin este acotamiento reconocían como
+    entrada de catálogo cualquier fila que empezara por un código entre comillas
+    invertidas — y la matriz contiene otras tablas con esa forma (la de sufijos
+    `EXC-`, el índice `PT → ficha`). El resultado eran 16 errores falsos que
+    describían un catálogo inexistente (GOB-CHK-001 H38).
+    """
+    dentro = False
+    indices = set()
+    for i, linea in enumerate(matriz["lineas"]):
+        if linea.startswith("#"):
+            dentro = bool(RE_SECCION_CATALOGO.match(linea))
+        elif dentro:
+            indices.add(i)
+    return indices
+
+
 def c6_catalogo(docs, por_codigo, raiz):
     """
     El catálogo de GOB-MAT-001 es el índice del corpus: declara, por cada código,
@@ -413,7 +440,10 @@ def c6_catalogo(docs, por_codigo, raiz):
                          "GOB-MAT-001 no encontrado: no se valida el catálogo")]
 
     fila = re.compile(r"^\|\s*`([A-Z][A-Z0-9-]+)`\s*\|[^|]*\|[^|]*\|\s*`([^`]+)`\s*\|")
+    del_catalogo = lineas_del_catalogo(matriz)
     for i, linea in enumerate(matriz["lineas"]):
+        if i not in del_catalogo:
+            continue
         m = fila.match(linea)
         if not m:
             continue
@@ -475,7 +505,10 @@ def c8_catalogo_estado(docs, por_codigo):
                          "GOB-MAT-001 no encontrado: no se valida el estado del catálogo")]
 
     fila = re.compile(r"^\|\s*`([A-Z][A-Z0-9-]+)`\s*\|[^|]*\|([^|]*)\|")
+    del_catalogo = lineas_del_catalogo(matriz)
     for i, linea in enumerate(matriz["lineas"]):
+        if i not in del_catalogo:
+            continue
         m = fila.match(linea)
         if not m:
             continue

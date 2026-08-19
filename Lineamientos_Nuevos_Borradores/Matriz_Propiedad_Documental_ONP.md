@@ -1,7 +1,7 @@
 # Matriz de Propiedad Documental — ONP
 
 **Código:** GOB-MAT-001  
-**Versión:** 0.17.0 (ver "Historial de versiones")  
+**Versión:** 0.24.0 (ver "Historial de versiones")  
 **Fecha:** 2026-08-05  
 **Autor:** OTI — Oficina de Tecnologías de la Información  
 **Estado:** Vigente / Operativo  
@@ -105,6 +105,18 @@ Un hallazgo puede ser propio de un documento o estar distribuido por todo el cor
 
 La graduación se registra en el historial de versiones del documento y en el catálogo de esta matriz, con fecha.
 
+### Vigencia de los documentos de arquitectura de proyecto
+
+El ciclo de vida de esta matriz gobierna los **documentos del corpus**. Los **documentos de arquitectura de cada sistema** —producidos con `GOB-PLA-001`— no son parte del corpus, pero declaran conformidad con él y por tanto envejecen cuando el corpus cambia.
+
+**Regla:** un documento de arquitectura declara conformidad con el corpus **en la versión de esta matriz que registra en su tabla de identidad**, no con el corpus perpetuo. Debe registrar esa línea base y una fecha de próxima revisión no mayor a 12 meses.
+
+**Disparador de mayor impacto: la graduación a `Vigente`.** Cuando un documento gradúa, lo que antes era criterio técnico pasa a ser exigible contractualmente por la regla de exigibilidad. Todo documento de arquitectura de un sistema que dependa de él debe revisarse. **Arquitectura OTI comunica cada graduación**; detectar el resto de disparadores corresponde al arquitecto responsable del sistema. El detalle está en `GOB-PLA-001 §1.5`.
+
+> Esta regla es también la razón por la que el historial de versiones de esta matriz debe ser legible: es la fuente que un arquitecto consulta para saber qué cambió desde su línea base.
+
+---
+
 ### Registro de decisiones y excepciones — tres instrumentos distintos
 
 El corpus usa la palabra «ADR» para tres cosas que no son lo mismo, y confundirlas tiene consecuencias: o se llena el registro institucional de incidencias operativas, o un proyecto cree que puede dispensarse a sí mismo de un lineamiento.
@@ -117,7 +129,20 @@ El corpus usa la palabra «ADR» para tres cosas que no son lo mismo, y confundi
 
 **Regla:** un `AD-NNN` **no puede dispensar del cumplimiento de un lineamiento**. Toda desviación de una norma se registra como `EXC-`, con justificación, riesgo aceptado, control compensatorio y **fecha de revisión** — nunca indefinida. El código del lineamiento afectado va en el identificador: `EXC-IAC-001`, `EXC-K8S-004`, `EXC-VER-002`.
 
-> **Estado de adopción.** `LIN-VER-001 §24.2` fue el primer documento en definir este formato y `LIN-IAC-001 §14` lo adoptó. Los demás lineamientos siguen titulando su apartado «Proceso ADR para excepciones» sin identificador propio; su alineación está registrada como deuda en `GOB-CHK-001` H32.
+**Sufijo por lineamiento.** El identificador no se improvisa: cada lineamiento tiene un sufijo asignado, de modo que `EXC-K8S-004` sea inequívoco sin consultar nada.
+
+| Lineamiento | Sufijo | Lineamiento | Sufijo |
+|---|---|---|---|
+| `LIN-ARQ-001` | `ARQ` | `LIN-K8S-001` | `K8S` |
+| `LIN-DIS-001` | `DIS` | `LIN-CICD-001` | `CICD` |
+| `LIN-DEV-JAVA-001` | `JAVA` | `LIN-IAC-001` | `IAC` |
+| `LIN-API-REST-001` | `API` | `LIN-BUS-001` | `BUS` |
+| `LIN-FE-ANG-001` | `FE` | `LIN-VER-001` | `VER` |
+| `LIN-BD-ORA-001` | `BD` | `LIN-TEST-001` | `TEST` |
+| `LIN-BI-001` | `BI` | `LIN-PERF-001` | `PERF` |
+| `LIN-SEC-APP-001` | `SEC` | `LIN-OBS-001` | `OBS` |
+
+**Numeración correlativa por lineamiento y por sistema**, no global: `EXC-K8S-001` del sistema PAST y `EXC-K8S-001` del sistema Notificaciones son excepciones distintas. La excepción se identifica siempre junto al sistema que la solicita, y se registra en su documento de arquitectura (`GOB-PLA-001`, Anexo E, criterio 14).
 
 ---
 
@@ -138,23 +163,23 @@ Las referencias informativas o de contexto no tienen esta restricción.
 | Código | Documento | Estado | Archivo |
 |---|---|---|---|
 | `LIN-ARQ-000` | Cantera Histórica Congelada de Arquitectura | Congelado v0.1.19 | `arquitectura/Lineamiento_Diseno_Arquitectura_Software_ONP_OLD.md` |
-| `LIN-ARQ-001` | Marco Rector de Arquitectura de Software (Nivel 1) | **En revisión** v0.1.11 | `arquitectura/Lineamiento_Marco_Rector_Arquitectura_ONP.md` |
-| `LIN-DIS-001` | Estándar de Diseño de Software y Patrones Tácticos (Nivel 2) | **En revisión** v0.1.6 | `arquitectura/Lineamiento_Diseno_Software_Patrones_Tacticos_ONP.md` |
+| `LIN-ARQ-001` | Marco Rector de Arquitectura de Software (Nivel 1) | **En revisión** v0.1.14 | `arquitectura/Lineamiento_Marco_Rector_Arquitectura_ONP.md` |
+| `LIN-DIS-001` | Estándar de Diseño de Software y Patrones Tácticos (Nivel 2) | **En revisión** v0.1.7 | `arquitectura/Lineamiento_Diseno_Software_Patrones_Tacticos_ONP.md` |
 | `LIN-PAT-001` | Catálogo Oficial de Patrones y Fichas Técnicas de Decisión | **En revisión** v0.1.6 | `arquitectura/Lineamiento_Catalogo_Patrones_Fichas_ONP.md` |
-| `LIN-API-REST-001` | Estándar de Servicios Web y APIs REST | **En revisión** v0.1.7 | `Web/Lineamiento_Estandar_APIs_REST_ONP.md` |
-| `LIN-DEV-JAVA-001` | Estándar de Desarrollo Java | **En revisión** v0.1.11 | `desarrollo/Lineamiento_Estandar_Desarrollo_Java_ONP.md` |
-| `LIN-BD-ORA-001` | Estándar de Base de Datos Oracle | **En revisión** v0.1.13 | `Datos/Lineamiento_Estandar_Base_de_Datos_ONP.md` |
+| `LIN-API-REST-001` | Estándar de Servicios Web y APIs REST | **En revisión** v0.1.8 | `Web/Lineamiento_Estandar_APIs_REST_ONP.md` |
+| `LIN-DEV-JAVA-001` | Estándar de Desarrollo Java | **En revisión** v0.1.13 | `desarrollo/Lineamiento_Estandar_Desarrollo_Java_ONP.md` |
+| `LIN-BD-ORA-001` | Estándar de Base de Datos Oracle | **En revisión** v0.1.15 | `Datos/Lineamiento_Estandar_Base_de_Datos_ONP.md` |
 | `LIN-BI-001` | Lineamiento de Explotación y Analítica de Datos (BI) | **En revisión** v0.1.3 | `Datos/Lineamiento_Explotacion_Analitica_Datos_BI_ONP.md` |
-| `LIN-FE-ANG-001` | Estándar de Diseño Web Frontend Angular | **En revisión** v0.1.4 | `Web/Lineamiento_Estandar_Diseno_Web_Frontend_ONP.md` |
-| `LIN-OBS-001` | Lineamiento de Log Centralizado, Trazabilidad y Observabilidad | **Vigente v0.1.4** (graduado 2026-08-09) | `observabilidad/Lineamiento_Log_Trazabilidad_Observabilidad_ONP.md` |
-| `LIN-SEC-APP-001` | Estándar de Seguridad en Aplicaciones | **En revisión** v0.1.7 | `seguridad/Lineamiento_Seguridad_Aplicaciones_ONP.md` |
-| `LIN-TEST-001` | Estándar de Pruebas | **Vigente v0.1.4** (graduado 2026-08-09) | `pruebas/Lineamiento_Estandar_Pruebas_ONP.md` |
-| `LIN-CICD-001` | Estándar de CI/CD | **En revisión** v0.1.6 | `CICD/Lineamiento_Integracion_Entrega_Continua_ONP.md` |
-| `LIN-K8S-001` | Estándar de Contenedores y Orquestación | **En revisión** v0.1.16 | `contenedores/Lineamiento_Contenedores_Orquestacion_ONP.md` |
-| `LIN-IAC-001` | Estándar de Infraestructura como Código | **En revisión** v0.1.3 | `Infraestructura/Lineamiento_Infraestructura_Código_ONP.md` |
-| `LIN-BUS-001` | Lineamiento de Mensajería y Bus de Eventos | **En revisión** v0.1.7 | `mensajeria/Lineamiento_Mensajeria_Bus_Eventos_ONP.md` |
+| `LIN-FE-ANG-001` | Estándar de Diseño Web Frontend Angular | **En revisión** v0.1.5 | `Web/Lineamiento_Estandar_Diseno_Web_Frontend_ONP.md` |
+| `LIN-OBS-001` | Lineamiento de Log Centralizado, Trazabilidad y Observabilidad | **Vigente v0.1.7** (graduado 2026-08-09) | `observabilidad/Lineamiento_Log_Trazabilidad_Observabilidad_ONP.md` |
+| `LIN-SEC-APP-001` | Estándar de Seguridad en Aplicaciones | **En revisión** v0.1.8 | `seguridad/Lineamiento_Seguridad_Aplicaciones_ONP.md` |
+| `LIN-TEST-001` | Estándar de Pruebas | **Vigente v0.1.6** (graduado 2026-08-09) | `pruebas/Lineamiento_Estandar_Pruebas_ONP.md` |
+| `LIN-CICD-001` | Estándar de CI/CD | **En revisión** v0.1.8 | `CICD/Lineamiento_Integracion_Entrega_Continua_ONP.md` |
+| `LIN-K8S-001` | Estándar de Contenedores y Orquestación | **En revisión** v0.1.18 | `contenedores/Lineamiento_Contenedores_Orquestacion_ONP.md` |
+| `LIN-IAC-001` | Estándar de Infraestructura como Código | **En revisión** v0.1.4 | `Infraestructura/Lineamiento_Infraestructura_Código_ONP.md` |
+| `LIN-BUS-001` | Lineamiento de Mensajería y Bus de Eventos | **En revisión** v0.1.8 | `mensajeria/Lineamiento_Mensajeria_Bus_Eventos_ONP.md` |
 | `LIN-VER-001` | Estándar de Versionamiento y Control de Cambios | **En revisión** v0.1.8 | `versionamiento/Lineamiento_Versionamiento_Control_Cambios_ONP.md` |
-| `LIN-PERF-001` | Estándar de Pruebas de Rendimiento, Carga y Estrés | **En revisión** v0.1.3 | `pruebas/Lineamiento_Pruebas_Rendimiento_Carga_Estres_ONP.md` |
+| `LIN-PERF-001` | Estándar de Pruebas de Rendimiento, Carga y Estrés | **En revisión** v0.1.5 | `pruebas/Lineamiento_Pruebas_Rendimiento_Carga_Estres_ONP.md` |
 | `LIN-DOC-001` | Estándar de Documentación y Modelado | **Pendiente** | — |
 | `GLOSARIO-ONP` | Glosario transversal operativo | Vigente / Operativo v0.2.2 | `GLOSARIO_ONP.md` |
 
@@ -164,9 +189,9 @@ Documentos que no norman un tema técnico pero forman parte del corpus: son dest
 
 | Código | Documento | Estado | Archivo |
 |---|---|---|---|
-| `GOB-MAT-001` | Matriz de Propiedad Documental (este documento) | Vigente v0.17.0 | `Matriz_Propiedad_Documental_ONP.md` |
+| `GOB-MAT-001` | Matriz de Propiedad Documental (este documento) | Vigente v0.24.0 | `Matriz_Propiedad_Documental_ONP.md` |
 | `GOB-INI-001` | START HERE — punto de entrada para proyectos Java | Vigente / Operativo v0.3.0 | `START_HERE_Proyecto_Java_ONP.md` |
-| `GOB-PLA-001` | Plantilla institucional de Documento de Arquitectura de TI | Vigente v2.3 | `arquitectura/Plantilla_Documento_Arquitectura_ONP.md` |
+| `GOB-PLA-001` | Plantilla institucional de Documento de Arquitectura de TI | Vigente v2.7 | `arquitectura/Plantilla_Documento_Arquitectura_ONP.md` |
 | `GOB-BRE-001` | Tablero de Brechas del Framework de Arquitectura | En revisión v0.1.7 | `arquitectura/Brecha_Framework_Arquitectura_ONP.md` |
 | `GOB-CHK-001` | Checklist de Mejora del Corpus Documental | En ejecución v0.1.0 | `CHECKLIST_Mejora_Corpus_ONP.md` |
 
@@ -378,6 +403,11 @@ Los ADR numerados `ADR-001`–`ADR-014` viven en el Apéndice A de `LIN-ARQ-001`
 | Angular como framework SPA primario | `LIN-ARQ-001` | `LIN-FE-ANG-001` | Conforme | — |
 | Estructura de proyecto Angular | `LIN-FE-ANG-001` | — | Conforme | — |
 | Standalone components | `LIN-FE-ANG-001` | — | Conforme | — |
+| **Verificación de fronteras del Monolito Modular (pruebas de arquitectura)** | `LIN-DIS-001` (reglas) / `LIN-DEV-JAVA-001` (implementación) | `LIN-TEST-001`, `LIN-CICD-001`, `LIN-ARQ-001` | Conforme | `LIN-DIS-001 §3` y `§3.4` definen las fronteras; `LIN-DEV-JAVA-001 §15.5` las implementa como reglas ArchUnit (tipo `AT` de `LIN-TEST-001 §3.1`) y `LIN-CICD-001 §19.2` las hace bloqueantes. **Creado 2026-08-18** (`GOB-CHK-001` H37): era el único control del Monolito Modular sin verificación automática — ni el pipeline ni el grafo de servicios podían comprobarlo |
+| **Identificador único de un componente desplegable (`service.name`)** | `LIN-VER-001` | `LIN-OBS-001`, `LIN-K8S-001`, `LIN-API-REST-001`, `LIN-BUS-001` | Conforme | La forma canónica es la del proyecto GitLab (`LIN-VER-001 §9.1`): `<sistema>-<tipo-componente>[-<canal>]`. El **mismo** identificador rige en `app.kubernetes.io/name` (`LIN-K8S-001 §9.3`), en el catálogo de servicios (`LIN-API-REST-001 §10.1`) y en `service.name` de la telemetría (`LIN-OBS-001 §5.8.4`). **Corregido 2026-08-18:** existían tres convenciones para lo mismo, lo que impedía reconciliar el grafo observado con los registros declarativos (`GOB-CHK-001` H36) |
+| **Grafo de servicios y arquitectura observada** | `LIN-OBS-001` (mecanismo) / `LIN-ARQ-001` (gobierno) | `GOB-PLA-001`, `LIN-API-REST-001`, `LIN-DIS-001` | Conforme | `LIN-OBS-001 §5.8` norma la generación del grafo desde las trazas, con la regla de que **las métricas se generan antes del muestreo**; `LIN-ARQ-001 §5.5` norma su uso para detectar deriva entre la arquitectura declarada y la real. **Creado 2026-08-18** (`GOB-CHK-001` H35). El grafo **no es un catálogo**: es la contraparte observada de los cuatro registros declarativos del corpus |
+| **Continuidad operativa — criticidad, RTO/RPO y recuperación** | `LIN-ARQ-001` | `LIN-BD-ORA-001`, `LIN-K8S-001`, `LIN-IAC-001`, `LIN-BI-001`, `LIN-BUS-001`, `LIN-PERF-001`, `GOB-PLA-001` | Conforme | `LIN-ARQ-001 §5.4` — tres bandas de criticidad con RTO/RPO objetivo, política de respaldo por componente (delega el mecanismo a cada dueño), procedimiento de recuperación y régimen de pruebas. **Creado 2026-08-17** (`GOB-CHK-001` H11.2): era la mayor brecha de contenido del corpus. **Los valores son propuesta técnica sujeta a ratificación del Comité con las áreas usuarias** |
+| **Escala de criticidad de sistemas (Alta / Media / Baja)** | `LIN-ARQ-001` | `LIN-PERF-001`, `LIN-CICD-001`, `LIN-K8S-001` | Conforme | `LIN-ARQ-001 §5.4.1` define las bandas; `LIN-PERF-001 §6.4` define cómo se determina. Antes la escala se usaba en tres documentos sin fuente común |
 | Core Web Vitals — umbrales obligatorios | `LIN-ARQ-001` | `LIN-FE-ANG-001`, `LIN-CICD-001`, `LIN-PERF-001` | Conforme | `LIN-ARQ-001 §7.2` publica los siete umbrales (LCP, INP, CLS, FCP, TTI, TBT, FPS). `LIN-FE-ANG-001 §15.2` reproduce cuatro como referencia declarada; `LIN-CICD-001 §9.4` los implementa como gate. **Corregido 2026-08-17:** la fila no citaba sección y omitía a `LIN-PERF-001`, que listaba las métricas por tercera vez y sin umbrales (`GOB-CHK-001` H30) |
 | Interceptores HTTP (auth, errores, request ID) | `LIN-FE-ANG-001` | — | Conforme | — |
 | Modelos TypeScript de respuesta API | `LIN-FE-ANG-001` | — | Resuelto | `LIN-FE-ANG-001` corregido: `ApiMeta` completo con `timestamp`, `requestId`, `version`; errores con `campo`/`mensaje` |
@@ -511,6 +541,13 @@ Cada vez que se redacte un lineamiento nuevo o se modifique uno existente, esta 
 | 0.1.x | 2026-05-28 | Arquitectura OTI | Versiones iniciales de la matriz de propiedad y plan de correcciones |
 | 0.2.0 | 2026-07-08 | Arquitectura OTI | Alineación al modelo de 3 Niveles de Arquitectura (`LIN-ARQ-001`, `LIN-DIS-001`, `LIN-DEV-JAVA-001`) |
 | 0.8.0 | 2026-08-09 | Arquitectura OTI | **Alcance del criterio 2 precisado** (`GOB-CHK-001` H22.5): se distingue entre hallazgos **de documento** —que bloquean la graduación— y **de corpus** —que se registran como deuda con responsable y fecha—, con una **excepción por severidad**: un hallazgo transversal que comprometa el uso normativo de un documento concreto se escala y sí bloquea. Sin esta distinción el criterio se rompía por ambos extremos: exigirlo todo congelaba la graduación del corpus entero, y no exigir nada permitiría declarar `Vigente` un documento inutilizable. Aplicado a las anclas internas rotas: no bloquea en general, **sí bloquea a `LIN-BD-ORA-001` y `LIN-BI-001`**, cuyos índices completos no resuelven por titular las secciones como `## sección N` |
+| 0.24.0 | 2026-08-18 | Arquitectura OTI | **Alineación completa del registro de excepciones** (`GOB-CHK-001` H38): once lineamientos titulaban su apartado «Proceso ADR para excepciones/desviaciones» sin identificador propio, de modo que una desviación de proyecto se registraba como «un ADR» — instrumento que esta matriz reserva a las decisiones institucionales del Comité. Todos usan ya `EXC-<SUFIJO>-NNN`. Se añade la **tabla de sufijos por lineamiento**, para que el identificador no quede a criterio de cada equipo, y la regla de numeración correlativa por lineamiento **y por sistema** |
+| 0.23.0 | 2026-08-18 | Arquitectura OTI | Nuevo tema **verificación de fronteras del Monolito Modular**, con propiedad dividida entre `LIN-DIS-001` (las reglas) y `LIN-DEV-JAVA-001` (su implementación en ArchUnit). Cierra la deuda que dejó a la vista el trabajo del grafo de servicios: la topología por defecto de la ONP descansaba en una declaración jurada sin verificación de ninguna clase (`GOB-CHK-001` H37) |
+| 0.22.0 | 2026-08-18 | Arquitectura OTI | Nuevo tema: **identificador único de un componente desplegable**. El corpus usaba tres convenciones para el mismo nombre —telemetría, proyecto GitLab y etiqueta de Kubernetes— sin que ninguna fuera declarada canónica. Se adopta la de `LIN-VER-001 §9.1` y se elimina el prefijo `onp-` de la telemetría. Sin esto, las verificaciones de `LIN-ARQ-001 §5.5` no podían automatizarse (`GOB-CHK-001` H36) |
+| 0.21.0 | 2026-08-18 | Arquitectura OTI | Nuevo tema **grafo de servicios y arquitectura observada**, con propiedad dividida: el mecanismo en `LIN-OBS-001 §5.8` y el gobierno en `LIN-ARQ-001 §5.5`. Cierra un vacío de verificación —el Anexo A de `GOB-PLA-001` era una arquitectura declarada sin forma de detectar su deriva— y refuerza la regla de dependencias de `§5.4.1`, cuya verificación era hasta ahora puramente documental (`GOB-CHK-001` H35) |
+| 0.20.0 | 2026-08-18 | Arquitectura OTI | Nueva regla de **vigencia de los documentos de arquitectura de proyecto**: declaran conformidad con el corpus en la versión de esta matriz que registran, no con el corpus perpetuo, y deben revisarse cuando un documento del que dependen gradúa a `Vigente` — el disparador de mayor impacto, porque cambia lo que es exigible. Arquitectura OTI comunica cada graduación. Detalle en `GOB-PLA-001 §1.5` (`GOB-CHK-001` H34.5) |
+| 0.19.0 | 2026-08-17 | Arquitectura OTI | `GOB-PLA-001` v2.5: incorpora criterios de aprobación verificables (Anexo E), las declaraciones obligatorias que el corpus exigía sin que la plantilla las pidiera —Estadio, CAP, DDD, Declaración de Conformidad— y el corpus completo en `§5.2`, que listaba 6 de 19 documentos (`GOB-CHK-001` H34) |
+| 0.18.0 | 2026-08-17 | Arquitectura OTI | **Cierra H11.2, la mayor brecha de contenido del corpus.** `LIN-ARQ-001 §5.4` asume la continuidad operativa: bandas de criticidad con RTO/RPO objetivo, política de respaldo por componente, recuperación a nivel de sistema y pruebas de restauración obligatorias. Se registran dos temas nuevos y se sincronizan los seis documentos afectados. La escala de criticidad, que `LIN-PERF-001`, `LIN-CICD-001` y `LIN-K8S-001` usaban sin fuente común, pasa a tener dueño |
 | 0.17.0 | 2026-08-17 | Arquitectura OTI | `LIN-BI-001` v0.1.3 pasa a **En revisión**. **Con ello ningún lineamiento del corpus queda en `Borrador`** — cierra H14.6, la lectura de contenido de los 19 documentos (`GOB-CHK-001` H32) |
 | 0.16.0 | 2026-08-17 | Arquitectura OTI | Se norma el **registro de decisiones y excepciones** distinguiendo tres instrumentos que el corpus venía llamando «ADR» indistintamente: `ADR-NNN` institucional, `AD-NNN` de proyecto y `EXC-<CÓDIGO>-NNN` para desviaciones de un lineamiento. Doce de los trece documentos titulaban su apartado «Proceso ADR para excepciones» sin identificador propio; solo `LIN-VER-001` había definido el formato. Sincroniza `LIN-IAC-001` v0.1.3, **En revisión** (`GOB-CHK-001` H32) |
 | 0.15.0 | 2026-08-17 | Arquitectura OTI | Revisión de `GOB-PLA-001` v2.3 y reconciliación del registro de ADRs (`GOB-CHK-001` H31): el catálogo de ADRs de esta matriz y el **Apéndice A de `LIN-ARQ-001`** eran dos listas desconectadas, con una misma decisión —CloudEvents— registrada bajo dos identificadores. Cada ADR en archivo declara ahora su equivalencia con la matriz institucional |

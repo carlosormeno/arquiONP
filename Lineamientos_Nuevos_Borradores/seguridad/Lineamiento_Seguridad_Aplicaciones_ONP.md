@@ -1,6 +1,6 @@
 # Lineamiento de Seguridad en Aplicaciones ONP
 **Código:** LIN-SEC-APP-001
-**Versión:** v0.1.7
+**Versión:** v0.1.8
 **Estado:** En revisión — revisión de contenido cerrada (`GOB-CHK-001` H15); pendiente de graduación
 **Fecha:** 2026-08-09
 **Propietario:** Arquitectura de Software — OTI
@@ -19,6 +19,7 @@
 | v0.1.3 | 2026-07-10 | Arquitectura OTI | Revierte la corrección de v0.1.2: el código correcto de Circuit Breaker es **PT07**, no PT06 — PT06 es Retry y PT08 es Bulkhead, según el catálogo autoritativo `LIN-PAT-001` (fichas PAT-RES-01/02) y `Matriz_Propiedad_Documental_ONP`. Actualiza §8.7 y el glosario. Redirige además la referencia de Circuit Breaker desde el documento congelado `LIN-ARQ-000 §3.7.3` hacia `LIN-DIS-001 §6.2`, donde vive el contenido vigente |
 | v0.1.4 | 2026-07-10 | Arquitectura OTI | Migra Marco rector de `LIN-ARQ-000` (congelado) a `LIN-ARQ-001` (vigente) en encabezado y §2; corrige la clasificación de "Nivel 2" a "Nivel 1" para el marco rector |
 | v0.1.7 | 2026-08-09 | Arquitectura OTI | `§7.1` incorpora la **excepción acotada de tráfico intra-cluster** decidida en `ADR-TLS-INTERNO-001`, con sus tres condiciones (terminación TLS en el perímetro, `NetworkPolicy` obligatoria como control sustitutivo, migración a mTLS al habilitarse la malla) y sus límites explícitos. Resuelve la contradicción que `LIN-API-REST-001 §2.5` mantenía con este documento (`GOB-CHK-001` H24.4) |
+| v0.1.8 | 2026-08-18 | Arquitectura OTI | El apartado de excepción titulaba «Proceso ADR para desviaciones» y no definía identificador: una desviación de este lineamiento se registraba como «un ADR», instrumento que `GOB-MAT-001` reserva a las decisiones **institucionales** del Comité. Pasa a **`EXC-SEC-NNN`**, con vigencia acotada y fecha de revisión obligatoria (`GOB-CHK-001` H38) |
 | v0.1.6 | 2026-08-08 | Arquitectura OTI | `SaaTokenValidationFilter` pasa a `@Order(3)`, por dentro de `CanonicalRequestLogFilter` (`@Order(2)`), para que sus rechazos queden registrados en el log canónico (`GOB-CHK-001` H19.1). Publica la identidad también como atributo de request `onp.user.id`, porque el MDC se limpia al desapilarse el filtro. Actualizada la tabla de `§8.7.1`: los 401 y 503 **sí** producen log canónico |
 | v0.1.5 | 2026-08-08 | Arquitectura OTI | Revisión de contenido (`GOB-CHK-001` H15). **(1) §9.3** publicaba un contrato de error paralelo (`ErrorResponse` con códigos `ERR-INTERNAL`/`ERR-FORBIDDEN`) que contradecía el contrato institucional y el catálogo `codDetRespuesta` — reescrito con `ApiResponseWrapper` y códigos `500`/`301`. **(2) §8.4** el cliente SAA usaba `RestTemplate` **sin timeouts**, en la ruta crítica de cada petición y contra el servicio que el propio §8.7 declara dependencia crítica — reescrito con `RestClient` sobre Apache HttpClient 5, con los umbrales de `LIN-DIS-001 §6.1` y Bulkhead de `§6.3`. **(3) §8.3** se documenta que `response.sendError()` no produce `ApiResponseWrapper` y cuál es la forma conforme. **(4) §8.5** el ejemplo DEV publicaba la URL del SAA en claro sobre **HTTP** contra un servidor compartido, violando su propio §7.1 (HTTPS obligatorio fuera de localhost) y §12.1 (esa URL es un secreto) — sustituida por variable de entorno. **(5)** Corrige la cita de PMD `LIN-DEV-JAVA-001 10.3` → `§12.3` |
 
@@ -1073,7 +1074,10 @@ DEPENDENCIAS
 
 ---
 
-## 18. Proceso ADR para desviaciones
+## 18. Proceso de excepción (`EXC-SEC-NNN`)
+
+> **Instrumento correcto: `EXC-SEC-NNN`, no un ADR.** Conforme a `GOB-MAT-001` (Registro de decisiones y excepciones), la desviación de un lineamiento **en un proyecto concreto** se registra como excepción con vigencia acotada y **fecha de revisión**, nunca indefinida. El `ADR-NNN` queda reservado a decisiones **institucionales** del Comité de Arquitectura, que obligan a todo el corpus; llevar allí cada desviación de cada sistema vaciaría de valor ese registro. La excepción se aprueba por Arquitectura OTI y **validación de Seguridad Digital**, por tratarse de controles de seguridad y se registra en el documento de arquitectura del sistema (`GOB-PLA-001`, Anexo E, criterio 14).
+
 
 Cualquier desviación a las reglas de este lineamiento requiere un ADR (Architecture Decision Record) aprobado por Arquitectura de Software antes de implementarse.
 
