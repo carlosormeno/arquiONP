@@ -535,6 +535,29 @@ Cierra **H32.7**. Once lineamientos titulaban su apartado «Proceso ADR para exc
 
 ---
 
+## H39 — Identificadores estables de regla (2026-08-19)
+
+Cierra **H12.1**, abierto desde la primera revisión. Ataca la **causa raíz** del defecto más repetido de todo el ejercicio: una cita `§6.2` no falla cuando el documento citado renumera — **sigue resolviendo y apunta a otro tema**, en silencio. C1 no puede detectarlo porque verifica que la sección exista, no que trate de lo citado. Ocurrió en H6.1 (nueve citas), H12.4 (ocho), H22.2, H24.4 y H26.9.
+
+- [x] **H39.1** **La selección se midió, no se intuyó.** Se contaron las citas por sección en todo el corpus: `LIN-ARQ-001 §2.1` (Estadios) recibe **29 citas desde 11 documentos** — una renumeración habría roto silenciosamente las 29. Le siguen `LIN-TEST-001 §5.1` (22), `LIN-DIS-001 §3.4` (16) y `LIN-SEC-APP-001 §7.1` (14). Se asignó ID a las **28 reglas de mayor tráfico**, no a todas: un ID por párrafo sería ruido. La regla de adopción es que una regla adquiere ID cuando la citan varios documentos.
+- [x] **H39.2** **240 citas migradas en 24 documentos** al formato `` `ARQ-R-001` (LIN-ARQ-001 §2.1) ``: el ID identifica la regla, el número de sección queda como ayuda de navegación para quien lee en papel.
+- [x] **H39.3** **Comprobación C9**, que es lo que da valor real al ID: verifica que todo ID citado esté declarado, que **ninguno esté declarado dos veces** —resolvería a la regla equivocada— y avisa de los declarados que nadie cita, señal de migración a medias. El índice `ID → documento §sección` se **genera** (`--indice`), no se mantiene a mano: una tabla manual volvería a divergir, que es justo el problema que se resuelve.
+- [x] **H39.4** **Verificado con tres pruebas inyectadas**, incluida la que motivó todo el trabajo: se renumeró `LIN-ARQ-001 §2.1 → §2.9` y **C9 permaneció en verde**, con el índice resolviendo `ARQ-R-001` a su nueva ubicación. Las 29 citas sobrevivieron a la renumeración sin tocar ninguna.
+
+### Dos defectos propios, corregidos
+
+- [x] **H39.5** **La migración dejó 191 backticks sueltos.** Cuando la cita original venía entre comillas invertidas, mi patrón consumía la de apertura y no la de cierre, produciendo `` `ARQ-R-001` (LIN-ARQ-001 §2.1)` ``. Detectado al inspeccionar una muestra del resultado —no por el linter, que no valida formato Markdown— y reparado en los 24 documentos.
+- [x] **H39.6** **C9 marcó como duplicado el ejemplo de sintaxis de `GOB-MAT-001`.** El linter no excluía los bloques de código cercados, de modo que un ejemplo se contaba como declaración real. Añadida `marcar_bloques_codigo()`; el filtro convenía además a C1 y C3, que tenían la misma exposición latente.
+
+### Incidente durante la verificación
+
+- [x] **H39.7** ⚠️ **Un `git checkout --` de mi prueba de regresión revirtió `LIN-ARQ-001` al último commit**, descartando los marcadores y las citas migradas de ese archivo. El daño fue acotado porque el commit `9f86e38` ya contenía v0.1.14 con `§5.4`, `§5.5` y los ADR — solo se perdió el trabajo de H39 sobre ese documento, que se rehízo y verificó. **Lección aplicable:** las pruebas de regresión del linter deben restaurar desde una copia propia, nunca desde Git, porque Git restaura al último commit y no al estado previo a la prueba.
+
+**Estado:** 28 identificadores declarados, 240 citas migradas, linter con **ocho comprobaciones** en verde. `GOB-MAT-001` v0.25.0.
+
+
+---
+
 ## PRIORIDAD 1 — Estructurales (atacan la causa raíz)
 
 ### H6 — Referencias cruzadas rotas sistémicas (LIN-PAT-001, Glosario, Brecha)
@@ -567,7 +590,7 @@ Cierra **H32.7**. Once lineamientos titulaban su apartado «Proceso ADR para exc
 
 ### H12 — Tooling: linter del corpus + anclas estables (causa raíz de H1, H5, H6, H7)
 
-- [ ] **H12.1** Introducir IDs estables e independientes de la numeración para reglas importantes (estilo requirement-ID: `ARQ-R-021`). Las citas cruzadas usan el ID, no "§6.2". Empezar por las reglas más citadas (estadios, timeouts, resiliencia, wrapper, estilos por defecto). *(Pendiente: es una migración que toca todo el corpus; el linter de H12.2 ya mitiga el síntoma mientras tanto.)*
+- [x] **H12.1** **Cerrado en H39.** 28 reglas de mayor tráfico con identificador estable `<SUFIJO>-R-NNN`, 240 citas migradas y comprobación C9 que las verifica. Renumerar una sección ya no rompe sus citas.
 - [x] **H12.2** **Linter del corpus implementado** en `herramientas/lint_corpus.py` (Python 3.8+, sin dependencias) con 5 comprobaciones — C1 citas cruzadas, C2 coherencia de versión, C3 códigos PT, C4 artefactos duplicados, C5 enlaces — más `.gitlab-ci.yml` que lo ejecuta en cada MR que toque documentación y en la rama principal, y `herramientas/README.md` con las decisiones de diseño. **Resultado del primer uso: 8 citas rotas nuevas que la revisión manual no había encontrado** (ver H12.4). Verificado con pruebas de regresión: se inyectó un fallo de cada tipo y las 5 comprobaciones lo detectaron, con código de salida correcto.
 - [x] **H12.3** Regla de proceso documentada en `herramientas/README.md`: toda renumeración de secciones de un documento dueño debe corregir, en el mismo MR, las citas de `GOB-MAT-001` y de los consumidores. El linter la hace verificable — un MR que renumere sin propagar falla en C1. *(La regla equivalente ya se incorporó a la Matriz como regla de mantenimiento 8 en H5.8.)*
 - [x] **H12.4** *(hallazgos del primer uso del linter, 2026-08-05)* **8 citas rotas adicionales**, ninguna detectada en la revisión manual: `LIN-CICD-001` → `LIN-ARQ-001 §8.3.4` (inexistente; es `§8.3` numeral 4) y → `LIN-IAC-001 §18.1` (el documento solo llega a `§16`; el repositorio dedicado está en `§5`); `LIN-FE-ANG-001` → `LIN-DEV-JAVA-001 §11.4.4` (**duodécima superviviente** de la renumeración `11.4→13.4`); `LIN-DEV-JAVA-001`, `GLOSARIO-ONP` y `Plantilla_Documento_Arquitectura` → `LIN-ARQ-001 §9`/`§9.5` (la misma "sección fantasma 9.5" que `LIN-API-REST-001 v0.1.3` ya había corregido en su propio texto sin buscarla en el resto; real: `§5.3`); `Brecha_Framework` → `LIN-DEV-JAVA-001 §10.4.1` (real: `§7.1`–`§7.5`, corrección que su propia v0.1.5 declaró hecha); `Plantilla_Documento_Arquitectura` → `LIN-DIS-001 §8` (real: `§6`). Todas corregidas.

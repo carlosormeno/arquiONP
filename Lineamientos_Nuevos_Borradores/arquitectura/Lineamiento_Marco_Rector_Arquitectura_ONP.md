@@ -97,6 +97,8 @@ La evolución arquitectónica de los sistemas institucionales se organiza en tre
 
 ### 2.1 Los Tres Estadios Evolutivos
 
+> 🔖 **`ARQ-R-001`** — *identificador estable de esta regla; cítese este código y no el número de sección (`GOB-MAT-001`)*
+
 ```
 ESTADIO 1                             ESTADIO 2                             ESTADIO 3
 Monolito Tradicional                  Monolito Modular                      Microservicios Selectivos
@@ -157,6 +159,8 @@ Para modernizar sistemas del Estadio 1 hacia el Estadio 2 (o Estadio 3 cuando es
 4. Cuando el legacy deja de recibir tráfico, se apaga y desinstala limpiamente de los servidores de aplicaciones de la institución.
 
 ### 2.3 Gobierno Institucional de Feature Toggles (*Unleash*)
+
+> 🔖 **`ARQ-R-002`** — *identificador estable de esta regla; cítese este código y no el número de sección (`GOB-MAT-001`)*
 
 El patrón *Strangler Fig* y la integración continua bajo el modelo **GitLab Flow simplificado** —disciplinado con principios de Trunk-Based Development (`LIN-VER-001 §6`)— exigen desacoplar el **despliegue de código** de la **liberación de funcionalidades al usuario**. Para ello, es mandatorio el uso de **Feature Toggles (PA14)** gestionados mediante la plataforma estándar on-premise de la institución: **Unleash (*ADR-014*)**.
 
@@ -219,7 +223,9 @@ Queda **terminantemente prohibido** el uso de transacciones distribuidas con pro
 
 ### 3.3 Patrón Saga con Transactional Outbox (Consistencia Eventual)
 
-Para mantener coherencia de negocio entre dos o más dominios autónomos o microservicios sin violar la prohibición de 2PC, se establece como norma obligatoria la adopción del **Patrón Saga (orquestado o coreografiado)** respaldado por el patrón **Transactional Outbox (*LIN-DIS-001 §4.2*, DDL en *LIN-BD-ORA-001 §3.10*, relevo en *LIN-BUS-001 §7.3*)**.
+> 🔖 **`ARQ-R-003`** — *identificador estable de esta regla; cítese este código y no el número de sección (`GOB-MAT-001`)*
+
+Para mantener coherencia de negocio entre dos o más dominios autónomos o microservicios sin violar la prohibición de 2PC, se establece como norma obligatoria la adopción del **Patrón Saga (orquestado o coreografiado)** respaldado por el patrón **Transactional Outbox (*`DIS-R-004` (LIN-DIS-001 §4.2)*, DDL en *LIN-BD-ORA-001 §3.10*, relevo en *LIN-BUS-001 §7.3*)**.
 
 1. **Transacciones Locales ACID:** Cada servicio participante ejecuta su modificación de estado exclusivamente sobre su base de datos local dentro de una transacción ACID propia.
 2. **Tabla Outbox:** En la misma transacción local del negocio, se inserta el evento del cambio en la tabla `EVT_OUTBOX` de la base de datos local.
@@ -324,15 +330,17 @@ La comunicación asíncrona mediante paso de mensajes es el mecanismo mandatorio
 
 ### 4.3 Interoperabilidad Gubernamental y SOA (*PIDE, RENIEC, SUNAT*)
 
+> 🔖 **`ARQ-R-004`** — *identificador estable de esta regla; cítese este código y no el número de sección (`GOB-MAT-001`)*
+
 Las integraciones con entidades externas del Estado Peruano (Plataforma de Interoperabilidad del Estado - PIDE, RENIEC, SUNAT) operan frecuentemente bajo protocolos heredados o específicos (**SOAP / XML / WS-Security / mTLS**).
 
 1. **Aislamiento de Seguridad (Zero Trust):** Toda comunicación con terceros gubernamentales debe transitar obligatoriamente a través de la pasarela de seguridad perimetral (**WSO2 API Gateway / mTLS mutual proxy**), nunca directamente desde un contenedor de aplicación de backend.
 2. **Capa Anticorrupción (ACL Mandatoria):** Según el principio de protección de fronteras (*ADR-005* y *PT13 en LIN-DIS-001*), el módulo que consume un servicio PIDE o RENIEC no puede propagar los DTOs XML o estructuras de terceros al interior de su lógica de negocio. Debe implementar un `Adapter` de infraestructura que traduzca de forma quirúrgica la respuesta exterior hacia el modelo inmutable de la ONP (`DatosPersona`, `Dni`).
 3. **Aislamiento ante Caídas Exteriores (*Design for Failure*):** Dado que los servicios externos del Estado experimentan caídas impredecibles, es **mandatorio** que todo cliente HTTP/SOAP hacia terceros gubernamentales garantice el aislamiento de fallos mediante tres controles conjuntos: **timeouts explícitos y estrictos** (queda prohibido dejar los valores por defecto del cliente, infinitos o superiores a 30 segundos), **acotamiento del pool de conexiones por proveedor** (*Bulkhead*) y **estrategia de contingencia o *degraded mode*** (por ejemplo, permitir registro manual provisorio con validación diferida si RENIEC está caído).
 
-   > **Qué exige este Marco Rector y qué delega:** el Nivel 1 exige el **resultado** — que la caída de un tercero nunca agote los hilos ni tumbe el servicio ONP — no una herramienta específica. El **mecanismo y los valores concretos los define `LIN-DIS-001 §6` como documento dueño**: matriz de timeouts por criticidad y demanda (`§6.1` — RENIEC en ruta crítica interactiva exige valores más agresivos que SUNAT en proceso diferido), Bulkhead por defecto vía `setMaxConnPerRoute` de Apache HttpClient 5 (`§6.3`) y reintentos con Spring Retry en lecturas idempotentes (`§6.4`).
+   > **Qué exige este Marco Rector y qué delega:** el Nivel 1 exige el **resultado** — que la caída de un tercero nunca agote los hilos ni tumbe el servicio ONP — no una herramienta específica. El **mecanismo y los valores concretos los define `DIS-R-007` (LIN-DIS-001 §6) como documento dueño**: matriz de timeouts por criticidad y demanda (`§6.1` — RENIEC en ruta crítica interactiva exige valores más agresivos que SUNAT en proceso diferido), Bulkhead por defecto vía `setMaxConnPerRoute` de Apache HttpClient 5 (`§6.3`) y reintentos con Spring Retry en lecturas idempotentes (`§6.4`).
    >
-   > El **Circuit Breaker formal con Resilience4j (`LIN-DIS-001 §6.2`) es obligatorio en Microservicios (Estadio 3) y excepcional bajo ADR en Monolito Modular** — no es exigible por este numeral. Un Monolito Modular que consuma RENIEC cumple este mandato con timeout estricto + Bulkhead + degraded mode, sin Resilience4j.
+   > El **Circuit Breaker formal con Resilience4j (`DIS-R-009` (LIN-DIS-001 §6.2)) es obligatorio en Microservicios (Estadio 3) y excepcional bajo ADR en Monolito Modular** — no es exigible por este numeral. Un Monolito Modular que consuma RENIEC cumple este mandato con timeout estricto + Bulkhead + degraded mode, sin Resilience4j.
 
 ---
 
@@ -373,6 +381,8 @@ El clúster de **Kubernetes con containerd (*ADR-009*)** es el destino de produc
 
 ### 5.3 Observabilidad Institucional (*Marco Google SRE Four Golden Signals*)
 
+> 🔖 **`ARQ-R-005`** — *identificador estable de esta regla; cítese este código y no el número de sección (`GOB-MAT-001`)*
+
 La observabilidad es un **requisito de arquitectura de producción, no una opción de soporte (*ADR-010*)**. Ningún sistema podrá ser liberado a producción si no expone las telemetrías necesarias para supervisar las **Cuatro Señales Doradas (*Four Golden Signals*) del marco SRE de Google**:
 
 | Señal Dorada SRE | Qué Mide en la Arquitectura ONP | Mecanismo e Implementación Técnica Mandatoria |
@@ -390,6 +400,8 @@ La instrumentación técnica debe integrarse al ecosistema de observabilidad ins
 ---
 
 ### 5.4 Continuidad Operativa: Criticidad, RTO/RPO y Recuperación
+
+> 🔖 **`ARQ-R-006`** — *identificador estable de esta regla; cítese este código y no el número de sección (`GOB-MAT-001`)*
 
 > ⚠️ **Los valores de esta sección son una propuesta técnica que requiere ratificación.** Arquitectura OTI puede proponer la escala y los objetivos, pero **RTO y RPO son decisiones de negocio**: expresan cuánto tiempo puede estar caído un servicio y cuánta información puede perderse. Su ratificación corresponde al **Comité de Arquitectura con las áreas usuarias** (Pensiones, Aportes, Atención al Ciudadano) y a Plataforma en cuanto a viabilidad. Mientras no se ratifiquen, rigen como **valores por defecto** que un proyecto debe cumplir o justificar por excepción.
 
@@ -415,7 +427,7 @@ El Nivel 1 exige el **resultado** —que el componente sea recuperable dentro de
 
 | Componente | Documento dueño del mecanismo | Exigencia de este marco |
 |---|---|---|
-| Base de datos Oracle | `LIN-BD-ORA-001 §11.2` (RMAN, frecuencias y retención ya normadas) | Frecuencia de respaldo coherente con el RPO de la banda: un RPO de 15 minutos no se satisface con archive logs cada hora |
+| Base de datos Oracle | `BD-R-002` (LIN-BD-ORA-001 §11.2) (RMAN, frecuencias y retención ya normadas) | Frecuencia de respaldo coherente con el RPO de la banda: un RPO de 15 minutos no se satisface con archive logs cada hora |
 | Estado de Terraform | `LIN-IAC-001 §6.3` | Ya normado; retenciones sujetas a revisión contra esta tabla |
 | `PersistentVolume` de Kubernetes | `LIN-K8S-001 §13.3` | **Pendiente de normar.** `§13.3` exige declarar «política de backup» sin definirla. Mientras tanto: todo PVC de un sistema de criticidad Alta o Media requiere respaldo con frecuencia acorde a su RPO, o justificación de por qué el dato es reconstruible |
 | Buckets del Lakehouse | `LIN-BI-001 §8.3.1` | Bronze es reconstruible desde el origen transaccional; Silver y Gold requieren respaldo o procedimiento de reconstrucción documentado y **medido** — si reconstruir Gold toma 12 horas, el RTO real del BI es 12 horas |
@@ -444,7 +456,7 @@ Un respaldo cuya restauración nunca se probó no es un respaldo. La periodicida
 
 La prueba debe **medir el tiempo real de recuperación** y contrastarlo con el RTO declarado. Un RTO declarado que nunca se midió es una aspiración, no un compromiso. Si la medición lo excede, se registra como riesgo en el documento de arquitectura y se acuerda un plan con Plataforma.
 
-> `LIN-BD-ORA-001 §11.2` ya exige prueba semestral por base productiva, coherente con la banda Alta. `LIN-IAC-001 §6.3` exige prueba anual del estado de Terraform.
+> `BD-R-002` (LIN-BD-ORA-001 §11.2) ya exige prueba semestral por base productiva, coherente con la banda Alta. `LIN-IAC-001 §6.3` exige prueba anual del estado de Terraform.
 
 #### 5.4.5 Qué debe declarar cada sistema
 
@@ -468,9 +480,9 @@ Para todo sistema de criticidad **Alta o Media** (`§5.4.1`), Arquitectura OTI c
 |---|---|---|
 | **Dependencias no declaradas** | Aristas en el grafo que no aparecen en el Anexo A del documento de arquitectura | `GOB-PLA-001` Anexo A |
 | **Integridad del inventario de recuperación** | Toda dependencia observada está considerada en el RTO/RPO declarado. Una dependencia desconocida **invalida** la verificación de la regla 2 de `§5.4.1` | `§5.4.1` |
-| **Elusión del ACL** | Llamadas directas de un módulo a un sistema legado (Estadio 1) o a una entidad externa sin pasar por su Capa Anticorrupción | `§4.3`, `LIN-DIS-001 §5.4` |
+| **Elusión del ACL** | Llamadas directas de un módulo a un sistema legado (Estadio 1) o a una entidad externa sin pasar por su Capa Anticorrupción | `§4.3`, `DIS-R-006` (LIN-DIS-001 §5.4) |
 | **Servicios fuera de catálogo** | Aristas hacia APIs REST no registradas en el catálogo institucional | `LIN-API-REST-001 §10.1` |
-| **Exposición sin gateway** | Tráfico entrante que no proviene del Ingress o de WSO2 cuando gradúe | `LIN-API-REST-001 §2.5` |
+| **Exposición sin gateway** | Tráfico entrante que no proviene del Ingress o de WSO2 cuando gradúe | `API-R-001` (LIN-API-REST-001 §2.5) |
 
 #### 5.5.2 Tratamiento de las divergencias
 
@@ -486,7 +498,7 @@ Para todo sistema de criticidad **Alta o Media** (`§5.4.1`), Arquitectura OTI c
 Esta verificación **no sustituye** a la revisión del documento ni al análisis estático:
 
 - El grafo solo muestra lo **ejercitado** en la ventana observada. Una arista ausente significa «no se usó», no «no existe»: una integración trimestral puede no aparecer en un contraste semestral.
-- **No observa las fronteras internas** de un Monolito Modular, que ocurren en el mismo proceso. Las importaciones prohibidas de `LIN-DIS-001 §3.4` siguen dependiendo de la Declaración de Conformidad del Tech Lead (`§8.3` numeral 4) y requerirían análisis estático de dependencias entre módulos Maven, control del que el corpus **aún no dispone**.
+- **No observa las fronteras internas** de un Monolito Modular, que ocurren en el mismo proceso. Las importaciones prohibidas de `DIS-R-003` (LIN-DIS-001 §3.4) siguen dependiendo de la Declaración de Conformidad del Tech Lead (`§8.3` numeral 4) y requerirían análisis estático de dependencias entre módulos Maven, control del que el corpus **aún no dispone**.
 - La calidad del grafo depende de que la regla de `LIN-OBS-001 §5.8.1` se cumpla: métricas generadas **antes** del muestreo. Con muestreo aplicado, la ausencia de una arista de baja frecuencia carece de valor probatorio.
 
 ---
@@ -534,7 +546,7 @@ Para separar totalmente la carga analítica y de reportes masivos del procesamie
 
 - La capa **Gold** en formato tabular **Parquet / Apache Nessie** constituye la fuente autoritativa para dashboards ejecutivos, analítica avanzada e inteligencia de negocios.
 - **Prohibición de Reportes Masivos en el Core OLTP:** Queda estrictamente prohibido ejecutar consultas de reportes agregados, inteligencia de negocios o extracciones masivas sin paginar directamente sobre las bases de datos operacionales de Oracle en horario laboral. Tales procesos deben consumir las capas Silver o Gold del Lakehouse (*LIN-BI-001*).
-- **Relación con CQRS operacional (§6.2):** el Medallion no es una rama aislada del negocio transaccional — la capa **Gold** es también la fuente natural para los **read models analíticos de CQRS** (reportes, dashboards, análisis histórico), mientras que Redis/MongoDB/Elasticsearch sirven los read models operacionales de baja latencia (`LIN-DIS-001 §4.2`). Ambos son proyecciones derivadas de la misma fuente de verdad transaccional en Oracle; se diferencian por el patrón de consulta que sirven, no por ser mecanismos independientes.
+- **Relación con CQRS operacional (§6.2):** el Medallion no es una rama aislada del negocio transaccional — la capa **Gold** es también la fuente natural para los **read models analíticos de CQRS** (reportes, dashboards, análisis histórico), mientras que Redis/MongoDB/Elasticsearch sirven los read models operacionales de baja latencia (`DIS-R-004` (LIN-DIS-001 §4.2)). Ambos son proyecciones derivadas de la misma fuente de verdad transaccional en Oracle; se diferencian por el patrón de consulta que sirven, no por ser mecanismos independientes.
 
 ---
 
@@ -548,6 +560,8 @@ El desarrollo frontend en la ONP se estructura obligatoriamente como una **Singl
 - **Seguridad SAA:** La autenticación se gestiona del lado cliente mediante el token institucional **SAA** o token **OAuth2/OIDC** emitido por WSO2, el cual es inyectado como cabecera `Authorization: Bearer <token>` en cada llamado hacia el backend.
 
 ### 7.2 Umbrales Core Web Vitals como Gates en CI/CD
+
+> 🔖 **`ARQ-R-007`** — *identificador estable de esta regla; cítese este código y no el número de sección (`GOB-MAT-001`)*
 
 La calidad de experiencia de usuario y el rendimiento del frontend se miden institucionalmente bajo el marco **Core Web Vitals de Google y métricas complementarias de Lighthouse (*ADR-007*)**.
 
@@ -583,19 +597,21 @@ Todo profesional o equipo asignado por la empresa contratista a proyectos de des
 |---|---|---|
 | **Transaction Script / Active Record** *(mantenimiento de sistemas simples o legados)* | • JPA/Hibernate, Spring Data, manejo transaccional declarativo. | No conoce `@Transactional` o usa `SELECT *`; no distingue transacción declarativa de programática. |
 | **Estadio 2: Monolito Modular** *(Estándar por Defecto en ONP)* | • Arquitectura modular Maven y gobierno de fronteras de paquetes.<br>• Principios SOLID aplicados rigurosamente a clases y servicios (`LIN-DEV-JAVA-001 §7`).<br>• Capacidad para aislar subdominios sin incurrir en dependencias circulares. | Desconoce el impacto de acoplar paquetes de dominio entre sí; usa comodines de importación o no logra explicar cómo evitar ciclos en dependencias Maven multi-módulo. |
-| **Arquitectura Hexagonal** *(candidato a microservicio)* | • Patrón Hexagonal (*Ports & Adapters*) estricto con inversión de dependencias (`LIN-DIS-001 §2.3`).<br>• Pruebas de dominio puro sin contenedor Spring. | Mezcla lógica de negocio en Controllers o Repositories; no logra aislar el dominio del framework en pruebas unitarias. |
+| **Arquitectura Hexagonal** *(candidato a microservicio)* | • Patrón Hexagonal (*Ports & Adapters*) estricto con inversión de dependencias (`DIS-R-001` (LIN-DIS-001 §2.3)).<br>• Pruebas de dominio puro sin contenedor Spring. | Mezcla lógica de negocio en Controllers o Repositories; no logra aislar el dominio del framework en pruebas unitarias. |
 | **Estadio 3: Microservicios** | • Spring Cloud o diseño *Kubernetes-native*, Circuit Breaker, Trazabilidad Distribuida (OpenTelemetry).<br>• Transacciones distribuidas eventuales (Patrón Saga y Outbox, `§3.3`). | Intenta usar `2PC` o transacciones bloqueantes entre servicios; desconoce el Teorema CAP, Saga o cómo operar en consistencia eventual. |
 | **Domain-Driven Design (DDD)** *(solo cuando aplican los 6 criterios de `LIN-DIS-001 §3.0`)* | • Bounded Contexts, Agregados, Value Objects, Domain Events, CQRS básico. | No puede distinguir un Agregado de una entidad JPA; propone DDD para un CRUD simple sin justificar los 6 criterios de gobernanza. |
 | **Desarrollo Frontend SPA Angular** | • Angular 17+ con TypeScript estricto, programación reactiva con RxJS (`Signals`, `Observables`).<br>• Optimización extrema para cumplimiento de Core Web Vitals (LCP, INP, CLS) y pruebas en Lighthouse.<br>• Diseño responsivo y buenas prácticas de seguridad (gestión limpia del token SAA). | Manipula directamente el DOM mediante `document.getElementById()`; utiliza `any` en TypeScript; abusa de `setTimeout(fn, 0)` para hackear el ciclo de detección de cambios (*Change Detection*) de Angular. |
 
-> **Nota de alcance:** esta tabla agrupa perfiles de contratación/TDR y mezcla dos dimensiones distintas a propósito — estilo arquitectónico (Monolito Modular, Hexagonal, Microservicios) y estrategia de lógica de dominio (Transaction Script/Active Record, DDD) — porque ambas son relevantes para evaluar competencias de un candidato. Para gates de cobertura de pruebas **no se usa esta tabla**: `LIN-TEST-001 §5.1` define los umbrales por estilo arquitectónico (Monolito Simple, Monolito Modular, Hexagonal, Microservicio, EDA), y `LIN-TEST-001 §4.6` explica por qué la estrategia de lógica de dominio (Transaction Script, DDD) es una dimensión ortogonal que modula el *foco* de las pruebas unitarias pero no tiene un porcentaje de cobertura propio.
+> **Nota de alcance:** esta tabla agrupa perfiles de contratación/TDR y mezcla dos dimensiones distintas a propósito — estilo arquitectónico (Monolito Modular, Hexagonal, Microservicios) y estrategia de lógica de dominio (Transaction Script/Active Record, DDD) — porque ambas son relevantes para evaluar competencias de un candidato. Para gates de cobertura de pruebas **no se usa esta tabla**: `TEST-R-001` (LIN-TEST-001 §5.1) define los umbrales por estilo arquitectónico (Monolito Simple, Monolito Modular, Hexagonal, Microservicio, EDA), y `LIN-TEST-001 §4.6` explica por qué la estrategia de lógica de dominio (Transaction Script, DDD) es una dimensión ortogonal que modula el *foco* de las pruebas unitarias pero no tiene un porcentaje de cobertura propio.
 
 ### 8.3 Criterios Técnicos de Aceptación y Entrega Formal de Software
+
+> 🔖 **`ARQ-R-008`** — *identificador estable de esta regla; cítese este código y no el número de sección (`GOB-MAT-001`)*
 Para que la OTI o el Área Usuaria otorgue la **conformidad técnica y aceptación formal de un entregable de software contratado**, el contratista deberá adjuntar y aprobar las siguientes evidencias en el pipeline CI/CD:
-1. **Informe de SonarQube:** 0 vulnerabilidades de seguridad (*Security Hotspots / Blocker / Critical*), cero deuda técnica caduca en *Unleash Feature Toggles*, y cumplimiento de la cobertura mínima de pruebas automáticas según el estilo arquitectónico del proyecto — el umbral exacto por estilo es normado exclusivamente en **`LIN-TEST-001 §5.1`** (dueño de este tema; no se duplica aquí para evitar que ambos documentos queden desalineados).
+1. **Informe de SonarQube:** 0 vulnerabilidades de seguridad (*Security Hotspots / Blocker / Critical*), cero deuda técnica caduca en *Unleash Feature Toggles*, y cumplimiento de la cobertura mínima de pruebas automáticas según el estilo arquitectónico del proyecto — el umbral exacto por estilo es normado exclusivamente en **`TEST-R-001` (LIN-TEST-001 §5.1)** (dueño de este tema; no se duplica aquí para evitar que ambos documentos queden desalineados).
 2. **Evidencia de Cumplimiento Core Web Vitals:** Reporte automatizado de Lighthouse en el pipeline CI/CD demostrando un LCP < 2.5s, INP < 200ms y CLS < 0.1 en las pantallas entregadas.
 3. **Evidencia de Observabilidad Completa:** Captura de pantalla y traza de prueba funcional ejecutada en el clúster de QA donde se compruebe la presencia simultánea de las cuatro señales en el Dashboard de Grafana (`LIN-OBS-001`) y la traza distribuida continua en Jaeger sin cortes de context propagation.
-4. **Declaración de Conformidad con LIN-ARQ-001:** Declaración jurada técnica en el `README.md` del repositorio firmada por el Tech Lead de la fábrica, certificando la ausencia de importaciones entre fronteras prohibidas en el Monolito Modular (`LIN-DIS-001 §3.4`).
+4. **Declaración de Conformidad con LIN-ARQ-001:** Declaración jurada técnica en el `README.md` del repositorio firmada por el Tech Lead de la fábrica, certificando la ausencia de importaciones entre fronteras prohibidas en el Monolito Modular (`DIS-R-003` (LIN-DIS-001 §3.4)).
 
    > **Verificación asociada.** La presencia de la declaración la comprueba `LIN-CICD-001 §12.5`; su contenido sustantivo —ausencia de importaciones entre fronteras prohibidas— lo verifican desde 2026-08-18 las **pruebas de arquitectura** de `LIN-DEV-JAVA-001 §15.5`, que fallan la compilación ante una violación. La declaración conserva su valor para los juicios que ninguna regla automática puede emitir, pero deja de ser el único control.
 
@@ -635,7 +651,7 @@ La siguiente tabla compendia las decisiones históricas y vigentes adoptadas por
 | **ADR-012** | **Apache Kafka como Broker Institucional:** Se oficializa a Apache Kafka (`LIN-BUS-001`) como el único canal institucional de mensajería y eventos asíncronos para EDA. | 2026-06-05 | Aceptada / Vigente |
 | **ADR-013** | **CloudEvents v1.0 como Estándar de Eventos:** Todo evento publicado en los tópicos institucionales de Kafka debe ajustarse a la especificación estándar CNCF CloudEvents v1.0. **Desarrollo completo en [`ADR-CLOUDEVENTS-001`](ADR-CLOUDEVENTS-001.md)** — misma decisión, no una adicional. | 2026-06-08 | Aceptada / Vigente |
 | **ADR-015** | **Transición de SAA hacia WSO2 API Manager:** SAA sigue siendo el mecanismo institucional obligatorio; WSO2 permanece en PoC hasta comunicación formal de Arquitectura y Plataforma. Desarrollo completo en [`ADR-WSO2-001`](ADR-WSO2-001.md). | 2026-05-28 | Propuesta |
-| **ADR-016** | **Terminación TLS en el perímetro y tráfico intra-cluster sobre HTTP:** excepción acotada a `LIN-SEC-APP-001 §7.1`, condicionada a `NetworkPolicy` obligatoria como control sustitutivo. Desarrollo completo en [`ADR-TLS-INTERNO-001`](ADR-TLS-INTERNO-001.md). | 2026-08-09 | Propuesta |
+| **ADR-016** | **Terminación TLS en el perímetro y tráfico intra-cluster sobre HTTP:** excepción acotada a `SEC-R-001` (LIN-SEC-APP-001 §7.1), condicionada a `NetworkPolicy` obligatoria como control sustitutivo. Desarrollo completo en [`ADR-TLS-INTERNO-001`](ADR-TLS-INTERNO-001.md). | 2026-08-09 | Propuesta |
 | **ADR-014** | **Unleash para Feature Toggles On-Premise:** Se adopta Unleash self-hosted como herramienta oficial para Feature Toggles en Trunk-Based Development (*LIN-VER-001*). **Ampliación 2026-08-05:** la taxonomía de `§2.3` incorpora **Experiment Toggle** como cuarta categoría y acota **Permission Toggle** al control de acceso por rol/perfil — antes una sola categoría mezclaba ambos ciclos de vida (el experimento caduca con su veredicto; el permiso puede ser permanente). Alinea el Nivel 1 con la taxonomía operativa de `LIN-DEV-JAVA-001 §16.6`. | 2026-07-02 | Aceptada / Vigente |
 
 ---

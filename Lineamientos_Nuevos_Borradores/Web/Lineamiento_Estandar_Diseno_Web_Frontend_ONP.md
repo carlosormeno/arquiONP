@@ -576,11 +576,11 @@ export class UsuarioService {
 
 ### 9.3 Interceptor de autenticación
 
-El patrón de manejo del token SAA en Angular depende de si el sistema tiene un **BFF (Backend for Frontend)** delante del core, según los criterios de adopción de `LIN-DIS-001 §5.1`. Son dos escenarios distintos, no intercambiables — implementar el patrón equivocado para la topología real del proyecto es una desviación de `LIN-DIS-001 §5.1.1`.
+El patrón de manejo del token SAA en Angular depende de si el sistema tiene un **BFF (Backend for Frontend)** delante del core, según los criterios de adopción de `DIS-R-005` (LIN-DIS-001 §5.1). Son dos escenarios distintos, no intercambiables — implementar el patrón equivocado para la topología real del proyecto es una desviación de `LIN-DIS-001 §5.1.1`.
 
 #### 9.3.1 Escenario sin BFF (canal único) — interceptor con token directo
 
-Cuando el proyecto tiene un único canal de consumo estándar y no hay mediación SSO externa (`LIN-DIS-001 §5.1`: *"si el proyecto tiene un único canal estándar... no se construye un BFF Token Handler separado"*), Angular consume el core directamente y es responsable de adjuntar el token en cada request:
+Cuando el proyecto tiene un único canal de consumo estándar y no hay mediación SSO externa (`DIS-R-005` (LIN-DIS-001 §5.1): *"si el proyecto tiene un único canal estándar... no se construye un BFF Token Handler separado"*), Angular consume el core directamente y es responsable de adjuntar el token en cada request:
 
 ```typescript
 // core/interceptors/auth.interceptor.ts
@@ -625,7 +625,7 @@ export const sessionInterceptor: HttpInterceptorFn = (req, next) => {
 provideHttpClient(withInterceptors([sessionInterceptor, errorInterceptor]), withFetch())
 ```
 
-**Regla de decisión:** un proyecto usa 9.3.1 **o** 9.3.2, nunca ambos. La decisión de qué escenario aplica no la toma el equipo de frontend por preferencia — se deriva de si el proyecto cumple los criterios de adopción de BFF de `LIN-DIS-001 §5.1` (documentados en la arquitectura del proyecto, no en este lineamiento).
+**Regla de decisión:** un proyecto usa 9.3.1 **o** 9.3.2, nunca ambos. La decisión de qué escenario aplica no la toma el equipo de frontend por preferencia — se deriva de si el proyecto cumple los criterios de adopción de BFF de `DIS-R-005` (LIN-DIS-001 §5.1) (documentados en la arquitectura del proyecto, no en este lineamiento).
 
 ### 9.4 Interceptor de errores HTTP
 
@@ -971,9 +971,9 @@ Flujos obligatorios a cubrir por cada feature:
 
 ## 15. Observabilidad y performance
 
-El **LIN-ARQ-001 sección 5.3** establece que todo sistema que llega a producción en ONP debe implementar los cuatro pilares de observabilidad (Four Golden Signals) sin excepción. Para una SPA Angular, estos pilares se traducen de la siguiente manera:
+El **`ARQ-R-005` (LIN-ARQ-001 §5.3)** establece que todo sistema que llega a producción en ONP debe implementar los cuatro pilares de observabilidad (Four Golden Signals) sin excepción. Para una SPA Angular, estos pilares se traducen de la siguiente manera:
 
-| Pilar (`LIN-ARQ-001 §5.3`) | Aplicabilidad en SPA Angular |
+| Pilar (`ARQ-R-005` (LIN-ARQ-001 §5.3)) | Aplicabilidad en SPA Angular |
 |---|---|
 | **Trazas distribuidas** | El SPA no genera spans propios, pero **debe propagar `X-Request-ID`** en cada request HTTP para que los traces del backend sean correlacionables |
 | **Logs estructurados** | No aplica al browser directamente; los errores JS se capturan y envían al backend via API |
@@ -1022,7 +1022,7 @@ provideHttpClient(
 
 ONP adopta Core Web Vitals como framework de medición de performance frontend. Los umbrales son **obligatorios** y se miden con Lighthouse. Un build que no los cumple **no pasa a producción**.
 
-> **Documento dueño: `LIN-ARQ-001 §7.2`**, que publica siete umbrales — los tres Core Web Vitals más FCP, TTI, TBT y FPS de animaciones. La tabla siguiente reproduce los cuatro de aplicación directa en Angular **como referencia de trabajo, no como fuente**: ante cualquier discrepancia rige el marco rector. `LIN-CICD-001 §9.4` los implementa como gate de bloqueo con Lighthouse CI.
+> **Documento dueño: `ARQ-R-007` (LIN-ARQ-001 §7.2)**, que publica siete umbrales — los tres Core Web Vitals más FCP, TTI, TBT y FPS de animaciones. La tabla siguiente reproduce los cuatro de aplicación directa en Angular **como referencia de trabajo, no como fuente**: ante cualquier discrepancia rige el marco rector. `LIN-CICD-001 §9.4` los implementa como gate de bloqueo con Lighthouse CI.
 
 | Métrica | Qué mide | Umbral ONP |
 |---|---|---|
@@ -1127,7 +1127,7 @@ La integración de Lighthouse en el pipeline CI/CD está implementada en **LIN-C
 
 #### Prohibición de manipulación directa del DOM y de `setTimeout` como hack de Change Detection
 
-`LIN-ARQ-001 §7.2` prohíbe explícitamente dos prácticas que degradan Core Web Vitals y ocultan errores de binding: manipular el DOM directamente en lugar de dejar que Angular lo gestione vía su ciclo de Change Detection (Zone.js o Signals en modo zoneless), y usar `setTimeout`/`setInterval` para forzar artificialmente un re-render.
+`ARQ-R-007` (LIN-ARQ-001 §7.2) prohíbe explícitamente dos prácticas que degradan Core Web Vitals y ocultan errores de binding: manipular el DOM directamente en lugar de dejar que Angular lo gestione vía su ciclo de Change Detection (Zone.js o Signals en modo zoneless), y usar `setTimeout`/`setInterval` para forzar artificialmente un re-render.
 
 **Por qué está prohibido:** cuando un binding no se actualiza como se espera, la causa casi siempre es un error de referencia, de inmutabilidad o de zona de ejecución — nunca "Angular no se dio cuenta". Envolver la asignación en `setTimeout(fn, 0)` oculta ese error en vez de corregirlo, y la manipulación directa del DOM (`document.getElementById`, `innerHTML`, `classList` fuera de bindings) desincroniza el estado real del DOM del que Angular cree tener, produciendo bugs visuales intermitentes difíciles de reproducir. Es además el anti-patrón señalado explícitamente en `LIN-ARQ-001 §8.2` como señal de alarma en evaluación técnica de candidatos.
 
@@ -1196,7 +1196,7 @@ Registro en `app.config.ts`:
 
 ### 15.4 Checklist mínimo antes de pasar a producción
 
-Equivalente del checklist de `LIN-ARQ-001 §5.3`, aplicado al SPA Angular:
+Equivalente del checklist de `ARQ-R-005` (LIN-ARQ-001 §5.3), aplicado al SPA Angular:
 
 - [ ] `correlationInterceptor` registrado como primer interceptor en `app.config.ts`
 - [ ] `GlobalErrorHandler` registrado en `app.config.ts`

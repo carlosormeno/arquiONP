@@ -311,7 +311,7 @@ El archivo de estado es **el activo más crítico del repositorio de IaC**, por 
 | **Antes de un `apply` en `prod`** | Verificar que existe una versión del estado inmediatamente anterior, recuperable. |
 | **Bloqueo huérfano** | Si un pipeline interrumpido deja el estado bloqueado, el desbloqueo (`terraform force-unlock`) lo ejecuta únicamente Plataforma, dejando registro del motivo. Nunca desde una terminal local sin registro. |
 
-> **Relación con la política institucional.** `LIN-ARQ-001 §5.4` es el documento dueño de la continuidad operativa: fija las bandas de criticidad, los objetivos de RTO/RPO y el régimen de pruebas de recuperación. Esta sección cubre **únicamente el estado de Terraform**, cuyo mecanismo le corresponde a este lineamiento. La prueba anual de `§6.3` es coherente con la banda que aplique al clúster; si la infraestructura soporta sistemas de criticidad **Alta**, la periodicidad se eleva a semestral conforme a `LIN-ARQ-001 §5.4.4`.
+> **Relación con la política institucional.** `ARQ-R-006` (LIN-ARQ-001 §5.4) es el documento dueño de la continuidad operativa: fija las bandas de criticidad, los objetivos de RTO/RPO y el régimen de pruebas de recuperación. Esta sección cubre **únicamente el estado de Terraform**, cuyo mecanismo le corresponde a este lineamiento. La prueba anual de `§6.3` es coherente con la banda que aplique al clúster; si la infraestructura soporta sistemas de criticidad **Alta**, la periodicidad se eleva a semestral conforme a `LIN-ARQ-001 §5.4.4`.
 
 ### 6.4 Estado local
 

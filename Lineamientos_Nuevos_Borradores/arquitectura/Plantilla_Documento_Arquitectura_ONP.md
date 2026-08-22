@@ -122,15 +122,15 @@ El presente documento describe la arquitectura de TI propuesta para **[Nombre de
 
 | Declaración | Valor | Fundamento |
 |---|---|---|
-| **Estadio de topología** | [1 — Legacy / 2 — Monolito Modular / 3 — Microservicios] | `LIN-ARQ-001 §2.1`. El Estadio 2 es el **por defecto** para todo sistema nuevo |
-| **Criterios de extracción a microservicio** | [No aplica (Estadio 1 o 2) / Cumplidos los 6, ver AD-00X] | `LIN-ARQ-001 §2.1` — los seis criterios se cumplen **simultáneamente** o el sistema no es candidato |
+| **Estadio de topología** | [1 — Legacy / 2 — Monolito Modular / 3 — Microservicios] | `ARQ-R-001` (LIN-ARQ-001 §2.1). El Estadio 2 es el **por defecto** para todo sistema nuevo |
+| **Criterios de extracción a microservicio** | [No aplica (Estadio 1 o 2) / Cumplidos los 6, ver AD-00X] | `ARQ-R-001` (LIN-ARQ-001 §2.1) — los seis criterios se cumplen **simultáneamente** o el sistema no es candidato |
 | **Adopción de DDD táctico** | [Sí, ver AD-00X / No] | `LIN-DIS-001 §3.0` — seis criterios propios, **independientes** de los de microservicio: cumplir unos no implica cumplir los otros |
 | **Declaración CAP** | [CP / AP / No aplica (no distribuido)] | `LIN-ARQ-001 §3.1` — **obligatoria** para todo microservicio o módulo distribuido, con su sustento |
 | **Criticidad y objetivos de recuperación** | [Alta / Media / Baja + RTO y RPO] | `LIN-ARQ-001 §5.4.1`. Se detalla en el Anexo C — Recuperabilidad |
 
 #### Declaración de Conformidad en el `README.md` del repositorio
 
-Además de este documento, `LIN-ARQ-001 §8.3` numeral 4 exige una **declaración jurada técnica firmada por el Tech Lead** en el `README.md` del repositorio. **`LIN-CICD-001 §12.5` la verifica en el pipeline y bloquea el pase si falta** — un documento de arquitectura impecable no evita ese bloqueo.
+Además de este documento, `ARQ-R-008` (LIN-ARQ-001 §8.3) numeral 4 exige una **declaración jurada técnica firmada por el Tech Lead** en el `README.md` del repositorio. **`LIN-CICD-001 §12.5` la verifica en el pipeline y bloquea el pase si falta** — un documento de arquitectura impecable no evita ese bloqueo.
 
 ```markdown
 ## Declaración de Conformidad con LIN-ARQ-001
@@ -272,10 +272,10 @@ A continuación se presenta la Vista General de la arquitectura de **[Nombre del
 > 📋 **Orientación para el arquitecto**
 >
 > Describe los componentes de aplicación del sistema alineados a **LIN-DIS-001 (Patrones Tácticos de Diseño)**.
-> - **Estilo Táctico Seleccionado:** Declara explícitamente si el sistema adopta *Monolito Modular* o *Arquitectura Hexagonal / Limpia* (por defecto en nuevos proyectos, según `LIN-ARQ-001 §2.1` y `LIN-DIS-001 §2`) o *Capas Clásica* (solo mantenimiento/legacy).
+> - **Estilo Táctico Seleccionado:** Declara explícitamente si el sistema adopta *Monolito Modular* o *Arquitectura Hexagonal / Limpia* (por defecto en nuevos proyectos, según `ARQ-R-001` (LIN-ARQ-001 §2.1) y `LIN-DIS-001 §2`) o *Capas Clásica* (solo mantenimiento/legacy).
 > - **Frontend:** Indica el tipo de aplicación (SPA, MPA, aplicación móvil) y la estrategia de despliegue.
 > - **Backend / Contextos Delimitados (Bounded Contexts):** Lista cada servicio o módulo táctico de dominio con su nombre oficial y responsabilidad principal en una línea. Si el sistema expone un **API Gateway**, **BFF (Backend for Frontend)** o **Facade Arquitectónico**, descríbelo como punto de entrada perimetral.
-> - **Integraciones con Legados:** Si el Backend interactúa con sistemas core legacy de la institución (Estadio 1), declara si implementa el patrón **Anti-Corruption Layer (ACL)** (`LIN-DIS-001 §5.4`) o **Strangler Fig** (`LIN-ARQ-001 §2.2`).
+> - **Integraciones con Legados:** Si el Backend interactúa con sistemas core legacy de la institución (Estadio 1), declara si implementa el patrón **Anti-Corruption Layer (ACL)** (`DIS-R-006` (LIN-DIS-001 §5.4)) o **Strangler Fig** (`LIN-ARQ-001 §2.2`).
 >
 > **Lo que NO va aquí:** protocolos de comunicación en detalle, contratos de API, formatos de mensajes, lógica interna de métodos.
 
@@ -443,7 +443,7 @@ Mostrar el sistema como una unidad y su relación con los actores externos (usua
 > **Elementos que debes incluir:**
 > - El sistema como un solo bloque con su nombre oficial
 > - Los tipos de usuario que lo usan (no personas específicas, sino roles)
-> - Los sistemas externos e internos con los que se integra, declarando explícitamente a qué estadio de la topología institucional pertenecen (`Estadio 1 Monolito Tradicional/Legacy`, `Estadio 2 Monolito Modular` o `Estadio 3 Microservicios Selectivos`, según `LIN-ARQ-001 §2.1`)
+> - Los sistemas externos e internos con los que se integra, declarando explícitamente a qué estadio de la topología institucional pertenecen (`Estadio 1 Monolito Tradicional/Legacy`, `Estadio 2 Monolito Modular` o `Estadio 3 Microservicios Selectivos`, según `ARQ-R-001` (LIN-ARQ-001 §2.1))
 > - Una relación por cada interacción relevante, con una etiqueta que indique qué hace (ej. "consulta datos", "recibe notificación")
 >
 > **Lo que NO debe aparecer en esta vista:**
@@ -495,7 +495,7 @@ Mostrar los principales componentes de aplicación que componen el sistema, sus 
 >
 > **Elementos que debes incluir:**
 > - Todos los componentes desplegables del sistema (frontend, servicios de backend, gateway, servicios de integración)
-> - Declaración visual y conceptual de los **Bounded Contexts** (Contextos Delimitados de DDD) del sistema (`LIN-DIS-001 §3`)
+> - Declaración visual y conceptual de los **Bounded Contexts** (Contextos Delimitados de DDD) del sistema (`DIS-R-002` (LIN-DIS-001 §3))
 > - Las interfaces o APIs expuestas por cada componente (indicando si cuentan con contrato OpenAPI 3.0 Code-First según `LIN-API-REST-001`)
 > - Las bases de datos propias del sistema (Oracle 19c / PostgreSQL institucional)
 > - Los sistemas internos de la ONP con los que se integra (declarando si se intermedia con una Capa Anticorrupción **ACL** para legados Estadio 1)
@@ -764,15 +764,15 @@ Este anexo describe los atributos de calidad relevantes para el sistema y cómo 
 
 | Atributo | Requisito / Expectativa | Decisión arquitectónica que lo aborda |
 |---|---|---|
-| **Disponibilidad y Resiliencia** | [ej. 99.5% uptime en horario hábil y tolerancia a fallos transaccionales] | [ej. Despliegue en K8s con réplicas/probes; aislamiento de fallos en llamadas externas según la matriz por criticidad de `LIN-DIS-001 §6` — timeout estricto y Bulkhead siempre, Circuit Breaker con Resilience4j solo en Microservicios o bajo ADR (`§6.2`) — Ver AD-00X] |
-| **Seguridad** | [ej. Autenticación obligatoria en todas las APIs públicas y Zero Trust] | [ej. Validación del **token opaco de SAA** en cada servicio mediante `SaaTokenValidationFilter` (`LIN-SEC-APP-001 §8.3`) — **el token SAA no es JWT**: no es autocontenido ni verificable localmente (`LIN-API-REST-001 §7.1`); autorización por permisos SAA con `hasAuthority` (`LIN-SEC-APP-001 §5.4`) — Ver AD-00X] |
+| **Disponibilidad y Resiliencia** | [ej. 99.5% uptime en horario hábil y tolerancia a fallos transaccionales] | [ej. Despliegue en K8s con réplicas/probes; aislamiento de fallos en llamadas externas según la matriz por criticidad de `DIS-R-007` (LIN-DIS-001 §6) — timeout estricto y Bulkhead siempre, Circuit Breaker con Resilience4j solo en Microservicios o bajo ADR (`§6.2`) — Ver AD-00X] |
+| **Seguridad** | [ej. Autenticación obligatoria en todas las APIs públicas y Zero Trust] | [ej. Validación del **token opaco de SAA** en cada servicio mediante `SaaTokenValidationFilter` (`SEC-R-002` (LIN-SEC-APP-001 §8.3)) — **el token SAA no es JWT**: no es autocontenido ni verificable localmente (`LIN-API-REST-001 §7.1`); autorización por permisos SAA con `hasAuthority` (`LIN-SEC-APP-001 §5.4`) — Ver AD-00X] |
 | **Escalabilidad** | [ej. Soporte para N usuarios concurrentes en pico electoral] | [ej. Contenedorización inmutable en K8s con autoescalado horizontal (HPA) — Ver AD-00X] |
-| **Observabilidad (Google SRE 4 Golden Signals)** | [ej. Monitoreo obligatorio de las 4 Señales Doradas: Latencia, Tráfico, Errores y Saturación (`LIN-ARQ-001 §5.3`)] | [ej. OpenTelemetry + centralización de logs ECS con `trace.id`, propagación del header `X-Request-ID` (`LIN-OBS-001 §4.10`) y `codDetRespuesta` en el cuerpo de `ApiResponseWrapper` — **es un campo del body, no un header** (`LIN-API-REST-001 §4.1`) — Ver AD-00X] |
+| **Observabilidad (Google SRE 4 Golden Signals)** | [ej. Monitoreo obligatorio de las 4 Señales Doradas: Latencia, Tráfico, Errores y Saturación (`ARQ-R-005` (LIN-ARQ-001 §5.3))] | [ej. OpenTelemetry + centralización de logs ECS con `trace.id`, propagación del header `X-Request-ID` (`LIN-OBS-001 §4.10`) y `codDetRespuesta` en el cuerpo de `ApiResponseWrapper` — **es un campo del body, no un header** (`API-R-002` (LIN-API-REST-001 §4.1)) — Ver AD-00X] |
 | **Mantenibilidad** | [ej. Capacidad de actualizar o reemplazar un servicio sin afectar los demás] | [ej. Bounded Contexts independientes con contratos OpenAPI 3.0 Code-First (`LIN-API-REST-001`)] |
 | **Interoperabilidad** | [ej. Integración con 10+ entidades externas del Estado y legados internos] | [ej. Servicio de fachada para Entidades Externas y Capa Anticorrupción (**ACL**) para legados ONP] |
-| **Recuperabilidad** | [Criticidad asignada + RTO y RPO de su banda (`LIN-ARQ-001 §5.4.1`), con el nombre de quien los validó por el área usuaria] | [ej. Respaldo RMAN según `LIN-BD-ORA-001 §11.2` con frecuencia coherente al RPO; procedimiento de recuperación con orden de dependencias (`LIN-ARQ-001 §5.4.3`); prueba de restauración semestral — Ver AD-00X] |
+| **Recuperabilidad** | [Criticidad asignada + RTO y RPO de su banda (`LIN-ARQ-001 §5.4.1`), con el nombre de quien los validó por el área usuaria] | [ej. Respaldo RMAN según `BD-R-002` (LIN-BD-ORA-001 §11.2) con frecuencia coherente al RPO; procedimiento de recuperación con orden de dependencias (`LIN-ARQ-001 §5.4.3`); prueba de restauración semestral — Ver AD-00X] |
 
-> 📌 **Recuperabilidad — documento dueño: `LIN-ARQ-001 §5.4`.** Los valores no se inventan por proyecto: se derivan de la **banda de criticidad** asignada al sistema (`§5.4.1`). Este atributo debe declarar: la criticidad asignada; el RTO y RPO comprometidos y **quién los validó por el área usuaria**; la verificación de que ninguna dependencia tiene un RTO/RPO peor que el declarado (regla 2 de `§5.4.1`); y, para criticidad **Alta o Media**, el procedimiento de recuperación de `§5.4.3`.
+> 📌 **Recuperabilidad — documento dueño: `ARQ-R-006` (LIN-ARQ-001 §5.4).** Los valores no se inventan por proyecto: se derivan de la **banda de criticidad** asignada al sistema (`§5.4.1`). Este atributo debe declarar: la criticidad asignada; el RTO y RPO comprometidos y **quién los validó por el área usuaria**; la verificación de que ninguna dependencia tiene un RTO/RPO peor que el declarado (regla 2 de `§5.4.1`); y, para criticidad **Alta o Media**, el procedimiento de recuperación de `§5.4.3`.
 >
 > **Un documento de arquitectura de criticidad Alta no puede aprobarse sin estos elementos.**
 
@@ -824,10 +824,10 @@ Este anexo registra los riesgos arquitectónicos identificados y la deuda técni
 >
 > Lista las decisiones subóptimas que se tomaron conscientemente. Para cada una indica qué se hizo, por qué no se hizo de la forma ideal (tiempo, información incompleta, dependencia de otro equipo) y cuándo o cómo se planea resolver.
 >
-> **MANDATO INSTITUCIONAL DE DEUDA TÉCNICA CERO (`LIN-ARQ-001 §2.3` / `LIN-DEV-JAVA-001 §16.6`):**
+> **MANDATO INSTITUCIONAL DE DEUDA TÉCNICA CERO (`ARQ-R-002` (LIN-ARQ-001 §2.3) / `LIN-DEV-JAVA-001 §16.6`):**
 > Toda deuda técnica admitida por compromisos de cronograma o dependencias externas debe:
 > 1. Estar asociada obligatoriamente a un **Ticket de Refactorización registrado en el Backlog** oficial de GitLab / Jira del proyecto.
-> 2. Contar con una **estrategia de mitigación de bajo riesgo**, como el uso de **Feature Toggles** (`LIN-ARQ-001 §2.3` y `ADR-014` — Unleash; cuatro categorías, de las cuales solo *Release* y *Experiment* caducan obligatoriamente) para encender/apagar el comportamiento temporal sin re-despliegues complejos.
+> 2. Contar con una **estrategia de mitigación de bajo riesgo**, como el uso de **Feature Toggles** (`ARQ-R-002` (LIN-ARQ-001 §2.3) y `ADR-014` — Unleash; cuatro categorías, de las cuales solo *Release* y *Experiment* caducan obligatoriamente) para encender/apagar el comportamiento temporal sin re-despliegues complejos.
 > 3. Tener un **horizonte de remediación acotado en Sprints** (prioridad alta/media) pactado formalmente antes de obtener la conformidad de paso a Producción.
 
 | ID | Descripción | Prioridad | Plan de resolución (y Ticket en Backlog) |
@@ -862,11 +862,11 @@ Este anexo es la lista de verificación del **revisor y del aprobador**, no del 
 
 | # | Criterio | Fundamento | Estado |
 |---|---|---|---|
-| 6 | **Estadio de topología** declarado | `LIN-ARQ-001 §2.1` | ☐ |
-| 7 | Si declara Estadio 3: los **6 criterios de extracción** se sustentan uno a uno en un ADR | `LIN-ARQ-001 §2.1` | ☐ |
+| 6 | **Estadio de topología** declarado | `ARQ-R-001` (LIN-ARQ-001 §2.1) | ☐ |
+| 7 | Si declara Estadio 3: los **6 criterios de extracción** se sustentan uno a uno en un ADR | `ARQ-R-001` (LIN-ARQ-001 §2.1) | ☐ |
 | 8 | **Adopción de DDD** declarada, evaluada de forma independiente de la anterior | `LIN-DIS-001 §3.0` | ☐ |
 | 9 | **Declaración CAP** (CP/AP) presente y sustentada, o justificado que el sistema no es distribuido | `LIN-ARQ-001 §3.1` | ☐ |
-| 10 | **Criticidad** asignada, con RTO y RPO de su banda y **nombre de quien los validó por el área usuaria** | `LIN-ARQ-001 §5.4` | ☐ |
+| 10 | **Criticidad** asignada, con RTO y RPO de su banda y **nombre de quien los validó por el área usuaria** | `ARQ-R-006` (LIN-ARQ-001 §5.4) | ☐ |
 | 11 | Verificado que **ninguna dependencia tiene un RTO/RPO peor** que el declarado | `LIN-ARQ-001 §5.4.1` regla 2 | ☐ |
 | 12 | Si la criticidad es **Alta o Media**: procedimiento de recuperación con orden de dependencias | `LIN-ARQ-001 §5.4.3` | ☐ |
 
@@ -880,7 +880,7 @@ Este anexo es la lista de verificación del **revisor y del aprobador**, no del 
 | 14 | Toda desviación de un lineamiento está registrada como **`EXC-<CÓDIGO>-NNN`** con riesgo aceptado, control compensatorio y **fecha de revisión** | `GOB-MAT-001` | ☐ |
 | 15 | Ningún `AD-NNN` de este documento pretende dispensar del cumplimiento de un lineamiento institucional | `GOB-MAT-001` | ☐ |
 | 16 | Ningún criterio de aceptación del proyecto se apoya en un documento que **no esté `Vigente`** | `GOB-MAT-001`, regla de exigibilidad | ☐ |
-| 17 | La **Declaración de Conformidad** existe y está firmada en el `README.md` del repositorio | `LIN-ARQ-001 §8.3`; verificada por `LIN-CICD-001 §12.5` | ☐ |
+| 17 | La **Declaración de Conformidad** existe y está firmada en el `README.md` del repositorio | `ARQ-R-008` (LIN-ARQ-001 §8.3); verificada por `LIN-CICD-001 §12.5` | ☐ |
 
 ## E.4 Consistencia interna
 
@@ -890,7 +890,7 @@ Este anexo es la lista de verificación del **revisor y del aprobador**, no del 
 | 19 | Todo ADR listado en `B.1` tiene su ficha completa en `B.2`, y ninguna ficha existe sin estar en el índice | ☐ |
 | 20 | Cada atributo de calidad de `C.1` referencia el `AD-NNN` que lo aborda | ☐ |
 | 21 | Cada ADR tiene al menos **dos alternativas reales** evaluadas | ☐ |
-| 22 | Toda deuda técnica de `D.2` tiene ticket en el backlog y horizonte de remediación acotado | `LIN-ARQ-001 §2.3` | ☐ |
+| 22 | Toda deuda técnica de `D.2` tiene ticket en el backlog y horizonte de remediación acotado | `ARQ-R-002` (LIN-ARQ-001 §2.3) | ☐ |
 | 23 | Los riesgos de `D.1` son **arquitectónicos**, no de gestión de proyecto | ☐ |
 
 ## E.5 Registro de la revisión

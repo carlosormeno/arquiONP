@@ -1,7 +1,7 @@
 # Matriz de Propiedad Documental — ONP
 
 **Código:** GOB-MAT-001  
-**Versión:** 0.24.0 (ver "Historial de versiones")  
+**Versión:** 0.25.0 (ver "Historial de versiones")  
 **Fecha:** 2026-08-05  
 **Autor:** OTI — Oficina de Tecnologías de la Información  
 **Estado:** Vigente / Operativo  
@@ -59,7 +59,7 @@ Borrador ──► En revisión ──► Vigente ──► Deprecado
 
 > ### ⚠️ Nota de transición (desde 2026-08-08)
 >
-> **Estado al 2026-08-09: los dos primeros documentos ya graduaron.** `LIN-OBS-001` y `LIN-TEST-001` pasaron a `Vigente` tras cumplir los cinco criterios, y con ello **son exigibles contractualmente**: los requisitos de `LIN-ARQ-001 §8.3` que dependían de ellos —evidencia de observabilidad y umbrales de cobertura— dejan de estar degradados a *recomendados*.
+> **Estado al 2026-08-09: los dos primeros documentos ya graduaron.** `LIN-OBS-001` y `LIN-TEST-001` pasaron a `Vigente` tras cumplir los cinco criterios, y con ello **son exigibles contractualmente**: los requisitos de `ARQ-R-008` (LIN-ARQ-001 §8.3) que dependían de ellos —evidencia de observabilidad y umbrales de cobertura— dejan de estar degradados a *recomendados*.
 >
 > **El resto del corpus sigue sin graduar.** Los tres que figuraban como tal —`LIN-ARQ-001`, `LIN-DIS-001` y `LIN-PAT-001`— se autodeclararon vigentes **antes de que existiera un proceso de graduación**, por lo que no cumplieron una barra que aún no estaba definida. Se reclasifican a `En revisión` junto con los documentos cuya revisión de contenido ya está cerrada.
 >
@@ -104,6 +104,32 @@ Un hallazgo puede ser propio de un documento o estar distribuido por todo el cor
 | Nivel 3, transversales y documentos de gobierno | **Arquitectura OTI**, verificando los cinco criterios |
 
 La graduación se registra en el historial de versiones del documento y en el catálogo de esta matriz, con fecha.
+
+### Identificadores estables de regla (`<SUFIJO>-R-NNN`)
+
+El defecto más repetido de este corpus no ha sido la cita rota, sino **la cita que sigue resolviendo y apunta a otro tema**. Cuando un documento renumera sus secciones, un `§6.2` ajeno no falla: pasa a señalar una regla distinta, en silencio. El linter no puede detectarlo —verifica que la sección exista, no que trate de lo citado— y solo aparece leyendo. Ocurrió en `GOB-CHK-001` H6.1 (nueve citas), H12.4 (ocho), H22.2, H24.4 y H26.9.
+
+**La solución es desacoplar la identidad de la regla de su posición.** Las reglas de mayor tráfico llevan un identificador estable declarado bajo su encabezado:
+
+```markdown
+### 6.1 Estrategia de Timeouts Finos
+
+> 🔖 **`DIS-R-008`** — *identificador estable de esta regla; cítese este código y no el número de sección (`GOB-MAT-001`)*
+```
+
+| Aspecto | Regla |
+|---|---|
+| **Formato** | `<SUFIJO>-R-NNN`, con el mismo sufijo por lineamiento de la tabla de excepciones |
+| **Estabilidad** | Un ID **no se reutiliza jamás**. Si la regla se elimina, su ID queda retirado; si se divide, la parte que conserva el sentido original mantiene el ID y la nueva recibe uno propio |
+| **Independencia** | Renumerar secciones, reordenar capítulos o mover una regla dentro del documento **no altera su ID** |
+| **Cómo se cita** | Por el ID. La referencia `§N` sigue admitiéndose como ayuda de navegación, pero **el ID es el que identifica la regla** |
+| **Índice** | Se **genera**, no se mantiene a mano: `python3 herramientas/lint_corpus.py --indice`. Una tabla manual aquí volvería a divergir, que es el problema que se está resolviendo |
+
+**Alcance actual.** No todas las reglas llevan ID: se asignaron a las de mayor tráfico de citas, medidas sobre el corpus. Asignar uno a cada párrafo produciría ruido sin beneficio. Una regla adquiere ID cuando la citan varios documentos.
+
+La comprobación **C9** del linter verifica que todo ID citado esté declarado, que ninguno esté declarado dos veces —resolvería a la regla equivocada— y avisa de los declarados que nadie cita todavía.
+
+---
 
 ### Vigencia de los documentos de arquitectura de proyecto
 
@@ -189,7 +215,7 @@ Documentos que no norman un tema técnico pero forman parte del corpus: son dest
 
 | Código | Documento | Estado | Archivo |
 |---|---|---|---|
-| `GOB-MAT-001` | Matriz de Propiedad Documental (este documento) | Vigente v0.24.0 | `Matriz_Propiedad_Documental_ONP.md` |
+| `GOB-MAT-001` | Matriz de Propiedad Documental (este documento) | Vigente v0.25.0 | `Matriz_Propiedad_Documental_ONP.md` |
 | `GOB-INI-001` | START HERE — punto de entrada para proyectos Java | Vigente / Operativo v0.3.0 | `START_HERE_Proyecto_Java_ONP.md` |
 | `GOB-PLA-001` | Plantilla institucional de Documento de Arquitectura de TI | Vigente v2.7 | `arquitectura/Plantilla_Documento_Arquitectura_ONP.md` |
 | `GOB-BRE-001` | Tablero de Brechas del Framework de Arquitectura | En revisión v0.1.7 | `arquitectura/Brecha_Framework_Arquitectura_ONP.md` |
@@ -201,12 +227,12 @@ Ningún documento está `Vigente`: la ruta describe el orden en que graduarán.
 
 Aplicando la regla de exigibilidad, el orden de graduación **no es discrecional**: lo fija qué documentos necesitan hacer exigibles los que ya están vigentes.
 
-**Qué ordena la prioridad.** `LIN-ARQ-001 §8.3` exige al contratista, como condición de conformidad técnica, evidencia de observabilidad según `LIN-OBS-001` y umbrales de cobertura según `LIN-TEST-001`. Por la regla de exigibilidad, **`LIN-ARQ-001` no podrá graduar mientras esos dos sigan sin graduar**: haría exigible lo que no rige. Son, por tanto, la primera prioridad — y con ellos se desbloquea el Nivel 1.
+**Qué ordena la prioridad.** `ARQ-R-008` (LIN-ARQ-001 §8.3) exige al contratista, como condición de conformidad técnica, evidencia de observabilidad según `LIN-OBS-001` y umbrales de cobertura según `LIN-TEST-001`. Por la regla de exigibilidad, **`LIN-ARQ-001` no podrá graduar mientras esos dos sigan sin graduar**: haría exigible lo que no rige. Son, por tanto, la primera prioridad — y con ellos se desbloquea el Nivel 1.
 
 | Prioridad | Documento | Por qué | Falta para graduar |
 |---|---|---|---|
-| **1** | `LIN-OBS-001` | Exigido por `LIN-ARQ-001 §8.3` (evidencia de observabilidad) y prerequisito de EDA en `§4.2` | Revisión de contenido |
-| **1** | `LIN-TEST-001` | Exigido por `LIN-ARQ-001 §8.3` (cobertura) y dueño de umbrales que consumen 4 documentos | Revisión de contenido |
+| **1** | `LIN-OBS-001` | Exigido por `ARQ-R-008` (LIN-ARQ-001 §8.3) (evidencia de observabilidad) y prerequisito de EDA en `§4.2` | Revisión de contenido |
+| **1** | `LIN-TEST-001` | Exigido por `ARQ-R-008` (LIN-ARQ-001 §8.3) (cobertura) y dueño de umbrales que consumen 4 documentos | Revisión de contenido |
 | **2** | `LIN-DEV-JAVA-001` | Nivel 3 del modelo; el más citado del corpus | **Nada — cumple los 5 criterios** (revisión H13 cerrada) |
 | **2** | `LIN-SEC-APP-001` | Transversal; controles invocados por CI/CD y APIs | **Nada — cumple los 5 criterios** (revisión H15 cerrada) |
 | **3** | `LIN-BD-ORA-001` | Dueño del modelo de datos y del DDL canónico `EVT_OUTBOX` | Cerrar `GOB-CHK-001` H14.2 y H14.3 |
@@ -265,8 +291,8 @@ Los ADR numerados `ADR-001`–`ADR-014` viven en el Apéndice A de `LIN-ARQ-001`
 | Versionamiento en URL (`/api/v1/`) | `LIN-API-REST-001` | `LIN-DEV-JAVA-001`, `LIN-FE-ANG-001` | Conforme | — |
 | Paginación — campos y estructura del response | `LIN-API-REST-001` | `LIN-FE-ANG-001` | Resuelto | `LIN-FE-ANG-001` corregido: `pagina`/`tamanio` alineados con contrato REST |
 | Operaciones no CRUD (verbos en URL) | `LIN-API-REST-001` | `LIN-DEV-JAVA-001` | Conforme | — |
-| Rate limiting y throttling | `LIN-SEC-APP-001` | `LIN-API-REST-001`, `LIN-K8S-001` | Conforme | `LIN-SEC-APP-001 §7.1`–`§7.2`: básico en la aplicación mientras no haya gateway, gestionado en WSO2 cuando gradúe. **Corregido 2026-08-09:** `LIN-API-REST-001 §8.4` figuraba como dueño y afirmaba que los servicios *no* implementan rate limiting, atribuyéndolo a un gateway que sigue en PoC — el resultado era que **ninguna API tenía rate limiting** (`GOB-CHK-001` H24) |
-| Resiliencia táctica en llamadas externas — timeouts, Bulkhead, Retry, Circuit Breaker | `LIN-DIS-001` | `LIN-ARQ-001`, `LIN-API-REST-001`, `LIN-SEC-APP-001` | Resuelto | `LIN-DIS-001 §6` es dueño único (matriz de timeouts por criticidad en `§6.1`). Corregido 2026-08-05: `LIN-ARQ-001 §4.3` exigía Resilience4j contradiciendo `§6.2`, y publicaba un rango propio de timeout; `LIN-API-REST-001 §8.3` publicaba un tercer par de valores. Ambos delegan ahora al dueño (`GOB-CHK-001` H2 y H3) |
+| Rate limiting y throttling | `LIN-SEC-APP-001` | `LIN-API-REST-001`, `LIN-K8S-001` | Conforme | `SEC-R-001` (LIN-SEC-APP-001 §7.1)–`§7.2`: básico en la aplicación mientras no haya gateway, gestionado en WSO2 cuando gradúe. **Corregido 2026-08-09:** `LIN-API-REST-001 §8.4` figuraba como dueño y afirmaba que los servicios *no* implementan rate limiting, atribuyéndolo a un gateway que sigue en PoC — el resultado era que **ninguna API tenía rate limiting** (`GOB-CHK-001` H24) |
+| Resiliencia táctica en llamadas externas — timeouts, Bulkhead, Retry, Circuit Breaker | `LIN-DIS-001` | `LIN-ARQ-001`, `LIN-API-REST-001`, `LIN-SEC-APP-001` | Resuelto | `DIS-R-007` (LIN-DIS-001 §6) es dueño único (matriz de timeouts por criticidad en `§6.1`). Corregido 2026-08-05: `ARQ-R-004` (LIN-ARQ-001 §4.3) exigía Resilience4j contradiciendo `§6.2`, y publicaba un rango propio de timeout; `LIN-API-REST-001 §8.3` publicaba un tercer par de valores. Ambos delegan ahora al dueño (`GOB-CHK-001` H2 y H3) |
 | API Gateway y API Manager — plataforma WSO2 | `LIN-API-REST-001` | `LIN-ARQ-001`, `LIN-K8S-001`, `LIN-SEC-APP-001` | En borrador | `LIN-API-REST-001` secciones 2.5 y 10.3 definen plataforma y gate de publicación. La transición se documenta además en `arquitectura/ADR-WSO2-001.md` |
 
 ---
@@ -314,7 +340,7 @@ Los ADR numerados `ADR-001`–`ADR-014` viven en el Apéndice A de `LIN-ARQ-001`
 | Integración SAA en apps Spring Boot — patrón `SaaTokenValidationFilter` | `LIN-SEC-APP-001` | `LIN-DEV-JAVA-001` | En borrador | `LIN-SEC-APP-001` sección 8 — flujo, filtro, cliente, prohibiciones, manejo de indisponibilidad |
 | OAuth2/OIDC — flujo y decisión de arquitectura | `LIN-ARQ-001` | `LIN-API-REST-001`, `LIN-SEC-APP-001`, `LIN-FE-ANG-001` | En borrador | `LIN-SEC-APP-001` sección 3.2 documenta el modelo objetivo; la decisión de adopción requiere ADR cuando WSO2 esté operativo |
 | Configuración Spring Security | `LIN-SEC-APP-001` | `LIN-DEV-JAVA-001` | En borrador | `LIN-SEC-APP-001` sección 9.1 define configuración mínima obligatoria. **Verificado 2026-08-05:** `LIN-DEV-JAVA-001` referencia `LIN-SEC-APP-001` para el filtro SAA (sección 8.3) y para secretos (sección 12), pero **no** cita la sección 9.1 de configuración de Spring Security — brecha de referencia a cerrar en la próxima revisión de `LIN-DEV-JAVA-001` |
-| Cifrado en tránsito — HTTPS y límite de confianza de red | `LIN-SEC-APP-001` | `LIN-API-REST-001`, `LIN-K8S-001` | Conforme | `LIN-SEC-APP-001 §7.1`: HTTPS obligatorio en ambientes compartidos, con dos excepciones —`localhost` y el tramo intra-cluster de `ADR-TLS-INTERNO-001`—. La excepción interna se sostiene sobre la `NetworkPolicy` obligatoria de `LIN-K8S-001 §9.1`, que **sustituye** al cifrado como control; sin ella el servicio debe servir HTTPS extremo a extremo |
+| Cifrado en tránsito — HTTPS y límite de confianza de red | `LIN-SEC-APP-001` | `LIN-API-REST-001`, `LIN-K8S-001` | Conforme | `SEC-R-001` (LIN-SEC-APP-001 §7.1): HTTPS obligatorio en ambientes compartidos, con dos excepciones —`localhost` y el tramo intra-cluster de `ADR-TLS-INTERNO-001`—. La excepción interna se sostiene sobre la `NetworkPolicy` obligatoria de `K8S-R-002` (LIN-K8S-001 §9.1), que **sustituye** al cifrado como control; sin ella el servicio debe servir HTTPS extremo a extremo |
 | Headers de seguridad HTTP obligatorios | `LIN-SEC-APP-001` | `LIN-API-REST-001`, `LIN-DEV-JAVA-001` | Conforme | `LIN-SEC-APP-001 §7.3` — `X-Content-Type-Options`, `X-Frame-Options`, `HSTS`, `Cache-Control`. **Corregido 2026-08-09:** `LIN-API-REST-001 §7.4` los daba como «valor recomendado» y los asignaba al gateway en PoC (`GOB-CHK-001` H24) |
 | Prohibición de credenciales en código o repositorio | `LIN-SEC-APP-001` | `LIN-DEV-JAVA-001`, `LIN-CICD-001` | En borrador | `LIN-SEC-APP-001` sección 12.2 — prohibición absoluta, incluyendo `environment.ts` Angular |
 | Gestión de secretos — K8s Secrets, rotación, separación por ambiente | `LIN-SEC-APP-001` | `LIN-DEV-JAVA-001`, `LIN-K8S-001` | En borrador | `LIN-SEC-APP-001` sección 12 — dueño provisional hasta que `LIN-K8S-001` sea creado |
@@ -341,7 +367,7 @@ Los ADR numerados `ADR-001`–`ADR-014` viven en el Apéndice A de `LIN-ARQ-001`
 | `BigDecimal` para valores monetarios | `LIN-DEV-JAVA-001` | — | Conforme | — |
 | `GlobalExceptionHandler` — implementación | `LIN-DEV-JAVA-001` | — | Conforme | Implementa el contrato de `LIN-API-REST-001`; ver `LIN-DEV-JAVA-001` sección 11.1 |
 | Revisión de código — verificaciones específicas de Java | `LIN-DEV-JAVA-001` | `LIN-CICD-001` | Resuelto | `LIN-DEV-JAVA-001 §16.2`: Checkstyle, JaCoCo y tabla de antipatrones Java. **Corregido 2026-08-09:** este documento redefinía las reglas generales del proceso (autoaprobación, revisores, máximo 400 líneas) que pertenecen a `LIN-VER-001 §12`; el límite de tamaño, además, quedaba de facto limitado a Java, dejando sin regla a los MR de Angular, SQL o manifiestos (`GOB-CHK-001` H23) |
-| Adapter para PL/SQL legacy | `LIN-DEV-JAVA-001` | `LIN-BD-ORA-001` | Resuelto | `LIN-BD-ORA-001` sección 6.0 define el patrón; `LIN-DEV-JAVA-001` sección 13.5.3 lo implementa como adaptador `JdbcRepository` |
+| Adapter para PL/SQL legacy | `LIN-DEV-JAVA-001` | `LIN-BD-ORA-001` | Resuelto | `BD-R-001` (LIN-BD-ORA-001 §6.0) define el patrón; `LIN-DEV-JAVA-001` sección 13.5.3 lo implementa como adaptador `JdbcRepository` |
 | Análisis estático de código (PMD) | `LIN-DEV-JAVA-001` | `LIN-SEC-APP-001`, `LIN-VER-001`, `LIN-CICD-001` | Resuelto | `LIN-DEV-JAVA-001` sección 12.3 define configuración, ruleset y custom rules XPath |
 
 ---
@@ -352,10 +378,10 @@ Los ADR numerados `ADR-001`–`ADR-014` viven en el Apéndice A de `LIN-ARQ-001`
 |---|---|---|---|---|
 | Pirámide de pruebas y distribución por estilo | `LIN-DIS-001` | `LIN-TEST-001`, `LIN-DEV-JAVA-001` | Conforme | — |
 | Tipos de prueba y pirámide por estilo arquitectónico | `LIN-TEST-001` | `LIN-DIS-001`, `LIN-DEV-JAVA-001`, `LIN-FE-ANG-001` | Conforme | `LIN-TEST-001` secciones 3–4 definen clasificación y distribución por estilo (Simple, Modular, Hexagonal) |
-| Cobertura mínima por capa y estilo (umbrales) | `LIN-TEST-001` | `LIN-DEV-JAVA-001`, `LIN-FE-ANG-001`, `LIN-CICD-001` | Resuelto | `LIN-TEST-001` sección 5 — Java: ≥65–70% global; capa negocio ≥75–85%; Angular: ≥70% statements. **Corregido 2026-08-05:** `LIN-DEV-JAVA-001 §15.3` mantenía una tabla propia con "Controladores REST 70%", umbral que `LIN-TEST-001 §5.1` prohíbe explícitamente, y el gate de PR (`§16.2`) apuntaba a esa tabla — no a `§12.1`, que sí se había corregido. Ambas remiten ahora al dueño (`GOB-CHK-001` H13.1) |
+| Cobertura mínima por capa y estilo (umbrales) | `LIN-TEST-001` | `LIN-DEV-JAVA-001`, `LIN-FE-ANG-001`, `LIN-CICD-001` | Resuelto | `LIN-TEST-001` sección 5 — Java: ≥65–70% global; capa negocio ≥75–85%; Angular: ≥70% statements. **Corregido 2026-08-05:** `LIN-DEV-JAVA-001 §15.3` mantenía una tabla propia con "Controladores REST 70%", umbral que `TEST-R-001` (LIN-TEST-001 §5.1) prohíbe explícitamente, y el gate de PR (`§16.2`) apuntaba a esa tabla — no a `§12.1`, que sí se había corregido. Ambas remiten ahora al dueño (`GOB-CHK-001` H13.1) |
 | Herramientas: JUnit 5, Mockito, Testcontainers, JaCoCo | `LIN-TEST-001` | `LIN-DEV-JAVA-001` | Conforme | `LIN-TEST-001` sección 11.1 — OracleContainer `gvenzl/oracle-xe:21-slim-faststart` |
-| Pruebas de contrato — obligatoriedad y herramientas | `LIN-TEST-001` | `LIN-API-REST-001`, `LIN-DEV-JAVA-001` | Conforme | `LIN-TEST-001 §6` — tabla de casos obligatorio/recomendado; OpenAPI validation como mínimo siempre. **Desbloqueado 2026-08-09** (`GOB-CHK-001` H22.3): el gate de publicación de `LIN-API-REST-001 §10.3` no pedía evidencia de prueba de contrato pese a declararla obligatoria el dueño; incorporada al gate |
-| Pruebas de caracterización — técnica y criterios | `LIN-TEST-001` | `LIN-BD-ORA-001`, `LIN-DEV-JAVA-001` | Conforme | `LIN-TEST-001` sección 13 — dueño de la técnica; `LIN-BD-ORA-001` sección 6.0 declara cuándo es obligatorio |
+| Pruebas de contrato — obligatoriedad y herramientas | `LIN-TEST-001` | `LIN-API-REST-001`, `LIN-DEV-JAVA-001` | Conforme | `TEST-R-002` (LIN-TEST-001 §6) — tabla de casos obligatorio/recomendado; OpenAPI validation como mínimo siempre. **Desbloqueado 2026-08-09** (`GOB-CHK-001` H22.3): el gate de publicación de `LIN-API-REST-001 §10.3` no pedía evidencia de prueba de contrato pese a declararla obligatoria el dueño; incorporada al gate |
+| Pruebas de caracterización — técnica y criterios | `LIN-TEST-001` | `LIN-BD-ORA-001`, `LIN-DEV-JAVA-001` | Conforme | `LIN-TEST-001` sección 13 — dueño de la técnica; `BD-R-001` (LIN-BD-ORA-001 §6.0) declara cuándo es obligatorio |
 | Naming conventions de tests (sufijos IT, CT, Test) | `LIN-TEST-001` | `LIN-DEV-JAVA-001` | Resuelto | `LIN-TEST-001` sección 3.2 — `*Test.java` (Surefire), `*IT.java` y `*CT.java` (Failsafe) |
 | Evidencias obligatorias y criterios de paso a QA/PROD | `LIN-TEST-001` | `LIN-CICD-001` | Conforme | `LIN-TEST-001 §8`–`§9` define qué debe cumplirse; `LIN-CICD-001 §19.2` lo implementa como gate. **Desbloqueado 2026-08-17** (`GOB-CHK-001` H22.3 → H27): el pipeline llamaba «sugeridos» a sus criterios y omitía siete de los once del dueño. Alineados en ambos sentidos — `LIN-TEST-001 §9` dejó además de expresarse solo en el modelo de ramas legado |
 | Gates automáticos de pruebas en pipeline | `LIN-CICD-001` | `LIN-TEST-001` | En borrador | `LIN-TEST-001` sección 7 declara que las pruebas deben ser automatizables; el gate lo define LIN-CICD-001 |
@@ -377,9 +403,9 @@ Los ADR numerados `ADR-001`–`ADR-014` viven en el Apéndice A de `LIN-ARQ-001`
 | Esquemas por dominio funcional | `LIN-BD-ORA-001` | `LIN-ARQ-001` | Conforme | — |
 | Política de migraciones versionadas (Flyway/Liquibase) | `LIN-BD-ORA-001` | `LIN-CICD-001` | Conforme | — |
 | PL/SQL técnico permitido (constraints, vistas, auditoría) | `LIN-BD-ORA-001` | — | Conforme | — |
-| Gobierno de PL/SQL legacy con lógica de negocio | `LIN-BD-ORA-001` | `LIN-DEV-JAVA-001`, `LIN-DIS-001` | Resuelto | `LIN-BD-ORA-001` sección 6.0: categorías, inventario, adapter Java, pruebas de caracterización y checklist |
-| Restricción de nueva lógica de negocio en PL/SQL | `LIN-BD-ORA-001` | `LIN-ARQ-001`, `LIN-DIS-001` | Resuelto | `LIN-BD-ORA-001` sección 6.0 define categorías restrictivas y proceso ADR para excepciones |
-| Adapter Java para invocar PL/SQL legacy | `LIN-DEV-JAVA-001` | `LIN-BD-ORA-001` | Resuelto | `LIN-BD-ORA-001` sección 6.0 define el patrón `SimpleJdbcCall`; referenciado en `LIN-DEV-JAVA-001` sección 13.5.3 |
+| Gobierno de PL/SQL legacy con lógica de negocio | `LIN-BD-ORA-001` | `LIN-DEV-JAVA-001`, `LIN-DIS-001` | Resuelto | `BD-R-001` (LIN-BD-ORA-001 §6.0): categorías, inventario, adapter Java, pruebas de caracterización y checklist |
+| Restricción de nueva lógica de negocio en PL/SQL | `LIN-BD-ORA-001` | `LIN-ARQ-001`, `LIN-DIS-001` | Resuelto | `BD-R-001` (LIN-BD-ORA-001 §6.0) define categorías restrictivas y proceso ADR para excepciones |
+| Adapter Java para invocar PL/SQL legacy | `LIN-DEV-JAVA-001` | `LIN-BD-ORA-001` | Resuelto | `BD-R-001` (LIN-BD-ORA-001 §6.0) define el patrón `SimpleJdbcCall`; referenciado en `LIN-DEV-JAVA-001` sección 13.5.3 |
 | Prohibición de acceso directo entre dominios BD | `LIN-BD-ORA-001` | `LIN-ARQ-001`, `LIN-DIS-001` | Conforme | — |
 
 ---
@@ -403,12 +429,12 @@ Los ADR numerados `ADR-001`–`ADR-014` viven en el Apéndice A de `LIN-ARQ-001`
 | Angular como framework SPA primario | `LIN-ARQ-001` | `LIN-FE-ANG-001` | Conforme | — |
 | Estructura de proyecto Angular | `LIN-FE-ANG-001` | — | Conforme | — |
 | Standalone components | `LIN-FE-ANG-001` | — | Conforme | — |
-| **Verificación de fronteras del Monolito Modular (pruebas de arquitectura)** | `LIN-DIS-001` (reglas) / `LIN-DEV-JAVA-001` (implementación) | `LIN-TEST-001`, `LIN-CICD-001`, `LIN-ARQ-001` | Conforme | `LIN-DIS-001 §3` y `§3.4` definen las fronteras; `LIN-DEV-JAVA-001 §15.5` las implementa como reglas ArchUnit (tipo `AT` de `LIN-TEST-001 §3.1`) y `LIN-CICD-001 §19.2` las hace bloqueantes. **Creado 2026-08-18** (`GOB-CHK-001` H37): era el único control del Monolito Modular sin verificación automática — ni el pipeline ni el grafo de servicios podían comprobarlo |
+| **Verificación de fronteras del Monolito Modular (pruebas de arquitectura)** | `LIN-DIS-001` (reglas) / `LIN-DEV-JAVA-001` (implementación) | `LIN-TEST-001`, `LIN-CICD-001`, `LIN-ARQ-001` | Conforme | `DIS-R-002` (LIN-DIS-001 §3) y `§3.4` definen las fronteras; `LIN-DEV-JAVA-001 §15.5` las implementa como reglas ArchUnit (tipo `AT` de `LIN-TEST-001 §3.1`) y `LIN-CICD-001 §19.2` las hace bloqueantes. **Creado 2026-08-18** (`GOB-CHK-001` H37): era el único control del Monolito Modular sin verificación automática — ni el pipeline ni el grafo de servicios podían comprobarlo |
 | **Identificador único de un componente desplegable (`service.name`)** | `LIN-VER-001` | `LIN-OBS-001`, `LIN-K8S-001`, `LIN-API-REST-001`, `LIN-BUS-001` | Conforme | La forma canónica es la del proyecto GitLab (`LIN-VER-001 §9.1`): `<sistema>-<tipo-componente>[-<canal>]`. El **mismo** identificador rige en `app.kubernetes.io/name` (`LIN-K8S-001 §9.3`), en el catálogo de servicios (`LIN-API-REST-001 §10.1`) y en `service.name` de la telemetría (`LIN-OBS-001 §5.8.4`). **Corregido 2026-08-18:** existían tres convenciones para lo mismo, lo que impedía reconciliar el grafo observado con los registros declarativos (`GOB-CHK-001` H36) |
 | **Grafo de servicios y arquitectura observada** | `LIN-OBS-001` (mecanismo) / `LIN-ARQ-001` (gobierno) | `GOB-PLA-001`, `LIN-API-REST-001`, `LIN-DIS-001` | Conforme | `LIN-OBS-001 §5.8` norma la generación del grafo desde las trazas, con la regla de que **las métricas se generan antes del muestreo**; `LIN-ARQ-001 §5.5` norma su uso para detectar deriva entre la arquitectura declarada y la real. **Creado 2026-08-18** (`GOB-CHK-001` H35). El grafo **no es un catálogo**: es la contraparte observada de los cuatro registros declarativos del corpus |
-| **Continuidad operativa — criticidad, RTO/RPO y recuperación** | `LIN-ARQ-001` | `LIN-BD-ORA-001`, `LIN-K8S-001`, `LIN-IAC-001`, `LIN-BI-001`, `LIN-BUS-001`, `LIN-PERF-001`, `GOB-PLA-001` | Conforme | `LIN-ARQ-001 §5.4` — tres bandas de criticidad con RTO/RPO objetivo, política de respaldo por componente (delega el mecanismo a cada dueño), procedimiento de recuperación y régimen de pruebas. **Creado 2026-08-17** (`GOB-CHK-001` H11.2): era la mayor brecha de contenido del corpus. **Los valores son propuesta técnica sujeta a ratificación del Comité con las áreas usuarias** |
+| **Continuidad operativa — criticidad, RTO/RPO y recuperación** | `LIN-ARQ-001` | `LIN-BD-ORA-001`, `LIN-K8S-001`, `LIN-IAC-001`, `LIN-BI-001`, `LIN-BUS-001`, `LIN-PERF-001`, `GOB-PLA-001` | Conforme | `ARQ-R-006` (LIN-ARQ-001 §5.4) — tres bandas de criticidad con RTO/RPO objetivo, política de respaldo por componente (delega el mecanismo a cada dueño), procedimiento de recuperación y régimen de pruebas. **Creado 2026-08-17** (`GOB-CHK-001` H11.2): era la mayor brecha de contenido del corpus. **Los valores son propuesta técnica sujeta a ratificación del Comité con las áreas usuarias** |
 | **Escala de criticidad de sistemas (Alta / Media / Baja)** | `LIN-ARQ-001` | `LIN-PERF-001`, `LIN-CICD-001`, `LIN-K8S-001` | Conforme | `LIN-ARQ-001 §5.4.1` define las bandas; `LIN-PERF-001 §6.4` define cómo se determina. Antes la escala se usaba en tres documentos sin fuente común |
-| Core Web Vitals — umbrales obligatorios | `LIN-ARQ-001` | `LIN-FE-ANG-001`, `LIN-CICD-001`, `LIN-PERF-001` | Conforme | `LIN-ARQ-001 §7.2` publica los siete umbrales (LCP, INP, CLS, FCP, TTI, TBT, FPS). `LIN-FE-ANG-001 §15.2` reproduce cuatro como referencia declarada; `LIN-CICD-001 §9.4` los implementa como gate. **Corregido 2026-08-17:** la fila no citaba sección y omitía a `LIN-PERF-001`, que listaba las métricas por tercera vez y sin umbrales (`GOB-CHK-001` H30) |
+| Core Web Vitals — umbrales obligatorios | `LIN-ARQ-001` | `LIN-FE-ANG-001`, `LIN-CICD-001`, `LIN-PERF-001` | Conforme | `ARQ-R-007` (LIN-ARQ-001 §7.2) publica los siete umbrales (LCP, INP, CLS, FCP, TTI, TBT, FPS). `LIN-FE-ANG-001 §15.2` reproduce cuatro como referencia declarada; `LIN-CICD-001 §9.4` los implementa como gate. **Corregido 2026-08-17:** la fila no citaba sección y omitía a `LIN-PERF-001`, que listaba las métricas por tercera vez y sin umbrales (`GOB-CHK-001` H30) |
 | Interceptores HTTP (auth, errores, request ID) | `LIN-FE-ANG-001` | — | Conforme | — |
 | Modelos TypeScript de respuesta API | `LIN-FE-ANG-001` | — | Resuelto | `LIN-FE-ANG-001` corregido: `ApiMeta` completo con `timestamp`, `requestId`, `version`; errores con `campo`/`mensaje` |
 | Estrategia de estado (Signals, store global) | `LIN-FE-ANG-001` | — | Pendiente | Pendiente de desarrollar en `LIN-FE-ANG-001` |
@@ -435,9 +461,9 @@ Los ADR numerados `ADR-001`–`ADR-014` viven en el Apéndice A de `LIN-ARQ-001`
 | Formato y proceso de ADR | `LIN-ARQ-001` | Todos | Resuelto | Proceso de excepción (ADR) agregado en todos los lineamientos existentes (`LIN-DEV-JAVA-001 §17`) |
 | Proceso de excepción a estándares (Supremacía Normativa) | `LIN-ARQ-001` | Todos | Conforme | — |
 | Cuándo es obligatoria revisión de arquitectura | `LIN-ARQ-001` | — | Conforme | — |
-| Escala de Estadios de Topología (1 Legacy · 2 Monolito Modular · 3 Microservicios) | `LIN-ARQ-001` | `LIN-PAT-001`, `GLOSARIO-ONP`, `Plantilla_Documento_Arquitectura` | Resuelto | `LIN-ARQ-001 §2.1` es la escala oficial. Corregida en 2026-08-05 una escala paralela 0/1/2 que circulaba en Glosario, 4 fichas de `LIN-PAT-001` y 3 guías de la Plantilla (`GOB-CHK-001` H1). Strangler Fig es estrategia de transición (`§2.2`), no un estadio |
+| Escala de Estadios de Topología (1 Legacy · 2 Monolito Modular · 3 Microservicios) | `LIN-ARQ-001` | `LIN-PAT-001`, `GLOSARIO-ONP`, `Plantilla_Documento_Arquitectura` | Resuelto | `ARQ-R-001` (LIN-ARQ-001 §2.1) es la escala oficial. Corregida en 2026-08-05 una escala paralela 0/1/2 que circulaba en Glosario, 4 fichas de `LIN-PAT-001` y 3 guías de la Plantilla (`GOB-CHK-001` H1). Strangler Fig es estrategia de transición (`§2.2`), no un estadio |
 | Códigos `PT` de patrones — fuente única | `LIN-PAT-001` | `LIN-DIS-001`, `LIN-SEC-APP-001`, `Brecha_Framework` | En borrador | `LIN-PAT-001` es autoritativo. `Brecha_Framework` mantiene asignaciones contradictorias de PT09/PT10/PT12 pendientes de corrección (`GOB-CHK-001` H6.3) |
-| Categorías y ciclo de vida de Feature Toggles (PA14) | `LIN-ARQ-001` | `LIN-DEV-JAVA-001`, `LIN-VER-001`, `LIN-CICD-001` | Resuelto | `LIN-ARQ-001 §2.3` + `ADR-014` definen 4 categorías: Release y Experiment (caducidad obligatoria), Ops y Permission (pueden ser permanentes). **Ampliado 2026-08-05:** `LIN-DEV-JAVA-001 §16.6` operaba con Experiment Toggle sin respaldo del marco rector, cuya descripción de Permission mezclaba dos ciclos de vida opuestos; se incorporó Experiment al Nivel 1 y se acotó Permission a control de acceso (`GOB-CHK-001` H13.3) |
+| Categorías y ciclo de vida de Feature Toggles (PA14) | `LIN-ARQ-001` | `LIN-DEV-JAVA-001`, `LIN-VER-001`, `LIN-CICD-001` | Resuelto | `ARQ-R-002` (LIN-ARQ-001 §2.3) + `ADR-014` definen 4 categorías: Release y Experiment (caducidad obligatoria), Ops y Permission (pueden ser permanentes). **Ampliado 2026-08-05:** `LIN-DEV-JAVA-001 §16.6` operaba con Experiment Toggle sin respaldo del marco rector, cuya descripción de Permission mezclaba dos ciclos de vida opuestos; se incorporó Experiment al Nivel 1 y se acotó Permission a control de acceso (`GOB-CHK-001` H13.3) |
 | Configuración institucional de Checkstyle | `LIN-DEV-JAVA-001` | Templates GitLab, `LIN-CICD-001` | Resuelto | Archivo canónico: `desarrollo/plantillas/checkstyle-onp.xml`; `LIN-DEV-JAVA-001 §12.1` norma los umbrales y el Anexo B lo reproduce como copia de referencia. **Corregido 2026-08-05:** el canónico y el Anexo B declaraban `LineLength` dentro de `TreeWalker` — configuración que aborta el build desde Checkstyle 8.24 — y los templates enviaban una versión reducida sin las 3 métricas obligatorias (`GOB-CHK-001` H4.4, H4.7, H13.2) |
 | Guía v0.1.2 — archivada | — | `LIN-OBS-001`, `LIN-API-REST-001`, `LIN-DEV-JAVA-001` | **Archivado** | secciones 1–2 absorbidos por `LIN-OBS-001`; sección 3 absorbido por `LIN-DEV-JAVA-001` y `LIN-API-REST-001`. La guía está marcada como archivada. El valor de "orden de inicio" se preserva en `LIN-DEV-JAVA-001 sección 1.3 — Configuración inicial de un proyecto nuevo`. No actualizar la guía. |
 
@@ -475,8 +501,8 @@ Correcciones a aplicar sobre los documentos existentes antes de redactar nuevos 
 | 8 | Bug Markdown sección 13.4.7 (citada como 11.4.7 antes de la renumeración interna): cerrar bloque de código del record con `@Schema` | `LIN-DEV-JAVA-001` | **Aplicado** |
 | 9 | Agregar sección WSO2 API Manager (Gateway + Management) | `LIN-API-REST-001` | **Aplicado** |
 | 10 | Unificar campos de paginación `pagina`/`tamanio` y `ApiMeta` completo en Frontend | `LIN-FE-ANG-001` | **Aplicado** |
-| 11 | Agregar sección de adapter Java para invocar PL/SQL legacy | `LIN-BD-ORA-001` sección 6.0 | **Aplicado** |
-| 12 | Agregar sección de gobierno PL/SQL legacy (catálogo, categorías, checklist) | `LIN-BD-ORA-001` sección 6.0 | **Aplicado** |
+| 11 | Agregar sección de adapter Java para invocar PL/SQL legacy | `BD-R-001` (LIN-BD-ORA-001 §6.0) | **Aplicado** |
+| 12 | Agregar sección de gobierno PL/SQL legacy (catálogo, categorías, checklist) | `BD-R-001` (LIN-BD-ORA-001 §6.0) | **Aplicado** |
 | 13 | Agregar code review como gate obligatorio (hoy sección 16) | `LIN-DEV-JAVA-001` | **Aplicado** |
 | 14 | Agregar proceso de excepción (ADR) en lineamientos Java, API, BD y Frontend (en Java, hoy sección 17) | Todos los existentes | **Aplicado** |
 | 15 | Crear LIN-OBS-001 absorbiendo Guía v0.1.1 secciones 1–2 (trazas, logs, correlación, métricas) | `observabilidad/Lineamiento_Log_Trazabilidad_Observabilidad_ONP.md` | **Aplicado** |
@@ -541,6 +567,7 @@ Cada vez que se redacte un lineamiento nuevo o se modifique uno existente, esta 
 | 0.1.x | 2026-05-28 | Arquitectura OTI | Versiones iniciales de la matriz de propiedad y plan de correcciones |
 | 0.2.0 | 2026-07-08 | Arquitectura OTI | Alineación al modelo de 3 Niveles de Arquitectura (`LIN-ARQ-001`, `LIN-DIS-001`, `LIN-DEV-JAVA-001`) |
 | 0.8.0 | 2026-08-09 | Arquitectura OTI | **Alcance del criterio 2 precisado** (`GOB-CHK-001` H22.5): se distingue entre hallazgos **de documento** —que bloquean la graduación— y **de corpus** —que se registran como deuda con responsable y fecha—, con una **excepción por severidad**: un hallazgo transversal que comprometa el uso normativo de un documento concreto se escala y sí bloquea. Sin esta distinción el criterio se rompía por ambos extremos: exigirlo todo congelaba la graduación del corpus entero, y no exigir nada permitiría declarar `Vigente` un documento inutilizable. Aplicado a las anclas internas rotas: no bloquea en general, **sí bloquea a `LIN-BD-ORA-001` y `LIN-BI-001`**, cuyos índices completos no resuelven por titular las secciones como `## sección N` |
+| 0.25.0 | 2026-08-19 | Arquitectura OTI | Se norman los **identificadores estables de regla** (`<SUFIJO>-R-NNN`) y se asignan a las **28 reglas de mayor tráfico de citas**, medido sobre el corpus (`GOB-CHK-001` H39). Atacan la causa raíz del defecto más repetido de este ejercicio: una cita `§6.2` sigue resolviendo tras una renumeración pero apunta a otro tema, y C1 no puede detectarlo. **240 citas migradas** en 24 documentos. El índice `ID → §sección` se **genera** con el linter, no se mantiene a mano |
 | 0.24.0 | 2026-08-18 | Arquitectura OTI | **Alineación completa del registro de excepciones** (`GOB-CHK-001` H38): once lineamientos titulaban su apartado «Proceso ADR para excepciones/desviaciones» sin identificador propio, de modo que una desviación de proyecto se registraba como «un ADR» — instrumento que esta matriz reserva a las decisiones institucionales del Comité. Todos usan ya `EXC-<SUFIJO>-NNN`. Se añade la **tabla de sufijos por lineamiento**, para que el identificador no quede a criterio de cada equipo, y la regla de numeración correlativa por lineamiento **y por sistema** |
 | 0.23.0 | 2026-08-18 | Arquitectura OTI | Nuevo tema **verificación de fronteras del Monolito Modular**, con propiedad dividida entre `LIN-DIS-001` (las reglas) y `LIN-DEV-JAVA-001` (su implementación en ArchUnit). Cierra la deuda que dejó a la vista el trabajo del grafo de servicios: la topología por defecto de la ONP descansaba en una declaración jurada sin verificación de ninguna clase (`GOB-CHK-001` H37) |
 | 0.22.0 | 2026-08-18 | Arquitectura OTI | Nuevo tema: **identificador único de un componente desplegable**. El corpus usaba tres convenciones para el mismo nombre —telemetría, proyecto GitLab y etiqueta de Kubernetes— sin que ninguna fuera declarada canónica. Se adopta la de `LIN-VER-001 §9.1` y se elimina el prefijo `onp-` de la telemetría. Sin esto, las verificaciones de `LIN-ARQ-001 §5.5` no podían automatizarse (`GOB-CHK-001` H36) |

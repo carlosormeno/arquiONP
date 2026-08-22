@@ -8,19 +8,19 @@
 
 ## Contexto
 
-`LIN-SEC-APP-001 §7.1` establece HTTPS obligatorio en todos los ambientes compartidos, admitiendo una única excepción: desarrollo local en la máquina del desarrollador.
+`SEC-R-001` (LIN-SEC-APP-001 §7.1) establece HTTPS obligatorio en todos los ambientes compartidos, admitiendo una única excepción: desarrollo local en la máquina del desarrollador.
 
-`LIN-API-REST-001 §2.5` describe, como parte del modelo objetivo con WSO2 API Manager, la terminación TLS en el perímetro: el gateway resuelve el handshake y reenvía la petición al backend por la red interna del cluster. La consecuencia natural de esa topología es que los pods reciben tráfico HTTP.
+`API-R-001` (LIN-API-REST-001 §2.5) describe, como parte del modelo objetivo con WSO2 API Manager, la terminación TLS en el perímetro: el gateway resuelve el handshake y reenvía la petición al backend por la red interna del cluster. La consecuencia natural de esa topología es que los pods reciben tráfico HTTP.
 
 Ambas afirmaciones no podían coexistir. La revisión de fondo de `LIN-API-REST-001` (`GOB-CHK-001` H24.4) dejó la topología marcada como no aplicable a la espera de esta decisión, precisamente para no relajar una regla de seguridad desde un documento que no es su dueño.
 
 La cuestión de fondo no es si el tráfico interno va cifrado, sino **cuál es el límite de confianza**. Terminar TLS en el perímetro y confiar en la red del cluster es la práctica habitual en Kubernetes, pero solo es defendible si el acceso a esa red interna está efectivamente restringido. Sin restricción de red, "tráfico interno" significa que cualquier pod del cluster —incluido uno comprometido o ajeno al sistema— puede alcanzar en claro a cualquier servicio.
 
-La ONP no dispone hoy de malla de servicios. `LIN-K8S-001 §9.4` reserva expresamente el patrón Sidecar para cuando Plataforma habilite formalmente una malla (Envoy/Istio) con terminación mTLS entre pods, y `LIN-K8S-001` Anexo E ya define la `NetworkPolicy` como el mecanismo disponible para restringir el tráfico a nivel de pod.
+La ONP no dispone hoy de malla de servicios. `K8S-R-003` (LIN-K8S-001 §9.4) reserva expresamente el patrón Sidecar para cuando Plataforma habilite formalmente una malla (Envoy/Istio) con terminación mTLS entre pods, y `LIN-K8S-001` Anexo E ya define la `NetworkPolicy` como el mecanismo disponible para restringir el tráfico a nivel de pod.
 
 ## Decisión
 
-**Se admite el tráfico intra-cluster sobre HTTP como excepción acotada a `LIN-SEC-APP-001 §7.1`**, bajo tres condiciones de cumplimiento obligatorio y verificable. La excepción no es general: aplica al tramo comprendido entre el punto de terminación TLS y el pod destino, dentro del mismo cluster.
+**Se admite el tráfico intra-cluster sobre HTTP como excepción acotada a `SEC-R-001` (LIN-SEC-APP-001 §7.1)**, bajo tres condiciones de cumplimiento obligatorio y verificable. La excepción no es general: aplica al tramo comprendido entre el punto de terminación TLS y el pod destino, dentro del mismo cluster.
 
 ### Condición 1 — TLS termina en el perímetro, no antes
 
@@ -30,13 +30,13 @@ El handshake TLS se resuelve en el Ingress Controller o en el gateway WSO2. Todo
 
 Esta es la condición que sustituye al cifrado como control. Sin ella la excepción no se sostiene y queda revocada de hecho.
 
-`LIN-K8S-001 §9.1` clasificaba la `NetworkPolicy` como *«recomendada; obligatoria para servicios críticos»*. Con este ADR pasa a ser **obligatoria para todo servicio que reciba tráfico dentro del cluster**, con la política mínima del Anexo E de ese lineamiento: aceptar tráfico únicamente del Ingress Controller y de los pods del mismo sistema, denegar el resto.
+`K8S-R-002` (LIN-K8S-001 §9.1) clasificaba la `NetworkPolicy` como *«recomendada; obligatoria para servicios críticos»*. Con este ADR pasa a ser **obligatoria para todo servicio que reciba tráfico dentro del cluster**, con la política mínima del Anexo E de ese lineamiento: aceptar tráfico únicamente del Ingress Controller y de los pods del mismo sistema, denegar el resto.
 
 Un servicio sin `NetworkPolicy` no puede acogerse a esta excepción y debe servir HTTPS extremo a extremo.
 
 ### Condición 3 — Migración a mTLS cuando exista malla de servicios
 
-Cuando Plataforma habilite formalmente una malla de servicios (`LIN-K8S-001 §9.4`, excepción legítima 2), el cifrado entre pods pasa a resolverse con mTLS gestionado por la infraestructura y **esta excepción queda sin efecto**. La migración no es opcional ni queda a criterio de cada equipo.
+Cuando Plataforma habilite formalmente una malla de servicios (`K8S-R-003` (LIN-K8S-001 §9.4), excepción legítima 2), el cifrado entre pods pasa a resolverse con mTLS gestionado por la infraestructura y **esta excepción queda sin efecto**. La migración no es opcional ni queda a criterio de cada equipo.
 
 ## Alcance y límites
 
@@ -48,11 +48,11 @@ Cuando Plataforma habilite formalmente una malla de servicios (`LIN-K8S-001 §9.
 | Pod → servicio fuera del cluster (SAA, RENIEC, SUNAT, Oracle) | HTTPS obligatorio, sin excepción |
 | Cualquier tramo que atraviese el borde del cluster | HTTPS obligatorio, sin excepción |
 
-Esta excepción **no** autoriza HTTP en ambientes compartidos fuera de Kubernetes: un servicio desplegado en máquina virtual o servidor de aplicaciones sigue sujeto a `LIN-SEC-APP-001 §7.1` sin matices.
+Esta excepción **no** autoriza HTTP en ambientes compartidos fuera de Kubernetes: un servicio desplegado en máquina virtual o servidor de aplicaciones sigue sujeto a `SEC-R-001` (LIN-SEC-APP-001 §7.1) sin matices.
 
 ## Consecuencias
 
-- Se elimina la contradicción entre `LIN-SEC-APP-001 §7.1` y `LIN-API-REST-001 §2.5` sin relajar la postura de seguridad: se sustituye un control (cifrado en tránsito interno) por otro verificable (restricción de red), no se retira.
+- Se elimina la contradicción entre `SEC-R-001` (LIN-SEC-APP-001 §7.1) y `API-R-001` (LIN-API-REST-001 §2.5) sin relajar la postura de seguridad: se sustituye un control (cifrado en tránsito interno) por otro verificable (restricción de red), no se retira.
 - El coste de operar certificados por pod —emisión, rotación, truststore en cada JVM— se evita en una plataforma que hoy no tiene ni `cert-manager` ni malla declarados en el corpus.
 - Aumenta la carga de configuración en `LIN-K8S-001`: la `NetworkPolicy` deja de ser recomendada y pasa a ser un requisito de despliegue más, verificable en el gate.
 - El riesgo residual es el movimiento lateral dentro del cluster si una `NetworkPolicy` está mal definida o ausente. Se mitiga con la Condición 2 y su verificación en el gate de publicación.
@@ -76,7 +76,7 @@ Este ADR debe revisarse cuando ocurra alguno de estos eventos:
 
 | Documento | Efecto |
 |---|---|
-| `LIN-SEC-APP-001 §7.1` | Incorpora la excepción acotada y sus tres condiciones |
-| `LIN-K8S-001 §9.1` | `NetworkPolicy` pasa de recomendada a obligatoria para servicios que reciben tráfico interno |
+| `SEC-R-001` (LIN-SEC-APP-001 §7.1) | Incorpora la excepción acotada y sus tres condiciones |
+| `K8S-R-002` (LIN-K8S-001 §9.1) | `NetworkPolicy` pasa de recomendada a obligatoria para servicios que reciben tráfico interno |
 | `LIN-API-REST-001 §2.2` y `§2.5` | Retiran la reserva y remiten a este ADR |
 | `GOB-MAT-001` | Registra el ADR y el cambio de estado del tema |

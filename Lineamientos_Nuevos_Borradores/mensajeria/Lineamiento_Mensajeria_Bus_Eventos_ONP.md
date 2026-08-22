@@ -87,7 +87,7 @@ Este lineamiento establece los estándares obligatorios para el diseño, impleme
 
 ### 1.3 Prerrequisito arquitectónico
 
-De acuerdo con `LIN-DIS-001 §2.3`, todo módulo que use mensajería para coordinar transacciones distribuidas debe haber adoptado previamente una **Arquitectura Hexagonal**. El broker no es un atajo para omitir esa frontera — los ports y adapters hacen explícita la separación entre el dominio y la infraestructura de mensajería.
+De acuerdo con `DIS-R-001` (LIN-DIS-001 §2.3), todo módulo que use mensajería para coordinar transacciones distribuidas debe haber adoptado previamente una **Arquitectura Hexagonal**. El broker no es un atajo para omitir esa frontera — los ports y adapters hacen explícita la separación entre el dominio y la infraestructura de mensajería.
 
 ---
 
@@ -666,7 +666,7 @@ La respuesta que el monolito participante publica:
 - Los tópicos Saga los crea **Plataforma** igual que los tópicos de dominio — no se crean ad hoc.
 - El `sagaId` debe usarse como **clave de partición** para garantizar orden de mensajes dentro del mismo flujo.
 - Si un paso falla y el mensaje va a DLQ, el orquestador inicia compensación — no espera el replay del DLQ.
-- Cada flujo Saga debe documentarse como **ADR** con el diagrama de pasos y las compensaciones explícitas (ver `LIN-ARQ-001 §3.3`).
+- Cada flujo Saga debe documentarse como **ADR** con el diagrama de pasos y las compensaciones explícitas (ver `ARQ-R-003` (LIN-ARQ-001 §3.3)).
 
 ---
 

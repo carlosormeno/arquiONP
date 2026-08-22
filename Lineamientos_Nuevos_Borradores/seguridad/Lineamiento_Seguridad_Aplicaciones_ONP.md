@@ -85,7 +85,7 @@ Aplica a:
 
 | Documento | Código | Relevancia |
 |---|---|---|
-| Marco Rector de Arquitectura de Software | LIN-ARQ-001 | Documento rector de Nivel 1 — define Zero Trust y Defensa en Profundidad (§5.1), Observabilidad (§5.3) y el marco general que este lineamiento opera en materia de seguridad. Circuit Breaker/Resilience4j vive en `LIN-DIS-001 §6.2` |
+| Marco Rector de Arquitectura de Software | LIN-ARQ-001 | Documento rector de Nivel 1 — define Zero Trust y Defensa en Profundidad (§5.1), Observabilidad (§5.3) y el marco general que este lineamiento opera en materia de seguridad. Circuit Breaker/Resilience4j vive en `DIS-R-009` (LIN-DIS-001 §6.2) |
 | Lineamiento de Estándar APIs REST | LIN-API-REST-001 | HTTPS, headers, CORS, WSO2 |
 | Lineamiento Estándar Desarrollo Java | LIN-DEV-JAVA-001 | Estructura de proyecto, secrets |
 | Lineamiento Log, Trazabilidad y Observabilidad | LIN-OBS-001 | No PII en logs, propagación user.id |
@@ -250,6 +250,8 @@ Este principio surge del `ServicioNotificacion` del SAA actual, que explícitame
 
 ### 7.1 Reglas vigentes (sin WSO2 operativo)
 
+> 🔖 **`SEC-R-001`** — *identificador estable de esta regla; cítese este código y no el número de sección (`GOB-MAT-001`)*
+
 Mientras WSO2 API Manager no esté operativo en producción, aplican las siguientes reglas:
 
 | Regla | Descripción |
@@ -380,6 +382,8 @@ Las aplicaciones nuevas **no reemplazan el SAA ni crean mecanismos paralelos**. 
 ```
 
 ### 8.3 Filtro de validación de token SAA
+
+> 🔖 **`SEC-R-002`** — *identificador estable de esta regla; cítese este código y no el número de sección (`GOB-MAT-001`)*
 
 > **Posición en la cadena: `@Order(3)`, por dentro del filtro canónico.** `CanonicalRequestLogFilter` (`@Order(2)`) envuelve a este filtro para que **los rechazos de autenticación queden registrados**: si el filtro de seguridad corriera por fuera, ningún 401 ni 503 aparecería en el log canónico y la tasa de fallos de autenticación sería inmedible — el escenario *OWASP A09* que §13.1 identifica como relevante. Por eso este filtro publica la identidad **también** como atributo de la request: el MDC se limpia al desapilarse, el atributo no. Cadena completa en `LIN-OBS-001 §4.11`.
 
@@ -558,7 +562,7 @@ El SAA es una dependencia crítica. Si no responde:
 - Retornar `503 Service Unavailable` con mensaje genérico (no técnico)
 - Registrar el evento como `log.error` con contexto de traza
 - No cachear el último resultado como sustituto de validación
-- Aplicar Circuit Breaker si el servicio tiene alta concurrencia (ver patrón PT07 — normado en LIN-DIS-001 §6.2)
+- Aplicar Circuit Breaker si el servicio tiene alta concurrencia (ver patrón PT07 — normado en `DIS-R-009` (LIN-DIS-001 §6.2))
 
 #### 8.7.1 Comportamiento del filtro ante error
 

@@ -448,6 +448,8 @@ registry.gitlab.onp.gob.pe/aplicaciones/past/frontend:3.1.0
 
 ### 6.3 Tags permitidos
 
+> 🔖 **`K8S-R-001`** — *identificador estable de esta regla; cítese este código y no el número de sección (`GOB-MAT-001`)*
+
 | Tag | Uso |
 |---|---|
 | `1.2.3` | Versión semántica estable |
@@ -562,6 +564,8 @@ La definición de qué constituye un secreto y cómo debe protegerse se rige por
 ## 9. Manifiestos Kubernetes mínimos
 
 ### 9.1 Recursos mínimos por aplicación
+
+> 🔖 **`K8S-R-002`** — *identificador estable de esta regla; cítese este código y no el número de sección (`GOB-MAT-001`)*
 
 Toda aplicación desplegada en Kubernetes debe contar, como mínimo, con:
 
@@ -678,6 +682,8 @@ app.kubernetes.io/managed-by: <equipo-o-herramienta>
 
 ### 9.4 Patrones Multi-Contenedor en el Pod: Sidecar (PT17) y Ambassador (PT18)
 
+> 🔖 **`K8S-R-003`** — *identificador estable de esta regla; cítese este código y no el número de sección (`GOB-MAT-001`)*
+
 En Kubernetes, la unidad atómica de despliegue es el **Pod**. Por regla general y en estricta coherencia con el principio de separación de responsabilidades (§4.2), **un pod en la ONP debe contener un único contenedor de negocio (estilo 1 Pod = 1 Contenedor)**.
 
 No obstante, este lineamiento norma dos patrones tácticos de despliegue multi-contenedor (*Multi-Container Pod Patterns*): **Sidecar (`PT17`, ficha `PAT-K8S-01`)** y **Ambassador (`PT18`, ficha `PAT-K8S-02`)**, cuyas fichas de decisión viven en el catálogo oficial `LIN-PAT-001 §6`.
@@ -752,9 +758,9 @@ spec:
 
 El patrón **Ambassador** actúa como un proxy de red local dentro del pod que media y blinda todo el tráfico saliente (*outbound traffic*) desde la aplicación hacia sistemas externos, APIs, bases de datos o servicios heredados.
 
-1. **Regla General en ONP (Prohibido para Java / Spring Boot 3):** En coherencia con **`LIN-ARQ-001 §4.3`** (Interoperabilidad Gubernamental y SOA) y **`LIN-DIS-001 §6`** (Resiliencia Táctica), para aplicaciones construidas en Java 21 / Spring Boot 3, **está estrictamente prohibido utilizar un Ambassador sidecar para gestionar resiliencia o conectividad saliente**. Toda la resiliencia de integración hacia sistemas externos (RENIEC, SUNAT, PIDE) o servicios WSO2 debe resolverse **dentro de la JVM**, en la capa de infraestructura del software (`pe.gob.onp.<sistema>.<modulo>.infrastructure.client.*`).
+1. **Regla General en ONP (Prohibido para Java / Spring Boot 3):** En coherencia con **`ARQ-R-004` (LIN-ARQ-001 §4.3)** (Interoperabilidad Gubernamental y SOA) y **`DIS-R-007` (LIN-DIS-001 §6)** (Resiliencia Táctica), para aplicaciones construidas en Java 21 / Spring Boot 3, **está estrictamente prohibido utilizar un Ambassador sidecar para gestionar resiliencia o conectividad saliente**. Toda la resiliencia de integración hacia sistemas externos (RENIEC, SUNAT, PIDE) o servicios WSO2 debe resolverse **dentro de la JVM**, en la capa de infraestructura del software (`pe.gob.onp.<sistema>.<modulo>.infrastructure.client.*`).
 
-   > **El mecanismo lo define `LIN-DIS-001 §6`, documento dueño de la resiliencia táctica** — este lineamiento no lo redefine. En resumen, y sin sustituir al dueño: *Timeout* siempre obligatorio y *Bulkhead* por defecto con **Apache HttpClient 5** (`setMaxConnPerRoute`); *Retry* con **Spring Retry**; y **Circuit Breaker con Resilience4j solo en Microservicios, o en Monolito Modular bajo ADR** (`LIN-DIS-001 §6.2`). Fichas `PAT-RES-01` y `PAT-RES-02`.
+   > **El mecanismo lo define `DIS-R-007` (LIN-DIS-001 §6), documento dueño de la resiliencia táctica** — este lineamiento no lo redefine. En resumen, y sin sustituir al dueño: *Timeout* siempre obligatorio y *Bulkhead* por defecto con **Apache HttpClient 5** (`setMaxConnPerRoute`); *Retry* con **Spring Retry**; y **Circuit Breaker con Resilience4j solo en Microservicios, o en Monolito Modular bajo ADR** (`DIS-R-009` (LIN-DIS-001 §6.2)). Fichas `PAT-RES-01` y `PAT-RES-02`.
 
    Lo que este lineamiento sí norma es **dónde** vive ese control: dentro del proceso Java, nunca en un proxy de red adjunto al pod. Ningún desarrollador Java debe delegar, duplicar ni configurar políticas de reintento o circuit breaker en un contenedor Ambassador.
 2. **Única Excepción Legítima (Strangler Fig sobre Monolitos Legacy No-Java):** En el marco de la hoja de ruta de modernización institucional (**`LIN-ARQ-001 §2.2`** Strangler Fig y **§2.1** Estadio 1 — Monolito Tradicional), cuando se contenericen sistemas heredados (ej. monolitos en JBoss, WebLogic, C++ o frameworks antiguos) cuyo código fuente no puede ser refactorizado o modificado para incorporar políticas de resiliencia o seguridad moderna, se autoriza el despliegue de un **Ambassador sidecar** (ej. Envoy, Envoy-based Proxy o WSO2 Microgateway ligero) en el pod. En este escenario —y solo en este—, el Ambassador asumirá la terminación mTLS, rotación de cabeceras, timeouts y reintentos hacia el exterior, protegiendo al monolito heredado sin necesidad de reescribir su lógica interna.
@@ -1185,7 +1191,7 @@ Mientras `LIN-IAC-001` no esté oficializado:
 > **Instrumento correcto: `EXC-K8S-NNN`, no un ADR.** Conforme a `GOB-MAT-001` (Registro de decisiones y excepciones), la desviación de un lineamiento **en un proyecto concreto** se registra como excepción con vigencia acotada y **fecha de revisión**, nunca indefinida. El `ADR-NNN` queda reservado a decisiones **institucionales** del Comité de Arquitectura, que obligan a todo el corpus; llevar allí cada desviación de cada sistema vaciaría de valor ese registro. La excepción se aprueba por Arquitectura OTI, con **Plataforma y Seguridad** cuando la desviación afecte al clúster y se registra en el documento de arquitectura del sistema (`GOB-PLA-001`, Anexo E, criterio 14).
 
 
-> **Importante:** **Gobernanza y Supremacía de LIN-ARQ-001:** En estricta coherencia con la supremacía jerárquica del marco rector de **Nivel 1**, ningún ADR podrá ser aprobado ni será válido si contraviene los principios arquitectónicos fundamentales o los mandatos rectores de **LIN-ARQ-001**, ni las reglas de resiliencia táctica de **`LIN-DIS-001 §6`**, que es su documento dueño, salvo autorización expresa y excepcional de la Dirección de Arquitectura de la OTI.
+> **Importante:** **Gobernanza y Supremacía de LIN-ARQ-001:** En estricta coherencia con la supremacía jerárquica del marco rector de **Nivel 1**, ningún ADR podrá ser aprobado ni será válido si contraviene los principios arquitectónicos fundamentales o los mandatos rectores de **LIN-ARQ-001**, ni las reglas de resiliencia táctica de **`DIS-R-007` (LIN-DIS-001 §6)**, que es su documento dueño, salvo autorización expresa y excepcional de la Dirección de Arquitectura de la OTI.
 
 Toda desviación relevante requiere ADR aprobado por Arquitectura. Si afecta seguridad, requiere además validación de Seguridad Digital conforme a la Directiva de Desarrollo de Software Seguro.
 

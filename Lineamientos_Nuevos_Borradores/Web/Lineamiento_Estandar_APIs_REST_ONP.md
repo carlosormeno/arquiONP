@@ -117,9 +117,9 @@ Todos los servicios web nuevos de la ONP deben implementarse siguiendo el estilo
 
 ### 2.2 HTTPS obligatorio
 
-Toda comunicación con APIs de la ONP debe realizarse a través de HTTPS con certificado SSL/TLS válido. Las URLs que inicien con `http://` quedan prohibidas en entornos QA y PROD, conforme a `LIN-SEC-APP-001 §7.1`, que solo admite excepción para desarrollo local en la máquina del desarrollador.
+Toda comunicación con APIs de la ONP debe realizarse a través de HTTPS con certificado SSL/TLS válido. Las URLs que inicien con `http://` quedan prohibidas en entornos QA y PROD, conforme a `SEC-R-001` (LIN-SEC-APP-001 §7.1), que solo admite excepción para desarrollo local en la máquina del desarrollador.
 
-> **Tráfico intra-cluster.** El tramo comprendido entre el punto de terminación TLS y el pod destino, dentro del mismo cluster, puede viajar sobre HTTP: es la excepción acotada de `LIN-SEC-APP-001 §7.1`, decidida en **`ADR-TLS-INTERNO-001`**. Se sostiene sobre un control sustitutivo, no sobre una dispensa: exige `NetworkPolicy` obligatoria en el servicio (`LIN-K8S-001 §9.1`), terminación TLS en el Ingress o en el gateway, y migración a mTLS cuando exista malla de servicios. **Un servicio sin `NetworkPolicy` no puede acogerse a ella.** El tráfico hacia servicios externos al cluster —SAA, RENIEC, SUNAT, Oracle— exige HTTPS sin excepción.
+> **Tráfico intra-cluster.** El tramo comprendido entre el punto de terminación TLS y el pod destino, dentro del mismo cluster, puede viajar sobre HTTP: es la excepción acotada de `SEC-R-001` (LIN-SEC-APP-001 §7.1), decidida en **`ADR-TLS-INTERNO-001`**. Se sostiene sobre un control sustitutivo, no sobre una dispensa: exige `NetworkPolicy` obligatoria en el servicio (`K8S-R-002` (LIN-K8S-001 §9.1)), terminación TLS en el Ingress o en el gateway, y migración a mTLS cuando exista malla de servicios. **Un servicio sin `NetworkPolicy` no puede acogerse a ella.** El tráfico hacia servicios externos al cluster —SAA, RENIEC, SUNAT, Oracle— exige HTTPS sin excepción.
 
 ### 2.3 Codificación de caracteres
 
@@ -134,6 +134,8 @@ Content-Type: application/json; charset=UTF-8
 Los recursos, parámetros y mensajes se nombran en **español** siguiendo el lenguaje ubicuo del dominio de negocio de la ONP. Excepción: términos técnicos sin traducción establecida (ej. `token`, `endpoint`).
 
 ### 2.5 Gestión de APIs — API Gateway y API Manager
+
+> 🔖 **`API-R-001`** — *identificador estable de esta regla; cítese este código y no el número de sección (`GOB-MAT-001`)*
 
 #### Plataforma institucional
 
@@ -164,7 +166,7 @@ El gateway es responsable de:
 - Inyección de headers de correlación (`X-Request-ID`, `X-Forwarded-For`)
 - Logging de acceso (quién llamó, cuándo, qué endpoint, status de respuesta)
 - Enrutamiento al backend según la versión de la API (`/v1/`, `/v2/`)
-- Terminación TLS en el perímetro. Los backend reciben tráfico interno sobre HTTP dentro del cluster, conforme a la excepción acotada de `LIN-SEC-APP-001 §7.1` y `ADR-TLS-INTERNO-001`, que exige `NetworkPolicy` en el servicio como control sustitutivo (ver [sección 2.2](#22-https-obligatorio))
+- Terminación TLS en el perímetro. Los backend reciben tráfico interno sobre HTTP dentro del cluster, conforme a la excepción acotada de `SEC-R-001` (LIN-SEC-APP-001 §7.1) y `ADR-TLS-INTERNO-001`, que exige `NetworkPolicy` en el servicio como control sustitutivo (ver [sección 2.2](#22-https-obligatorio))
 
 #### Validación del token SAA — estado actual y objetivo futuro
 
@@ -414,6 +416,8 @@ La respuesta con paginación incluye los datos de paginación en el campo `meta`
 ## 4. Contrato de respuesta estándar
 
 ### 4.1 Estructura ApiResponseWrapper
+
+> 🔖 **`API-R-002`** — *identificador estable de esta regla; cítese este código y no el número de sección (`GOB-MAT-001`)*
 
 Todos los servicios REST de la ONP deben retornar sus respuestas usando `ApiResponseWrapper`. Esta estructura es el contrato institucional que garantiza consistencia entre servicios y facilita la correlación con logs y trazas.
 
@@ -685,7 +689,7 @@ Todos los endpoints de la ONP requieren el token emitido por **SAA** (Sistema de
 Authorization: Bearer <token-saa>
 ```
 
-El token SAA es **opaco** (no es JWT — no es autocontenido ni verificable localmente). El servicio no puede decodificarlo por su cuenta; la validación la realiza el `SaaTokenValidationFilter` mediante una llamada al endpoint de validación de SAA en cada request. Ver **LIN-SEC-APP-001 sección 8.3** para la implementación del filtro.
+El token SAA es **opaco** (no es JWT — no es autocontenido ni verificable localmente). El servicio no puede decodificarlo por su cuenta; la validación la realiza el `SaaTokenValidationFilter` mediante una llamada al endpoint de validación de SAA en cada request. Ver **`SEC-R-002` (LIN-SEC-APP-001 §8.3)** para la implementación del filtro.
 
 > **Objetivo futuro:** reemplazar SAA por OAuth2/OIDC mediante **WSO2 API Manager** (actualmente en PoC, no operacional en producción). Cuando esté operativo, el token pasará a ser JWT verificable localmente y este lineamiento se actualizará. Ver LIN-SEC-APP-001 para el modelo objetivo con WSO2.
 
@@ -732,7 +736,7 @@ El Controller debe anotar el `@RequestBody` con `@Valid` para activar la validac
 
 > **Documento dueño: `LIN-SEC-APP-001 §7.3`.** Estos headers son **obligatorios**, no recomendados.
 
-Mientras WSO2 no esté operativo como gateway centralizado, **es el propio servicio Spring Boot quien debe emitirlos** (`LIN-SEC-APP-001 §7.1`: los controles se configuran en la aplicación cuando no hay gateway). Delegarlos en una plataforma que aún está en PoC equivale a no emitirlos.
+Mientras WSO2 no esté operativo como gateway centralizado, **es el propio servicio Spring Boot quien debe emitirlos** (`SEC-R-001` (LIN-SEC-APP-001 §7.1): los controles se configuran en la aplicación cuando no hay gateway). Delegarlos en una plataforma que aún está en PoC equivale a no emitirlos.
 
 | Header | Valor obligatorio |
 |---|---|
@@ -802,7 +806,7 @@ public List<Regimen> obtenerRegimenes(String tipo) {
 
 Todo cliente HTTP que llame a servicios externos debe configurar timeouts explícitos. Queda prohibido dejar los valores por defecto del cliente (infinitos o excesivos).
 
-> **Valores normativos — documento dueño `LIN-DIS-001 §6.1`.** Los umbrales se definen mediante una matriz por **criticidad y demanda** del servicio consumido (ruta crítica interactiva / consulta de negocio / proceso diferido o batch), no con un par de valores único: RENIEC en ventanilla virtual exige `fail-fast` más agresivo que una conciliación SUNAT por lotes. Este lineamiento **no publica valores propios** para evitar divergencia entre documentos. Ver también `LIN-ARQ-001 §4.3` para integraciones con entidades del Estado.
+> **Valores normativos — documento dueño `DIS-R-008` (LIN-DIS-001 §6.1).** Los umbrales se definen mediante una matriz por **criticidad y demanda** del servicio consumido (ruta crítica interactiva / consulta de negocio / proceso diferido o batch), no con un par de valores único: RENIEC en ventanilla virtual exige `fail-fast` más agresivo que una conciliación SUNAT por lotes. Este lineamiento **no publica valores propios** para evitar divergencia entre documentos. Ver también `ARQ-R-004` (LIN-ARQ-001 §4.3) para integraciones con entidades del Estado.
 
 Lo que este lineamiento sí norma es la **respuesta del contrato REST ante el vencimiento del timeout**: si el servicio externo no responde en el plazo configurado, retornar `504` / `codDetRespuesta: 402` (ver [sección 5.1](#51-mapeo-de-codigo-http-a-coddetrespuesta)).
 
@@ -810,7 +814,7 @@ Lo que este lineamiento sí norma es la **respuesta del contrato REST ante el ve
 
 **Modelo objetivo (WSO2 operativo):** el API Gateway aplica rate limiting por cliente (IP o token) según el plan de suscripción, y los servicios no lo implementan internamente.
 
-**Estado actual (WSO2 en PoC):** dado que no existe gateway centralizado en producción, aplica la regla del documento dueño `LIN-SEC-APP-001 §7.1` — *«Rate limiting básico: configurado en la aplicación si no hay gateway»*. Todo servicio expuesto a consumidores externos (ciudadano o entidad pública) debe implementar un límite básico por cliente hasta que WSO2 gradúe.
+**Estado actual (WSO2 en PoC):** dado que no existe gateway centralizado en producción, aplica la regla del documento dueño `SEC-R-001` (LIN-SEC-APP-001 §7.1) — *«Rate limiting básico: configurado en la aplicación si no hay gateway»*. Todo servicio expuesto a consumidores externos (ciudadano o entidad pública) debe implementar un límite básico por cliente hasta que WSO2 gradúe.
 
 Al superarse el límite, el servicio responde `429 Too Many Requests` con `codDetRespuesta: 302` (ver [sección 5.1](#51-mapeo-de-codigo-http-a-coddetrespuesta)).
 
@@ -820,7 +824,7 @@ Al superarse el límite, el servicio responde `429 Too Many Requests` con `codDe
 
 ## 9. Observabilidad
 
-Los servicios REST de la ONP deben estar instrumentados con los **cuatro pilares de observabilidad** definidos en **LIN-ARQ-001 sección 5.3** (Four Golden Signals): trazas, logs estructurados, métricas y health checks. **No hay excepciones:** un servicio sin observabilidad no está listo para producción. Este lineamiento define los requisitos de cada pilar desde la perspectiva REST; la implementación técnica completa se encuentra en **LIN-OBS-001**.
+Los servicios REST de la ONP deben estar instrumentados con los **cuatro pilares de observabilidad** definidos en **`ARQ-R-005` (LIN-ARQ-001 §5.3)** (Four Golden Signals): trazas, logs estructurados, métricas y health checks. **No hay excepciones:** un servicio sin observabilidad no está listo para producción. Este lineamiento define los requisitos de cada pilar desde la perspectiva REST; la implementación técnica completa se encuentra en **LIN-OBS-001**.
 
 ### 9.1 Correlación de peticiones — X-Request-ID
 
@@ -956,7 +960,7 @@ Un servicio sin probes declaradas en el Deployment **no puede ser aprobado** par
 
 ### 9.7 Checklist mínimo de observabilidad antes de producción
 
-Equivalente del checklist de **LIN-ARQ-001 sección 5.3**, aplicado a servicios REST:
+Equivalente del checklist de **`ARQ-R-005` (LIN-ARQ-001 §5.3)**, aplicado a servicios REST:
 
 - [ ] `spring-boot-starter-actuator` incluido en `pom.xml`
 - [ ] `micrometer-registry-prometheus` incluido en `pom.xml`
@@ -1016,7 +1020,7 @@ Antes de que OTI Arquitectura active el estado `PUBLISHED` en WSO2, el equipo de
 #### Parte A — Requisitos técnicos (equipo de desarrollo)
 
 - [ ] Especificación OpenAPI 3.0 generada, válida y sin errores (verificable en Swagger Editor o Stoplight)
-- [ ] **Prueba de contrato ejecutada y en verde**, conforme a `LIN-TEST-001 §6` — documento dueño. El mínimo aceptable es validar la respuesta contra un JSON Schema derivado del OpenAPI; para APIs publicadas en WSO2 o con consumidores externos, `LIN-TEST-001 §6.2` exige validar request y response contra el `openapi.yml` completo con un OpenAPI validator
+- [ ] **Prueba de contrato ejecutada y en verde**, conforme a `TEST-R-002` (LIN-TEST-001 §6) — documento dueño. El mínimo aceptable es validar la respuesta contra un JSON Schema derivado del OpenAPI; para APIs publicadas en WSO2 o con consumidores externos, `LIN-TEST-001 §6.2` exige validar request y response contra el `openapi.yml` completo con un OpenAPI validator
 - [ ] Todos los endpoints documentados con `@Operation`, `@ApiResponse` y `@Schema` (ver LIN-DEV-JAVA-001 sección 13.4.6–13.4.7)
 - [ ] Backend desplegado y smoke-tested en el ambiente de destino (QA o PROD)
 - [ ] Endpoint `/actuator/health` responde `{"status":"UP"}` en el ambiente de destino
@@ -1024,7 +1028,7 @@ Antes de que OTI Arquitectura active el estado `PUBLISHED` en WSO2, el equipo de
 - [ ] Esquema de autenticación SAA declarado en la especificación OpenAPI (`securitySchemes: bearerAuth`) — cuando WSO2/OAuth2 esté operacional, actualizar a `oauth2`
 - [ ] Swagger deshabilitado en PROD (`SWAGGER_ENABLED=false`) si el ambiente es producción (ver [sección 6.2](#62-configuracion))
 - [ ] URL base interna del backend configurada en WSO2 Publisher apuntando al servicio K8s interno
-- [ ] **`NetworkPolicy` declarada** en los manifiestos del servicio (`LIN-K8S-001 §9.1`, Anexo E). Es la condición que sostiene la excepción de tráfico intra-cluster sobre HTTP de `ADR-TLS-INTERNO-001`: sin ella, el servicio debe servir HTTPS extremo a extremo
+- [ ] **`NetworkPolicy` declarada** en los manifiestos del servicio (`K8S-R-002` (LIN-K8S-001 §9.1), Anexo E). Es la condición que sostiene la excepción de tráfico intra-cluster sobre HTTP de `ADR-TLS-INTERNO-001`: sin ella, el servicio debe servir HTTPS extremo a extremo
 
 #### Parte B — Requisitos de gobernanza (OTI Arquitectura verifica)
 
@@ -1107,7 +1111,7 @@ https://<host>/api/v{N}/{recurso-plural}/{id}/{sub-recurso}?param=valor
 | LIN-DEV-JAVA-001 sección 13.4 | Implementación completa de OpenAPI/Swagger y `ApiResponseWrapper<T>` |
 | LIN-DEV-JAVA-001 sección 14 | Estructura de proyecto Maven y convenciones de nombrado |
 | LIN-ARQ-001 sección 2 | Estilos arquitectónicos macro (monolito, monolito modular, microservicios) |
-| LIN-DIS-001 sección 2.3 | Arquitectura Hexagonal (Ports & Adapters) |
+| `DIS-R-001` (LIN-DIS-001 §2.3) | Arquitectura Hexagonal (Ports & Adapters) |
 
 ---
 

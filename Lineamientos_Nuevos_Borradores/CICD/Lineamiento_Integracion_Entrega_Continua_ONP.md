@@ -457,7 +457,7 @@ PMD se ejecuta como validación complementaria de calidad Java. No reemplaza a C
 | Unit tests | Jest o Karma/Jasmine | Fase 1 |
 | E2E | Playwright preferente | Fase 2/3 según criticidad |
 | Lint | ESLint | Fase 2 |
-| **Core Web Vitals** | **Lighthouse CI (`lhci autorun`)** | **Fase 2 — gate de bloqueo mandatorio (`LIN-ARQ-001 §7.2`)** |
+| **Core Web Vitals** | **Lighthouse CI (`lhci autorun`)** | **Fase 2 — gate de bloqueo mandatorio (`ARQ-R-007` (LIN-ARQ-001 §7.2))** |
 | SCA | npm audit / herramienta aprobada | Fase 2 |
 | Package | Artefacto estático | Fase 1 |
 | Docker build | Nginx u runtime web aprobado | Fase 3 |
@@ -486,7 +486,7 @@ Las pruebas E2E no deben ejecutarse obligatoriamente en cada commit para todos l
 
 ### 9.4 Core Web Vitals (Lighthouse CI) — gate de bloqueo
 
-`LIN-ARQ-001 §7.2` declara el cumplimiento de Core Web Vitals como **gate de bloqueo mandatorio para la promoción del build de frontend a producción**, y `LIN-FE-ANG-001 §15.2` define el archivo `lighthouserc.js` con los umbrales institucionales (LCP < 2.5 s, INP/TBT < 200 ms, CLS < 0.1, FCP < 1.8 s, TTI < 3.5 s). Esta sección cierra el circuito: implementa el job de CI/CD que ejecuta esa configuración y bloquea el pipeline si no se cumple.
+`ARQ-R-007` (LIN-ARQ-001 §7.2) declara el cumplimiento de Core Web Vitals como **gate de bloqueo mandatorio para la promoción del build de frontend a producción**, y `LIN-FE-ANG-001 §15.2` define el archivo `lighthouserc.js` con los umbrales institucionales (LCP < 2.5 s, INP/TBT < 200 ms, CLS < 0.1, FCP < 1.8 s, TTI < 3.5 s). Esta sección cierra el circuito: implementa el job de CI/CD que ejecuta esa configuración y bloquea el pipeline si no se cumple.
 
 **Herramienta:** `@lhci/cli` (Lighthouse CI), ejecutado contra el build de producción servido localmente en el runner.
 
@@ -508,7 +508,7 @@ lighthouse:
     - if: '$CI_COMMIT_BRANCH == "main"'
 ```
 
-**Regla de bloqueo:** `lhci autorun` retorna código de salida distinto de cero si cualquier `assertion` de `lighthouserc.js` falla (ver umbrales completos en `LIN-FE-ANG-001 §15.2`); el job falla y el MR queda bloqueado igual que cualquier otro gate de calidad. No existe una ruta de "advertencia sin bloqueo" — `LIN-ARQ-001 §7.2` es explícito en que es un gate, no una recomendación.
+**Regla de bloqueo:** `lhci autorun` retorna código de salida distinto de cero si cualquier `assertion` de `lighthouserc.js` falla (ver umbrales completos en `LIN-FE-ANG-001 §15.2`); el job falla y el MR queda bloqueado igual que cualquier otro gate de calidad. No existe una ruta de "advertencia sin bloqueo" — `ARQ-R-007` (LIN-ARQ-001 §7.2) es explícito en que es un gate, no una recomendación.
 
 **Excepción:** solo mediante el proceso de ADR de la [sección 25](#25-proceso-adr-para-excepciones), igual que cualquier otro gate bloqueante (§19.3).
 
@@ -570,9 +570,9 @@ latest
 | Integración | Spring Boot Test / Testcontainers | Fase 2 |
 | Contrato | OpenAPI validator / Pact / Spring Cloud Contract | Fase 2/3 — **la obligatoriedad no es por fase**: la fija `LIN-TEST-001 §6.2` |
 | Caracterización | JUnit + BD controlada | Según legacy |
-| Cobertura | JaCoCo | Fase 2 — **el umbral lo fija `LIN-TEST-001 §5.1`**, no este documento |
+| Cobertura | JaCoCo | Fase 2 — **el umbral lo fija `TEST-R-001` (LIN-TEST-001 §5.1)**, no este documento |
 
-> **La fase indica cuándo se automatiza el control, no si el control es exigible.** Un proyecto en Fase 1 no queda eximido de los umbrales de cobertura de `LIN-TEST-001 §5.1` ni de las pruebas de contrato de `§6.2`: lo que cambia es que la verificación se hace de forma manual o semiautomática con evidencia en el Merge Request (`LIN-VER-001 §13`), en lugar de en el pipeline.
+> **La fase indica cuándo se automatiza el control, no si el control es exigible.** Un proyecto en Fase 1 no queda eximido de los umbrales de cobertura de `TEST-R-001` (LIN-TEST-001 §5.1) ni de las pruebas de contrato de `§6.2`: lo que cambia es que la verificación se hace de forma manual o semiautomática con evidencia en el Merge Request (`LIN-VER-001 §13`), en lugar de en el pipeline.
 
 ### 11.2 Pruebas frontend
 
@@ -623,18 +623,18 @@ El quality gate debe considerar progresivamente:
 
 - build exitoso;
 - pruebas exitosas;
-- cobertura mínima **según los umbrales de `LIN-TEST-001 §5.1`** — no es un valor que este documento fije ni que escale por fase;
+- cobertura mínima **según los umbrales de `TEST-R-001` (LIN-TEST-001 §5.1)** — no es un valor que este documento fije ni que escale por fase;
 - ausencia de violaciones críticas;
 - ausencia de duplicación crítica;
 - deuda técnica controlada;
 - no reducción significativa de cobertura;
 - no incremento injustificado de issues críticos.
 
-**Condición explícita de SonarQube (`LIN-ARQ-001 §8.3`):** "ausencia de violaciones críticas" no es un umbral discrecional por fase — el criterio de aceptación institucional es **cero (0) vulnerabilidades en severidad `Blocker` o `Critical`** (*Security Hotspots* incluidos) en el análisis de SonarQube. El quality gate de SonarQube debe configurarse con una condición dedicada sobre `security_rating`/`reliability_rating` en severidad Blocker/Critical = 0, independiente del gate genérico de cobertura o duplicación. Esta condición bloquea desde Fase 2 sin excepción de madurez (a diferencia del resto de reglas de este apartado, que sí escalan progresivamente por fase).
+**Condición explícita de SonarQube (`ARQ-R-008` (LIN-ARQ-001 §8.3)):** "ausencia de violaciones críticas" no es un umbral discrecional por fase — el criterio de aceptación institucional es **cero (0) vulnerabilidades en severidad `Blocker` o `Critical`** (*Security Hotspots* incluidos) en el análisis de SonarQube. El quality gate de SonarQube debe configurarse con una condición dedicada sobre `security_rating`/`reliability_rating` en severidad Blocker/Critical = 0, independiente del gate genérico de cobertura o duplicación. Esta condición bloquea desde Fase 2 sin excepción de madurez (a diferencia del resto de reglas de este apartado, que sí escalan progresivamente por fase).
 
 ### 12.4 Deuda técnica de Feature Toggles (Unleash)
 
-`LIN-ARQ-001 §2.3` establece que un *Release Toggle* que permanece en el código más de 30 días después del pase a producción es deuda técnica crítica, y que "el pipeline de análisis estático (SonarQube) emitirá una alerta de bloqueo... en las comprobaciones de Unleash". SonarQube no tiene un plugin nativo para Unleash, así que esta comprobación se implementa como un job dedicado que consulta la API administrativa de Unleash y bloquea el pipeline — el efecto de bloqueo es el mismo que describe `LIN-ARQ-001 §2.3`, aunque el motor no sea SonarQube en sí mismo.
+`ARQ-R-002` (LIN-ARQ-001 §2.3) establece que un *Release Toggle* que permanece en el código más de 30 días después del pase a producción es deuda técnica crítica, y que "el pipeline de análisis estático (SonarQube) emitirá una alerta de bloqueo... en las comprobaciones de Unleash". SonarQube no tiene un plugin nativo para Unleash, así que esta comprobación se implementa como un job dedicado que consulta la API administrativa de Unleash y bloquea el pipeline — el efecto de bloqueo es el mismo que describe `ARQ-R-002` (LIN-ARQ-001 §2.3), aunque el motor no sea SonarQube en sí mismo.
 
 **Script referencial** (ejecutado contra el proyecto/entorno Unleash institucional):
 
@@ -673,11 +673,11 @@ unleash-toggle-debt-check:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
 ```
 
-**Alcance:** solo aplica a *Release Toggles* (etiqueta `release` en Unleash, ver `LIN-ARQ-001 §2.3` tabla de categorías) — los *Ops*, *Experiment* y *Permission Toggles* tienen ciclo de vida largo/permanente por diseño y no entran en esta regla. Requiere que el equipo etiquete el toggle como `release` al crearlo en Unleash; sin esa etiqueta el script no puede distinguirlo de un toggle de largo plazo.
+**Alcance:** solo aplica a *Release Toggles* (etiqueta `release` en Unleash, ver `ARQ-R-002` (LIN-ARQ-001 §2.3) tabla de categorías) — los *Ops*, *Experiment* y *Permission Toggles* tienen ciclo de vida largo/permanente por diseño y no entran en esta regla. Requiere que el equipo etiquete el toggle como `release` al crearlo en Unleash; sin esa etiqueta el script no puede distinguirlo de un toggle de largo plazo.
 
 ### 12.5 Declaración de Conformidad con LIN-ARQ-001 en README
 
-`LIN-ARQ-001 §8.3` punto 4 exige una "declaración jurada técnica en el `README.md` del repositorio firmada por el Tech Lead de la fábrica, certificando la ausencia de importaciones entre fronteras prohibidas en el Monolito Modular (`LIN-DIS-001 §3.4`)". El pipeline **no puede validar el contenido sustantivo** de esa declaración (es un juicio humano del Tech Lead, no una propiedad verificable por máquina) — lo que sí puede y debe hacer es bloquear el pase si la sección obligatoria está ausente o incompleta.
+`ARQ-R-008` (LIN-ARQ-001 §8.3) punto 4 exige una "declaración jurada técnica en el `README.md` del repositorio firmada por el Tech Lead de la fábrica, certificando la ausencia de importaciones entre fronteras prohibidas en el Monolito Modular (`DIS-R-003` (LIN-DIS-001 §3.4))". El pipeline **no puede validar el contenido sustantivo** de esa declaración (es un juicio humano del Tech Lead, no una propiedad verificable por máquina) — lo que sí puede y debe hacer es bloquear el pase si la sección obligatoria está ausente o incompleta.
 
 **Formato mínimo obligatorio en `README.md`:**
 
@@ -995,8 +995,8 @@ Debe requerir:
 
 | Criterio | Bloquea |
 |---|---|
-| Cobertura JaCoCo inferior al umbral de `LIN-TEST-001 §5.1` | **Sí** |
-| Cobertura Angular inferior al umbral de `LIN-TEST-001 §5.1` | **Sí** |
+| Cobertura JaCoCo inferior al umbral de `TEST-R-001` (LIN-TEST-001 §5.1) | **Sí** |
+| Cobertura Angular inferior al umbral de `TEST-R-001` (LIN-TEST-001 §5.1) | **Sí** |
 | Prueba unitaria o de integración fallida | **Sí** |
 | **Prueba de arquitectura (`AT`) fallida** — frontera entre módulos o Shared Kernel violados | **Sí** |
 | Prueba de caracterización (`CT`) fallida | **Sí** |
@@ -1021,9 +1021,9 @@ Debe requerir:
 | PMD crítico | Sí desde Fase 2 madura |
 | CPD duplicación crítica | Según umbral |
 | SonarQube quality gate falla | Según fase |
-| **SonarQube: vulnerabilidad Blocker o Critical presente** | **Sí, sin excepción de fase (`LIN-ARQ-001 §8.3`)** |
-| **Feature Toggle (Unleash) caduco: Release Toggle > 30 días desde el pase a producción** | **Sí (`LIN-ARQ-001 §2.3`, ver §12.4)** |
-| **Lighthouse CI (Core Web Vitals) falla algún assertion** | **Sí desde Fase 2 (`LIN-ARQ-001 §7.2`, ver §9.4)** |
+| **SonarQube: vulnerabilidad Blocker o Critical presente** | **Sí, sin excepción de fase (`ARQ-R-008` (LIN-ARQ-001 §8.3))** |
+| **Feature Toggle (Unleash) caduco: Release Toggle > 30 días desde el pase a producción** | **Sí (`ARQ-R-002` (LIN-ARQ-001 §2.3), ver §12.4)** |
+| **Lighthouse CI (Core Web Vitals) falla algún assertion** | **Sí desde Fase 2 (`ARQ-R-007` (LIN-ARQ-001 §7.2), ver §9.4)** |
 | Secret detectado | Sí |
 | Vulnerabilidad crítica | Sí salvo excepción |
 | Imagen con CVE crítico | Sí salvo excepción |

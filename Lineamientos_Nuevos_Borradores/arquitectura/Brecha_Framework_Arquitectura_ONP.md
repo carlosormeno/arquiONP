@@ -23,12 +23,12 @@ Este documento registra los patrones, estilos, principios y decisiones arquitect
 | # | Estilo | Estado | Documento destino | Notas |
 |---|---|---|---|---|
 | E01 | Arquitectura en Capas (Layered) | ✅ Documentado | LIN-DIS-001 §2.2 | |
-| E02 | Arquitectura Hexagonal (Ports & Adapters) | ✅ Documentado | LIN-DIS-001 §2.3 | |
-| E03 | Monolito Puro | ✅ Documentado | LIN-ARQ-001 §2.1 | |
-| E04 | Monolito Modular | ✅ Documentado | LIN-ARQ-001 §2.1 | Destino por defecto ONP |
-| E05 | Microservicios | ✅ Documentado | LIN-ARQ-001 §2.1 | Con criterios de extracción |
+| E02 | Arquitectura Hexagonal (Ports & Adapters) | ✅ Documentado | `DIS-R-001` (LIN-DIS-001 §2.3) | |
+| E03 | Monolito Puro | ✅ Documentado | `ARQ-R-001` (LIN-ARQ-001 §2.1) | |
+| E04 | Monolito Modular | ✅ Documentado | `ARQ-R-001` (LIN-ARQ-001 §2.1) | Destino por defecto ONP |
+| E05 | Microservicios | ✅ Documentado | `ARQ-R-001` (LIN-ARQ-001 §2.1) | Con criterios de extracción |
 | E06 | Arquitectura Orientada a Eventos (EDA) | ✅ Documentado | LIN-ARQ-001 §4.2 | |
-| E07 | Arquitectura Orientada a Servicios (SOA) | ✅ Documentado | LIN-ARQ-001 §4.3 | Modelo mandatorio para interoperabilidad B2G/G2G (PIDE, RENIEC, SUNAT) con resiliencia y ACL obligatorios |
+| E07 | Arquitectura Orientada a Servicios (SOA) | ✅ Documentado | `ARQ-R-004` (LIN-ARQ-001 §4.3) | Modelo mandatorio para interoperabilidad B2G/G2G (PIDE, RENIEC, SUNAT) con resiliencia y ACL obligatorios |
 | E08 | Serverless | ❌ Pendiente | LIN-ARQ-001 | Evaluar si aplica a largo plazo en ONP |
 | E09 | Pipe and Filter | ❌ Pendiente | LIN-ARQ-001 | Revisar si aplica para pipelines de datos |
 
@@ -40,19 +40,19 @@ Este documento registra los patrones, estilos, principios y decisiones arquitect
 | # | Patrón | Estado | Documento destino | Notas |
 |---|---|---|---|---|
 | PA01 | Strangler Fig | ✅ Documentado | LIN-ARQ-001 §2.2 | Migración de legacy |
-| PA02 | Anti-Corruption Layer (ACL) | ✅ Documentado | LIN-DIS-001 §5.4 + LIN-ARQ-001 §4.3 | Obligatorio con RENIEC, SUNAT, PIDE |
-| PA03 | Saga — coreografía | ✅ Documentado | LIN-ARQ-001 §3.3 + LIN-BUS-001 §9.1 | |
-| PA04 | Saga — orquestación | ✅ Documentado | LIN-ARQ-001 §3.3 + LIN-BUS-001 §9.2 | |
+| PA02 | Anti-Corruption Layer (ACL) | ✅ Documentado | `DIS-R-006` (LIN-DIS-001 §5.4) + `ARQ-R-004` (LIN-ARQ-001 §4.3) | Obligatorio con RENIEC, SUNAT, PIDE |
+| PA03 | Saga — coreografía | ✅ Documentado | `ARQ-R-003` (LIN-ARQ-001 §3.3) + LIN-BUS-001 §9.1 | |
+| PA04 | Saga — orquestación | ✅ Documentado | `ARQ-R-003` (LIN-ARQ-001 §3.3) + LIN-BUS-001 §9.2 | |
 | PA05 | Saga sobre monolitos (Kafka + REST) | ✅ Documentado | LIN-ARQ-001 §3.3.1 + LIN-BUS-001 §9.4 | Variante ONP — parque actual |
-| PA06 | Transactional Outbox | ✅ Documentado | LIN-ARQ-001 §3.3 + LIN-BUS-001 §7.3 | |
-| PA07 | CQRS (Event-Driven) | ✅ Documentado | LIN-DIS-001 §4.2 | Dos variantes: Outbox+Kafka (estándar) y CDC+Kafka (agnóstico al motor). Adopción mediante ADR obligatorio. |
-| PA08 | API Gateway / API Manager | ✅ Documentado | LIN-API-REST-001 §2.5 | WSO2 — estado PoC (ADR-WSO2-001) |
-| PA09 | BFF (Backend for Frontend) | ✅ Documentado | LIN-DIS-001 §5.1 | Patrón oficial **PT11** (ficha `PAT-INT-01`) para adaptación de canales y mediación SSO frente a WSO2. |
+| PA06 | Transactional Outbox | ✅ Documentado | `ARQ-R-003` (LIN-ARQ-001 §3.3) + LIN-BUS-001 §7.3 | |
+| PA07 | CQRS (Event-Driven) | ✅ Documentado | `DIS-R-004` (LIN-DIS-001 §4.2) | Dos variantes: Outbox+Kafka (estándar) y CDC+Kafka (agnóstico al motor). Adopción mediante ADR obligatorio. |
+| PA08 | API Gateway / API Manager | ✅ Documentado | `API-R-001` (LIN-API-REST-001 §2.5) | WSO2 — estado PoC (ADR-WSO2-001) |
+| PA09 | BFF (Backend for Frontend) | ✅ Documentado | `DIS-R-005` (LIN-DIS-001 §5.1) | Patrón oficial **PT11** (ficha `PAT-INT-01`) para adaptación de canales y mediación SSO frente a WSO2. |
 | PA10 | Facade (arquitectura) | ✅ Documentado | LIN-DIS-001 §5.3 | Patrón oficial **PT15** (ficha `PAT-INT-03`) para ocultar complejidad externa/legada en Monolito Modular. |
 | PA11 | Gateway-Aggregation | ✅ Documentado | LIN-DIS-001 §5.2 | Patrón oficial **PT12** (ficha `PAT-INT-02`) intra-JVM para Monolito Modular y vía red en Microservicios. |
 | PA12 | Sidecar | ✅ Documentado | LIN-K8S-001 §9.4.A | Patrón oficial **PT17** (ficha `PAT-K8S-01`). Prohibido en Java/Spring Boot 3; admitido solo para cajas negras que escriben bitácora en archivo, y reservado a la malla de servicios cuando exista |
-| PA13 | Ambassador | ✅ Documentado | LIN-K8S-001 §9.4.B | Patrón oficial **PT18** (ficha `PAT-K8S-02`). Prohibido en Java/Spring Boot 3 —la resiliencia saliente se resuelve en la JVM según `LIN-DIS-001 §6`—; admitido solo en monolitos heredados no-Java bajo Strangler Fig |
-| PA14 | Feature Toggle (Strangler complemento) | ✅ Documentado | LIN-ARQ-001 §2.3 | Normado en 4 variantes para Trunk-Based Development, Kill-Switch y Branch by Abstraction |
+| PA13 | Ambassador | ✅ Documentado | LIN-K8S-001 §9.4.B | Patrón oficial **PT18** (ficha `PAT-K8S-02`). Prohibido en Java/Spring Boot 3 —la resiliencia saliente se resuelve en la JVM según `DIS-R-007` (LIN-DIS-001 §6)—; admitido solo en monolitos heredados no-Java bajo Strangler Fig |
+| PA14 | Feature Toggle (Strangler complemento) | ✅ Documentado | `ARQ-R-002` (LIN-ARQ-001 §2.3) | Normado en 4 variantes para Trunk-Based Development, Kill-Switch y Branch by Abstraction |
 
 ---
 
@@ -66,9 +66,9 @@ Este documento registra los patrones, estilos, principios y decisiones arquitect
 | PI03 | CloudEvents v1.0 | ✅ Documentado | LIN-BUS-001 §5.2 + ADR-CLOUDEVENTS-001 | |
 | PI04 | Dead Letter Queue (DLQ) | ✅ Documentado | LIN-BUS-001 §8.5–8.7 | |
 | PI05 | Idempotent Consumer | ✅ Documentado | LIN-BUS-001 §8.4 | |
-| PI06 | Circuit Breaker | ✅ Documentado | LIN-DIS-001 §6.2 | Estándar y condicionales (Estadio 3 Microservicios o excepción en Monolito Modular) |
+| PI06 | Circuit Breaker | ✅ Documentado | `DIS-R-009` (LIN-DIS-001 §6.2) | Estándar y condicionales (Estadio 3 Microservicios o excepción en Monolito Modular) |
 | PI07 | Retry con backoff exponencial | ✅ Documentado | LIN-DIS-001 §6.3 + LIN-BUS-001 §8.5 | Cubierto para REST y Kafka |
-| PI08 | Timeout | ✅ Documentado | LIN-DIS-001 §6.1 | Matriz de timeouts por criticidad y demanda |
+| PI08 | Timeout | ✅ Documentado | `DIS-R-008` (LIN-DIS-001 §6.1) | Matriz de timeouts por criticidad y demanda |
 | PI09 | Bulkhead | ✅ Documentado | LIN-DIS-001 §6.3 | Aislamiento por pools de conexión HTTP/JDBC |
 | PI10 | Rate Limiting (patrón de diseño) | ⚠️ Parcial | LIN-API-REST-001 | Cubierto en WSO2 Gateway, falta para consumo interno |
 | PI11 | Competing Consumers | ❌ Pendiente | LIN-BUS-001 | Múltiples instancias consumiendo el mismo tópico |
@@ -88,9 +88,9 @@ Este documento registra los patrones, estilos, principios y decisiones arquitect
 | PD04 | Repository | ✅ Documentado | LIN-DEV-JAVA-001 §13.5.3 | Puerto en capa de dominio + adaptador `JpaRepository`/`JdbcRepository` en infraestructura; traducción de excepciones Oracle a jerarquía limpia |
 | PD05 | Domain Service | ✅ Documentado | LIN-DEV-JAVA-001 §13.5.2 | POJO puro sin anotaciones de Spring/JPA; registro obligatorio vía `@Configuration`/`@Bean` para preservar la pureza hexagonal |
 | PD06 | Application Service | ✅ Documentado | LIN-DEV-JAVA-001 §13.5.1 | Orquestador transaccional (`@Service` + `@Transactional`); delega en el Domain Service y publica eventos de dominio |
-| PD07 | Bounded Context | ✅ Documentado | LIN-DIS-001 §3 | |
+| PD07 | Bounded Context | ✅ Documentado | `DIS-R-002` (LIN-DIS-001 §3) | |
 | PD08 | Context Map | ✅ Documentado | LIN-DIS-001 §3.1 | Contrato y relaciones entre Bounded Contexts en Monolito Modular |
-| PD09 | Shared Kernel | ✅ Documentado | LIN-DIS-001 §3.4 | Estándar y tabla de elementos permitidos/prohibidos en módulo común |
+| PD09 | Shared Kernel | ✅ Documentado | `DIS-R-003` (LIN-DIS-001 §3.4) | Estándar y tabla de elementos permitidos/prohibidos en módulo común |
 | PD10 | Published Language | ✅ Documentado | LIN-BUS-001 §5.2 + LIN-API-REST-001 | Contratos CloudEvents v1.0 / Schema Registry (asíncrono) y OpenAPI 3.0 (síncrono) |
 
 ---
@@ -133,9 +133,9 @@ Este documento registra los patrones, estilos, principios y decisiones arquitect
 | PRA01 | Teorema CAP (CP vs AP) | ✅ Documentado | LIN-ARQ-001 §3.1 | Obligatorio en extracción de microservicios |
 | PRA02 | Consistencia eventual | ✅ Documentado | LIN-ARQ-001 §4.2 + LIN-BUS-001 | |
 | PRA03 | Idempotencia | ✅ Documentado | LIN-BUS-001 §8.4 | |
-| PRA04 | Observabilidad como requisito (4 pilares) | ✅ Documentado | LIN-ARQ-001 §5.3 + LIN-OBS-001 | |
+| PRA04 | Observabilidad como requisito (4 pilares) | ✅ Documentado | `ARQ-R-005` (LIN-ARQ-001 §5.3) + LIN-OBS-001 | |
 | PRA05 | Contract First | ✅ Documentado | LIN-API-REST-001 + LIN-BUS-001 P3 | APIs y eventos |
-| PRA06 | Design for Failure | ✅ Documentado | LIN-DIS-001 §6 | Cubierto en Monolito Modular y Microservicios |
+| PRA06 | Design for Failure | ✅ Documentado | `DIS-R-007` (LIN-DIS-001 §6) | Cubierto en Monolito Modular y Microservicios |
 | PRA07 | Loose Coupling / High Cohesion | ✅ Documentado | LIN-DIS-001 §1.2 | Declarado formalmente con tabla de aplicación por decisión arquitectónica |
 | PRA08 | Zero Trust | ⚠️ Parcial | LIN-SEC-APP-001 | Implícito, falta declaración formal |
 | PRA09 | Inmutabilidad de eventos | ✅ Documentado | LIN-DIS-001 §1.2 | Declarado formalmente en `LIN-DIS-001 §1.2` con tabla de decisiones; referenciado normativamente en `LIN-BUS-001 §5.2` (Published Language) |
@@ -150,24 +150,24 @@ Este documento registra los patrones, estilos, principios y decisiones arquitect
 
 | Código | Brecha | Estado |
 |---|---|---|
-| PI06 | Circuit Breaker — resiliencia en llamadas REST y Kafka | ✅ Cerrada (LIN-DIS-001 §6.2) |
-| PI08 | Timeout — sin estándar definido | ✅ Cerrada (LIN-DIS-001 §6.1) |
-| PRA06 | Design for Failure — principio transversal a todo | ✅ Cerrada (LIN-DIS-001 §6) |
+| PI06 | Circuit Breaker — resiliencia en llamadas REST y Kafka | ✅ Cerrada (`DIS-R-009` (LIN-DIS-001 §6.2)) |
+| PI08 | Timeout — sin estándar definido | ✅ Cerrada (`DIS-R-008` (LIN-DIS-001 §6.1)) |
+| PRA06 | Design for Failure — principio transversal a todo | ✅ Cerrada (`DIS-R-007` (LIN-DIS-001 §6)) |
 | PR01–PR05 | SOLID — base del código Java ONP | ✅ Cerrada (`LIN-DIS-001 §1.2` + `LIN-DEV-JAVA-001 §7.1`–`§7.5`) |
 
 ### Media prioridad — necesarios al avanzar hacia microservicios
 
 | Código | Brecha | Estado |
 |---|---|---|
-| PA09 | BFF (Backend for Frontend) — PT11 oficial | ✅ Cerrada (LIN-DIS-001 §5.1) |
+| PA09 | BFF (Backend for Frontend) — PT11 oficial | ✅ Cerrada (`DIS-R-005` (LIN-DIS-001 §5.1)) |
 | PA10 | Facade (arquitectura) — PT15 oficial | ✅ Cerrada (LIN-DIS-001 §5.3) |
 | PA11 | Gateway-Aggregation — PT12 oficial | ✅ Cerrada (LIN-DIS-001 §5.2) |
 | PA12 | Sidecar — PT17 oficial | ✅ Cerrada (LIN-K8S-001 §9.4.A, ficha `PAT-K8S-01`) |
 | PA13 | Ambassador — PT18 oficial | ✅ Cerrada (LIN-K8S-001 §9.4.B, ficha `PAT-K8S-02`) |
 | PD08 | Context Map | ✅ Cerrada (LIN-DIS-001 §3.1) |
-| PD09 | Shared Kernel | ✅ Cerrada (LIN-DIS-001 §3.4) |
+| PD09 | Shared Kernel | ✅ Cerrada (`DIS-R-003` (LIN-DIS-001 §3.4)) |
 | PI09 | Bulkhead | ✅ Cerrada (LIN-DIS-001 §6.3) |
-| PA07 | CQRS — detalle de implementación | ✅ Cerrada (LIN-DIS-001 §4.2) |
+| PA07 | CQRS — detalle de implementación | ✅ Cerrada (`DIS-R-004` (LIN-DIS-001 §4.2)) |
 | PD04–PD06 | Repository, Domain Service, Application Service — building blocks tácticos en Spring | ✅ Cerrada (LIN-DEV-JAVA-001 §13.5) |
 
 ### Baja prioridad — complementan el framework a largo plazo

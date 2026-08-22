@@ -812,12 +812,12 @@ El revisor debe verificar, según aplique:
 
 Hasta la implementación de `LIN-CICD-001`, las evidencias mínimas se adjuntan, enlazan o describen en el Merge Request.
 
-> **Qué se evidencia y qué se exige son cosas distintas.** Esta tabla define *qué prueba debe acompañar al MR*; los **umbrales** de cobertura y los tipos de prueba obligatorios los fija `LIN-TEST-001 §5.1`, que es el documento dueño. Ninguna fila de esta tabla releva de esos umbrales.
+> **Qué se evidencia y qué se exige son cosas distintas.** Esta tabla define *qué prueba debe acompañar al MR*; los **umbrales** de cobertura y los tipos de prueba obligatorios los fija `TEST-R-001` (LIN-TEST-001 §5.1), que es el documento dueño. Ninguna fila de esta tabla releva de esos umbrales.
 
 | Tipo de cambio | Evidencia mínima |
 |---|---|
-| Backend Java | Resultado de pruebas unitarias/integración y **cobertura conforme a los umbrales de `LIN-TEST-001 §5.1`** (no es opcional) |
-| Frontend Angular | Pruebas unitarias con la cobertura exigida en `LIN-TEST-001 §5.1`, build local, E2E si aplica |
+| Backend Java | Resultado de pruebas unitarias/integración y **cobertura conforme a los umbrales de `TEST-R-001` (LIN-TEST-001 §5.1)** (no es opcional) |
+| Frontend Angular | Pruebas unitarias con la cobertura exigida en `TEST-R-001` (LIN-TEST-001 §5.1), build local, E2E si aplica |
 | API REST | `openapi.yml` actualizado y evidencia de compatibilidad |
 | Contrato API crítico | Validación OpenAPI o prueba de contrato |
 | Base de datos | Script versionado, estrategia de reversa o compensación si aplica, evidencia de prueba |
@@ -920,7 +920,7 @@ Todo release debe documentar:
 
 ### 15.3 Relación con imágenes de contenedor
 
-Cuando el componente genera imagen de contenedor, el tag de imagen debe corresponder a la versión del release. Conforme a `LIN-K8S-001 §6.3`, el tag debe ser **explícito e inmutable**: `latest` y cualquier etiqueta móvil están prohibidos en QA y Producción. Si por restricción técnica no puede usarse la versión del release, se admite un identificador inmutable y trazable al commit (por ejemplo, el SHA corto), nunca una etiqueta reutilizable.
+Cuando el componente genera imagen de contenedor, el tag de imagen debe corresponder a la versión del release. Conforme a `K8S-R-001` (LIN-K8S-001 §6.3), el tag debe ser **explícito e inmutable**: `latest` y cualquier etiqueta móvil están prohibidos en QA y Producción. Si por restricción técnica no puede usarse la versión del release, se admite un identificador inmutable y trazable al commit (por ejemplo, el SHA corto), nunca una etiqueta reutilizable.
 
 Ejemplo:
 

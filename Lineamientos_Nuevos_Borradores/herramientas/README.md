@@ -29,11 +29,12 @@ Código de salida `0` si no hay errores, `1` si los hay. Los **avisos no rompen 
 |---|---|---|---|
 | **C1** | Toda cita `LIN-XXX §N.N` o `LIN-XXX sección N.N` resuelve a una sección real del documento citado | Error | H1, H5.3, H6, H7 — 17 citas rotas corregidas a mano |
 | **C2** | La versión del encabezado coincide con la embebida en el nombre de archivo | Aviso | H8 — divergencia sistémica, 19 documentos afectados |
-| **C3** | Todo código `PT` citado está definido en `LIN-PAT-001` (fuente única). Además, un código de brecha (`PA`/`PI`/`PD`/`PR`/`PG`) inexistente en `GOB-BRE-001` es error, y uno que el tablero declare `Pendiente` es aviso | Error / Aviso | H10.3 — el ida y vuelta PT06↔PT07. **Ampliada en H26:** `LIN-K8S-001 §9.4` normaba Sidecar y Ambassador con los códigos `PA12`/`PA13` del tablero de brechas, invisible para el linter |
+| **C3** | Todo código `PT` citado está definido en `LIN-PAT-001` (fuente única). Además, un código de brecha (`PA`/`PI`/`PD`/`PR`/`PG`) inexistente en `GOB-BRE-001` es error, y uno que el tablero declare `Pendiente` es aviso | Error / Aviso | H10.3 — el ida y vuelta PT06↔PT07. **Ampliada en H26:** `K8S-R-003` (LIN-K8S-001 §9.4) normaba Sidecar y Ambassador con los códigos `PA12`/`PA13` del tablero de brechas, invisible para el linter |
 | **C4** | Las copias controladas son idénticas a su fuente canónica | Error | H4.4 — los templates enviaban un `checkstyle-onp.xml` mutilado |
 | **C5** | Sin rutas absolutas de máquina; los enlaces relativos resuelven | Error | H10.5, H13.5 — 13 enlaces `file:///home/carlos/...` |
 | **C6** | Las rutas del catálogo de `GOB-MAT-001` existen y contienen el código atribuido | Error | H8.3 — al renombrar el documento congelado, la ruta del catálogo quedó apuntando a un archivo inexistente |
 | **C8** | La versión y el estado que el catálogo declara coinciden con el encabezado real | Error (estado) / Aviso (versión) | H25 — **15 de 21 entradas desactualizadas**; el catálogo daba `LIN-API-REST-001` por «Borrador v0.1.5» cuando iba por «En revisión v0.1.7» |
+| **C9** | Todo identificador estable de regla (`ARQ-R-001`) citado está declarado, y ninguno lo está dos veces | Error / Aviso (declarado sin citar) | H39 — desacopla la identidad de una regla de su número de sección |
 
 ### Decisiones de diseño
 
@@ -44,6 +45,8 @@ Código de salida `0` si no hay errores, `1` si los hay. Los **avisos no rompen 
 **`LIN-ARQ-000` está excluido de las citas salientes.** Es cantera histórica congelada: sus referencias apuntan a su propia estructura y no deben corregirse. Sí se le aplican C5 (enlaces) y las comprobaciones entrantes — otros documentos no pueden citarlo como norma vigente.
 
 **El estado desviado es error; la versión desviada, aviso.** C8 distingue ambos casos porque no cuestan lo mismo. Una versión desfasada en el catálogo desorienta; un **estado** desfasado cambia qué es contractualmente exigible, porque la regla de exigibilidad de `GOB-MAT-001` se aplica sobre el estado declarado — dar por `Vigente` lo que sigue en `Borrador` permite exigir en un TDR algo que aún no obliga.
+
+**Índice de reglas:** `python3 herramientas/lint_corpus.py --indice` imprime el mapa `ID → documento §sección`. **Se genera, no se mantiene a mano**: una tabla manual volvería a divergir, que es el problema que los IDs resuelven.
 
 **No hay C7.** El número está reservado para la comprobación de anclas internas (`GOB-CHK-001` H21.2), pendiente de validar el algoritmo de generación contra el renderizador real del GitLab de la ONP. C8 se numeró después para no ocupar ese hueco.
 

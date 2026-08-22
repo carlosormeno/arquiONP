@@ -76,12 +76,12 @@ Cada vez que un Arquitecto de Software, Diseñador/Tech Lead o Desarrollador ana
 |---|---|
 | **Código** | `PAT-TOP-01` (Nivel 1 — Topología Macro) |
 | **Nombre** | **Monolito Modular (*Estadio 2*)** |
-| **Capa / Dominio** | Topología de Despliegue e Interconexión de Sistemas (`LIN-ARQ-001 §2.1`) |
+| **Capa / Dominio** | Topología de Despliegue e Interconexión de Sistemas (`ARQ-R-001` (LIN-ARQ-001 §2.1)) |
 | **Descripción** | Aplicación desplegable en una sola unidad física en Kubernetes (`Pod`), pero organizada internamente en módulos estancos independientes (*Bounded Contexts*) con aislamiento estricto de código, esquemas de base de datos divididos por dominio y comunicación regulada en memoria. |
 | **✅ Criterio de Selección<br>*(¿Cuándo usar en ONP?)*** | **Se DEBE usar si el análisis de requisitos determina:**<br>• El sistema abarca entre 2 y 6 dominios funcionales fuertemente colaborativos (ej. Sistema Previsional Core que gestiona Expedientes, Aportes y Pensionistas en transacciones coordinadas).<br>• El equipo técnico asignado tiene menos de 15 desarrolladores y comparte un pipeline CI/CD unificado.<br>• Es un nuevo desarrollo que reemplaza un sistema legacy (*Estadio 1*) y busca alta modularidad sin asumir la complejidad operacional extrema ni la latencia de red de múltiples microservicios distribuidos. |
 | **❌ Criterio de Exclusión<br>*(¿Cuándo NO usar?)*** | **NO usar cuando:**<br>• Un único submódulo o función concentra más del 85% del tráfico o de la carga computacional y requiere escalar horizontalmente en K8s de forma aislada sin duplicar el resto del sistema (en ese caso $\rightarrow$ *Microservicio PAT-TOP-02*).<br>• Se permite que las clases de un paquete accedan libremente a clases internas o tablas `JPA` de otro paquete sin pasar por las interfaces de contrato `application.api`. |
 | **🛠️ Stack / Herramienta<br>Homologada en ONP** | Java 21 + Spring Boot 3 (`Maven Multi-Module` organizado con `onp-common-domain` para primitivas transversales) sobre contenedor Linux Alpine en `containerd/K8s`. |
-| **📖 Referencia Oficial** | `LIN-ARQ-001 §2.1` (Estadio 2) y `LIN-DIS-001 §3` |
+| **📖 Referencia Oficial** | `ARQ-R-001` (LIN-ARQ-001 §2.1) (Estadio 2) y `DIS-R-002` (LIN-DIS-001 §3) |
 
 ---
 
@@ -91,12 +91,12 @@ Cada vez que un Arquitecto de Software, Diseñador/Tech Lead o Desarrollador ana
 |---|---|
 | **Código** | `PAT-TOP-02` (Nivel 1 — Topología Macro) |
 | **Nombre** | **Microservicios Cloud-Native (*Estadio 3*)** |
-| **Capa / Dominio** | Topología de Despliegue Distribuido (`LIN-ARQ-001 §2.1`) |
+| **Capa / Dominio** | Topología de Despliegue Distribuido (`ARQ-R-001` (LIN-ARQ-001 §2.1)) |
 | **Descripción** | Descomposición de un sistema en servicios pequeños, autónomos y altamente especializados, donde cada microservicio encapsula una única capacidad de negocio previsional, posee su propia base de datos exclusiva y se despliega y escala de forma 100% independiente en Kubernetes. |
 | **✅ Criterio de Selección<br>*(¿Cuándo usar en ONP?)*** | **Se DEBE usar si el análisis de requisitos determina:**<br>• El componente tiene requerimientos de escalabilidad masiva y latencia asimétrica respecto al resto de la institución (ej. Motor Actuarial de Cálculo de Pensiones en épocas de pago masivo o Consulta Ciudadana Web en picos masivos).<br>• La solución es mantenida por equipos de desarrollo independientes (*Two-Pizza Teams*) con ciclos de entrega de software (`Releases`) dispares.<br>• El servicio debe evolucionar tecnológicamente de forma aislada sin afectar la estabilidad ni reiniciar el clúster transaccional core. |
 | **❌ Criterio de Exclusión<br>*(¿Cuándo NO usar?)*** | **NO usar cuando:**<br>• Se intenta crear un "nanoservicio" o un CRUD de 3 tablas que requiere hacer 5 llamadas REST sincrónicas a otros microservicios para completar una sola operación transaccional básica (antipatrón *Distributed Monolith*). |
 | **🛠️ Stack / Herramienta<br>Homologada en ONP** | Java 21 + Spring Boot 3 / Spring Cloud o Go 1.22+ (si aplica alto rendimiento concurrente) en Pods K8s gestionados por API Gateway WSO2 y trazas OpenTelemetry. |
-| **📖 Referencia Oficial** | `LIN-ARQ-001 §2.1` (Estadio 3, con los 6 criterios de extracción) y `ADR-003` |
+| **📖 Referencia Oficial** | `ARQ-R-001` (LIN-ARQ-001 §2.1) (Estadio 3, con los 6 criterios de extracción) y `ADR-003` |
 
 ---
 
@@ -123,12 +123,12 @@ Cada vez que un Arquitecto de Software, Diseñador/Tech Lead o Desarrollador ana
 |---|---|
 | **Código** | `PAT-DIS-01` (Nivel 2 — Diseño Táctico Interno) |
 | **Nombre** | **Arquitectura Hexagonal (*Ports & Adapters*)** |
-| **Capa / Dominio** | Estructuración Interna del Módulo o Contenedor (`LIN-DIS-001 §2.3`) |
+| **Capa / Dominio** | Estructuración Interna del Módulo o Contenedor (`DIS-R-001` (LIN-DIS-001 §2.3)) |
 | **Descripción** | Estilo de diseño táctico que aísla por completo la lógica de negocio previsional pura dentro del paquete `domain/`, comunicándola con el exterior exclusivamente a través de interfaces explícitas (*Puertos de Entrada `port.in` y de Salida `port.out`*), las cuales son implementadas en la periferia por *Adaptadores* técnicos (`infrastructure.in/out`). |
 | **✅ Criterio de Selección<br>*(¿Cuándo usar en ONP?)*** | **Se DEBE usar obligatoriamente si el análisis de requisitos determina:**<br>• El módulo pertenece al *Core Previsional* (Aportes, Pensiones, Expedientes, Liquidaciones, Tesorería) donde las reglas de negocio son complejas y estrictamente regidas por ley.<br>• El módulo interactúa con 3 o más sistemas externos heterogéneos (RENIEC, SUNAT, bancos, PIDE, JBoss legacy).<br>• El módulo se concibe para ser extraído o desacoplado en el futuro hacia un microservicio independiente (*Estadio 3*). |
 | **❌ Criterio de Exclusión<br>*(¿Cuándo NO usar?)*** | **NO usar cuando:**<br>• El módulo es un CRUD administrativo simple de catálogos auxiliares o tablas maestras planas sin reglas previsionales transaccionales (aplicar Hexagonal en un ABM simple genera sobreingeniería innecesaria).<br>• Se contamina la capa de dominio (`domain/`) incluyendo anotaciones `@Entity` o `@Table` de JPA o dependencias `@Autowired` de Spring. |
 | **🛠️ Stack / Herramienta<br>Homologada en ONP** | Java 21 (`Records` inmutables para DTOs y Value Objects) + Spring Boot 3 con inyección por constructor (`@RequiredArgsConstructor`) en adaptadores. |
-| **📖 Referencia Oficial** | `LIN-DIS-001 §2.3` y `LIN-DEV-JAVA-001 §8` |
+| **📖 Referencia Oficial** | `DIS-R-001` (LIN-DIS-001 §2.3) y `LIN-DEV-JAVA-001 §8` |
 
 ---
 
@@ -153,7 +153,7 @@ Cada vez que un Arquitecto de Software, Diseñador/Tech Lead o Desarrollador ana
 |---|---|
 | **Código** | `PAT-DIS-03` (Nivel 2 — Modelado de Dominio Táctico) |
 | **Nombre** | **Bounded Context & Agregados DDD (*Domain-Driven Design*)** |
-| **Capa / Dominio** | Modelado de Entidades y Consistencia Transaccional (`LIN-DIS-001 §3`) |
+| **Capa / Dominio** | Modelado de Entidades y Consistencia Transaccional (`DIS-R-002` (LIN-DIS-001 §3)) |
 | **Descripción** | Delimitación estricta del significado de los conceptos dentro de un límite lingüístico y transaccional (*Bounded Context*), organizando las clases de dominio en clústeres fuertemente cohesivos liderados por una única entidad soberana (*Raíz de Agregado / Aggregate Root*) que garantiza la consistencia ACID de todo su árbol de subentidades y *Value Objects*. |
 | **✅ Criterio de Selección<br>*(¿Cuándo usar en ONP?)*** | **Se DEBE usar si el análisis de requisitos determina:**<br>• Sistemas con alta complejidad en sus reglas y lógica de negocio donde un mismo concepto (ej. `Expediente` o `Persona`) tiene reglas y transiciones de estado completamente distintas según el departamento que lo atiende (Mesa de Partes vs. Liquidaciones vs. Legal).<br>• Necesidad de proteger invariantes donde la modificación de una sub-entidad (ej. agregar una resolución a un expediente) debe revalidar y actualizar el estado global del trámite completo en una única transacción. |
 | **❌ Criterio de Exclusión<br>*(¿Cuándo NO usar?)*** | **NO usar cuando:**<br>• Se modelan tablas relacionales planas sin comportamiento mutante (estilo *Active Record / Table Module*).<br>• Se intenta compartir la misma entidad o `@Entity` JPA entre varios *Bounded Contexts* rompiendo la soberanía de la Fuente Única de Verdad (`PRA10`). |
@@ -168,12 +168,12 @@ Cada vez que un Arquitecto de Software, Diseñador/Tech Lead o Desarrollador ana
 |---|---|
 | **Código** | `PAT-DIS-04` / `PT04` (Nivel 2 — Persistencia Táctica y Consulta) |
 | **Nombre** | **Segregación de Responsabilidades de Mando y Consulta (*CQRS*)** |
-| **Capa / Dominio** | Arquitectura de Datos y Consulta de Alto Rendimiento (`LIN-DIS-001 §4.2`) |
+| **Capa / Dominio** | Arquitectura de Datos y Consulta de Alto Rendimiento (`DIS-R-004` (LIN-DIS-001 §4.2)) |
 | **Descripción** | Patrón que separa físicamente el modelo de datos utilizado para procesar mutaciones y transacciones ACID de negocio (*Command Side — Oracle 19c*) del modelo de datos desnormalizado optimizado exclusivamente para lecturas, búsquedas rápidas o reportes (*Query Side — MongoDB / Redis / Elasticsearch*). |
 | **✅ Criterio de Selección<br>*(¿Cuándo usar en ONP?)*** | **Se DEBE usar si el análisis de requisitos determina:**<br>• Operaciones de consulta ciudadana web masiva donde buscar un *Expediente 360°* en Oracle requiere ejecutar *JOINs* relacionales pesados sobre 8+ tablas históricas degradando el rendimiento transaccional en horario pico.<br>• Requerimientos de búsqueda por texto libre difuso, facetas y filtros combinados instantáneos no viables en motores relacionales.<br>• Requerimiento de latencia sub-milisegundo (< 2ms) para validaciones frecuentes de identidad por DNI o estado de pensionista. |
 | **❌ Criterio de Exclusión<br>*(¿Cuándo NO usar?)*** | **NO usar cuando:**<br>• El volumen de consultas y de escrituras es moderado y puede manejarse sin contención ni bloqueo dentro de una sola tabla o esquema relacional en Oracle con índices `B-Tree` o `Bitmap` adecuadamente construidos.<br>• El caso de uso no puede tolerar en absoluto la latencia de "sincronización eventual" (ej. en el momento exacto de un cargo en cuenta bancaria). |
 | **🛠️ Stack / Herramienta<br>Homologada en ONP** | Oracle 19c (Escritura ACID) $\rightarrow$ *Transactional Outbox / Debezium CDC* $\rightarrow$ Apache Kafka $\rightarrow$ MongoDB (Documento 360°), Redis (Caché DNI) o Elasticsearch. |
-| **📖 Referencia Oficial** | `LIN-DIS-001 §4.2` y `LIN-BUS-001` |
+| **📖 Referencia Oficial** | `DIS-R-004` (LIN-DIS-001 §4.2) y `LIN-BUS-001` |
 
 ---
 
@@ -185,12 +185,12 @@ Cada vez que un Arquitecto de Software, Diseñador/Tech Lead o Desarrollador ana
 |---|---|
 | **Código** | `PAT-INT-01` / `PT11` (Nivel 2 — Interfaz y Presentación) |
 | **Nombre** | **Backend for Frontend (*BFF*)** |
-| **Capa / Dominio** | Orquestación de Presentación Pública (`LIN-DIS-001 §5.1`) |
+| **Capa / Dominio** | Orquestación de Presentación Pública (`DIS-R-005` (LIN-DIS-001 §5.1)) |
 | **Descripción** | Capa de agregación y presentación ligera dedicada y construida a la medida exacta de una interfaz de usuario cliente específica (ej. *BFF Mesa de Partes Web Angular* vs. *BFF App Móvil ONP*), que consolida llamados a múltiples microservicios internos y reduce la carga del payload devolviendo solo lo que la vista requiere. |
 | **✅ Criterio de Selección<br>*(¿Cuándo usar en ONP?)*** | **Se DEBE usar si el análisis de requisitos determina:**<br>• Una interfaz SPA Angular o aplicación móvil requiere realizar más de 3 peticiones REST por red dispersas para construir una sola pantalla de atención al ciudadano.<br>• Los servicios transaccionales internos devuelven DTOs con 80+ atributos técnicos o sensibles y el frontend solo necesita mostrar 10 en su tabla visual.<br>• Necesidad de adaptar protocolos entre el navegador (`HTTPS/REST/JSON`) y los servicios internos (`gRPC / Kafka / SOAP`).<br>• Necesidad de mediación de seguridad frente al API Manager WSO2 mediante el patrón **Token Handler** (`LIN-DIS-001 §5.1.1`): el BFF gestiona cookies `HttpOnly` con el frontend e inyecta el `Authorization: Bearer` hacia el core. |
 | **❌ Criterio de Exclusión<br>*(¿Cuándo NO usar?)*** | **NO usar cuando:**<br>• Existe una relación 1:1 simple donde la UI consume exactamente el mismo DTO transaccional que expone el servicio de dominio.<br>• Se introduce en el BFF lógica transaccional, mutaciones ACID de base de datos Oracle o reglas de cálculo de pensión (el BFF es **presentación y agregación pura**). |
 | **🛠️ Stack / Herramienta<br>Homologada en ONP** | Java 21 + Spring Boot 3 (`pe.gob.onp.bff.*`) expuesto a través de API Gateway WSO2 y consumiendo APIs internas vía `RestClient` y Resilience4j. |
-| **📖 Referencia Oficial** | `LIN-DIS-001 §5.1-5.1.1` y `LIN-FE-ANG-001` |
+| **📖 Referencia Oficial** | `DIS-R-005` (LIN-DIS-001 §5.1)-5.1.1` y `LIN-FE-ANG-001` |
 
 ---
 
@@ -230,12 +230,12 @@ Cada vez que un Arquitecto de Software, Diseñador/Tech Lead o Desarrollador ana
 |---|---|
 | **Código** | `PAT-INT-04` / `PT13` (Nivel 2 — Aislamiento y Traducción) |
 | **Nombre** | **Anti-Corruption Layer (*Capa Anticorrupción — ACL*)** |
-| **Capa / Dominio** | Integración Táctica e Interoperabilidad Legacy (`LIN-DIS-001 §5.4`) |
+| **Capa / Dominio** | Integración Táctica e Interoperabilidad Legacy (`DIS-R-006` (LIN-DIS-001 §5.4)) |
 | **Descripción** | Capa de traducción e impermeabilización transaccional que intercepta las respuestas o eventos provenientes de un sistema tercero o legacy, transformando sus modelos de datos arcaicos, nombres cripticos o formatos de fecha incompatibles hacia objetos puros del dominio moderno (`Records` de `domain/model/`), impidiendo que el modelo ajeno corrompa la semántica interna de la ONP. |
 | **✅ Criterio de Selección<br>*(¿Cuándo usar en ONP?)*** | **Se DEBE usar obligatoriamente si el análisis de requisitos determina:**<br>• Consumo de servicios de terceros externos (RENIEC, SUNAT, bancos) donde las tablas o XML devuelven campos como `fec_nac_per` en formato `"dd/MM/yyyy"` que deben traducirse inmediatamente a `LocalDate fechaNacimiento` antes de tocar la lógica del negocio.<br>• Lectura o invocación de procedimientos almacenados heredados (*Legacy PL/SQL*) del Estadio 1. |
 | **❌ Criterio de Exclusión<br>*(¿Cuándo NO usar?)*** | **NO usar cuando:**<br>• La comunicación ocurre entre dos módulos modernos (*Bounded Contexts*) del mismo Monolito Modular ONP que comparten el `Shared Kernel` (`onp-common-domain`) y exponen contratos DTO estandarizados por la OTI. |
 | **🛠️ Stack / Herramienta<br>Homologada en ONP** | Java 21 (`Mappers` de traducción y adaptadores implementados dentro del paquete `infrastructure/adapter/out/acl/`). |
-| **📖 Referencia Oficial** | `LIN-DIS-001 §5.4` y `LIN-ARQ-001 §4.3` (ACL mandatoria en interoperabilidad gubernamental) |
+| **📖 Referencia Oficial** | `DIS-R-006` (LIN-DIS-001 §5.4) y `ARQ-R-004` (LIN-ARQ-001 §4.3) (ACL mandatoria en interoperabilidad gubernamental) |
 
 ---
 
@@ -245,12 +245,12 @@ Cada vez que un Arquitecto de Software, Diseñador/Tech Lead o Desarrollador ana
 |---|---|
 | **Código** | `PAT-INT-05` / `PT05` (Transversal — Seguridad y Red) |
 | **Nombre** | **API Gateway y API Manager (*WSO2 Platform*)** |
-| **Capa / Dominio** | Frontera y Gobernanza de Exposición de Servicios (`LIN-API-REST-001 §2.5`) |
+| **Capa / Dominio** | Frontera y Gobernanza de Exposición de Servicios (`API-R-001` (LIN-API-REST-001 §2.5)) |
 | **Descripción** | Componente institucional único perimetral e interno que actúa como puerta de enlace, centralizando la exposición de todos los servicios REST, aplicando políticas obligatorias de seguridad perimetral (`OAuth2 / OIDC / Mutual TLS`), enrutamiento dinámico hacia Kubernetes, cuotas de tráfico (*Rate Limiting*) y analítica de consumo sin que el microservicio deba procesarlo en su código. |
 | **✅ Criterio de Selección<br>*(¿Cuándo usar en ONP?)*** | **Se DEBE usar obligatoriamente si el análisis de requisitos determina:**<br>• Exposición de cualquier servicio REST o API hacia aplicaciones clientes front-end (Angular, Móvil), hacia otras instituciones del Estado (PIDE) o entre dominios internos institucionales.<br>• Necesidad de control de acceso, versionado de contratos (`v1`, `v2`), auditoría de peticiones y estrangulamiento de tráfico por consumidor para proteger la infraestructura. |
 | **❌ Criterio de Exclusión<br>*(¿Cuándo NO usar?)*** | **NO usar cuando:**<br>• Se trata de comunicación interna de baja latencia dentro del mismo *Pod* en Kubernetes (ej. llamadas de clases locales) o entre contenedores colocalizados donde la penalización de un hop adicional de red por el Gateway no es justificable. |
 | **🛠️ Stack / Herramienta<br>Homologada en ONP** | **WSO2 API Manager / WSO2 Micro Integrator** homologado en `ADR-WSO2-001` e integrado al Sistema de Seguridad Institucional (`SAA / AD`). |
-| **📖 Referencia Oficial** | `LIN-API-REST-001 §2.5`, `LIN-SEC-APP-001 §3` y `ADR-WSO2-001` |
+| **📖 Referencia Oficial** | `API-R-001` (LIN-API-REST-001 §2.5), `LIN-SEC-APP-001 §3` y `ADR-WSO2-001` |
 
 ---
 
@@ -262,12 +262,12 @@ Cada vez que un Arquitecto de Software, Diseñador/Tech Lead o Desarrollador ana
 |---|---|
 | **Código** | `PAT-RES-01` / `PT07` (Nivel 2 / Resiliencia Táctica) |
 | **Nombre** | **Circuit Breaker (*Cortacircuitos Resilience4j*)** |
-| **Capa / Dominio** | Tolerancia a Fallos en Adaptadores de Salida (`LIN-DIS-001 §6.2`) |
+| **Capa / Dominio** | Tolerancia a Fallos en Adaptadores de Salida (`DIS-R-009` (LIN-DIS-001 §6.2)) |
 | **Descripción** | Mecanismo de protección que supervisa continuamente las llamadas por red hacia servicios externos o bases de datos. Si detecta que la tasa de fallos o latencia supera el 50% en una ventana de 100 peticiones, "abre el circuito" cortando las llamadas salientes durante 30 segundos y ejecutando una respuesta de contingencia inmediata (*Fallback*) para evitar agotar los hilos de la JVM. |
 | **✅ Criterio de Selección<br>*(¿Cuándo usar en ONP?)*** | **Se DEBE usar obligatoriamente si el análisis de requisitos determina:**<br>• **Microservicios (Estadio 3):** toda llamada por red saliente (`HTTP / REST / SOAP / JDBC`) hacia otro servicio o sistema externo.<br>• **Monolito Modular:** solo con **ADR aprobado**, y únicamente cuando el adaptador de salida cumple **ambas** condiciones simultáneamente: (a) volumetría masiva en ruta crítica interactiva, y (b) necesidad de corte automático sin intento de red (*fast fail*) porque el timeout + pool de conexiones no basta. |
 | **❌ Criterio de Exclusión<br>*(¿Cuándo NO usar?)*** | **NO usar cuando:**<br>• Llamadas a métodos en memoria dentro del mismo módulo o invocaciones a clases transaccionales locales donde no hay I/O de red involucrado.<br>• **En Monolito Modular, sin ADR aprobado** — no es el estándar por defecto fuera de Microservicios; Bulkhead y Retry se resuelven por defecto sin Resilience4j (ver `PAT-RES-02`). |
 | **🛠️ Stack / Herramienta<br>Homologada en ONP** | **Resilience4j Spring Boot Starter** configurado mediante `application.yml` o anotaciones `@CircuitBreaker(name = "reniecService", fallbackMethod = "fallbackReniec")`. |
-| **📖 Referencia Oficial** | `LIN-DIS-001 §6.2` y `LIN-API-REST-001` |
+| **📖 Referencia Oficial** | `DIS-R-009` (LIN-DIS-001 §6.2) y `LIN-API-REST-001` |
 
 ---
 
@@ -310,9 +310,9 @@ Cada vez que un Arquitecto de Software, Diseñador/Tech Lead o Desarrollador ana
 | **Capa / Dominio** | Composición del Pod en Kubernetes (`LIN-K8S-001 §9.4.B`) |
 | **Descripción** | Proxy de red local dentro del Pod que media todo el tráfico saliente de la aplicación hacia sistemas externos, asumiendo mTLS, cabeceras, timeouts y reintentos fuera del proceso de negocio. |
 | **✅ Criterio de Selección<br>*(¿Cuándo usar en ONP?)*** | **Un único escenario:** contenerización de monolitos heredados **no-Java** (JBoss, WebLogic, C++) en el marco de Strangler Fig (`LIN-ARQ-001 §2.2`), cuyo código no puede modificarse para incorporar resiliencia o seguridad moderna. |
-| **❌ Criterio de Exclusión<br>*(¿Cuándo NO usar?)*** | **Prohibido en aplicaciones Java 21 / Spring Boot 3.** La resiliencia saliente se resuelve dentro de la JVM según `LIN-DIS-001 §6`, que es el documento dueño: Timeout y Bulkhead siempre con Apache HttpClient 5, Retry con Spring Retry, y Circuit Breaker con Resilience4j **solo** en Microservicios o bajo ADR. Delegar esas políticas a un proxy de red las duplica y las saca del control del equipo. |
+| **❌ Criterio de Exclusión<br>*(¿Cuándo NO usar?)*** | **Prohibido en aplicaciones Java 21 / Spring Boot 3.** La resiliencia saliente se resuelve dentro de la JVM según `DIS-R-007` (LIN-DIS-001 §6), que es el documento dueño: Timeout y Bulkhead siempre con Apache HttpClient 5, Retry con Spring Retry, y Circuit Breaker con Resilience4j **solo** en Microservicios o bajo ADR. Delegar esas políticas a un proxy de red las duplica y las saca del control del equipo. |
 | **🛠️ Stack / Herramienta<br>Homologada en ONP** | Envoy o WSO2 Microgateway ligero, únicamente en el escenario de excepción. |
-| **📖 Referencia Oficial** | `LIN-K8S-001 §9.4.B` y `LIN-DIS-001 §6` |
+| **📖 Referencia Oficial** | `LIN-K8S-001 §9.4.B` y `DIS-R-007` (LIN-DIS-001 §6) |
 
 ---
 
@@ -352,12 +352,12 @@ Cada vez que un Arquitecto de Software, Diseñador/Tech Lead o Desarrollador ana
 |---|---|
 | **Código** | `PAT-MSG-03` / `PT09` (Nivel 1 / Mensajería Transaccional) |
 | **Nombre** | **Patrón Saga Distribuida (*Orquestada o Coreografiada*)** |
-| **Capa / Dominio** | Coordinación Transaccional entre Microservicios (`LIN-ARQ-001 §3.3`) |
+| **Capa / Dominio** | Coordinación Transaccional entre Microservicios (`ARQ-R-003` (LIN-ARQ-001 §3.3)) |
 | **Descripción** | Secuencia coordinada de transacciones locales independientes en múltiples microservicios o *Bounded Contexts*, donde cada paso actualiza una base de datos local y publica un evento. Si un paso posterior falla por reglas de negocio, la Saga ejecuta transacciones de **compensación en reversa** para deshacer limpiamente los cambios previos ya confirmados, manteniendo la consistencia eventual. |
 | **✅ Criterio de Selección<br>*(¿Cuándo usar en ONP?)*** | **Se DEBE usar si el análisis de requisitos determina:**<br>• Flujos de negocio transaccionales de largo alcance que cruzan múltiples microservicios o dominios de base de datos Oracle aislados donde el bloqueo distribuido (`2-Phase Commit / 2PC`) no es viable ni soportado en arquitectura Cloud-Native.<br>• *Ejemplo en ONP:* Flujo de Liquidación de Jubilación (Paso 1: Bloquear Reserva en Tesorería $\rightarrow$ Paso 2: Generar Resolución Legal $\rightarrow$ Paso 3: Si falla Resolución Legal, ejecutar *Compensación Liberar Reserva en Tesorería*). |
 | **❌ Criterio de Exclusión<br>*(¿Cuándo NO usar?)*** | **NO usar cuando:**<br>• Toda la transacción ocurre dentro del mismo módulo del Monolito Modular y sobre el mismo esquema de base de datos Oracle transaccional donde un simple `@Transactional` (ACID nativo) garantiza la consistencia sin complejidad distribuida. |
 | **🛠️ Stack / Herramienta<br>Homologada en ONP** | Orquestación mediante **Spring StateMachine / Apache Camel** o Coreografía sobre **Apache Kafka (`CloudEvents`) + Outbox Table** con idempotencia estricta por `X-Request-ID`. |
-| **📖 Referencia Oficial** | `LIN-ARQ-001 §3.3` (Saga con Transactional Outbox) y `LIN-BUS-001 §9` |
+| **📖 Referencia Oficial** | `ARQ-R-003` (LIN-ARQ-001 §3.3) (Saga con Transactional Outbox) y `LIN-BUS-001 §9` |
 
 ---
 
@@ -384,12 +384,12 @@ Cada vez que un Arquitecto de Software, Diseñador/Tech Lead o Desarrollador ana
 |---|---|
 | **Código** | `PAT-DEV-02` (Nivel 3 / Seguridad — Autenticación en Aplicación) |
 | **Nombre** | **Filtro de Validación y Contexto SAA (*SaaTokenValidationFilter*)** |
-| **Capa / Dominio** | Seguridad de Endpoints REST en Spring Boot (`LIN-SEC-APP-001 §8.3`) |
+| **Capa / Dominio** | Seguridad de Endpoints REST en Spring Boot (`SEC-R-002` (LIN-SEC-APP-001 §8.3)) |
 | **Descripción** | Patrón e implementación de filtro de seguridad en Spring Security (`OncePerRequestFilter`) que intercepta toda petición HTTP entrante al contenedor de la aplicación, extrae el token de autorización del header `Authorization: Bearer <token>`, valida criptográficamente su autenticidad e inyecta el contexto del usuario institucional o ciudadano (`SecurityContextHolder`) disponible para los controladores. |
 | **✅ Criterio de Selección<br>*(¿Cuándo usar en ONP?)*** | **Se DEBE usar obligatoriamente si el análisis de requisitos determina:**<br>• **Toda aplicación o microservicio Spring Boot de la ONP** que exponga endpoints REST/HTTP protegidos y reciba tráfico desde el API Gateway WSO2 o front-ends institucionales.<br>• Queda **terminantemente prohibido** que una aplicación desarrolle su propia tabla de usuarios, contraseñas o genere tokens JWT paralelos fuera de la delegación al SAA/WSO2. |
 | **❌ Criterio de Exclusión<br>*(¿Cuándo NO usar?)*** | **NO usar cuando:**<br>• Endpoints explícitamente catalogados como públicos o de salud operacional (`/actuator/health`, `/actuator/info` o `Liveness/Readiness` de Kubernetes). |
 | **🛠️ Stack / Herramienta<br>Homologada en ONP** | Spring Security 6+ sobre Java 21 integrado con cliente oficial o validación OIDC/JWT hacia **SAA / WSO2 Identity Server**. |
-| **📖 Referencia Oficial** | `LIN-SEC-APP-001 §8.3` (fuente autoritativa del filtro; no vive en `LIN-DEV-JAVA-001`) |
+| **📖 Referencia Oficial** | `SEC-R-002` (LIN-SEC-APP-001 §8.3) (fuente autoritativa del filtro; no vive en `LIN-DEV-JAVA-001`) |
 
 ---
 
@@ -401,10 +401,10 @@ Cada vez que un Arquitecto de Software, Diseñador/Tech Lead o Desarrollador ana
 | **Nombre** | **Adapter Java para PL/SQL Legacy (*SimpleJdbcCall*)** |
 | **Capa / Dominio** | Persistencia e Interoperabilidad con Bases de Datos (`LIN-BD-ORA-001 §6`) |
 | **Descripción** | Patrón técnico que estandariza la invocación segura, robusta y performante de Procedimientos Almacenados (`Stored Procedures / Functions`) y Paquetes `PL/SQL` heredados en Oracle 19c/11g desde código Java 21, aislando los tipos de datos nativos de Oracle (`ARRAY`, `REF CURSOR`, `CLOB`) dentro de un adaptador exclusivo (`infrastructure/adapter/out/persistence/plsql/`). |
-| **✅ Criterio de Selección<br>*(¿Cuándo usar en ONP?)*** | **Se DEBE usar si el análisis de requisitos determina:**<br>• Invocación obligatoria de lógica previsional heredada transitoriamente alojada en procedimientos `PL/SQL` técnicos catalogados como permitidos o en proceso de migración de largo plazo según `LIN-BD-ORA-001 §6.0`.<br>• Procesamiento por lotes o consultas donde la salida sea un `REF CURSOR` relacional masivo que debe mapearse hacia `Records` Java. |
+| **✅ Criterio de Selección<br>*(¿Cuándo usar en ONP?)*** | **Se DEBE usar si el análisis de requisitos determina:**<br>• Invocación obligatoria de lógica previsional heredada transitoriamente alojada en procedimientos `PL/SQL` técnicos catalogados como permitidos o en proceso de migración de largo plazo según `BD-R-001` (LIN-BD-ORA-001 §6.0).<br>• Procesamiento por lotes o consultas donde la salida sea un `REF CURSOR` relacional masivo que debe mapearse hacia `Records` Java. |
 | **❌ Criterio de Exclusión<br>*(¿Cuándo NO usar?)*** | **NO usar cuando:**<br>• Desarrollo de **nueva lógica de negocio transaccional** (prohibida terminantemente en PL/SQL en proyectos nuevos; toda nueva regla debe programarse en Java 21 en la capa `domain/`).<br>• Acceso a tablas relacionales modernas donde `Spring Data JPA / Hibernate` o `JdbcTemplate` directo resuelve el CRUD de forma estándar. |
 | **🛠️ Stack / Herramienta<br>Homologada en ONP** | Java 21 + **Spring `SimpleJdbcCall` / `SqlParameterSource`** con gestión estricta de conexiones del *Pool HikariCP* (`close()` explícito de cursores). |
-| **📖 Referencia Oficial** | `LIN-BD-ORA-001 §6.0` y `LIN-DEV-JAVA-001 §8` |
+| **📖 Referencia Oficial** | `BD-R-001` (LIN-BD-ORA-001 §6.0) y `LIN-DEV-JAVA-001 §8` |
 
 ---
 
@@ -419,7 +419,7 @@ Cada vez que un Arquitecto de Software, Diseñador/Tech Lead o Desarrollador ana
 | **✅ Criterio de Selección<br>*(¿Cuándo usar en ONP?)*** | **Se DEBE usar obligatoriamente si el análisis de requisitos determina:**<br>• **Todo caso de uso transaccional en Oracle (`@Transactional`)** que como consecuencia de su éxito deba publicar o emitir un evento hacia Apache Kafka o el bus de servicios para notificar a otros subdominios (ej. *Aporte Registrado*, *Expediente Aprobado*, *Resolución Emitida*). |
 | **❌ Criterio de Exclusión<br>*(¿Cuándo NO usar?)*** | **NO usar cuando:**<br>• El servicio actúa únicamente como un <i>proxy</i> o pasarela sin persistencia local de datos en Oracle (ej. un servicio de pasarela que solo recibe un REST y publica un evento directo en Kafka sin transacción local previa). |
 | **🛠️ Stack / Herramienta<br>Homologada en ONP** | Oracle 19c (`EVT_OUTBOX` con índices por estado `PENDIENTE/ENVIADO`) + Spring Boot JPA/JdbcTemplate + **Debezium CDC o Polling Scheduled Relay**. |
-| **📖 Referencia Oficial** | `LIN-BD-ORA-001 §3.10` (DDL canónico), `LIN-BUS-001 §7.3` (relevo) y `LIN-DIS-001 §4.2` |
+| **📖 Referencia Oficial** | `LIN-BD-ORA-001 §3.10` (DDL canónico), `LIN-BUS-001 §7.3` (relevo) y `DIS-R-004` (LIN-DIS-001 §4.2) |
 
 ---
 
@@ -434,7 +434,7 @@ Cada vez que un Arquitecto de Software, Diseñador/Tech Lead o Desarrollador ana
 | **✅ Criterio de Selección<br>*(¿Cuándo usar en ONP?)*** | **Se DEBE usar si el análisis de requisitos determina:**<br>• Replicación o sincronización en tiempo real desde bases de datos relacionales transaccionales críticas de Oracle hacia stores de lectura NoSQL de *CQRS (`PAT-DIS-04`)* o hacia la capa *Bronze* de analítica (`PAT-BI-01`).<br>• Extracción no invasiva de datos transaccionales desde sistemas heredados (*Estadio 1*) que no pueden ser modificados en código para emitir eventos de aplicación. |
 | **❌ Criterio de Exclusión<br>*(¿Cuándo NO usar?)*** | **NO usar cuando:**<br>• No se cuenta con la validación o autorización formal de los Administradores de Base de Datos (`DBA`) respecto a la sobrecarga computacional o el licenciamiento de `LogMiner / Supplemental Logging` en el servidor Oracle transaccional de producción. |
 | **🛠️ Stack / Herramienta<br>Homologada en ONP** | **Debezium Oracle Connector + Kafka Connect Clúster** conectado hacia Apache Kafka Institucional e inyectando en MinIO/Iceberg. |
-| **📖 Referencia Oficial** | `LIN-BD-ORA-001`, `LIN-BI-001` y `LIN-DIS-001 §4.2` |
+| **📖 Referencia Oficial** | `LIN-BD-ORA-001`, `LIN-BI-001` y `DIS-R-004` (LIN-DIS-001 §4.2) |
 
 ---
 

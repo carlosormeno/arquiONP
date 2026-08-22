@@ -376,7 +376,7 @@ Otras herramientas = requieren justificación.
 
 ### 8.3 Métricas frontend
 
-> **Documento dueño: `LIN-ARQ-001 §7.2`.** Los umbrales de Core Web Vitals y de las métricas Lighthouse complementarias —LCP, INP, CLS, FCP, TTI, TBT y FPS— son **gate de bloqueo mandatorio** para la promoción de un build de frontend a producción. Este lineamiento **no publica esos valores** para no convertirse en una fuente paralela, y no puede relajarlos: no son «cuando aplique».
+> **Documento dueño: `ARQ-R-007` (LIN-ARQ-001 §7.2).** Los umbrales de Core Web Vitals y de las métricas Lighthouse complementarias —LCP, INP, CLS, FCP, TTI, TBT y FPS— son **gate de bloqueo mandatorio** para la promoción de un build de frontend a producción. Este lineamiento **no publica esos valores** para no convertirse en una fuente paralela, y no puede relajarlos: no son «cuando aplique».
 
 Además de los umbrales del marco rector, una prueba de performance de un frontend mide:
 
@@ -386,7 +386,7 @@ Además de los umbrales del marco rector, una prueba de performance de un fronte
 | Errores de red | Fallos HTTP en flujos críticos durante la prueba |
 | Tiempo total de flujo | Duración de la operación de usuario extremo a extremo |
 
-> **Qué aporta esta prueba frente a Lighthouse.** El gate de `LIN-ARQ-001 §7.2` se mide con Lighthouse CI sobre un build aislado (`LIN-CICD-001 §9.4`). Lo que aquí se mide es distinto y complementario: cómo se comporta el frontend **cuando el backend está bajo la carga del escenario**. Un LCP conforme en laboratorio puede degradarse cuando la API tarda cinco veces más por saturación.
+> **Qué aporta esta prueba frente a Lighthouse.** El gate de `ARQ-R-007` (LIN-ARQ-001 §7.2) se mide con Lighthouse CI sobre un build aislado (`LIN-CICD-001 §9.4`). Lo que aquí se mide es distinto y complementario: cómo se comporta el frontend **cuando el backend está bajo la carga del escenario**. Un LCP conforme en laboratorio puede degradarse cuando la API tarda cinco veces más por saturación.
 
 ---
 

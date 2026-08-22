@@ -304,6 +304,8 @@ La cobertura se mide con JaCoCo (backend Java). Para Angular, la cobertura de st
 
 ### 5.1 Umbrales por estilo (backend Java)
 
+> 🔖 **`TEST-R-001`** — *identificador estable de esta regla; cítese este código y no el número de sección (`GOB-MAT-001`)*
+
 | Estilo | Mínimo global | Capas de lógica de negocio |
 |---|---|---|
 | Monolito Simple | ≥65% instrucción | Service: ≥75%; Domain/Model: ≥80% |
@@ -332,6 +334,8 @@ La cobertura de PL/SQL no se mide con herramientas de instrumentación, sino con
 ---
 
 ## 6. Pruebas de contrato
+
+> 🔖 **`TEST-R-002`** — *identificador estable de esta regla; cítese este código y no el número de sección (`GOB-MAT-001`)*
 
 ### 6.1 Definición
 
@@ -1045,7 +1049,7 @@ Los procedures, packages y functions PL/SQL de la ONP contienen lógica de negoc
 
 > **Principio:** Antes de modificar un procedure, package o function con lógica de negocio crítica, el equipo debe demostrar que entiende su comportamiento actual mediante pruebas de caracterización. No como ejercicio de calidad de código, sino como red de seguridad del refactor.
 
-La observabilidad de PL/SQL desde Java se logra a través del adapter Java que lo invoca (ver LIN-DEV-JAVA-001 sección 8 y LIN-BD-ORA-001 sección 6.0). Las pruebas de caracterización se escriben en Java, invocando el procedure real sobre OracleContainer.
+La observabilidad de PL/SQL desde Java se logra a través del adapter Java que lo invoca (ver LIN-DEV-JAVA-001 sección 8 y `BD-R-001` (LIN-BD-ORA-001 §6.0)). Las pruebas de caracterización se escriben en Java, invocando el procedure real sobre OracleContainer.
 
 ### 13.2 Pruebas de caracterización — definición y técnica
 
@@ -1057,7 +1061,7 @@ Una prueba de caracterización captura el comportamiento observable actual de un
 
 - Antes de cualquier modificación funcional a un procedure, package o function con lógica de negocio crítica
 - Cuando el equipo no puede responder con certeza: "¿qué devuelve este procedure con estos parámetros?"
-- Cuando LIN-BD-ORA-001 sección 6.0 lo exige explícitamente
+- Cuando `BD-R-001` (LIN-BD-ORA-001 §6.0) lo exige explícitamente
 
 **Cuándo se escribe:**
 

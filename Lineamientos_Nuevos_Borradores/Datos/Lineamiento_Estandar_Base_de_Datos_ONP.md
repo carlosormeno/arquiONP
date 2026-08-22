@@ -85,7 +85,7 @@ Este estándar aplica a:
 | Estándar de Versionamiento y Control de Cambios | `LIN-VER-001` | Dueño de la obligatoriedad de versionar los scripts de BD en GitLab (`§16`); este estándar define su nomenclatura y estructura ([§8](#8-scripts-de-despliegue-y-control-de-cambios)) |
 | Guía de Diseño y Programación ONP v2.0 | — | Antecedente institucional externo al corpus, del que este lineamiento es actualización |
 
-> El documento `LIN-ARQ-000` (**congelado**) definía los componentes `CD01`/`CD02` de la Capa de Datos. Esa nomenclatura no rige: la topología vigente está en `LIN-ARQ-001 §2.1`.
+> El documento `LIN-ARQ-000` (**congelado**) definía los componentes `CD01`/`CD02` de la Capa de Datos. Esa nomenclatura no rige: la topología vigente está en `ARQ-R-001` (LIN-ARQ-001 §2.1).
 
 ---
 
@@ -357,7 +357,7 @@ Oracle soporta dos niveles de aislamiento estándar:
 
 ### 3.10 Tabla técnica transversal — `EVT_OUTBOX` (Transactional Outbox)
 
-El patrón **Transactional Outbox** (`LIN-DIS-001 §4.2`, `LIN-BUS-001 §7.3`, ficha `PAT-DAT-02` de `LIN-PAT-001`) depende de las garantías ACID de esta sección: el evento de dominio se inserta en una tabla local **dentro de la misma transacción** que modifica el dato de negocio, para que ambas operaciones confirmen o ninguna lo haga. Esta sección fija el nombre canónico y el DDL mínimo de esa tabla, ya que es una tabla técnica transversal (no pertenece a un dominio funcional específico) y su ausencia de este documento generaba tres nombres distintos en el framework (`OUTBOX`, `TB_OUTBOX`, `EVT_OUTBOX`).
+El patrón **Transactional Outbox** (`DIS-R-004` (LIN-DIS-001 §4.2), `LIN-BUS-001 §7.3`, ficha `PAT-DAT-02` de `LIN-PAT-001`) depende de las garantías ACID de esta sección: el evento de dominio se inserta en una tabla local **dentro de la misma transacción** que modifica el dato de negocio, para que ambas operaciones confirmen o ninguna lo haga. Esta sección fija el nombre canónico y el DDL mínimo de esa tabla, ya que es una tabla técnica transversal (no pertenece a un dominio funcional específico) y su ausencia de este documento generaba tres nombres distintos en el framework (`OUTBOX`, `TB_OUTBOX`, `EVT_OUTBOX`).
 
 **Nombre canónico:** `EVT_OUTBOX`, con el prefijo técnico `EVT_` (§3.3). Todo lineamiento o proyecto que mencione esta tabla debe usar este nombre.
 
@@ -388,7 +388,7 @@ CREATE INDEX IDX_EVT_OUTBOX_01 ON EVT_OUTBOX (C_ESTADO, FE_CREACION);
 
 #### Implicancia arquitectónica
 
-Las propiedades ACID son la razón por la que el **Monolito Modular con BD compartida** es el punto de llegada por defecto de ONP (ver **LIN-ARQ-001 sección 2.1**). Al dividir en microservicios con bases de datos separadas, `@Transactional` de Spring solo abarca una conexión a una BD: no hay ACID entre servicios. La alternativa correcta para coordinación entre microservicios es el patrón **Saga** (ver **LIN-ARQ-001 sección 3.3**).
+Las propiedades ACID son la razón por la que el **Monolito Modular con BD compartida** es el punto de llegada por defecto de ONP (ver **`ARQ-R-001` (LIN-ARQ-001 §2.1)**). Al dividir en microservicios con bases de datos separadas, `@Transactional` de Spring solo abarca una conexión a una BD: no hay ACID entre servicios. La alternativa correcta para coordinación entre microservicios es el patrón **Saga** (ver **`ARQ-R-003` (LIN-ARQ-001 §3.3)**).
 
 ---
 
@@ -756,6 +756,8 @@ WHERE ID_<ENTIDAD> = :v_id;
 ## 6. Objetos programables PL/SQL
 
 ### 6.0 Gobierno de lógica de negocio en PL/SQL
+
+> 🔖 **`BD-R-001`** — *identificador estable de esta regla; cítese este código y no el número de sección (`GOB-MAT-001`)*
 
 #### Contexto
 
@@ -1561,6 +1563,8 @@ Los objetos de aplicación no deben residir en el tablespace SYSTEM. Solo los ob
 - El monitoreo del uso de tablespaces es responsabilidad del DBA y debe estar incluido en las alertas de operación.
 
 ### 11.2 Backup y recuperación
+
+> 🔖 **`BD-R-002`** — *identificador estable de esta regla; cítese este código y no el número de sección (`GOB-MAT-001`)*
 
 La estrategia de backup de cada base de datos debe estar definida y documentada en el catálogo centralizado. Como mínimo:
 

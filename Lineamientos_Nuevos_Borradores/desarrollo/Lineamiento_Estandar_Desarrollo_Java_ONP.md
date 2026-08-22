@@ -103,7 +103,7 @@ Al iniciar un proyecto Spring Boot en ONP, configurar los siguientes componentes
 | 1 | Dependencias OTEL en `pom.xml` | LIN-OBS-001 sección 4 | Habilita trazas distribuidas, logs estructurados y métricas |
 | 2 | `RequestIdFilter` `@Order(1)` | [sección 13.4.5](#1345-filtro-de-correlacion--requestidfilter) | Genera o propaga `X-Request-ID` y lo pone en el MDC para correlacionar todas las líneas de log de una petición |
 | 3 | `CanonicalRequestLogFilter` `@Order(2)` | `LIN-OBS-001 §4.9` | Envuelve el resto de la cadena y emite el log canónico al finalizar **toda** petición, incluidas las rechazadas por seguridad |
-| 4 | `SaaTokenValidationFilter` `@Order(3)` | `LIN-SEC-APP-001 §8.3` | Valida el token SAA y publica la identidad en el MDC y en el atributo `onp.user.id` |
+| 4 | `SaaTokenValidationFilter` `@Order(3)` | `SEC-R-002` (LIN-SEC-APP-001 §8.3) | Valida el token SAA y publica la identidad en el MDC y en el atributo `onp.user.id` |
 | 5 | `ApiResponseWrapper` + `GlobalExceptionHandler` | [sección 13.4.4](#1344-estructura-de-respuesta-estandar--apiresponsewrapper), sección 11 | Contrato estándar de respuesta para todos los endpoints |
 | 6 | `OpenApiConfig` + anotaciones Swagger | LIN-API-REST-001 sección 6, [sección 13.4.1](#1341-dependencia-maven)–13.4.3 | Contrato OpenAPI publicado desde el arranque del servicio |
 | 7 | `AuditoriaBase` extendida en entidades JPA | Anexo D | Pobla automáticamente los 6 campos de auditoría obligatorios (LIN-BD-ORA-001 sección 5) |
@@ -1076,7 +1076,7 @@ La implementación de patrones *Gang of Four* (GoF) en la ONP aprovecha el conte
 ### 8.1 Patrones Estructurales en Spring
 
 #### 8.1.1 Adapter (Traducción de Interfaces de Sistemas Externos)
-Convierte la interfaz de un sistema externo (RENIEC, SUNAT, PIDE, PLAME) a la interfaz que el dominio espera, aislando el modelo previsional de los contratos ajenos. Cuando además debe blindar al dominio de estructuras de datos ajenas (XML, campos con nomenclatura distinta), el Adapter se combina con un Mapper dedicado como Capa Anticorrupción — ver ACL en `LIN-DIS-001 §5.4`.
+Convierte la interfaz de un sistema externo (RENIEC, SUNAT, PIDE, PLAME) a la interfaz que el dominio espera, aislando el modelo previsional de los contratos ajenos. Cuando además debe blindar al dominio de estructuras de datos ajenas (XML, campos con nomenclatura distinta), el Adapter se combina con un Mapper dedicado como Capa Anticorrupción — ver ACL en `DIS-R-006` (LIN-DIS-001 §5.4).
 
 ```java
 // Port esperado por el dominio (LIN-DIS-001 §5.4)
@@ -1283,7 +1283,7 @@ public class NotificacionResolucionListener {
 ```
 
 #### 8.3.3 Command (Operación Encapsulada como Objeto)
-Encapsula una solicitud de negocio como un `record` inmutable de Java 21, separando a quien la invoca (Controller) de quien la ejecuta (Application Service). Es la representación estándar del lado de escritura en CQRS (`LIN-DIS-001 §4.2`).
+Encapsula una solicitud de negocio como un `record` inmutable de Java 21, separando a quien la invoca (Controller) de quien la ejecuta (Application Service). Es la representación estándar del lado de escritura en CQRS (`DIS-R-004` (LIN-DIS-001 §4.2)).
 
 ```java
 // Command — record inmutable con validación en el constructor compacto
@@ -1332,7 +1332,7 @@ Gestiona el ciclo de vida transaccional de entidades con estados finitos (`BORRA
 
 ### 8.4 Patrones de Capas y Traducción
 
-Patrones que no son GoF pero son de uso obligatorio en la separación entre capas de la arquitectura hexagonal / en capas de ONP. El Repository se documenta en detalle en **[§13.5.3](#1353-repository-repositorios-de-dominio-vs-adaptadores-de-persistencia)** y la Anti-Corruption Layer (traducción de sistemas externos) en `LIN-DIS-001 §5.4` — esta sección cubre el Mapper para no fragmentar el catálogo de patrones de código.
+Patrones que no son GoF pero son de uso obligatorio en la separación entre capas de la arquitectura hexagonal / en capas de ONP. El Repository se documenta en detalle en **[§13.5.3](#1353-repository-repositorios-de-dominio-vs-adaptadores-de-persistencia)** y la Anti-Corruption Layer (traducción de sistemas externos) en `DIS-R-006` (LIN-DIS-001 §5.4) — esta sección cubre el Mapper para no fragmentar el catálogo de patrones de código.
 
 #### 8.4.1 Mapper (Transformación entre Capas)
 Traduce objetos entre capas (DTO ↔ Domain ↔ Entity) sin mezclar responsabilidades; ninguna capa expone directamente sus estructuras internas a otra.
@@ -1508,7 +1508,7 @@ public class ExpedienteServiceImpl {
 
 | Paquete | Nivel |
 |---|---|
-| `pe.gob.onp.*` | `INFO` — permite registrar eventos de negocio significativos exigidos por `LIN-ARQ-001 §5.3` (Observabilidad / Four Golden Signals) |
+| `pe.gob.onp.*` | `INFO` — permite registrar eventos de negocio significativos exigidos por `ARQ-R-005` (LIN-ARQ-001 §5.3) (Observabilidad / Four Golden Signals) |
 | `org.springframework.*`, `org.hibernate.*`, librerías de terceros | `WARN` — reduce ruido de frameworks |
 
 Subir `pe.gob.onp.*` a `DEBUG` solo para diagnóstico puntual y de forma temporal; revertir al terminar.
@@ -1651,7 +1651,7 @@ public class GlobalExceptionHandler {
 | Longitud máxima de clase | 500 líneas | Checkstyle |
 | **Índice CRAP (*Change Risk Anti-Patterns*)** | **≤ 30 por método** | **JaCoCo / GMetrics / SonarQube** (ver [§12.4.5](#1245-crap-change-risk-anti-patterns--evaluación-de-riesgo-de-cambio)) |
 
-**Cobertura de pruebas:** el umbral exacto por estilo arquitectónico y por capa (`domain`, `application`, etc.) es normado exclusivamente en **`LIN-TEST-001 §5.1`** (dueño de este tema) — no se duplica aquí para evitar que ambos documentos queden desalineados. Ver también §14.5 (gate JaCoCo por módulo). `LIN-TEST-001 §5.1` es explícito en que los **Controllers REST no se miden con umbral duro de cobertura de línea** — se verifican con pruebas de integración (`@WebMvcTest`, §15), no con JaCoCo.
+**Cobertura de pruebas:** el umbral exacto por estilo arquitectónico y por capa (`domain`, `application`, etc.) es normado exclusivamente en **`TEST-R-001` (LIN-TEST-001 §5.1)** (dueño de este tema) — no se duplica aquí para evitar que ambos documentos queden desalineados. Ver también §14.5 (gate JaCoCo por módulo). `TEST-R-001` (LIN-TEST-001 §5.1) es explícito en que los **Controllers REST no se miden con umbral duro de cobertura de línea** — se verifican con pruebas de integración (`@WebMvcTest`, §15), no con JaCoCo.
 
 ### 12.2 Tabla de antipatrones prohibidos
 
@@ -2060,7 +2060,7 @@ public class ExpedienteServiceImpl implements ExpedienteService {
 }
 ```
 
-> Ver **`LIN-ARQ-001 §3`** (Gobierno de Datos y Teorema CAP) para la discusión ACID/CAP, la prohibición de 2PC y el rol de `@Transactional` en la estrategia de consistencia. La coordinación entre dominios sin transacción distribuida se resuelve con Saga + Transactional Outbox (`LIN-ARQ-001 §3.3`, `LIN-BUS-001 §7.3`).
+> Ver **`LIN-ARQ-001 §3`** (Gobierno de Datos y Teorema CAP) para la discusión ACID/CAP, la prohibición de 2PC y el rol de `@Transactional` en la estrategia de consistencia. La coordinación entre dominios sin transacción distribuida se resuelve con Saga + Transactional Outbox (`ARQ-R-003` (LIN-ARQ-001 §3.3), `LIN-BUS-001 §7.3`).
 
 ### 13.4 API REST y documentación OpenAPI
 
@@ -2269,7 +2269,7 @@ public ResponseEntity<ApiResponseWrapper<ExpedienteResponse>> obtener(@PathVaria
 | `meta.requestId` | String | ID de correlación X-Request-ID leído del MDC | Sí |
 | `meta.version` | String | Versión del servicio que respondió | Sí |
 
-**Tabla de códigos `codDetRespuesta`:** la tabla completa y autoritativa de códigos está en **LIN-API-REST-001 sección 4.1**. No se duplica aquí para evitar desincronización. Ante cualquier duda sobre qué código usar en una situación específica, consultar ese documento.
+**Tabla de códigos `codDetRespuesta`:** la tabla completa y autoritativa de códigos está en **`API-R-002` (LIN-API-REST-001 §4.1)**. No se duplica aquí para evitar desincronización. Ante cualquier duda sobre qué código usar en una situación específica, consultar ese documento.
 
 #### 13.4.5 Filtro de correlación — RequestIdFilter
 
@@ -2698,7 +2698,7 @@ public class AportanteJdbcRepository implements AportanteRepository {
 
 ## 14. Estructura de proyecto y gestión de dependencias Maven
 
-> Esta sección 14 es la referencia de implementación práctica y contractual para las estructuras e interacciones tácticas definidas conceptualmente en el **Marco Rector de Arquitectura (`LIN-ARQ-001 §2.1` y `§6.2`)** y en el **Estándar de Diseño de Software y Patrones Tácticos (`LIN-DIS-001 §2` y `§3`)**.
+> Esta sección 14 es la referencia de implementación práctica y contractual para las estructuras e interacciones tácticas definidas conceptualmente en el **Marco Rector de Arquitectura (`ARQ-R-001` (LIN-ARQ-001 §2.1) y `§6.2`)** y en el **Estándar de Diseño de Software y Patrones Tácticos (`LIN-DIS-001 §2` y `§3`)**.
 
 ### 14.1 Estructura de proyecto por estilo arquitectónico
 
@@ -2712,8 +2712,8 @@ La elección de estructura en Maven no es libre ni es un estilo de codificación
 | Estructura Maven | Estilo / Topología | Cuándo usar en la ONP |
 |---|---|---|
 | **Monolito simple (capas)** | Layered (`PAT-DIS-02`) | Sistema de soporte simple sin candidatura a microservicio ni múltiples subdominios; lógica *Transaction Script* o *Active Record* (`LIN-DIS-001 §2.2`). |
-| **Monolito Modular (Multi-Módulo Vertical por Bounded Contexts)** | Monolito Modular (`PAT-TOP-01`) | **Estándar por defecto (*Estadio 2*)** para todo sistema nuevo en la ONP. Divide la aplicación en subdominios funcionales (`onp-expedientes`, `onp-aportes`) y un *Shared Kernel (`onp-common-domain`)* (`LIN-ARQ-001 §2.1`, `LIN-DIS-001 §3`). |
-| **Hexagonal / Clean (Estructura Interna o Microservicio)** | Hexagonal (`PAT-DIS-01`) | **Obligatorio** dentro de cada Bounded Context del *Core Previsional*, en módulos con 3+ integraciones externas o al extraer un Microservicio (*Estadio 3*) validado por los 6 criterios de `LIN-ARQ-001 §2.1`. |
+| **Monolito Modular (Multi-Módulo Vertical por Bounded Contexts)** | Monolito Modular (`PAT-TOP-01`) | **Estándar por defecto (*Estadio 2*)** para todo sistema nuevo en la ONP. Divide la aplicación en subdominios funcionales (`onp-expedientes`, `onp-aportes`) y un *Shared Kernel (`onp-common-domain`)* (`ARQ-R-001` (LIN-ARQ-001 §2.1), `DIS-R-002` (LIN-DIS-001 §3)). |
+| **Hexagonal / Clean (Estructura Interna o Microservicio)** | Hexagonal (`PAT-DIS-01`) | **Obligatorio** dentro de cada Bounded Context del *Core Previsional*, en módulos con 3+ integraciones externas o al extraer un Microservicio (*Estadio 3*) validado por los 6 criterios de `ARQ-R-001` (LIN-ARQ-001 §2.1). |
 
 #### Monolito simple (capas)
 
@@ -2820,7 +2820,7 @@ onp-{sistema}/                                ← Raíz del Proyecto General (PO
 
 En un Monolito Modular formal, cada componente físico (`componentes/{modulo-1}/`) materializa su arquitectura hexagonal separando físicamente sus capas en 4 sub-módulos Maven (`-domain`, `-application`, `-infrastructure`, `-api`). 
 
-Cuando se construye un **Microservicio independiente (`LIN-ARQ-001 §2.1 Estadio 3`)**, se puede optar por mantener esta misma estructura de 4 sub-módulos Maven bajo una raíz `onp-{microservicio}/` (con su propio `-boot`), o alternativamente, para microservicios acotados, concentrar el despliegue en un solo módulo Maven aplicando la separación estricta mediante paquetes Java estancos dentro de `src/main/java/pe/gob/onp/{modulo}/`:
+Cuando se construye un **Microservicio independiente (`ARQ-R-001` (LIN-ARQ-001 §2.1) Estadio 3`)**, se puede optar por mantener esta misma estructura de 4 sub-módulos Maven bajo una raíz `onp-{microservicio}/` (con su propio `-boot`), o alternativamente, para microservicios acotados, concentrar el despliegue en un solo módulo Maven aplicando la separación estricta mediante paquetes Java estancos dentro de `src/main/java/pe/gob/onp/{modulo}/`:
 
 ```
 onp-{modulo}/                        ← Módulo de un Microservicio independiente en un solo JAR
@@ -3252,11 +3252,11 @@ void deberiaRetornarExpedienteCuandoIdExiste() {
 }
 ```
 
-### 15.3 Cobertura mínima — remite a `LIN-TEST-001 §5.1`
+### 15.3 Cobertura mínima — remite a `TEST-R-001` (LIN-TEST-001 §5.1)
 
-> **Documento dueño: `LIN-TEST-001 §5.1`.** Los umbrales de cobertura se definen **por estilo arquitectónico** (Monolito Simple, Monolito Modular, Hexagonal, Microservicio, EDA) y por capa, no con una tabla plana. Este estándar **no publica umbrales propios** para evitar que ambos documentos queden desalineados — misma regla ya aplicada en `§12.1` y `§14.5`.
+> **Documento dueño: `TEST-R-001` (LIN-TEST-001 §5.1).** Los umbrales de cobertura se definen **por estilo arquitectónico** (Monolito Simple, Monolito Modular, Hexagonal, Microservicio, EDA) y por capa, no con una tabla plana. Este estándar **no publica umbrales propios** para evitar que ambos documentos queden desalineados — misma regla ya aplicada en `§12.1` y `§14.5`.
 
-**Lo que sí debe saber el desarrollador Java al escribir las pruebas** (el detalle normativo está en `LIN-TEST-001 §5.1`):
+**Lo que sí debe saber el desarrollador Java al escribir las pruebas** (el detalle normativo está en `TEST-R-001` (LIN-TEST-001 §5.1)):
 
 | Elemento | Criterio | Tipo de prueba |
 |------|-----------------|---------------|
@@ -3265,7 +3265,7 @@ void deberiaRetornarExpedienteCuandoIdExiste() {
 | **Controladores REST** | **No se miden con umbral duro de cobertura de línea** | Integración (`@WebMvcTest`) — se verifica comportamiento, no porcentaje |
 | Mappers (MapStruct), configuración, clases generadas | Sin umbral | MapStruct genera código verificado por el compilador |
 
-> ⚠️ **Controllers:** `LIN-TEST-001 §5.1` es explícito en que los Controllers REST **no** se someten a umbral duro de cobertura de línea. Cualquier gate de CI que imponga un porcentaje sobre `controller/` contradice al documento dueño.
+> ⚠️ **Controllers:** `TEST-R-001` (LIN-TEST-001 §5.1) es explícito en que los Controllers REST **no** se someten a umbral duro de cobertura de línea. Cualquier gate de CI que imponga un porcentaje sobre `controller/` contradice al documento dueño.
 
 ### 15.4 Testcontainers para repositorios
 
@@ -3314,7 +3314,7 @@ class ExpedienteRepositoryTest {
 
 ### 15.5 Pruebas de arquitectura (ArchUnit)
 
-`LIN-ARQ-001 §8.3` numeral 4 exige una **declaración jurada** del Tech Lead certificando la ausencia de importaciones entre fronteras prohibidas del Monolito Modular. Hasta ahora esa declaración no tenía verificación de ninguna clase: `LIN-CICD-001 §12.5` admite que el pipeline solo comprueba que el texto **exista**, y el grafo de servicios tampoco puede verlo (`LIN-OBS-001 §5.8.3`), porque las llamadas entre módulos ocurren dentro del mismo proceso.
+`ARQ-R-008` (LIN-ARQ-001 §8.3) numeral 4 exige una **declaración jurada** del Tech Lead certificando la ausencia de importaciones entre fronteras prohibidas del Monolito Modular. Hasta ahora esa declaración no tenía verificación de ninguna clase: `LIN-CICD-001 §12.5` admite que el pipeline solo comprueba que el texto **exista**, y el grafo de servicios tampoco puede verlo (`LIN-OBS-001 §5.8.3`), porque las llamadas entre módulos ocurren dentro del mismo proceso.
 
 Las **pruebas de arquitectura** cierran ese hueco: son pruebas JUnit ordinarias que analizan el bytecode y fallan la compilación cuando una regla estructural se viola. Tipo `AT` en la clasificación de `LIN-TEST-001 §3.1`.
 
@@ -3325,7 +3325,7 @@ En un reactor multi-módulo, el compilador **ya impide** que un módulo use clas
 | Regla | ¿La detecta Maven? | Por qué hace falta ArchUnit |
 |---|---|---|
 | Dependencia declarada entre dos *bounded contexts* | ❌ | Si alguien **añade la dependencia al `pom.xml`**, el compilador la acepta sin más. La frontera es una decisión de diseño, no del compilador |
-| Contenido prohibido en el *Shared Kernel* (`LIN-DIS-001 §3.4`) | ❌ | Una `@Entity` o un `CalculoPensionService` en `onp-common-domain` compila perfectamente |
+| Contenido prohibido en el *Shared Kernel* (`DIS-R-003` (LIN-DIS-001 §3.4)) | ❌ | Una `@Entity` o un `CalculoPensionService` en `onp-common-domain` compila perfectamente |
 | Dominio acoplado a Spring o JPA | ❌ | Si el módulo `-domain` declara Spring como dependencia, el compilador no objeta |
 | Reglas dentro de un mismo módulo Maven | ❌ | Proyectos que separan capas por paquete y no por módulo no tienen ninguna barrera |
 
@@ -3430,7 +3430,7 @@ Un PR no puede aprobarse si alguna de las siguientes condiciones no se cumple:
 | Condición | Verificación |
 |---|---|
 | Pipeline de CI verde | Build, tests y Checkstyle pasados sin errores |
-| Cobertura de pruebas dentro del umbral | JaCoCo no reporta degradación por debajo del mínimo normado en `LIN-TEST-001 §5.1` según el estilo arquitectónico del proyecto (ver [sección 15.3](#153-cobertura-minima--remite-a-lin-test-001-51)). **Los Controllers REST no se evalúan con umbral duro** |
+| Cobertura de pruebas dentro del umbral | JaCoCo no reporta degradación por debajo del mínimo normado en `TEST-R-001` (LIN-TEST-001 §5.1) según el estilo arquitectónico del proyecto (ver [sección 15.3](#153-cobertura-minima--remite-a-lin-test-001-51)). **Los Controllers REST no se evalúan con umbral duro** |
 | Sin antipatrones del [sección 12.2](#122-tabla-de-antipatrones-prohibidos) | El revisor verifica la tabla de antipatrones prohibidos |
 | Sin credenciales ni secretos en el código | Búsqueda manual o con herramienta de detección de secretos |
 | Sin código comentado | Ver [sección 9.3](#93-comentarios-internos-no-javadoc) — el código comentado no llega a rama principal |
@@ -3453,7 +3453,7 @@ Cualquier desviación de este estándar — incluyendo omitir la revisión por u
 
 ### 16.6 Patrón Feature Toggle y Deuda Técnica Cero (PA14)
 
-En alineación con el patrón arquitectónico **PA14 (Feature Toggle)** de **`LIN-ARQ-001 §2.3`** y las directivas de control de cambios de **LIN-VER-001**, el uso de *Feature Toggles* (o banderas de funcionalidad) es un mecanismo permitido para el despliegue continuo y la entrega progresiva, pero está sujeto a un riguroso control de ciclo de vida para garantizar la **deuda técnica cero**.
+En alineación con el patrón arquitectónico **PA14 (Feature Toggle)** de **`ARQ-R-002` (LIN-ARQ-001 §2.3)** y las directivas de control de cambios de **LIN-VER-001**, el uso de *Feature Toggles* (o banderas de funcionalidad) es un mecanismo permitido para el despliegue continuo y la entrega progresiva, pero está sujeto a un riguroso control de ciclo de vida para garantizar la **deuda técnica cero**.
 
 #### 16.6.1 Estrategia Tecnológica Oficial en Dos Niveles
 Para mantener un stack mínimo, homogéneo y eficiente en Spring Boot 3, la ONP estandariza la implementación de *Feature Toggles* en dos niveles operativos, en conformidad con **ADR-014 (LIN-ARQ-001 Apéndice A)**:
@@ -3505,7 +3505,7 @@ public class SolicitudPensionServiceImpl implements SolicitudPensionService {
 ```
 
 #### 16.6.2 Ciclo de Vida y Caducidad Acotada (Deuda Técnica Cero)
-En estricta coherencia con **`LIN-ARQ-001 §2.3`** (tabla de categorías y ciclo de vida máximo, `ADR-014`), la obligación de caducidad y retiro del código fuente aplica diferenciadamente según la clasificación del toggle:
+En estricta coherencia con **`ARQ-R-002` (LIN-ARQ-001 §2.3)** (tabla de categorías y ciclo de vida máximo, `ADR-014`), la obligación de caducidad y retiro del código fuente aplica diferenciadamente según la clasificación del toggle:
 
 | Clasificación según LIN-ARQ-001 | Plazo y Obligación de Retiro |
 |---|---|

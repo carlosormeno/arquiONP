@@ -9,7 +9,7 @@
 |---|---|---|
 | Estilo | Monolito Simple (`PAT-DIS-02`) | **Monolito Modular (`PAT-TOP-01`) — estándar por defecto en ONP** |
 | Módulos Maven | 1 | 8 (`onp-common-domain`, `onp-common-web`, 5 × componente, `-boot`) |
-| Cuándo usar | Sistema de soporte simple, CRUD sin reglas de negocio complejas | Todo sistema previsional nuevo (`LIN-ARQ-001 §2.1`), salvo excepción justificada |
+| Cuándo usar | Sistema de soporte simple, CRUD sin reglas de negocio complejas | Todo sistema previsional nuevo (`ARQ-R-001` (LIN-ARQ-001 §2.1)), salvo excepción justificada |
 
 Si el sistema tiene **un único subdominio simple y sin candidatura a microservicio**, considerar `template-backend-java` en su lugar. Ante la duda, el Monolito Modular es el default institucional.
 
@@ -24,7 +24,7 @@ Incluye, funcionando de extremo a extremo:
 - pruebas en las 5 capas: unitaria pura en `-domain`, unitaria con Mockito en `-application`/`-messaging`, `@DataJpaTest` + Testcontainers Oracle en `-infrastructure`, `@WebMvcTest` en `-api`, y `@SpringBootTest` de ensamblaje completo en `-boot`;
 - migración Flyway versionada (`db/migration`) — `ddl-auto=validate`, nunca `update` (`LIN-BD-ORA-001`);
 - filtros institucionales (`RequestId`, SAA, log canónico), `GlobalExceptionHandler` con mapeo de excepciones de dominio a HTTP, observabilidad OTEL/Logback, OpenAPI;
-- gate de cobertura JaCoCo **diferenciado por capa**: 85% en `-domain`/`-application`, 70% en `-infrastructure`/`-api`/`-boot` (`LIN-TEST-001 §5.1`);
+- gate de cobertura JaCoCo **diferenciado por capa**: 85% en `-domain`/`-application`, 70% en `-infrastructure`/`-api`/`-boot` (`TEST-R-001` (LIN-TEST-001 §5.1));
 - pipeline GitLab, Dockerfile multi-stage consciente del reactor Maven, manifiestos Kustomize por ambiente.
 
 **Tipo:** Backend Java / Spring Boot — Monolito Modular
@@ -53,7 +53,7 @@ mvn -pl componentes/afiliacion/onp-afiliacion-application -am verify
 mvn -pl onp-template-boot spring-boot:run -Dspring-boot.run.profiles=dev
 ```
 
-`mvn verify` falla si algún módulo cae bajo su umbral de cobertura (`LIN-TEST-001 §5.1`) o si Checkstyle encuentra violaciones. Las pruebas de `-infrastructure` y `-boot` requieren Docker disponible (Testcontainers levanta un Oracle real — `gvenzl/oracle-xe:21-slim-faststart`).
+`mvn verify` falla si algún módulo cae bajo su umbral de cobertura (`TEST-R-001` (LIN-TEST-001 §5.1)) o si Checkstyle encuentra violaciones. Las pruebas de `-infrastructure` y `-boot` requieren Docker disponible (Testcontainers levanta un Oracle real — `gvenzl/oracle-xe:21-slim-faststart`).
 
 ## Estructura del proyecto
 
@@ -112,7 +112,7 @@ Para agregar un consumer nuevo en otro componente: crear `onp-{componente}-messa
 3. Sustituir el stub de `SaaTokenValidationFilter` por la integración real con SAA.
 4. Ajustar endpoints OTEL por entorno si Plataforma lo indica.
 5. Reemplazar manifiestos K8s placeholder por los del sistema real.
-6. Revisar el umbral `jacoco.coverage.minimum` / `jacoco.coverage.minimum.domain` si el sistema justifica un mínimo mayor al normado en `LIN-TEST-001 §5.1`.
+6. Revisar el umbral `jacoco.coverage.minimum` / `jacoco.coverage.minimum.domain` si el sistema justifica un mínimo mayor al normado en `TEST-R-001` (LIN-TEST-001 §5.1).
 
 ## Artefactos normados — no personalizar
 

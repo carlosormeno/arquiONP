@@ -78,7 +78,7 @@ Este lineamiento establece las normas obligatorias para la implementación de ob
 |---|---|
 | Configuración del OTEL Collector, Jaeger, Elasticsearch, Kibana, Prometheus, Grafana | Responsabilidad de Plataforma — ver [sección 10.2](#102-plataforma-infraestructura) de este documento |
 | **Observabilidad de frontend Angular** — browser performance, Core Web Vitals, error tracking en el cliente | **LIN-FE-ANG-001 sección 15** — Observabilidad Frontend (sección existente): métricas de LCP, INP, CLS; errores de red; correlación del `X-Request-ID` propagado desde el backend hacia los logs del browser |
-| **Observabilidad de PL/SQL legacy** — trazabilidad de procedures críticos | **LIN-BD-ORA-001 sección 6.0**: la trazabilidad de PL/SQL se obtiene indirectamente a través del adapter Java; el span `@NewSpan` del adapter captura la duración y el resultado del procedure, y el log estructurado del adapter incluye `trace.id`. No hay instrumentación directa dentro del procedure |
+| **Observabilidad de PL/SQL legacy** — trazabilidad de procedures críticos | **`BD-R-001` (LIN-BD-ORA-001 §6.0)**: la trazabilidad de PL/SQL se obtiene indirectamente a través del adapter Java; el span `@NewSpan` del adapter captura la duración y el resultado del procedure, y el log estructurado del adapter incluye `trace.id`. No hay instrumentación directa dentro del procedure |
 
 ---
 
@@ -295,7 +295,7 @@ app:
 
 > **NOTA — SPRING_PROFILES_ACTIVE:** Plataforma es responsable de inyectar `SPRING_PROFILES_ACTIVE=dev|qa|prod` como variable de entorno en el `Deployment` de Kubernetes. Sin esta variable el servicio usa únicamente `application.yml` base y no emite telemetría. Ver [sección 10.2](#102-plataforma-infraestructura).
 
-> **NOTA — transporte OTLP en `http://` y Zero Trust:** los endpoints de estas secciones usan `http://` porque el tráfico es **intra-clúster**, del pod al colector, y no sale de la red del clúster. `LIN-ARQ-001 §5.1` establece Zero Trust —la red interna no otorga confianza implícita— y `LIN-SEC-APP-001 §7.1` exige HTTPS en ambientes compartidos; ambas se satisfacen a nivel de plataforma, no de aplicación. Desde 2026-08-09 esto tiene respaldo normativo explícito: **`ADR-TLS-INTERNO-001`** admite el tramo intra-cluster sobre HTTP a condición de que exista `NetworkPolicy`, que `LIN-K8S-001 §9.1` declara **obligatoria** para todo servicio que reciba tráfico interno, y prevé la migración a mTLS cuando Plataforma habilite la malla. **El servicio no configura TLS hacia el colector por su cuenta.** Si Plataforma habilita mTLS, el endpoint no cambia: lo intercepta el sidecar.
+> **NOTA — transporte OTLP en `http://` y Zero Trust:** los endpoints de estas secciones usan `http://` porque el tráfico es **intra-clúster**, del pod al colector, y no sale de la red del clúster. `LIN-ARQ-001 §5.1` establece Zero Trust —la red interna no otorga confianza implícita— y `SEC-R-001` (LIN-SEC-APP-001 §7.1) exige HTTPS en ambientes compartidos; ambas se satisfacen a nivel de plataforma, no de aplicación. Desde 2026-08-09 esto tiene respaldo normativo explícito: **`ADR-TLS-INTERNO-001`** admite el tramo intra-cluster sobre HTTP a condición de que exista `NetworkPolicy`, que `K8S-R-002` (LIN-K8S-001 §9.1) declara **obligatoria** para todo servicio que reciba tráfico interno, y prevé la migración a mTLS cuando Plataforma habilite la malla. **El servicio no configura TLS hacia el colector por su cuenta.** Si Plataforma habilita mTLS, el endpoint no cambia: lo intercepta el sidecar.
 
 > **NOTA — overrides OTEL en Kubernetes:** Variables como `OTEL_EXPORTER_OTLP_ENDPOINT` o `OTEL_SERVICE_NAME` se consideran mecanismos de override operativo administrados por Plataforma en `LIN-K8S-001`. No sustituyen la configuración base versionada del proyecto.
 
@@ -448,13 +448,13 @@ public final class Mask {
 |---|---|---|
 | `@Order(1)` | `RequestIdFilter` ([sección 4.10](#410-requestidfilterjava)) | Establece `http.request.id` en MDC |
 | `@Order(2)` | `CanonicalRequestLogFilter` | **Envuelve el resto de la cadena**; emite el log canónico en su `finally`, ocurra lo que ocurra dentro |
-| `@Order(3)` | `SaaTokenValidationFilter` (`LIN-SEC-APP-001 §8.3`) | Valida el token; publica la identidad en MDC y en el atributo `onp.user.id` de la request |
+| `@Order(3)` | `SaaTokenValidationFilter` (`SEC-R-002` (LIN-SEC-APP-001 §8.3)) | Valida el token; publica la identidad en MDC y en el atributo `onp.user.id` de la request |
 
 > **Por qué el filtro canónico va por fuera del de seguridad.** El log canónico debe registrar **todas** las peticiones, incluidas las que el filtro de seguridad rechaza. Si corriera por dentro (`@Order(3)`), un token ausente o inválido cortaría la cadena antes de llegar a él y **ningún 401 ni 503 aparecería en el log canónico**: no se podría medir la tasa de fallos de autenticación, un escaneo de tokens no dejaría rastro y la indisponibilidad del SAA sería invisible — lo que `LIN-SEC-APP-001 §13.1` clasifica como *OWASP A09, Security Logging Failures*.
 >
 > **Cómo se conserva `user.id` estando por fuera.** `SaaTokenValidationFilter` limpia el MDC en su propio `finally`, de modo que al volver el control al filtro canónico el MDC ya no tiene la identidad. Por eso el filtro de seguridad la publica además como **atributo de la request** (`onp.user.id`), que vive todo el ciclo de la petición y sobrevive a la limpieza del MDC. El filtro canónico lo lee al emitir el log.
 
-**Requiere:** `RequestIdFilter` ([sección 4.10](#410-requestidfilterjava)) para que `http.request.id` esté accesible. En servicios con autenticación SAA, `SaaTokenValidationFilter` (`LIN-SEC-APP-001 §8.3`) publica el atributo `onp.user.id`. En servicios públicos, o cuando la petición se rechaza antes de autenticar, `user.id` registra `"anonymous"`.
+**Requiere:** `RequestIdFilter` ([sección 4.10](#410-requestidfilterjava)) para que `http.request.id` esté accesible. En servicios con autenticación SAA, `SaaTokenValidationFilter` (`SEC-R-002` (LIN-SEC-APP-001 §8.3)) publica el atributo `onp.user.id`. En servicios públicos, o cuando la petición se rechaza antes de autenticar, `user.id` registra `"anonymous"`.
 
 ```java
 import jakarta.servlet.FilterChain;
@@ -864,8 +864,8 @@ Se exponen a Prometheus y se visualizan en Grafana con el panel **Node Graph**. 
 
 **Qué NO muestra, y es importante no confundirlo:**
 
-- **Las fronteras internas de un Monolito Modular.** Las llamadas entre módulos ocurren dentro del mismo proceso y no generan spans salvo instrumentación deliberada con `@NewSpan` (§5.3). Dado que el Estadio 2 es la topología por defecto (`LIN-ARQ-001 §2.1`), el grafo de un sistema típico de la ONP tendrá **pocos nodos internos y muchas aristas externas** — ahí está su valor.
-- **Las importaciones entre fronteras prohibidas** de `LIN-DIS-001 §3.4`. Eso es una propiedad del código, no del tráfico: la verifica el análisis estático de dependencias entre módulos Maven, no la telemetría. `LIN-CICD-001 §12.5` ya declara este límite para la Declaración de Conformidad.
+- **Las fronteras internas de un Monolito Modular.** Las llamadas entre módulos ocurren dentro del mismo proceso y no generan spans salvo instrumentación deliberada con `@NewSpan` (§5.3). Dado que el Estadio 2 es la topología por defecto (`ARQ-R-001` (LIN-ARQ-001 §2.1)), el grafo de un sistema típico de la ONP tendrá **pocos nodos internos y muchas aristas externas** — ahí está su valor.
+- **Las importaciones entre fronteras prohibidas** de `DIS-R-003` (LIN-DIS-001 §3.4). Eso es una propiedad del código, no del tráfico: la verifica el análisis estático de dependencias entre módulos Maven, no la telemetría. `LIN-CICD-001 §12.5` ya declara este límite para la Declaración de Conformidad.
 - **Dependencias que no se ejercitaron** en la ventana observada. Un grafo vacío en una arista significa «no se usó», no «no existe».
 
 #### 5.8.4 Identidad de los nodos — condición para que el grafo sea reconciliable
@@ -1077,7 +1077,7 @@ Los logs aparecen bajo el Data View `onp-logs-*`:
 | `trace.id` | `traceId` | ID único de la traza OTEL | OTEL automático → MDC |
 | `span.id` | `spanId` | ID del span activo | OTEL automático → MDC |
 | `http.request.id` | `http.request.id` | X-Request-ID de la petición HTTP | `RequestIdFilter` ([sección 4.10](#410-requestidfilterjava)) — @Order(1) |
-| `user.id` | `user.id` | Usuario autenticado | `SaaTokenValidationFilter` (LIN-SEC-APP-001 sección 8.3) — @Order(2); `CanonicalRequestLogFilter` ([sección 4.9](#49-canonicalrequestlogfilterjava)) lo lee de MDC |
+| `user.id` | `user.id` | Usuario autenticado | `SaaTokenValidationFilter` (`SEC-R-002` (LIN-SEC-APP-001 §8.3)) — @Order(2); `CanonicalRequestLogFilter` ([sección 4.9](#49-canonicalrequestlogfilterjava)) lo lee de MDC |
 | `service.name` | `service.name` | Nombre del servicio (`onp-<s>-<m>`) | `application.yml` |
 
 ### 7.2 Pasar de un log a su traza en Jaeger

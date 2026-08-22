@@ -129,6 +129,12 @@ RE_CITA = re.compile(
 
 RE_CODIGO_PT = re.compile(r"\b(PT\d{2})\b")
 
+# Identificadores estables de regla: `ARQ-R-001`, `DIS-R-008`, `TEST-R-001`…
+# El marcador se declara bajo el encabezado de la regla; la cita puede aparecer
+# en cualquier documento. Ver GOB-CHK-001 H39.
+RE_MARCADOR_ID = re.compile(r"^>\s*🔖\s*\*\*`([A-Z0-9]+-R-\d{3})`\*\*")
+RE_CITA_ID = re.compile(r"`([A-Z0-9]+-R-\d{3})`")
+
 # Códigos del tablero de brechas GOB-BRE-001: PA (arquitectura), PI (infraestructura
 # y resiliencia), PD (diseño/DDD), PR (principios), PG (GoF), E (estilos).
 # No son códigos normativos — son un inventario de vacíos por cerrar. Ver C3.
@@ -227,6 +233,27 @@ def indexar(raiz):
             else:
                 por_codigo[codigo] = doc
     return docs, por_codigo
+
+
+def marcar_bloques_codigo(lineas):
+    """
+    Índices de línea dentro de un bloque cercado (```), incluidas sus delimitadoras.
+
+    Un ejemplo de sintaxis no es una declaración: la propia GOB-MAT-001 ilustra el
+    formato del marcador de ID dentro de un bloque de código, y sin este filtro el
+    linter lo contaba como una segunda declaración del mismo identificador
+    (GOB-CHK-001 H39).
+    """
+    dentro = False
+    indices = set()
+    for i, linea in enumerate(lineas):
+        if linea.lstrip().startswith("```"):
+            indices.add(i)
+            dentro = not dentro
+            continue
+        if dentro:
+            indices.add(i)
+    return indices
 
 
 def marcar_historial(lineas):
@@ -534,6 +561,98 @@ def c8_catalogo_estado(docs, por_codigo):
     return hallazgos
 
 
+def c9_ids_estables(docs):
+    """
+    Los identificadores estables de regla (`ARQ-R-001`) existen y son únicos.
+
+    Nacen del defecto más repetido del corpus: una cita `§6.2` sigue resolviendo
+    después de que el documento citado renumere, pero apunta a otro tema. C1 no
+    puede detectarlo — verifica que la sección exista, no que trate de lo citado.
+    Un ID va unido a la regla, no a su posición, de modo que renumerar no lo rompe.
+
+    Verifica tres cosas:
+      · un ID citado está declarado en algún documento;
+      · ningún ID está declarado dos veces (resolvería a la regla equivocada);
+      · un ID declarado y nunca citado se reporta como aviso — no es un defecto,
+        pero suele indicar que la migración de citas quedó a medias.
+    """
+    hallazgos = []
+    declarados = {}          # ID -> (ruta, línea, sección)
+    duplicados = []
+    for doc in docs:
+        seccion_actual = "?"
+        en_codigo = marcar_bloques_codigo(doc["lineas"])
+        for i, linea in enumerate(doc["lineas"]):
+            if i in en_codigo:
+                continue
+            m_sec = RE_ENCABEZADO_NUM.match(linea)
+            if m_sec:
+                seccion_actual = m_sec.group(1)
+            m = RE_MARCADOR_ID.match(linea)
+            if not m:
+                continue
+            idr = m.group(1)
+            if idr in declarados:
+                duplicados.append((idr, doc["ruta"], i + 1, declarados[idr]))
+            else:
+                declarados[idr] = (doc["ruta"], i + 1, seccion_actual)
+
+    for idr, ruta, linea, previo in duplicados:
+        hallazgos.append(Hallazgo(
+            "error", ruta, linea, "C9",
+            f"el identificador `{idr}` ya está declarado en `{previo[0]}` §{previo[2]}: "
+            f"un ID identifica a una sola regla"))
+
+    citados = set()
+    for doc in docs:
+        if not doc["es_corpus"]:
+            continue
+        historial = marcar_historial(doc["lineas"])
+        en_codigo = marcar_bloques_codigo(doc["lineas"])
+        for i, linea in enumerate(doc["lineas"]):
+            if i in historial or i in en_codigo or RE_MARCADOR_ID.match(linea):
+                continue
+            for idr in RE_CITA_ID.findall(linea):
+                citados.add(idr)
+                if idr not in declarados:
+                    hallazgos.append(Hallazgo(
+                        "error", doc["ruta"], i + 1, "C9",
+                        f"se cita el identificador `{idr}`, que no está declarado "
+                        f"en ningún documento del corpus"))
+
+    for idr, (ruta, linea, seccion) in sorted(declarados.items()):
+        if idr not in citados:
+            hallazgos.append(Hallazgo(
+                "aviso", ruta, linea, "C9",
+                f"`{idr}` (§{seccion}) está declarado pero ningún documento lo cita "
+                f"todavía — migración de citas pendiente"))
+    return hallazgos
+
+
+def imprimir_indice(docs):
+    """Imprime el mapa ID → documento §sección. Se genera, no se mantiene a mano."""
+    filas = []
+    for doc in docs:
+        seccion_actual = "?"
+        titulo = ""
+        en_codigo = marcar_bloques_codigo(doc["lineas"])
+        for j, linea in enumerate(doc["lineas"]):
+            if j in en_codigo:
+                continue
+            m_sec = RE_ENCABEZADO_NUM.match(linea)
+            if m_sec:
+                seccion_actual = m_sec.group(1)
+                titulo = re.sub(r"^#+\s+(?:secci[óo]n\s+)?[\d.]+[.\s]+", "", linea).strip()
+            m = RE_MARCADOR_ID.match(linea)
+            if m:
+                filas.append((m.group(1), doc["codigo"] or doc["ruta"], seccion_actual, titulo))
+    print(f"{'ID':<12} {'DOCUMENTO':<20} {'§':<7} REGLA")
+    print("-" * 92)
+    for idr, cod, sec, tit in sorted(filas):
+        print(f"{idr:<12} {cod:<20} {sec:<7} {tit[:50]}")
+    print(f"\n{len(filas)} identificadores estables declarados")
+
+
 def c5_enlaces(docs, raiz):
     hallazgos = []
     for doc in docs:
@@ -566,7 +685,9 @@ def main():
     ap = argparse.ArgumentParser(description="Linter del corpus documental ONP")
     ap.add_argument("--raiz", default=os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     ap.add_argument("--formato", choices=["texto", "gitlab"], default="texto")
-    ap.add_argument("--solo", choices=["C1", "C2", "C3", "C4", "C5", "C6", "C8"], default=None)
+    ap.add_argument("--solo", choices=["C1", "C2", "C3", "C4", "C5", "C6", "C8", "C9"], default=None)
+    ap.add_argument("--indice", action="store_true",
+                    help="imprime el mapa ID estable → documento §sección y termina")
     args = ap.parse_args()
 
     raiz = os.path.abspath(args.raiz)
@@ -583,6 +704,11 @@ def main():
         todos += c4_duplicados(raiz)
     if args.solo in (None, "C5"):
         todos += c5_enlaces(docs, raiz)
+    if args.indice:
+        imprimir_indice(docs)
+        return 0
+    if args.solo in (None, "C9"):
+        todos += c9_ids_estables(docs)
     if args.solo in (None, "C8"):
         todos += c8_catalogo_estado(docs, por_codigo)
     if args.solo in (None, "C6"):
@@ -607,8 +733,9 @@ def main():
         "C5": "Enlaces",
         "C6": "Catálogo de GOB-MAT-001 — rutas y códigos",
         "C8": "Catálogo de GOB-MAT-001 — versión y estado",
+        "C9": "Identificadores estables de regla",
     }
-    for regla in ("C1", "C2", "C3", "C4", "C5", "C6", "C8"):
+    for regla in ("C1", "C2", "C3", "C4", "C5", "C6", "C8", "C9"):
         hs = por_regla.get(regla, [])
         n_err = sum(1 for h in hs if h.nivel == "error")
         estado = "OK" if not hs else f"{n_err} error(es), {len(hs) - n_err} aviso(s)"
