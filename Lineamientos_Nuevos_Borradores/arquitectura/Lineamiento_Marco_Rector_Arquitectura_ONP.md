@@ -1,7 +1,7 @@
 # Lineamiento Marco Rector de Arquitectura de Software en la ONP
 
 **Código:** LIN-ARQ-001  
-**Versión:** 0.1.14  
+**Versión:** 0.1.15  
 **Fecha:** 2026-08-05  
 **Autor:** Oficina de Tecnologías de la Información — ONP  
 **Estado:** En revisión / Estándar de Nivel 1 — pendiente de graduación a Vigente (`GOB-MAT-001`, Ciclo de vida documental)  
@@ -21,6 +21,7 @@
 | 0.1.12 | 2026-08-17 | Arquitectura OTI | Incorpora **`§5.4` Continuidad Operativa**, que cierra la mayor brecha de contenido del corpus (`GOB-CHK-001` H11.2): no existía clasificación institucional de criticidad ni objetivos de RTO/RPO, de modo que `GOB-PLA-001 C.1` obligaba a declararlos sin referencia y `LIN-K8S-001 §13.3` exigía una «política de backup» que ningún documento definía. La sección fija tres bandas de criticidad con RTO/RPO objetivo, la regla de que **ningún sistema puede comprometer un RTO/RPO mejor que el de sus dependencias**, la política de respaldo por componente delegando el mecanismo a cada dueño, el procedimiento de recuperación a nivel de sistema y el régimen obligatorio de pruebas de restauración. **Los valores son propuesta técnica sujeta a ratificación del Comité con las áreas usuarias.** Se declara además a esta sección dueña de la escala de criticidad, que `LIN-PERF-001`, `LIN-CICD-001` y `LIN-K8S-001` usaban sin fuente común |
 | 0.1.13 | 2026-08-18 | Arquitectura OTI | Incorpora **`§5.5` Arquitectura Observada**, que cierra un vacío de verificación: el Anexo A de `GOB-PLA-001` es una arquitectura **declarada** y el corpus no tenía forma de detectar su deriva respecto de la real. El grafo de servicios de `LIN-OBS-001 §5.8` provee la topología observada, y se fijan cinco verificaciones obligatorias semestrales para criticidad Alta y Media — dependencias no declaradas, integridad del inventario de recuperación de `§5.4.1`, elusión del ACL, servicios fuera de catálogo y exposición sin gateway. La regla de tratamiento es explícita: ante una dependencia observada y no declarada **se corrige el documento o el código, nunca se normaliza por estar en producción**. Se declaran también los límites: el grafo no ve fronteras internas del Monolito Modular ni sustituye al análisis estático, del que el corpus aún no dispone (`GOB-CHK-001` H35) |
 | 0.1.14 | 2026-08-18 | Arquitectura OTI | `§8.3` numeral 4: la declaración jurada de conformidad deja de ser el único control de las fronteras del Monolito Modular — su contenido lo verifican ahora las pruebas de arquitectura de `LIN-DEV-JAVA-001 §15.5` (`GOB-CHK-001` H37) |
+| 0.1.15 | 2026-08-21 | Arquitectura OTI | `§5.5.3` afirmaba que la verificación de fronteras internas del Monolito Modular era un control «del que el corpus aún no dispone». Dejó de ser cierto tres días después, cuando `LIN-DEV-JAVA-001 §15.5` incorporó las pruebas ArchUnit (`GOB-CHK-001` H37), sin que esta sección se actualizara. Es el defecto que `GOB-PLA-001 §1.5` norma para los documentos de proyecto —declarar conformidad con un corpus que ya cambió— reproducido dentro del propio marco rector (`GOB-CHK-001` H44) |
 
 ---
 
@@ -498,7 +499,7 @@ Para todo sistema de criticidad **Alta o Media** (`§5.4.1`), Arquitectura OTI c
 Esta verificación **no sustituye** a la revisión del documento ni al análisis estático:
 
 - El grafo solo muestra lo **ejercitado** en la ventana observada. Una arista ausente significa «no se usó», no «no existe»: una integración trimestral puede no aparecer en un contraste semestral.
-- **No observa las fronteras internas** de un Monolito Modular, que ocurren en el mismo proceso. Las importaciones prohibidas de `DIS-R-003` (LIN-DIS-001 §3.4) siguen dependiendo de la Declaración de Conformidad del Tech Lead (`§8.3` numeral 4) y requerirían análisis estático de dependencias entre módulos Maven, control del que el corpus **aún no dispone**.
+- **No observa las fronteras internas** de un Monolito Modular, que ocurren en el mismo proceso. Las importaciones prohibidas de `DIS-R-003` (LIN-DIS-001 §3.4) las verifica el **análisis estático** de `LIN-DEV-JAVA-001 §15.5` (pruebas ArchUnit, tipo `AT`), que falla la compilación ante una violación. Grafo y análisis estático son controles **complementarios y no sustituibles**: uno ve el tráfico entre procesos, el otro la estructura del código.
 - La calidad del grafo depende de que la regla de `LIN-OBS-001 §5.8.1` se cumpla: métricas generadas **antes** del muestreo. Con muestreo aplicado, la ausencia de una arista de baja frecuencia carece de valor probatorio.
 
 ---

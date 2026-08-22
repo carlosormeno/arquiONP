@@ -1,10 +1,12 @@
 # START HERE — Proyecto Java ONP
 
 **Código:** GOB-INI-001  
-**Versión:** 0.3.0 (Criterio de elección de template; citas corregidas)  
+**Versión:** 0.3.1 (Criterio de elección de template; citas corregidas)  
 **Fecha:** 2026-07-08  
 **Estado:** Vigente / Operativo  
 **Propósito:** punto de entrada para iniciar un proyecto Java/Spring Boot bajo los lineamientos ONP federados en 3 niveles de abstracción.
+
+> **¿Vienes a continuar el trabajo sobre el corpus, no a arrancar un proyecto?** El punto de retomada es **`GOB-EST-001`** (Estado y Continuidad): estado verificado, decisiones ya cerradas, pendientes y orden recomendado. Este documento es para **arrancar un proyecto Java**, que es otra cosa.
 
 ## 1. Orden de lectura recomendado
 

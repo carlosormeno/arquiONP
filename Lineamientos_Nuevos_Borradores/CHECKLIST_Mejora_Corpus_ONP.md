@@ -613,6 +613,23 @@ Cierra **H8.5**, abierto desde la primera revisión a la espera de que hubiera a
 
 ---
 
+## H44 — Auditoría de cierre: qué queda realmente pendiente (2026-08-21)
+
+Balance solicitado por Arquitectura tras cerrar 41 bloques. Se auditó el estado real —no el declarado en este checklist— y aparecieron **tres deudas que no estaban registradas**.
+
+- [x] **H44.1** 🔴 **`LIN-ARQ-001 §5.5.3` afirmaba tener un vacío que ya se había cerrado.** Decía que la verificación de fronteras internas del Monolito Modular «requeriría análisis estático… control del que el corpus **aún no dispone**». Dejó de ser cierto **tres días después**, cuando H37 incorporó las pruebas ArchUnit en `LIN-DEV-JAVA-001 §15.5`, sin que la sección se actualizara. Es exactamente el defecto que `GOB-PLA-001 §1.5` norma para los documentos de proyecto —declarar conformidad con un corpus que ya cambió— **reproducido dentro del propio marco rector**. Corregido: ambos controles quedan declarados complementarios y no sustituibles. → `LIN-ARQ-001` v0.1.15.
+- [ ] **H44.2** **37 temas de `GOB-MAT-001` siguen `En borrador`**, sobre un total de ~150. No es un defecto de contenido: es que su **alineación con los consumidores nunca se verificó**, y la regla editorial de la matriz obliga a usar `En borrador` ante duda razonable en vez de declarar `Conforme` por conveniencia. Se concentran en `LIN-SEC-APP-001` (8), `LIN-VER-001` (6) y `LIN-CICD-001` (5) — los tres documentos con más consumidores. **Es trabajo de verificación, no de redacción**, y es el criterio 3 de graduación: cerrarlos es requisito para que esos documentos puedan graduar.
+- [ ] **H44.3** **Dos deudas técnicas declaradas dentro de documentos, no en este checklist:**<br>• **Respaldo de `PersistentVolume`** — `ARQ-R-006` (LIN-ARQ-001 §5.4.2) lo marca «Pendiente de normar» y remite a `LIN-K8S-001 §13.3`, que exige declarar una «política de backup» sin definir su contenido. Hoy se resuelve por la banda de criticidad, pero falta el mecanismo (frecuencia, herramienta, retención).<br>• **Namespaces de infraestructura compartida** — `LIN-K8S-001 §4.4` pide a **Plataforma** confirmar si `otel-*` y `kafka-*` viven en un clúster compartido, lo que justificaría el sufijo de ambiente que la propia norma considera anti-patrón. Sin esa confirmación, dos documentos conservan una convención que puede ser incorrecta.
+- [ ] **H44.4** **Los dos ADR de mayor alcance siguen en estado `Propuesta`:** `ADR-WSO2-001` y `ADR-TLS-INTERNO-001`. El segundo importa más de lo que parece: **sostiene la excepción de tráfico intra-cluster sobre HTTP**, y mientras no lo apruebe Seguridad, esa excepción se aplica sin respaldo formal.
+
+- [x] **H44.5** **Creado `GOB-EST-001` — Estado y Continuidad del Corpus.** Este checklist es un registro **cronológico** de 44 bloques y ~2.900 líneas: sirve para saber *por qué* se hizo cada corrección, no para retomar el trabajo. `GOB-EST-001` consolida el estado verificado, las **decisiones cerradas que no deben re-litigarse** —el mayor riesgo en una retomada es volver a discutirlas—, los cinco frentes pendientes con contexto para arrancar en frío, el orden recomendado y los riesgos conocidos. Remite a este checklist para el detalle en vez de copiarlo.
+- [x] **H44.6** *(detectado al auditar)* **Tema duplicado en `GOB-MAT-001`:** «Seguridad frontend (XSS, token storage, guards, CSP)» figura en las líneas 371 y 463, ambas con dueño `LIN-SEC-APP-001` pero con **redacción distinta en la columna de evidencia** — una dice que `LIN-FE-ANG-001` ya las aplica, la otra que está pendiente. Registrado en `GOB-EST-001 §4.3` como primer paso de la verificación de temas.
+
+**Estado:** el corpus está completo y verificado mecánicamente; lo que resta es **verificación humana y aprobación formal**, no redacción. Punto de retomada: **`GOB-EST-001`**.
+
+
+---
+
 ## PRIORIDAD 1 — Estructurales (atacan la causa raíz)
 
 ### H6 — Referencias cruzadas rotas sistémicas (LIN-PAT-001, Glosario, Brecha)

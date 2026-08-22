@@ -1,7 +1,7 @@
 # Matriz de Propiedad Documental — ONP
 
 **Código:** GOB-MAT-001  
-**Versión:** 0.29.0 (ver "Historial de versiones")  
+**Versión:** 0.30.0 (ver "Historial de versiones")  
 **Fecha:** 2026-08-05  
 **Autor:** OTI — Oficina de Tecnologías de la Información  
 **Estado:** Vigente / Operativo  
@@ -208,7 +208,7 @@ Las referencias informativas o de contexto no tienen esta restricción.
 | Código | Documento | Estado | Archivo |
 |---|---|---|---|
 | `LIN-ARQ-000` | Cantera Histórica Congelada de Arquitectura | Congelado v0.1.19 | `arquitectura/Lineamiento_Diseno_Arquitectura_Software_ONP_OLD.md` |
-| `LIN-ARQ-001` | Marco Rector de Arquitectura de Software (Nivel 1) | **En revisión** v0.1.14 | `arquitectura/Lineamiento_Marco_Rector_Arquitectura_ONP.md` |
+| `LIN-ARQ-001` | Marco Rector de Arquitectura de Software (Nivel 1) | **En revisión** v0.1.15 | `arquitectura/Lineamiento_Marco_Rector_Arquitectura_ONP.md` |
 | `LIN-DIS-001` | Estándar de Diseño de Software y Patrones Tácticos (Nivel 2) | **En revisión** v0.1.7 | `arquitectura/Lineamiento_Diseno_Software_Patrones_Tacticos_ONP.md` |
 | `LIN-PAT-001` | Catálogo Oficial de Patrones y Fichas Técnicas de Decisión | **En revisión** v0.1.6 | `arquitectura/Lineamiento_Catalogo_Patrones_Fichas_ONP.md` |
 | `LIN-API-REST-001` | Estándar de Servicios Web y APIs REST | **En revisión** v0.1.8 | `Web/Lineamiento_Estandar_APIs_REST_ONP.md` |
@@ -234,11 +234,12 @@ Documentos que no norman un tema técnico pero forman parte del corpus: son dest
 
 | Código | Documento | Estado | Archivo |
 |---|---|---|---|
-| `GOB-MAT-001` | Matriz de Propiedad Documental (este documento) | Vigente v0.29.0 | `Matriz_Propiedad_Documental_ONP.md` |
-| `GOB-INI-001` | START HERE — punto de entrada para proyectos Java | Vigente / Operativo v0.3.0 | `START_HERE_Proyecto_Java_ONP.md` |
+| `GOB-MAT-001` | Matriz de Propiedad Documental (este documento) | Vigente v0.30.0 | `Matriz_Propiedad_Documental_ONP.md` |
+| `GOB-INI-001` | START HERE — punto de entrada para proyectos Java | Vigente / Operativo v0.3.1 | `START_HERE_Proyecto_Java_ONP.md` |
 | `GOB-PLA-001` | Plantilla institucional de Documento de Arquitectura de TI | Vigente v2.8 | `arquitectura/Plantilla_Documento_Arquitectura_ONP.md` |
 | `GOB-BRE-001` | Tablero de Brechas del Framework de Arquitectura | En revisión v0.1.7 | `arquitectura/Brecha_Framework_Arquitectura_ONP.md` |
 | `GOB-CHK-001` | Checklist de Mejora del Corpus Documental | En ejecución v0.1.0 | `CHECKLIST_Mejora_Corpus_ONP.md` |
+| `GOB-EST-001` | Estado y Continuidad del Corpus — punto de retomada | Vigente / Operativo v1.0.0 | `GOB-EST-001_Estado_y_Continuidad_del_Corpus.md` |
 
 ### Ruta de graduación (situación al 2026-08-08)
 
@@ -615,6 +616,7 @@ Cada vez que se redacte un lineamiento nuevo o se modifique uno existente, esta 
 | 0.27.0 | 2026-08-21 | Arquitectura OTI | Cierre de la deuda de tooling (`GOB-CHK-001` H41): **79 anclas internas reparadas** —el índice de varios documentos era inservible— y linter ampliado a **diez comprobaciones** con **C7** (anclas) y **C10** (historiales cronológicos), que detectó y permitió corregir 10 historiales desordenados. Se sincroniza el catálogo con `LIN-SEC-APP-001` v0.1.9, `LIN-PERF-001` v0.1.6 y `LIN-BI-001` v0.1.4 |
 | 0.28.0 | 2026-08-21 | Arquitectura OTI | **`LIN-DOC-001` creado** (`GOB-CHK-001` H42): era el último documento que el mapa declaraba `Pendiente`. **Ningún documento del corpus queda sin elaborar.** Dos temas nuevos —inventario documental de proyecto y notación de modelado— y sufijo `DOC` incorporado a la tabla de excepciones |
 | 0.29.0 | 2026-08-21 | Arquitectura OTI | Se norma el **versionado del corpus como conjunto** (`GOB-CHK-001` H43): un TDR no invoca la versión de un documento suelto, invoca el corpus vigente en una fecha. Se adopta el formato `v<MAJOR>.<MINOR>.<PATCH>` que `LIN-VER-001 §15.1` exige al código —el corpus se aplica su propia norma— y se fija que **`MAJOR` incrementa cuando un documento gradúa a `Vigente`**, porque cambia lo exigible. Estado actual `v0.9.0`: completo pero no graduado |
+| 0.30.0 | 2026-08-21 | Arquitectura OTI | Se incorpora **`GOB-EST-001`** al catálogo: documento de **estado y continuidad**, punto de retomada del trabajo. No duplica a `GOB-CHK-001` —que es el registro cronológico de los 44 bloques— sino que consolida el estado verificado, las **decisiones cerradas que no deben re-litigarse**, los cinco frentes pendientes con contexto suficiente para retomar en frío, y los riesgos conocidos (`GOB-CHK-001` H44) |
 
 ---
 
