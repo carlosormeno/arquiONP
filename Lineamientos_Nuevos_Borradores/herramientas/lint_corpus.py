@@ -561,6 +561,100 @@ def c8_catalogo_estado(docs, por_codigo):
     return hallazgos
 
 
+def _ancla(titulo):
+    """
+    Ancla que GitHub/GitLab genera para un encabezado.
+
+    Reglas verificadas contra el corpus: se elimina el marcado (`código`, **negrita**,
+    *cursiva*, enlaces), se pasa a minúsculas, se descarta todo carácter que no sea
+    alfanumérico, espacio, guion o guion bajo —**las tildes SÍ se conservan**, son
+    alfanuméricas— y los espacios pasan a guion. Un título con raya (`—`) produce
+    guion doble, porque la raya desaparece y quedan los dos espacios que la rodeaban.
+    """
+    t = re.sub(r"`([^`]*)`", r"\1", titulo)
+    t = re.sub(r"\*\*([^*]*)\*\*", r"\1", t)
+    t = re.sub(r"\*([^*]*)\*", r"\1", t)
+    t = re.sub(r"\[([^\]]*)\]\([^)]*\)", r"\1", t)
+    t = t.strip().lower()
+    t = "".join(c for c in t if c.isalnum() or c in " -_")
+    return re.sub(r"\s", "-", t)
+
+
+RE_FILA_VERSION = re.compile(r"^\|\s*v?(\d+)\.(\d+)(?:\.(\d+))?\s*\|")
+
+
+def c10_historial_ordenado(docs):
+    """
+    Las filas del historial de versiones van en orden cronológico ascendente.
+
+    Parece cosmético y no lo es: en GOB-CHK-001 H20 el desorden llevó a crear una
+    **versión duplicada**, porque la última fila de la tabla no era la última versión.
+    El defecto reapareció en LIN-BD-ORA-001 (dos veces), LIN-VER-001 y LIN-ARQ-001.
+    Es mecánicamente verificable, así que no tiene por qué volver a ocurrir.
+
+    Se reporta como aviso: no invalida el documento, pero induce al error de quien
+    va a añadir la siguiente fila.
+    """
+    hallazgos = []
+    for doc in docs:
+        historial = marcar_historial(doc["lineas"])
+        if not historial:
+            continue
+        previa = None
+        for i in sorted(historial):
+            m = RE_FILA_VERSION.match(doc["lineas"][i])
+            if not m:
+                continue
+            actual = tuple(int(x) if x else 0 for x in m.groups())
+            if previa and actual < previa:
+                v = lambda t: ".".join(str(x) for x in t)
+                hallazgos.append(Hallazgo(
+                    "aviso", doc["ruta"], i + 1, "C10",
+                    f"el historial no está en orden cronológico: v{v(actual)} "
+                    f"aparece después de v{v(previa)} — la última fila deja de ser "
+                    f"la última versión y se han creado duplicados por eso"))
+                break
+            previa = actual
+    return hallazgos
+
+
+def c7_anclas(docs):
+    """
+    Los enlaces internos (`](#ancla)`) resuelven a un encabezado del mismo documento.
+
+    Es la única clase de enlace que C5 no cubre: C5 valida rutas a archivos e ignora
+    el fragmento. Al medirlo, 79 de 477 enlaces internos no resolvían — sobre todo
+    tablas de contenido, que es donde más daño hace: un índice inservible vuelve
+    inutilizable un documento normativo para un contratista (GOB-CHK-001 H41).
+
+    Tres causas dominaban: tilde omitida en el enlace («#57-verificacion» contra un
+    encabezado «Verificación»), guion simple donde el título genera doble por llevar
+    raya, y retitulados que no se propagaron al índice.
+
+    **Nota de confianza:** el algoritmo replica el de GitHub/GitLab y se validó contra
+    el corpus completo, pero la generación de anclas depende del renderizador. Ante una
+    discrepancia con el GitLab de la ONP, manda el renderizador real.
+    """
+    hallazgos = []
+    for doc in docs:
+        en_codigo = marcar_bloques_codigo(doc["lineas"])
+        anclas = set()
+        for i, linea in enumerate(doc["lineas"]):
+            if i in en_codigo or not linea.startswith("#"):
+                continue
+            anclas.add(_ancla(re.sub(r"^#+\s+", "", linea)))
+        for i, linea in enumerate(doc["lineas"]):
+            if i in en_codigo:
+                continue
+            for destino in re.findall(r"\]\(#([^)]+)\)", linea):
+                if destino not in anclas:
+                    hallazgos.append(Hallazgo(
+                        "error", doc["ruta"], i + 1, "C7",
+                        f"el enlace interno `#{destino}` no resuelve a ningún "
+                        f"encabezado de este documento"))
+    return hallazgos
+
+
 def c9_ids_estables(docs):
     """
     Los identificadores estables de regla (`ARQ-R-001`) existen y son únicos.
@@ -685,7 +779,7 @@ def main():
     ap = argparse.ArgumentParser(description="Linter del corpus documental ONP")
     ap.add_argument("--raiz", default=os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     ap.add_argument("--formato", choices=["texto", "gitlab"], default="texto")
-    ap.add_argument("--solo", choices=["C1", "C2", "C3", "C4", "C5", "C6", "C8", "C9"], default=None)
+    ap.add_argument("--solo", choices=["C1", "C2", "C3", "C4", "C5", "C6", "C7", "C8", "C9", "C10"], default=None)
     ap.add_argument("--indice", action="store_true",
                     help="imprime el mapa ID estable → documento §sección y termina")
     args = ap.parse_args()
@@ -707,6 +801,10 @@ def main():
     if args.indice:
         imprimir_indice(docs)
         return 0
+    if args.solo in (None, "C10"):
+        todos += c10_historial_ordenado(docs)
+    if args.solo in (None, "C7"):
+        todos += c7_anclas(docs)
     if args.solo in (None, "C9"):
         todos += c9_ids_estables(docs)
     if args.solo in (None, "C8"):
@@ -732,10 +830,12 @@ def main():
         "C4": "Artefactos duplicados vs. fuente canónica",
         "C5": "Enlaces",
         "C6": "Catálogo de GOB-MAT-001 — rutas y códigos",
+        "C7": "Anclas internas (tablas de contenido)",
         "C8": "Catálogo de GOB-MAT-001 — versión y estado",
         "C9": "Identificadores estables de regla",
+        "C10": "Historiales en orden cronológico",
     }
-    for regla in ("C1", "C2", "C3", "C4", "C5", "C6", "C8", "C9"):
+    for regla in ("C1", "C2", "C3", "C4", "C5", "C6", "C7", "C8", "C9", "C10"):
         hs = por_regla.get(regla, [])
         n_err = sum(1 for h in hs if h.nivel == "error")
         estado = "OK" if not hs else f"{n_err} error(es), {len(hs) - n_err} aviso(s)"

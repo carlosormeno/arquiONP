@@ -9,10 +9,6 @@
 | Versión | Fecha | Autor | Descripción |
 |---------|-------|-------|-------------|
 | 0.1.0 | 2026-05-22 | OTI | Versión inicial |
-| 0.1.10 | 2026-08-08 | OTI | Incorpora el Índice CRAP (Change Risk Anti-Patterns) en la sección 12.1 (tabla de métricas) y la sección 12.4.5 como principio de evaluación de riesgo de cambio y refactorización |
-| 0.1.11 | 2026-08-09 | OTI | La sección 16 redefinía reglas de revisión de código que pertenecen a `LIN-VER-001 §12` (autoaprobación, revisor mínimo, tamaño máximo de PR). El efecto era que el límite de **400 líneas** solo existía en el estándar de Java, dejando sin regla de tamaño a los MR de Angular, SQL y manifiestos K8s. La sección ahora remite al documento dueño y conserva únicamente las verificaciones propias del stack Java (`GOB-CHK-001` H23) |
-| 0.1.12 | 2026-08-18 | OTI | Incorpora **`§15.5` Pruebas de arquitectura (ArchUnit)**, que cierran el único control del Monolito Modular que carecía de verificación automática (`GOB-CHK-001` H37). La declaración jurada de `LIN-ARQ-001 §8.3` numeral 4 era hasta ahora la palabra del Tech Lead: `LIN-CICD-001 §12.5` solo comprueba que el texto exista y el grafo de servicios no puede verlo porque las llamadas entre módulos son in-process. Seis reglas mínimas obligatorias: tres de gobierno del Shared Kernel (`LIN-DIS-001 §3.4`), una de aislamiento entre Bounded Contexts —la frontera que Maven **no** impide, porque basta añadir la dependencia al `pom.xml`— y dos de pureza del dominio |
-| 0.1.13 | 2026-08-18 | OTI | El apartado de excepción titulaba «Proceso de excepción a este estándar» y no definía identificador: una desviación de este lineamiento se registraba como «un ADR», instrumento que `GOB-MAT-001` reserva a las decisiones **institucionales** del Comité. Pasa a **`EXC-JAVA-NNN`**, con vigencia acotada y fecha de revisión obligatoria (`GOB-CHK-001` H38) |
 | 0.1.1 | 2026-05-28 | OTI | Alinea la configuración institucional a YAML, corrige el árbol de proyecto y adopta Checkstyle junto a PMD |
 | 0.1.2 | 2026-07-06 | OTI | Cierre de brechas Nivel 3 (PR01-PR08, PD04-PD06, PA14): Inclusión de secciones 10.4, 11.5, 14.6, catálogo de plantillas Java y reconciliación total con LIN-ARQ-000 y LIN-BD-ORA-001 |
 | 0.1.3 | 2026-07-09 | OTI | Completa el catálogo GoF de la sección 8 con los patrones que quedaron sin sede formal tras la redistribución del documento congelado (`Lineamiento_Diseno_Arquitectura_Software_ONP_v0.1.19`): Adapter (8.1.1), Singleton (8.2.3), Strategy (8.3.1), Command (8.3.3) y Mapper (8.4.1) |
@@ -22,6 +18,10 @@
 | 0.1.7 | 2026-07-09 | OTI | Reordena la Tabla de Contenidos en 6 bloques temáticos (Alcance/stack, Estructura del proyecto, Conceptos y principios, Convenciones del día a día, Cross-cutting, Gobernanza) como guía de lectura para desarrolladores nuevos. No renumera secciones — las citas existentes desde LIN-ARQ-001/LIN-DIS-001/LIN-TEST-001/Catálogo siguen siendo válidas. Separa 12.4 (DRY/KISS/YAGNI, conceptual) de 12.1-12.3 (métricas/antipatrones/PMD, gobernanza de herramientas) como entradas independientes en la tabla |
 | 0.1.8 | 2026-07-09 | OTI | Corrige §12.1: eliminaba las 3 filas de cobertura de pruebas (servicios ≥80%, utilidades ≥90%, controladores REST ≥70%) — la de controladores contradecía directamente `LIN-TEST-001 §5.1`, que exige explícitamente NO medir Controllers con umbral duro de cobertura. Ahora §12.1 remite a `LIN-TEST-001 §5.1` como única fuente, igual que ya se hizo en §14.5 y en Marco Rector §8.3 |
 | 0.1.9 | 2026-08-05 | OTI | Saneamiento integral (`GOB-CHK-001` H13). **(1) §15.3 — cierre real de la contradicción que la v0.1.8 dio por resuelta:** la tabla de cobertura eliminada de §12.1 seguía intacta en §15.3, y §16.2 (gate de aprobación de PR) apuntaba precisamente a §15.3 — el umbral "Controladores REST 70%" que `LIN-TEST-001 §5.1` prohíbe seguía gobernando los merges. §15.3 pasa a remitir al documento dueño y §16.2 se actualiza. **(2) Anexo B:** reproducía el `checkstyle-onp.xml` con `LineLength` dentro de `TreeWalker`, configuración que aborta el build desde Checkstyle 8.24 — sincronizado con el archivo canónico `desarrollo/plantillas/checkstyle-onp.xml` y declarado como copia de referencia. **(3) §16.6:** subsecciones renumeradas de `14.6.x` a `16.6.x` (residuo de una reubicación previa) y corregida la referencia interna "Sección 14.2" → §16.2; citas a la sección inexistente `LIN-ARQ-001 §2.2.1.A` redirigidas a `§2.3`; `Permission Toggle` acotado a control de acceso tras incorporarse `Experiment Toggle` al Nivel 1. **(4) §1.4 y §17:** `LIN-ARQ-001` estaba clasificado como "Nivel 2" (es Nivel 1) y nombrado con el título del documento congelado; se añaden `LIN-DIS-001`, `LIN-SEC-APP-001` y `LIN-TEST-001` a la tabla de documentos relacionados. **(5) §13.3:** referencia fantasma "sección 3.4 del Lineamiento de Arquitectura (doc. interno)" → `LIN-ARQ-001 §3`. **(6)** 10 enlaces `file:///home/carlos/...` convertidos a rutas relativas del repositorio |
+| 0.1.10 | 2026-08-08 | OTI | Incorpora el Índice CRAP (Change Risk Anti-Patterns) en la sección 12.1 (tabla de métricas) y la sección 12.4.5 como principio de evaluación de riesgo de cambio y refactorización |
+| 0.1.11 | 2026-08-09 | OTI | La sección 16 redefinía reglas de revisión de código que pertenecen a `LIN-VER-001 §12` (autoaprobación, revisor mínimo, tamaño máximo de PR). El efecto era que el límite de **400 líneas** solo existía en el estándar de Java, dejando sin regla de tamaño a los MR de Angular, SQL y manifiestos K8s. La sección ahora remite al documento dueño y conserva únicamente las verificaciones propias del stack Java (`GOB-CHK-001` H23) |
+| 0.1.12 | 2026-08-18 | OTI | Incorpora **`§15.5` Pruebas de arquitectura (ArchUnit)**, que cierran el único control del Monolito Modular que carecía de verificación automática (`GOB-CHK-001` H37). La declaración jurada de `LIN-ARQ-001 §8.3` numeral 4 era hasta ahora la palabra del Tech Lead: `LIN-CICD-001 §12.5` solo comprueba que el texto exista y el grafo de servicios no puede verlo porque las llamadas entre módulos son in-process. Seis reglas mínimas obligatorias: tres de gobierno del Shared Kernel (`LIN-DIS-001 §3.4`), una de aislamiento entre Bounded Contexts —la frontera que Maven **no** impide, porque basta añadir la dependencia al `pom.xml`— y dos de pureza del dominio |
+| 0.1.13 | 2026-08-18 | OTI | El apartado de excepción titulaba «Proceso de excepción a este estándar» y no definía identificador: una desviación de este lineamiento se registraba como «un ADR», instrumento que `GOB-MAT-001` reserva a las decisiones **institucionales** del Comité. Pasa a **`EXC-JAVA-NNN`**, con vigencia acotada y fecha de revisión obligatoria (`GOB-CHK-001` H38) |
 
 ---
 
@@ -65,9 +65,9 @@
   - [12.1 Métricas mínimas obligatorias](#121-métricas-mínimas-obligatorias)
   - [12.2 Tabla de antipatrones prohibidos](#122-tabla-de-antipatrones-prohibidos)
   - [12.3 Análisis estático de código (PMD)](#123-análisis-estático-de-código-pmd)
-- [17. Proceso de excepción a este estándar](#17-proceso-de-excepción-a-este-estándar)
+- [17. Proceso de excepción a este estándar](#17-proceso-de-excepción-a-este-estándar-exc-java-nnn)
 - [Anexo A: Plantilla Javadoc estándar ONP](#anexo-a-plantilla-javadoc-estándar-onp)
-- [Anexo B: Configuración Checkstyle recomendada](#anexo-b-configuración-checkstyle-recomendada)
+- [Anexo B: Configuración Checkstyle recomendada](#anexo-b-configuración-checkstyle-institucional)
 - [Anexo C: Tabla completa de sufijos de clase](#anexo-c-tabla-completa-de-sufijos-de-clase)
 - [Anexo D: Auditoría JPA — campos obligatorios LIN-BD-ORA-001](#anexo-d-auditoría-jpa--campos-obligatorios-lin-bd-ora-001)
 
@@ -101,10 +101,10 @@ Al iniciar un proyecto Spring Boot en ONP, configurar los siguientes componentes
 | Paso | Qué configurar | Sección | Descripción |
 |---|---|---|---|
 | 1 | Dependencias OTEL en `pom.xml` | LIN-OBS-001 sección 4 | Habilita trazas distribuidas, logs estructurados y métricas |
-| 2 | `RequestIdFilter` `@Order(1)` | [sección 13.4.5](#1345-filtro-de-correlacion--requestidfilter) | Genera o propaga `X-Request-ID` y lo pone en el MDC para correlacionar todas las líneas de log de una petición |
+| 2 | `RequestIdFilter` `@Order(1)` | [sección 13.4.5](#1345-filtro-de-correlación--requestidfilter) | Genera o propaga `X-Request-ID` y lo pone en el MDC para correlacionar todas las líneas de log de una petición |
 | 3 | `CanonicalRequestLogFilter` `@Order(2)` | `LIN-OBS-001 §4.9` | Envuelve el resto de la cadena y emite el log canónico al finalizar **toda** petición, incluidas las rechazadas por seguridad |
 | 4 | `SaaTokenValidationFilter` `@Order(3)` | `SEC-R-002` (LIN-SEC-APP-001 §8.3) | Valida el token SAA y publica la identidad en el MDC y en el atributo `onp.user.id` |
-| 5 | `ApiResponseWrapper` + `GlobalExceptionHandler` | [sección 13.4.4](#1344-estructura-de-respuesta-estandar--apiresponsewrapper), sección 11 | Contrato estándar de respuesta para todos los endpoints |
+| 5 | `ApiResponseWrapper` + `GlobalExceptionHandler` | [sección 13.4.4](#1344-estructura-de-respuesta-estándar--apiresponsewrapper), sección 11 | Contrato estándar de respuesta para todos los endpoints |
 | 6 | `OpenApiConfig` + anotaciones Swagger | LIN-API-REST-001 sección 6, [sección 13.4.1](#1341-dependencia-maven)–13.4.3 | Contrato OpenAPI publicado desde el arranque del servicio |
 | 7 | `AuditoriaBase` extendida en entidades JPA | Anexo D | Pobla automáticamente los 6 campos de auditoría obligatorios (LIN-BD-ORA-001 sección 5) |
 
@@ -119,11 +119,11 @@ Al iniciar un proyecto Spring Boot en ONP, configurar los siguientes componentes
 |-----------|----------|
 | **LIN-ARQ-001 — Marco Rector de Arquitectura de Software** | **Documento Rector de Nivel 1, de supremacía jerárquica.** Rige y fundamenta todos los mandatos arquitectónicos de este estándar. |
 | **LIN-DIS-001 — Estándar de Diseño de Software y Patrones Tácticos** | **Nivel 2.** Define el diseño interno del módulo (Hexagonal, DDD, CQRS, ACL/BFF y resiliencia táctica) que este estándar aterriza en código. |
-| LIN-API-REST-001 — Estándar de APIs REST | Complementa [sección 13.4](#134-api-rest-y-documentacion-openapi): convenciones REST detalladas |
+| LIN-API-REST-001 — Estándar de APIs REST | Complementa [sección 13.4](#134-api-rest-y-documentación-openapi): convenciones REST detalladas |
 | LIN-BD-ORA-001 — Estándar de Base de Datos Oracle | Complementa [sección 13.3](#133-transacciones): convenciones de persistencia |
 | LIN-OBS-001 — Log, Trazabilidad y Observabilidad | Complementa sección 10: logging estructurado avanzado |
 | LIN-SEC-APP-001 — Seguridad en Aplicaciones | Fuente autoritativa de la configuración mínima de Spring Security (§9.1), el filtro `SaaTokenValidationFilter` (§8.3) y la política de secretos (§12) |
-| LIN-TEST-001 — Estándar de Pruebas | Dueño de los umbrales de cobertura por estilo arquitectónico (§5.1) que consume [sección 15.3](#153-cobertura-minima--remite-a-lin-test-001-51) |
+| LIN-TEST-001 — Estándar de Pruebas | Dueño de los umbrales de cobertura por estilo arquitectónico (§5.1) que consume [sección 15.3](#153-cobertura-mínima--remite-a-test-r-001-lin-test-001-51) |
 
 ---
 
@@ -166,7 +166,7 @@ Donde:
 - `<módulo>` — funcionalidad de negocio (ej: `aportaciones`, `expedientes`, `pagos`)
 - `<capa>` — depende del estilo arquitectónico (ver tablas abajo)
 
-La estructura de paquetes **no es libre**: se deriva directamente del estilo arquitectónico declarado en el ADR del proyecto. La descripción detallada de estructuras Maven se encuentra en **[sección 14.1](#141-estructura-de-proyecto-por-estilo-arquitectonico)**; aquí se muestra la vista de paquetes Java para cada estilo.
+La estructura de paquetes **no es libre**: se deriva directamente del estilo arquitectónico declarado en el ADR del proyecto. La descripción detallada de estructuras Maven se encuentra en **[sección 14.1](#141-estructura-de-proyecto-por-estilo-arquitectónico)**; aquí se muestra la vista de paquetes Java para cada estilo.
 
 | Estilo | Cuándo aplica | Estructura de paquetes |
 |---|---|---|
@@ -208,7 +208,7 @@ pe.gob.onp.{sistema}.config
 
 #### Estilo 2 — Monolito Modular (multi-módulo Maven)
 
-Cinco módulos Maven con fronteras explícitas. Es el destino por defecto para todo sistema nuevo. Ver estructura Maven completa en **[sección 14.1](#141-estructura-de-proyecto-por-estilo-arquitectonico)**.
+Cinco módulos Maven con fronteras explícitas. Es el destino por defecto para todo sistema nuevo. Ver estructura Maven completa en **[sección 14.1](#141-estructura-de-proyecto-por-estilo-arquitectónico)**.
 
 | Módulo Maven | Paquetes internos | Dependencias del módulo |
 |---|---|---|
@@ -1618,7 +1618,7 @@ public class GlobalExceptionHandler {
 }
 ```
 
-> Se utiliza `ApiResponseWrapper` (definido en [sección 13.4.4](#1344-estructura-de-respuesta-estandar--apiresponsewrapper)) como envoltorio estándar de todas las respuestas de error en cumplimiento con **LIN-API-REST-001**. Esto garantiza homogeneidad en el formato devuelto por las APIs de la institución.
+> Se utiliza `ApiResponseWrapper` (definido en [sección 13.4.4](#1344-estructura-de-respuesta-estándar--apiresponsewrapper)) como envoltorio estándar de todas las respuestas de error en cumplimiento con **LIN-API-REST-001**. Esto garantiza homogeneidad en el formato devuelto por las APIs de la institución.
 
 ### 11.2 Tabla de HTTP status codes
 
@@ -2070,7 +2070,7 @@ Todo servicio que exponga endpoints HTTP debe seguir las convenciones de esta se
 - URLs en `kebab-case`: `/expedientes-pension`, `/periodos-aportacion`
 - Un controlador por recurso de dominio
 - Métodos del controlador delegados íntegramente al servicio; sin lógica de negocio
-- Respuestas tipadas con `ApiResponseWrapper` ([sección 13.4.4](#1344-estructura-de-respuesta-estandar--apiresponsewrapper)); nunca retornar `Object` o `Map<String, Object>` sin tipado
+- Respuestas tipadas con `ApiResponseWrapper` ([sección 13.4.4](#1344-estructura-de-respuesta-estándar--apiresponsewrapper)); nunca retornar `Object` o `Map<String, Object>` sin tipado
 - Las anotaciones Swagger se colocan **únicamente** en los `@RestController`; no en Service ni Repository
 
 #### 13.4.1 Dependencia Maven
@@ -3430,7 +3430,7 @@ Un PR no puede aprobarse si alguna de las siguientes condiciones no se cumple:
 | Condición | Verificación |
 |---|---|
 | Pipeline de CI verde | Build, tests y Checkstyle pasados sin errores |
-| Cobertura de pruebas dentro del umbral | JaCoCo no reporta degradación por debajo del mínimo normado en `TEST-R-001` (LIN-TEST-001 §5.1) según el estilo arquitectónico del proyecto (ver [sección 15.3](#153-cobertura-minima--remite-a-lin-test-001-51)). **Los Controllers REST no se evalúan con umbral duro** |
+| Cobertura de pruebas dentro del umbral | JaCoCo no reporta degradación por debajo del mínimo normado en `TEST-R-001` (LIN-TEST-001 §5.1) según el estilo arquitectónico del proyecto (ver [sección 15.3](#153-cobertura-mínima--remite-a-test-r-001-lin-test-001-51)). **Los Controllers REST no se evalúan con umbral duro** |
 | Sin antipatrones del [sección 12.2](#122-tabla-de-antipatrones-prohibidos) | El revisor verifica la tabla de antipatrones prohibidos |
 | Sin credenciales ni secretos en el código | Búsqueda manual o con herramienta de detección de secretos |
 | Sin código comentado | Ver [sección 9.3](#93-comentarios-internos-no-javadoc) — el código comentado no llega a rama principal |
@@ -3523,7 +3523,7 @@ Para los toggles de caducidad obligatoria (*Release* y *Experiment*), su existen
 | **Retiro / Limpieza (Gate PA14)** | Es **obligatorio** crear una tarea técnica en el sprint inmediatamente posterior al go-live (plazo máximo: **1 sprint / 14 días calendario**) para eliminar completamente las ramas condicionales del código, remover la configuración del toggle y eliminar la funcionalidad obsoleta o reemplazada. |
 
 #### 16.6.3 Verificación en Pull Request (Gate de Revisión)
-Durante la revisión de código ([sección 16.2](#162-condiciones-minimas-para-aprobar-un-pr)), el revisor y el líder técnico deben hacer cumplir las siguientes reglas incompatibles con la aprobación del PR:
+Durante la revisión de código ([sección 16.2](#162-condiciones-mínimas-para-aprobar-un-pr)), el revisor y el líder técnico deben hacer cumplir las siguientes reglas incompatibles con la aprobación del PR:
 1. **Rechazar toggles sin fecha de retiro:** Todo nuevo PR que introduzca un *Release Toggle* o *Experiment Toggle* debe indicar en la descripción del PR y en el código cuándo y cómo se eliminará.
 2. **Rechazar toggles anidados:** Se prohíbe anidar condicionales de múltiples *Feature Toggles* dentro del mismo bloque de lógica de dominio (ej. `if (featureA.isEnabled()) { if (featureB.isEnabled()) { ... } }`).
 3. **Auditoría periódica de código muerto:** No se aprobarán nuevos PRs de características a equipos o módulos que acumulen *Release/Experiment Toggles* expirados y no retirados del código fuente, haciendo efectiva la contención de deuda técnica institucional.

@@ -34,7 +34,9 @@ Código de salida `0` si no hay errores, `1` si los hay. Los **avisos no rompen 
 | **C5** | Sin rutas absolutas de máquina; los enlaces relativos resuelven | Error | H10.5, H13.5 — 13 enlaces `file:///home/carlos/...` |
 | **C6** | Las rutas del catálogo de `GOB-MAT-001` existen y contienen el código atribuido | Error | H8.3 — al renombrar el documento congelado, la ruta del catálogo quedó apuntando a un archivo inexistente |
 | **C8** | La versión y el estado que el catálogo declara coinciden con el encabezado real | Error (estado) / Aviso (versión) | H25 — **15 de 21 entradas desactualizadas**; el catálogo daba `LIN-API-REST-001` por «Borrador v0.1.5» cuando iba por «En revisión v0.1.7» |
+| **C7** | Los enlaces internos con fragmento `#` resuelven a un encabezado del mismo documento | Error | H41 — **79 de 477 rotos**, sobre todo tablas de contenido |
 | **C9** | Todo identificador estable de regla (`ARQ-R-001`) citado está declarado, y ninguno lo está dos veces | Error / Aviso (declarado sin citar) | H39 — desacopla la identidad de una regla de su número de sección |
+| **C10** | Las filas del historial van en orden cronológico ascendente | Aviso | H41 — el desorden ya produjo una **versión duplicada** en H20; 10 historiales desordenados en la primera ejecución |
 
 ### Decisiones de diseño
 
@@ -48,7 +50,9 @@ Código de salida `0` si no hay errores, `1` si los hay. Los **avisos no rompen 
 
 **Índice de reglas:** `python3 herramientas/lint_corpus.py --indice` imprime el mapa `ID → documento §sección`. **Se genera, no se mantiene a mano**: una tabla manual volvería a divergir, que es el problema que los IDs resuelven.
 
-**No hay C7.** El número está reservado para la comprobación de anclas internas (`GOB-CHK-001` H21.2), pendiente de validar el algoritmo de generación contra el renderizador real del GitLab de la ONP. C8 se numeró después para no ocupar ese hueco.
+**Sobre C7 y el renderizador.** El algoritmo de generación de anclas replica el de GitHub/GitLab y se validó contra el corpus completo: elimina el marcado, pasa a minúsculas, descarta lo no alfanumérico —**las tildes se conservan**— y convierte espacios en guiones. Un título con raya (`—`) genera **guion doble**, porque la raya desaparece y quedan los dos espacios que la rodeaban. Ante una discrepancia con el GitLab real de la ONP, manda el renderizador.
+
+**C10 avisa, no bloquea.** Un historial desordenado no invalida el documento, pero induce al error de quien va a añadir la siguiente fila: en `GOB-CHK-001` H20 llevó a crear una versión duplicada.
 
 **Una sección padre existe si existe una hija.** Si el documento declara `### 13.4.4`, el linter acepta citas a `§13`, `§13.4` y `§13.4.4`, aunque no haya un encabezado literal `## 13.4`.
 

@@ -1,6 +1,6 @@
 # LIN-BI-001 — Lineamiento de Explotación y Analítica de Datos (Business Intelligence) ONP
 ## Oficina de Normalización Previsional — OTI
-### Código: LIN-BI-001 | Versión 0.1.3 | Estado: En revisión | Marco rector: LIN-ARQ-001
+### Código: LIN-BI-001 | Versión 0.1.4 | Estado: En revisión | Marco rector: LIN-ARQ-001
 
 ---
 
@@ -12,6 +12,7 @@
 | 0.1.1   | 2026-07-10 | OTI | Migra Marco rector de `LIN-ARQ-000` (congelado) a `LIN-ARQ-001` (vigente) en encabezado y §1.3 |
 | 0.1.2   | 2026-08-09 | OTI | Normalización de encabezados de sección: `## Sección N Título` → `## N. Título`, alineando el formato con el resto del corpus (`GOB-CHK-001` H21.3). Actualizadas las 9 anclas del índice, que apuntaban al formato anterior. Resultado: 11/11 enlaces internos resuelven |
 | 0.1.3   | 2026-08-17 | OTI | Revisión de fondo (`GOB-CHK-001` H32). **(1) `§8.3` protegía solo al consumidor analítico.** El enmascaramiento dinámico de Trino cubre la capa Gold, pero **Bronze es por diseño una réplica cruda de las bases transaccionales** —padrón de afiliados con DNI, nombres, domicilios, montos e historial de aportes— y `§8.2` autoriza a Ingeniería de Datos a leerla entera. Nueva `§8.3.1`: clasificación PII desde la ingesta, cifrado en reposo, acceso nominal auditado, retención declarada por dominio y enmascaramiento previo obligatorio al replicar hacia ambientes no productivos. **(2) `§9.2` usaba el ADR como instrumento de excepción de proyecto**; pasa a `EXC-BI-NNN` conforme a la convención normada en `GOB-MAT-001`, con fecha de revisión obligatoria. **(3) `§1.3` citaba el «Lineamiento de Estándares de Tecnología v2.0» sin código** como autoridad de todo el stack homologado, sin declarar que es externo al corpus y por tanto no sujeto al ciclo de vida documental ni al linter. Se incorporan además `LIN-PAT-001` (ficha `PAT-BI-01`/`PT16`), `LIN-BUS-001`, `LIN-K8S-001`, `LIN-CICD-001`, `LIN-OBS-001` y `GOB-MAT-001`. El documento pasa a **En revisión** |
+| 0.1.4   | 2026-08-21 | OTI | `§8.3.1` remite a `SEC-R-003` (LIN-SEC-APP-001 §11.5) para el enmascaramiento en ambientes no productivos, en vez de a `LIN-PERF-001` —que no era su dueño— y de declarar la brecha como pendiente (`GOB-CHK-001` H40) |
 
 ---
 
@@ -273,9 +274,9 @@ Reglas mínimas mientras exista la brecha institucional de protección de datos 
 | **Cifrado en reposo** | Los buckets de Bronze, Silver y Gold deben estar cifrados en reposo. Sin cifrado, un acceso al almacenamiento de objetos elude todo control de Trino. |
 | **Acceso nominal y auditado** | El acceso de Ingeniería de Datos a Bronze es **nominal** —no por cuenta compartida— y queda registrado. `§8.2` define qué puede hacer cada rol; esto define que quede constancia de quién lo hizo. |
 | **Retención** | Bronze no crece indefinidamente: cada dominio declara un período de retención en el catálogo. Conservar indefinidamente una réplica cruda del padrón amplía la superficie de exposición sin beneficio analítico. |
-| **Ambientes no productivos** | Replicar Bronze hacia un entorno de desarrollo o pruebas exige **enmascaramiento previo e irreversible**, en los mismos términos de `LIN-PERF-001 §11.3`. |
+| **Ambientes no productivos** | Replicar Bronze hacia un entorno de desarrollo o pruebas exige **enmascaramiento previo e irreversible**, conforme a `SEC-R-003` (LIN-SEC-APP-001 §11.5), documento dueño. |
 
-> Estas reglas cubren el Lakehouse. La **política transversal de protección y enmascaramiento de datos personales** para todo el corpus sigue pendiente y su dueño natural es `LIN-SEC-APP-001` (`GOB-CHK-001` H11.3).
+> Estas reglas cubren lo propio del Lakehouse —clasificación desde la ingesta, cifrado de buckets, acceso nominal, retención—. La política transversal de datos personales en ambientes no productivos es de `SEC-R-003` (LIN-SEC-APP-001 §11.5) y aplica también aquí.
 
 ---
 

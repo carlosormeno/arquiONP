@@ -689,7 +689,7 @@ export const appConfig: ApplicationConfig = {
 };
 ```
 
-> El orden importa en ambos escenarios: `correlationInterceptor` debe ir primero para que el header `X-Request-ID` esté presente incluso en requests rechazados por `authInterceptor`/`sessionInterceptor`. Ver [sección 15.1](#151-interceptor-de-correlacion-x-request-id) para la implementación. Un proyecto registra únicamente el conjunto correspondiente a su escenario (§9.3.1 o §9.3.2) — nunca ambos interceptores de sesión a la vez.
+> El orden importa en ambos escenarios: `correlationInterceptor` debe ir primero para que el header `X-Request-ID` esté presente incluso en requests rechazados por `authInterceptor`/`sessionInterceptor`. Ver [sección 15.1](#151-interceptor-de-correlación-x-request-id) para la implementación. Un proyecto registra únicamente el conjunto correspondiente a su escenario (§9.3.1 o §9.3.2) — nunca ambos interceptores de sesión a la vez.
 
 ### 9.6 Interpretación de codDetRespuesta
 
@@ -1333,7 +1333,7 @@ volumes:
       sizeLimit: 16Mi
 ```
 
-> **Por qué no `readOnlyRootFilesystem: false`.** Versiones anteriores lo desactivaban con la nota «nginx necesita escribir en /tmp». Es cierto que necesita escribir, pero `LIN-K8S-001` nota 14.1 —documento dueño de los controles de pod— lo prohíbe expresamente como solución general: *«identificar los directorios que necesitan escritura y montarlos explícitamente»*. La propia [sección 16.5](#165-anti-patron) de este documento ya lista como anti-patrón omitir `client_body_temp_path` en `/tmp`, es decir, ya asume que nginx escribe ahí y lo configura — montar el volumen es el paso que faltaba. Desactivar el control deja el sistema de archivos completo escribible para evitar un `emptyDir` de 16 MB (`GOB-CHK-001` H29).
+> **Por qué no `readOnlyRootFilesystem: false`.** Versiones anteriores lo desactivaban con la nota «nginx necesita escribir en /tmp». Es cierto que necesita escribir, pero `LIN-K8S-001` nota 14.1 —documento dueño de los controles de pod— lo prohíbe expresamente como solución general: *«identificar los directorios que necesitan escritura y montarlos explícitamente»*. La propia [sección 16.5](#165-anti-patrón) de este documento ya lista como anti-patrón omitir `client_body_temp_path` en `/tmp`, es decir, ya asume que nginx escribe ahí y lo configura — montar el volumen es el paso que faltaba. Desactivar el control deja el sistema de archivos completo escribible para evitar un `emptyDir` de 16 MB (`GOB-CHK-001` H29).
 
 ### 16.5 Anti-patrón
 

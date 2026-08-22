@@ -2,7 +2,8 @@
 
 **Código:** ADR-WSO2-001  
 **Fecha:** 2026-05-28  
-**Estado:** Propuesta de ADR  
+**Estado:** Propuesta de ADR    
+**Última actualización:** 2026-08-21 — incorpora checklist de graduación (`GOB-CHK-001` H41)
 **Ámbito:** Seguridad, APIs, Plataforma, Arquitectura
 **ID en la matriz institucional:** `ADR-015` (`LIN-ARQ-001`, Apéndice A) — mismo identificador de decisión, no uno adicional  
 
@@ -25,8 +26,28 @@ La coexistencia entre ambos modelos requiere gobierno explícito para evitar imp
 - No se adopta OAuth2/OIDC por cuenta propia en servicios nuevos sin ADR adicional aprobado.
 
 3. **Regla de transición**
-- Cuando WSO2 pase a estado operativo, Arquitectura emitirá una actualización de `LIN-SEC-APP-001`, `LIN-API-REST-001` y este ADR.
+- Cuando WSO2 pase a estado operativo, Arquitectura emitirá una actualización de los documentos listados abajo.
 - En ese momento se definirá qué servicios migran primero y bajo qué criterios.
+
+#### Checklist de graduación — documentos a actualizar
+
+No depende de memoria: cada casilla se marca al actualizar el documento, y la graduación no se declara completa hasta que todas lo estén.
+
+- [ ] **`LIN-SEC-APP-001 §7.2`** — el modelo objetivo pasa a vigente: validación de token delegada al gateway, scopes OAuth2 por operación, rate limiting en WSO2
+- [ ] **`SEC-R-001` (LIN-SEC-APP-001 §7.1)** — retirar las reglas «mientras WSO2 no esté operativo»; el rate limiting básico en la aplicación deja de ser obligatorio
+- [ ] **`LIN-SEC-APP-001 §8`** — `SaaTokenValidationFilter` deja de ser obligatorio en cada servicio; definir si se retira o se conserva como defensa en profundidad
+- [ ] **`API-R-001` (LIN-API-REST-001 §2.5)** — retirar el bloque «Estado de implementación: fase PoC»; las reglas objetivo pasan a ser exigibles
+- [ ] **`LIN-API-REST-001 §7.1`** — el token deja de ser opaco y pasa a JWT verificable localmente; revisar toda mención a «token opaco» en el corpus
+- [ ] **`LIN-API-REST-001 §8.4`** — el rate limiting vuelve al gateway; retirar la regla transitoria de aplicación
+- [ ] **`LIN-API-REST-001 §10.2`** — retirar la vía transitoria de gate sin WSO2; los estados `CREATED`/`PUBLISHED` pasan a ser exigibles
+- [ ] **`LIN-API-REST-001 §10.3`** — activar los ítems diferidos: URL base en Publisher, plan de suscripción, publicación en Dev Portal
+- [ ] **`LIN-FE-ANG-001 §9.3`** — revisar los dos escenarios de manejo de token frente al nuevo modelo OAuth2/OIDC
+- [ ] **`ADR-TLS-INTERNO-001`** — WSO2 asume la terminación TLS; es disparador de revisión declarado en ese ADR
+- [ ] **`LIN-K8S-001 §12.2`** — la exposición vía API Manager deja de ser «preferente» y pasa a obligatoria
+- [ ] **`GOB-MAT-001`** — actualizar el tema «API Gateway y API Manager» y el estado de este ADR
+- [ ] **Registrar en producción las APIs ya desplegadas**, conservando su estado equivalente (`LIN-API-REST-001 §10.2`)
+
+> **Las APIs ya en producción no se rehacen:** se registran en WSO2 con el estado que les corresponda. La graduación del PoC no invalida lo construido bajo la vía transitoria.
 
 4. **Criterio mínimo para graduar el PoC**
 - gateway WSO2 operativo en un entorno institucional estable;

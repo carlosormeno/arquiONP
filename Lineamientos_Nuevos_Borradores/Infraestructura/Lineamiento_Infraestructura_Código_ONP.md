@@ -38,7 +38,7 @@
 11. [Responsabilidades](#11-responsabilidades)
 12. [Checklist de conformidad](#12-checklist-de-conformidad)
 13. [Anti-patrones](#13-anti-patrones)
-14. [Proceso ADR para excepciones](#14-proceso-adr-para-excepciones)
+14. [Proceso ADR para excepciones](#14-proceso-de-excepción)
 15. [Glosario](#15-glosario)
 16. [Anexos](#16-anexos)
 
@@ -168,7 +168,7 @@ Incluye:
 - ejecución obligatoria de `terraform fmt -check`, `terraform validate` y `terraform plan`;
 - publicación del plan como artefacto del pipeline para revisión;
 - `terraform apply` todavía ejecutado manualmente por el equipo de Plataforma desde terminal autorizada;
-- activación de la detección de drift semanal (ver [sección 10](#10-deteccion-de-drift)).
+- activación de la detección de drift semanal (ver [sección 10](#10-detección-de-drift)).
 
 **Criterio de graduación:** pipeline activo durante al menos 30 días sin falsos positivos; al menos un caso de drift detectado y corregido mediante MR documentado.
 
@@ -457,7 +457,7 @@ Esta sección complementa las buenas prácticas generales para el contexto espec
 
 #### 8.6.1 Autenticación con vCenter
 
-Las credenciales de vCenter son secretos de infraestructura y se rigen por la regla general de la [sección 7](#7-gestion-de-secretos-y-variables). El provider `vsphere` se configura mediante variables de entorno o variables Terraform sensibles — **nunca con valores en texto plano en el código**.
+Las credenciales de vCenter son secretos de infraestructura y se rigen por la regla general de la [sección 7](#7-gestión-de-secretos-y-variables). El provider `vsphere` se configura mediante variables de entorno o variables Terraform sensibles — **nunca con valores en texto plano en el código**.
 
 ```hcl
 # variables.tf

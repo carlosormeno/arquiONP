@@ -171,7 +171,7 @@ El gateway es responsable de:
 #### Validación del token SAA — estado actual y objetivo futuro
 
 > **Estado actual (WSO2 en fase PoC — no operativo como gateway centralizado):**
-> Cada servicio Spring Boot implementa `SaaTokenValidationFilter` (`@Order(3)`), que realiza una llamada síncrona al endpoint de SAA para validar el token opaco en cada petición entrante. Este filtro es **obligatorio** en todos los servicios mientras WSO2 no esté operativo como gateway. Ver [sección 7.1](#71-autenticacion-saa-token) y LIN-SEC-APP-001 sección 8.3.
+> Cada servicio Spring Boot implementa `SaaTokenValidationFilter` (`@Order(3)`), que realiza una llamada síncrona al endpoint de SAA para validar el token opaco en cada petición entrante. Este filtro es **obligatorio** en todos los servicios mientras WSO2 no esté operativo como gateway. Ver [sección 7.1](#71-autenticación--saa-token) y LIN-SEC-APP-001 sección 8.3.
 >
 > **Objetivo futuro (cuando WSO2 sea el gateway centralizado operativo):**
 > WSO2 Gateway validará el token SAA en el perímetro e inyectará headers de contexto de usuario sanitizados (`X-User-Id`, `X-User-Roles`) hacia el backend. En ese escenario, `SaaTokenValidationFilter` podrá eliminarse de los servicios individuales y el backend confiará en los headers del gateway. Esta transición requerirá ADR y confirmación de Plataforma.
@@ -211,7 +211,7 @@ Consumidor → https://apis.onp.gob.pe/pensiones/v1/expedientes  (WSO2 Gateway)
                                     mi-servicio.onp.internal:8080
 ```
 
-> **Para publicar una API en WSO2:** ver **[sección 10.3](#103-gate-de-publicacion-en-wso2)** — gate de publicación con los requisitos técnicos y de gobernanza que el equipo de desarrollo debe completar antes de que Arquitectura active el estado `PUBLISHED`.
+> **Para publicar una API en WSO2:** ver **[sección 10.3](#103-gate-de-publicación-en-wso2)** — gate de publicación con los requisitos técnicos y de gobernanza que el equipo de desarrollo debe completar antes de que Arquitectura active el estado `PUBLISHED`.
 
 ---
 
@@ -225,7 +225,7 @@ La estructura estándar de una URL en APIs ONP es:
 https://<host>/api/v{N}/{recurso-en-plural}/{id}/{sub-recurso}
 ```
 
-> **Esta es la ruta que expone el servicio**, la que el equipo implementa en sus `@RequestMapping`. La URL que ve el consumidor externo puede diferir: cuando WSO2 esté operativo, el gateway publica un *context path* propio por dominio y enruta hacia el backend —`https://apis.onp.gob.pe/pensiones/v1/...` → `mi-servicio.onp.internal:8080/api/v1/...` (ver [sección 2.5](#25-gestion-de-apis-api-gateway-y-api-manager))—. El backend no cambia su ruta para acomodar al gateway.
+> **Esta es la ruta que expone el servicio**, la que el equipo implementa en sus `@RequestMapping`. La URL que ve el consumidor externo puede diferir: cuando WSO2 esté operativo, el gateway publica un *context path* propio por dominio y enruta hacia el backend —`https://apis.onp.gob.pe/pensiones/v1/...` → `mi-servicio.onp.internal:8080/api/v1/...` (ver [sección 2.5](#25-gestión-de-apis--api-gateway-y-api-manager))—. El backend no cambia su ruta para acomodar al gateway.
 
 Ejemplos:
 
@@ -354,7 +354,7 @@ Sunset: Sat, 22 Nov 2026 00:00:00 GMT
 
 | Header | Tipo | Descripción |
 |---|---|---|
-| `Authorization` | Request | `Bearer <token>` — token SAA de autenticación (ver [sección 7.1](#71-autenticacion-saa-token)) |
+| `Authorization` | Request | `Bearer <token>` — token SAA de autenticación (ver [sección 7.1](#71-autenticación--saa-token)) |
 | `Content-Type` | Request | `application/json; charset=UTF-8` (cuando hay body) |
 | `X-Request-ID` | Request/Response | ID de correlación. El servicio lo genera si no llega en el request |
 
@@ -787,7 +787,7 @@ public class CorsConfig {
 
 Las consultas que puedan retornar más de 500 registros **deben implementar paginación**. No existe justificación técnica para retornar colecciones sin paginar de ese tamaño.
 
-La paginación usa los parámetros `pagina` y `tamanio` (ver [sección 3.4.3](#343-query-parameters-filtrado-ordenamiento-y-paginacion)) y devuelve los campos de paginación en `meta` (ver [sección 4.1](#41-estructura-apiresponsewrapper)).
+La paginación usa los parámetros `pagina` y `tamanio` (ver [sección 3.4.3](#343-query-parameters--filtrado-ordenamiento-y-paginación)) y devuelve los campos de paginación en `meta` (ver [sección 4.1](#41-estructura-apiresponsewrapper)).
 
 El tamaño máximo de página es **200 registros**. Si el cliente solicita un `tamanio` mayor, el servicio lo limita a 200 sin error.
 
@@ -808,7 +808,7 @@ Todo cliente HTTP que llame a servicios externos debe configurar timeouts explí
 
 > **Valores normativos — documento dueño `DIS-R-008` (LIN-DIS-001 §6.1).** Los umbrales se definen mediante una matriz por **criticidad y demanda** del servicio consumido (ruta crítica interactiva / consulta de negocio / proceso diferido o batch), no con un par de valores único: RENIEC en ventanilla virtual exige `fail-fast` más agresivo que una conciliación SUNAT por lotes. Este lineamiento **no publica valores propios** para evitar divergencia entre documentos. Ver también `ARQ-R-004` (LIN-ARQ-001 §4.3) para integraciones con entidades del Estado.
 
-Lo que este lineamiento sí norma es la **respuesta del contrato REST ante el vencimiento del timeout**: si el servicio externo no responde en el plazo configurado, retornar `504` / `codDetRespuesta: 402` (ver [sección 5.1](#51-mapeo-de-codigo-http-a-coddetrespuesta)).
+Lo que este lineamiento sí norma es la **respuesta del contrato REST ante el vencimiento del timeout**: si el servicio externo no responde en el plazo configurado, retornar `504` / `codDetRespuesta: 402` (ver [sección 5.1](#51-mapeo-de-código-http-a-coddetrespuesta)).
 
 ### 8.4 Rate limiting
 
@@ -816,7 +816,7 @@ Lo que este lineamiento sí norma es la **respuesta del contrato REST ante el ve
 
 **Estado actual (WSO2 en PoC):** dado que no existe gateway centralizado en producción, aplica la regla del documento dueño `SEC-R-001` (LIN-SEC-APP-001 §7.1) — *«Rate limiting básico: configurado en la aplicación si no hay gateway»*. Todo servicio expuesto a consumidores externos (ciudadano o entidad pública) debe implementar un límite básico por cliente hasta que WSO2 gradúe.
 
-Al superarse el límite, el servicio responde `429 Too Many Requests` con `codDetRespuesta: 302` (ver [sección 5.1](#51-mapeo-de-codigo-http-a-coddetrespuesta)).
+Al superarse el límite, el servicio responde `429 Too Many Requests` con `codDetRespuesta: 302` (ver [sección 5.1](#51-mapeo-de-código-http-a-coddetrespuesta)).
 
 > La versión anterior de esta sección asignaba el control exclusivamente al gateway. Como el gateway no está operativo, el efecto real era que **ninguna API de la ONP tenía rate limiting** (`GOB-CHK-001` H24).
 
@@ -952,7 +952,7 @@ readinessProbe:
   failureThreshold: 3
 ```
 
-> **El puerto de la probe debe ser aquel en el que responde Actuator.** La [sección 9.5](#95-metricas) ofrece dos formas de evitar que `/actuator/prometheus` quede publicado en el puerto de la API: separar `management.server.port`, o mantenerlo en el mismo puerto y restringir el acceso a nivel de red. **Los ejemplos de este corpus asumen la segunda opción** (Actuator en `8080`, protegido por red), y por eso las probes apuntan a `8080`.
+> **El puerto de la probe debe ser aquel en el que responde Actuator.** La [sección 9.5](#95-métricas) ofrece dos formas de evitar que `/actuator/prometheus` quede publicado en el puerto de la API: separar `management.server.port`, o mantenerlo en el mismo puerto y restringir el acceso a nivel de red. **Los ejemplos de este corpus asumen la segunda opción** (Actuator en `8080`, protegido por red), y por eso las probes apuntan a `8080`.
 >
 > Si un proyecto opta por separar el puerto de gestión, **debe actualizar también las probes**: dejarlas en `8080` mientras Actuator escucha en otro puerto hace que Kubernetes reciba `404`, marque el pod como no listo y el despliegue nunca converja. El valor de `application.yml` y el del `Deployment` se declaran juntos, en el mismo cambio (`LIN-K8S-001`).
 
@@ -993,10 +993,10 @@ La OTI.ID administra un catálogo centralizado de todos los servicios web REST d
 
 Los estados de ciclo de vida se gestionan en WSO2 API Manager (Publisher). Solo OTI Arquitectura puede avanzar o retroceder un estado.
 
-> **Vía transitoria mientras WSO2 esté en PoC.** Los estados `CREATED`/`PUBLISHED` son estados **de la plataforma**, no del servicio. Como WSO2 no está operativo en producción (ver [sección 2.5](#25-gestion-de-apis-api-gateway-y-api-manager) y ADR-WSO2-001), exigirlos como condición literal dejaría a toda API nueva sin camino legítimo a producción. Mientras dure el PoC:
+> **Vía transitoria mientras WSO2 esté en PoC.** Los estados `CREATED`/`PUBLISHED` son estados **de la plataforma**, no del servicio. Como WSO2 no está operativo en producción (ver [sección 2.5](#25-gestión-de-apis--api-gateway-y-api-manager) y ADR-WSO2-001), exigirlos como condición literal dejaría a toda API nueva sin camino legítimo a producción. Mientras dure el PoC:
 >
-> - los **requisitos** del gate de la [sección 10.3](#103-gate-de-publicacion-en-wso2) se cumplen y se evidencian igual, y OTI Arquitectura los aprueba formalmente;
-> - la evidencia se conserva en el repositorio del servicio y en el catálogo de la [sección 10.1](#101-catalogo-de-servicios), en lugar de en WSO2 Publisher;
+> - los **requisitos** del gate de la [sección 10.3](#103-gate-de-publicación-en-wso2) se cumplen y se evidencian igual, y OTI Arquitectura los aprueba formalmente;
+> - la evidencia se conserva en el repositorio del servicio y en el catálogo de la [sección 10.1](#101-catálogo-de-servicios), en lugar de en WSO2 Publisher;
 > - los ítems que solo puede satisfacer la plataforma —URL base en Publisher, plan de suscripción, publicación en Dev Portal— quedan **diferidos y registrados como pendientes de migración**, no omitidos;
 > - al graduar el PoC, las APIs ya en producción se registran en WSO2 conservando el estado equivalente.
 >
@@ -1006,8 +1006,8 @@ Los estados de ciclo de vida se gestionan en WSO2 API Manager (Publisher). Solo 
 |---|---|---|---|
 | **Diseño** | — | Definición del contrato OpenAPI y revisión por Arquitectura. La API no está en WSO2 aún | Equipo de desarrollo |
 | **Desarrollo** | — | Implementación siguiendo este lineamiento, LIN-DEV-JAVA-001 y LIN-OBS-001 | Equipo de desarrollo |
-| **QA** | `CREATED` | API registrada en WSO2 Publisher, visible solo para administradores. Gate [sección 10.3](#103-gate-de-publicacion-en-wso2) completado para QA | OTI Arquitectura |
-| **Producción** | `PUBLISHED` | Visible en Dev Portal, consumidores pueden suscribirse. Gate [sección 10.3](#103-gate-de-publicacion-en-wso2) completado para PROD | OTI Arquitectura |
+| **QA** | `CREATED` | API registrada en WSO2 Publisher, visible solo para administradores. Gate [sección 10.3](#103-gate-de-publicación-en-wso2) completado para QA | OTI Arquitectura |
+| **Producción** | `PUBLISHED` | Visible en Dev Portal, consumidores pueden suscribirse. Gate [sección 10.3](#103-gate-de-publicación-en-wso2) completado para PROD | OTI Arquitectura |
 | **Deprecación** | `DEPRECATED` | Sigue funcionando; no acepta nuevas suscripciones. Header `Deprecation: true` en todas las respuestas. Período mínimo: 6 meses | OTI Arquitectura |
 | **Retiro** | `RETIRED` | Eliminada del gateway; consumidores bloqueados. Solo tras período mínimo en `DEPRECATED` | OTI Arquitectura |
 
@@ -1026,7 +1026,7 @@ Antes de que OTI Arquitectura active el estado `PUBLISHED` en WSO2, el equipo de
 - [ ] Endpoint `/actuator/health` responde `{"status":"UP"}` en el ambiente de destino
 - [ ] Instrumentación de observabilidad completa: trazas visibles en Jaeger, logs en Kibana (ver LIN-OBS-001 sección 11)
 - [ ] Esquema de autenticación SAA declarado en la especificación OpenAPI (`securitySchemes: bearerAuth`) — cuando WSO2/OAuth2 esté operacional, actualizar a `oauth2`
-- [ ] Swagger deshabilitado en PROD (`SWAGGER_ENABLED=false`) si el ambiente es producción (ver [sección 6.2](#62-configuracion))
+- [ ] Swagger deshabilitado en PROD (`SWAGGER_ENABLED=false`) si el ambiente es producción (ver [sección 6.2](#62-configuración))
 - [ ] URL base interna del backend configurada en WSO2 Publisher apuntando al servicio K8s interno
 - [ ] **`NetworkPolicy` declarada** en los manifiestos del servicio (`K8S-R-002` (LIN-K8S-001 §9.1), Anexo E). Es la condición que sostiene la excepción de tráfico intra-cluster sobre HTTP de `ADR-TLS-INTERNO-001`: sin ella, el servicio debe servir HTTPS extremo a extremo
 
@@ -1050,8 +1050,8 @@ Antes de que OTI Arquitectura active el estado `PUBLISHED` en WSO2, el equipo de
 - [ ] **Clasificación de datos** declarada:
   - ¿La API expone datos personales (DNI, nombre, domicilio)? → activa política CORS estricta y auditoría de acceso
   - ¿La API expone datos previsionales (montos, periodos, beneficios)? → requiere autenticación obligatoria, sin caché en gateway
-- [ ] API registrada en el catálogo institucional ([sección 10.1](#101-catalogo-de-servicios)) antes de pasar a `PUBLISHED`
-- [ ] Confirmado que no duplica un servicio ya existente en el catálogo ([sección 10.1](#101-catalogo-de-servicios))
+- [ ] API registrada en el catálogo institucional ([sección 10.1](#101-catálogo-de-servicios)) antes de pasar a `PUBLISHED`
+- [ ] Confirmado que no duplica un servicio ya existente en el catálogo ([sección 10.1](#101-catálogo-de-servicios))
 
 #### Entregables mínimos al solicitar publicación
 

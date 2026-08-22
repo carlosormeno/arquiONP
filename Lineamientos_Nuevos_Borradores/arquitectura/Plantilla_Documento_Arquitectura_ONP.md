@@ -2,7 +2,7 @@
 **OFICINA DE TECNOLOGÍAS DE LA INFORMACIÓN**
 
 > **Identidad de esta plantilla — no copiar al documento derivado.**
-> **Código:** GOB-PLA-001 · **Versión:** v2.7 · **Estado:** Vigente · **Propietario:** Arquitectura OTI
+> **Código:** GOB-PLA-001 · **Versión:** v2.8 · **Estado:** Vigente · **Propietario:** Arquitectura OTI
 >
 > Estos datos identifican a la **plantilla institucional**. El documento de arquitectura que se produzca a partir de ella lleva su propia identidad en la tabla de abajo, y su versión evoluciona de forma independiente de la versión de la plantilla. Al completar el documento, elimina este bloque.
 
@@ -35,6 +35,7 @@
 | v2.5 | Evaluación de la plantilla como instrumento normativo (`GOB-CHK-001` H34). **(1)** Se incorpora el **Anexo E — Conformidad y Criterios de Aprobación**: la plantilla enseñaba a redactar pero no definía cuándo un documento está listo para aprobarse, de modo que la aprobación dependía del criterio de quien firmara. Es el único anexo que **no se elimina** del entregable. **(2)** Nueva `§1.4` con las cuatro **declaraciones obligatorias** que el corpus exige y la plantilla no pedía —Estadio, criterios de microservicio, DDD y **CAP**— más la Declaración de Conformidad del `README.md`, cuya ausencia **bloquea el pipeline** (`LIN-CICD-001 §12.5`) sin que el arquitecto tuviera forma de enterarse. **(3)** `§5.2` listaba 6 de 19 documentos del corpus, omitiendo `LIN-K8S-001`, `LIN-TEST-001` y `LIN-VER-001`; ahora lista el corpus completo con su estado y exige declarar cuáles no aplican y por qué | OTI / Arquitectura | 2026-08-17 |
 | v2.6 | Cierra los dos hallazgos de diseño de la evaluación (`GOB-CHK-001` H34.4 y H34.5). **(1) Regla de precedencia entre `§3` y el Anexo A:** eran dos representaciones del mismo sistema mantenidas por separado y sin regla de cuál prevalece. El **Anexo A pasa a ser la fuente autoritativa** —es el modelo ArchiMate versionable— y `§3` queda como lectura derivada para las audiencias que no leen ArchiMate, con prohibición de introducir elementos ausentes del modelo y obligación de actualizarse después de él. Se resuelve además el caso de la Capa de Seguridad, única sin vista propia. **(2) Vigencia frente al corpus:** el documento declaraba conformidad con lineamientos que cambian sin que nada indicara cuándo revisarlo. La tabla de identidad incorpora **línea base normativa** y **próxima revisión**; la nueva `§1.5` define cinco disparadores de revisión obligatoria —el principal, que un documento del que el sistema depende **gradúe a `Vigente`**— y qué explícitamente *no* obliga, para que la regla no degenere en revisar por cada errata | OTI / Arquitectura | 2026-08-18 |
 | v2.7 | El Anexo A advierte que el modelo **será contrastado contra la arquitectura observada** (`LIN-ARQ-001 §5.5`) mediante el grafo de servicios, y que una dependencia real no modelada se resuelve corrigiendo el documento o el código, no normalizando la desviación. Nuevo criterio 13c en el Anexo E para criticidad Alta y Media (`GOB-CHK-001` H35) | OTI / Arquitectura | 2026-08-18 |
+| v2.8 | La elección de ArchiMate/Archi remite a su documento dueño `DOC-R-002` (LIN-DOC-001 §7), que norma además la notación de los diagramas embebidos y la regla de versionar la fuente de todo diagrama (`GOB-CHK-001` H42) | OTI / Arquitectura | 2026-08-21 |
 
 ---
 
@@ -416,7 +417,7 @@ Cualquier modificación en los requisitos funcionales o no funcionales podrá re
 
 Este anexo presenta la arquitectura de **[Nombre del Sistema]** mediante cuatro vistas modeladas en ArchiMate, cada una orientada a una audiencia y propósito específico. El uso de múltiples vistas permite comunicar la arquitectura de forma apropiada según el nivel de abstracción requerido.
 
-> **Herramienta de modelado:** Archi (ArchiMate 3.x) — estándar aprobado en la ONP.
+> **Herramienta de modelado:** Archi (ArchiMate 3.x) — estándar aprobado en la ONP, normado en `DOC-R-002` (LIN-DOC-001 §7).
 
 > 🔍 **Este modelo será contrastado contra la arquitectura observada.** `LIN-ARQ-001 §5.5` establece que, para sistemas de criticidad **Alta o Media**, Arquitectura OTI compara semestralmente estas vistas contra el **grafo de servicios** derivado de las trazas en producción (`LIN-OBS-001 §5.8`). Una dependencia que exista en ejecución y no esté modelada aquí es una divergencia que se resuelve **corrigiendo este documento o el código** — nunca dando por buena la desviación por el hecho de estar en producción. Modela las integraciones reales, incluidas las de baja frecuencia.
 

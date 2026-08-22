@@ -1,7 +1,7 @@
 # LIN-K8S-001 — Lineamiento de Contenedores y Orquestación ONP
 
 **Código:** LIN-K8S-001  
-**Versión:** v0.1.18  
+**Versión:** v0.1.19  
 **Estado:** En revisión  
 **Fecha:** 2026-08-09  
 **Propietario documental:** Arquitectura de Software — OTI  
@@ -27,13 +27,14 @@
 | v0.1.9 | 2026-07-09 | Arquitectura OTI | Corrige las citas colgantes hacia el documento congelado `LIN-ARQ-000 §11.1`: el estadio de Transición (Docker Compose) y el runtime containerd de producción ahora citan `LIN-ARQ-001 §5.2` (Marco Rector vigente) |
 | v0.1.10 | 2026-07-09 | Arquitectura OTI | Añade en §10.3 la diferenciación de réplicas mínimas y SLO por estilo arquitectónico (Monolito Modular 99.0% / Microservicio 99.5%), que solo existía en el documento congelado |
 | v0.1.11 | 2026-07-10 | Arquitectura OTI | Corrige el ejemplo de imagen frontend en §5.4 y el Anexo D: reemplaza `nginx:stable-alpine` en puerto 80 (root) por `nginxinc/nginx-unprivileged:1.27-alpine` en puerto 8080 con directorios temporales en `/tmp`, alineando con `LIN-FE-ANG-001 §16` y con la propia regla de este documento (§14.1, `runAsNonRoot: true`) — el ejemplo previo violaba su propia norma y contradecía el anti-patrón explícito de §16.5 |
+| v0.1.12 | 2026-07-14 | Arquitectura OTI | Corrige las 9 citas residuales al documento congelado `LIN-ARQ-000` que quedaron sin migrar en v0.1.9 (que solo corrigió §11.1): §1.3, la cláusula de supremacía jerárquica de §2 (que además decía erróneamente que el marco rector es "Nivel 2" — es Nivel 1), tabla de §2, detonador NoSQL de §5.2, atribución de los patrones Sidecar/Ambassador de §9.4 (son normados por este propio documento, no por el marco rector), reglas de resiliencia y Strangler Fig de §9.4.2/9.4.3, y la cláusula de supremacía del proceso ADR en §20. Todas redirigidas a `LIN-ARQ-001` (§2.1, §2.2, §4.3, §6.2) y `LIN-DIS-001 §6` según corresponda |
 | v0.1.13 | 2026-08-09 | Arquitectura OTI | `§9.1` y el Anexo E: la `NetworkPolicy` pasa de *recomendada / obligatoria para críticos* a **obligatoria para todo servicio que reciba tráfico interno**. No es un endurecimiento aislado: `ADR-TLS-INTERNO-001` admite tráfico intra-cluster sobre HTTP y la restricción de red es el control que **sustituye** al cifrado en ese tramo (`GOB-CHK-001` H24.4) |
 | v0.1.14 | 2026-08-17 | Arquitectura OTI | Revisión de fondo (`GOB-CHK-001` H26). **(1) `§9.4` normaba Sidecar y Ambassador con los códigos `PA12`/`PA13` del tablero de brechas `GOB-BRE-001`**, que es un inventario de vacíos: mientras un patrón figura ahí se está declarando que *falta* normarlo. Pasan a `PT17`/`PT18` con fichas `PAT-K8S-01` y `PAT-K8S-02` en `LIN-PAT-001`, y las brechas se cierran. **(2) `§9.4.B` reintroducía el mandato de Resilience4j** que ya se había eliminado de `LIN-ARQ-001 §4.3` y de la Plantilla de Arquitectura: era la quinta fuente del mismo control, y además atribuía el Retry a Resilience4j cuando el dueño (`LIN-DIS-001 §6.3`) usa Spring Retry. Ahora remite al dueño y conserva solo lo propio —*dónde* vive el control, no cuál es—. **(3) El `Deployment` de referencia de `§9.2` no cumplía este documento:** le faltaban dos de las cinco etiquetas obligatorias de `§9.3` y, sobre todo, declaraba `readOnlyRootFilesystem: true` sin el volumen `/tmp` que exige la nota 14.1 — copiado tal cual, **el pod no arranca**. **(4) `§15.1` y `§15.2` degradaban a «cuando aplique»** obligaciones de `LIN-OBS-001`, que es documento **vigente**. `§15.2` fija además la convención de puerto de Actuator que ningún documento del corpus definía, pese a que `LIN-API-REST-001 §9.5` la exige (`GOB-CHK-001` H24.5). **(5)** `§18.2` y el Anexo A no incluían la `NetworkPolicy` que `§9.1` volvió obligatoria; `§20` atribuía los patrones de resiliencia a `LIN-ARQ-001` en vez de a `LIN-DIS-001 §6`; y `§2` no listaba `LIN-DIS-001`, `LIN-PAT-001`, `LIN-VER-001`, `LIN-IAC-001` ni `GOB-MAT-001`. El documento pasa a **En revisión** |
 | v0.1.15 | 2026-08-17 | Arquitectura OTI | La nota de gobernanza de `§4.4` atribuía a `LIN-BUS-001` los namespaces `kafka-dev`/`kafka-qa`/**`kafka`**, cuando ese documento usa `kafka-prod` en producción. La verificación pendiente con Plataforma sigue abierta, pero ahora parte del dato correcto (`GOB-CHK-001` H28) |
 | v0.1.16 | 2026-08-17 | Arquitectura OTI | El `nginx.conf` del Anexo D dirigía `error_log` a `/var/log/nginx/error.log`, incompatible con el `readOnlyRootFilesystem: true` que exige `§14.1` y con la regla de logs a stdout/stderr de `§15.1`. Apunta ahora a `/dev/stderr` (`GOB-CHK-001` H29) |
 | v0.1.17 | 2026-08-17 | Arquitectura OTI | `§13.3` exigía declarar una «política de backup» para todo PVC sin que ningún documento del corpus la definiera. Ahora se deriva de la banda de criticidad de `LIN-ARQ-001 §5.4.1`: todo PVC de un sistema de criticidad Alta o Media requiere respaldo acorde a su RPO **o** justificación documentada de que el dato es reconstruible (`GOB-CHK-001` H11.2) |
 | v0.1.18 | 2026-08-18 | Arquitectura OTI | El apartado de excepción titulaba «Proceso ADR para desviaciones» y no definía identificador: una desviación de este lineamiento se registraba como «un ADR», instrumento que `GOB-MAT-001` reserva a las decisiones **institucionales** del Comité. Pasa a **`EXC-K8S-NNN`**, con vigencia acotada y fecha de revisión obligatoria (`GOB-CHK-001` H38) |
-| v0.1.12 | 2026-07-14 | Arquitectura OTI | Corrige las 9 citas residuales al documento congelado `LIN-ARQ-000` que quedaron sin migrar en v0.1.9 (que solo corrigió §11.1): §1.3, la cláusula de supremacía jerárquica de §2 (que además decía erróneamente que el marco rector es "Nivel 2" — es Nivel 1), tabla de §2, detonador NoSQL de §5.2, atribución de los patrones Sidecar/Ambassador de §9.4 (son normados por este propio documento, no por el marco rector), reglas de resiliencia y Strangler Fig de §9.4.2/9.4.3, y la cláusula de supremacía del proceso ADR en §20. Todas redirigidas a `LIN-ARQ-001` (§2.1, §2.2, §4.3, §6.2) y `LIN-DIS-001 §6` según corresponda |
+| v0.1.19 | 2026-08-21 | Arquitectura OTI | `§16` conecta la ficha de despliegue con el inventario documental de `LIN-DOC-001 §4` y con el runbook de `DOC-R-003`, que no existía como artefacto normado (`GOB-CHK-001` H42) |
 
 ---
 
@@ -67,7 +68,7 @@
 17. [Relación con CI/CD e IaC](#17-relación-con-cicd-e-iac)  
 18. [Checklist de conformidad](#18-checklist-de-conformidad)  
 19. [Anti-patrones](#19-anti-patrones)  
-20. [Proceso ADR para desviaciones](#20-proceso-adr-para-desviaciones)  
+20. [Proceso ADR para desviaciones](#20-proceso-de-excepción-exc-k8s-nnn)  
 21. [Glosario](#21-glosario)  
 22. [Anexos](#22-anexos)
     - Anexo A — Estructura sugerida de manifiestos (Kustomize / Helm)
@@ -582,7 +583,7 @@ Toda aplicación desplegada en Kubernetes debe contar, como mínimo, con:
 | `PodDisruptionBudget` | Recomendado para servicios críticos |
 | `ResourceQuota` / `LimitRange` | Responsabilidad de Plataforma por namespace |
 
-> **Por qué la `NetworkPolicy` dejó de ser recomendada.** `ADR-TLS-INTERNO-001` admite que el tráfico entre el punto de terminación TLS y el pod destino viaje sobre HTTP dentro del cluster. Esa excepción se sostiene **únicamente** porque el acceso a la red interna está restringido: la `NetworkPolicy` es el control que sustituye al cifrado, no un refuerzo opcional. Un servicio sin ella no puede acogerse a la excepción y debe servir HTTPS extremo a extremo. Política mínima en el [Anexo E](#anexo-e-networkpolicy-minima-para-servicio-backend).
+> **Por qué la `NetworkPolicy` dejó de ser recomendada.** `ADR-TLS-INTERNO-001` admite que el tráfico entre el punto de terminación TLS y el pod destino viaje sobre HTTP dentro del cluster. Esa excepción se sostiene **únicamente** porque el acceso a la red interna está restringido: la `NetworkPolicy` es el control que sustituye al cifrado, no un refuerzo opcional. Un servicio sin ella no puede acogerse a la excepción y debe servir HTTPS extremo a extremo. Política mínima en el [Anexo E](#anexo-e--networkpolicy-mínima-para-servicio-backend).
 
 ### 9.2 Deployment mínimo de referencia
 
@@ -1076,6 +1077,8 @@ Para sistemas críticos, Plataforma y Desarrollo deben coordinar dashboards mín
 ---
 
 ## 16. Documentación obligatoria por ambiente
+
+> La **ficha de despliegue** de esta sección forma parte del inventario documental mínimo de todo proyecto (`LIN-DOC-001 §4`), que define además dónde vive y cuándo se revisa. El **runbook de operación** —obligatorio para criticidad Alta o Media— lo norma `DOC-R-003` (LIN-DOC-001 §8).
 
 Cada solución contenerizada debe documentar por ambiente:
 

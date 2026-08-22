@@ -16,9 +16,9 @@
 | v0.1.1 | 2026-07-09 | Arquitectura OTI | Completa la sección 4 con los estilos Microservicio y EDA (Consumidor Kafka), que quedaron sin cubrir tras la redistribución del documento congelado `LIN-ARQ-000 §10.1` |
 | v0.1.2 | 2026-07-09 | Arquitectura OTI | Añade §4.6 (Efecto de la Estrategia de Dominio sobre las Pruebas Unitarias), ausente en todo el ecosistema documental tras la redistribución |
 | v0.1.3 | 2026-08-09 | Arquitectura OTI | Revisión de contenido y **graduación a Vigente** (`GOB-CHK-001` H20). Las cinco tablas de `§4` dejan de repetir los umbrales de cobertura y remiten a `§5.1` como fuente única — el mismo dato ya había divergido en `LIN-DEV-JAVA-001 §15.3` (H13.1). Corregido un enlace de `§3.4` que apuntaba a un paso numerado del capítulo PL/SQL en vez de a `§5`. Verificada la alineación con los consumidores exigida por el criterio 3 de graduación, que detectó dos desalineamientos corregidos en sus documentos: `LIN-FE-ANG-001 §14.2` citaba `§4.4` (que es *Microservicio*) para herramientas E2E, y `LIN-DEV-JAVA-001 §15.1` omitía el sufijo `CT` de las pruebas de caracterización |
+| v0.1.4 | 2026-08-17 | Arquitectura OTI | `§9` expresaba sus criterios de aceptación **únicamente en el modelo de ramas legado** (`ONP_DESA` → `ONP_QA`, `master`), de modo que un proyecto nuevo bajo GitLab Flow simplificado —el modelo objetivo de `LIN-VER-001 §6`— podía leerse fuera de su alcance por no tener esas ramas. Los criterios pasan a expresarse por **promoción de ambiente**, válida en ambos modelos. Se explicita además que la fase de madurez CI/CD determina si la verificación es automática o manual con evidencia, **no si el criterio es exigible** (`GOB-CHK-001` H27) |
 | v0.1.5 | 2026-08-18 | Arquitectura OTI | Incorpora el tipo **`AT` (Arquitectura)** a la clasificación de `§3.1`: pruebas que verifican reglas estructurales del código —fronteras entre Bounded Contexts, contenido del Shared Kernel, pureza del dominio— mediante análisis de bytecode. Implementación en `LIN-DEV-JAVA-001 §15.5` (`GOB-CHK-001` H37) |
 | v0.1.6 | 2026-08-18 | Arquitectura OTI | El apartado de excepción titulaba «Proceso ADR para desviaciones» y no definía identificador: una desviación de este lineamiento se registraba como «un ADR», instrumento que `GOB-MAT-001` reserva a las decisiones **institucionales** del Comité. Pasa a **`EXC-TEST-NNN`**, con vigencia acotada y fecha de revisión obligatoria (`GOB-CHK-001` H38) |
-| v0.1.4 | 2026-08-17 | Arquitectura OTI | `§9` expresaba sus criterios de aceptación **únicamente en el modelo de ramas legado** (`ONP_DESA` → `ONP_QA`, `master`), de modo que un proyecto nuevo bajo GitLab Flow simplificado —el modelo objetivo de `LIN-VER-001 §6`— podía leerse fuera de su alcance por no tener esas ramas. Los criterios pasan a expresarse por **promoción de ambiente**, válida en ambos modelos. Se explicita además que la fase de madurez CI/CD determina si la verificación es automática o manual con evidencia, **no si el criterio es exigible** (`GOB-CHK-001` H27) |
 
 ---
 
@@ -49,7 +49,7 @@
 
 14. [Checklist de pruebas](#14-checklist-de-pruebas)
 15. [Anti-patrones](#15-anti-patrones)
-16. [Proceso ADR para desviaciones](#16-proceso-adr-para-desviaciones)
+16. [Proceso ADR para desviaciones](#16-proceso-de-excepción-exc-test-nnn)
 17. [Glosario](#17-glosario)
 
 **Anexos**
@@ -82,18 +82,18 @@ Este principio aplica especialmente a sistemas legacy: el objetivo de una prueba
 
 | Componente | Cubierto por |
 |---|---|
-| Backend Java / Spring Boot | [sección 11](#11-capitulo-backend-java) |
-| Frontend Angular | [sección 12](#12-capitulo-frontend-angular) |
-| PL/SQL procedures, packages, functions legacy | [sección 13](#13-capitulo-plsql-legacy) |
+| Backend Java / Spring Boot | [sección 11](#11-capítulo-backend-java) |
+| Frontend Angular | [sección 12](#12-capítulo-frontend-angular) |
+| PL/SQL procedures, packages, functions legacy | [sección 13](#13-capítulo-plsql-legacy) |
 | APIs REST (contrato) | [sección 6](#6-pruebas-de-contrato) y [sección 11.4](#114-pruebas-de-contrato-java) |
-| Integración Java → Oracle | [sección 11.3](#113-pruebas-de-integracion) y [sección 13](#13-capitulo-plsql-legacy) |
+| Integración Java → Oracle | [sección 11.3](#113-pruebas-de-integración) y [sección 13](#13-capítulo-plsql-legacy) |
 
 ### 1.4 Fuera de alcance
 
 | Tema | Responsable |
 |---|---|
 | Ejecución automática en pipeline (cuándo y cómo) | LIN-CICD-001 |
-| Pruebas de penetración (Ethical Hacking), DAST y retest de vulnerabilidades | UFSD / Seguridad Digital — este lineamiento no define la técnica; sí reconoce el resultado como evidencia complementaria y criterio de aceptación cuando aplique (ver [sección 8.5](#85-pruebas-de-seguridad-gestionadas-por-ufsd) y [sección 9.2](#92-criterios-de-paso-a-produccion-merge-a-rama-master)) |
+| Pruebas de penetración (Ethical Hacking), DAST y retest de vulnerabilidades | UFSD / Seguridad Digital — este lineamiento no define la técnica; sí reconoce el resultado como evidencia complementaria y criterio de aceptación cuando aplique (ver [sección 8.5](#85-pruebas-de-seguridad-gestionadas-por-ufsd) y [sección 9.2](#92-criterios-de-paso-a-producción)) |
 | Pruebas de carga y rendimiento | `LIN-PERF-001` — dueño de herramienta (JMeter preferente, k6 y Gatling como alternativas), tipos de prueba, escenarios, umbrales y criterios de aceptación de performance |
 | Pruebas de usabilidad formal | Diseño UX |
 
@@ -159,10 +159,10 @@ Maven Surefire ejecuta `*Test.java`. Maven Failsafe ejecuta `*IT.java` y `*CT.ja
 
 Este lineamiento diferencia entre **tipos de prueba** y **enfoques de diseño de pruebas**.
 
-- Los **tipos** definen qué evidencia técnica debe existir: unitarias, integración, contrato, E2E, caracterización. Son verificables y obligatorios según los criterios de [sección 9](#9-criterios-minimos-de-aceptacion-para-paso-a-qa-y-produccion).
+- Los **tipos** definen qué evidencia técnica debe existir: unitarias, integración, contrato, E2E, caracterización. Son verificables y obligatorios según los criterios de [sección 9](#9-criterios-mínimos-de-aceptación-para-paso-a-qa-y-producción).
 - Los **enfoques** definen cómo el equipo incorpora esas pruebas al proceso de desarrollo. ONP no impone un único enfoque, pero establece recomendaciones por situación.
 
-> **Lo que se audita es el tipo y la cobertura, no el enfoque.** Un equipo puede aplicar TDD o escribir las pruebas al final — lo que se exige es que las pruebas existan, pasen y alcancen los umbrales de la [sección 5](#5-cobertura-minima-obligatoria).
+> **Lo que se audita es el tipo y la cobertura, no el enfoque.** Un equipo puede aplicar TDD o escribir las pruebas al final — lo que se exige es que las pruebas existan, pasen y alcancen los umbrales de la [sección 5](#5-cobertura-mínima-obligatoria).
 
 #### Enfoques reconocidos
 
@@ -484,7 +484,7 @@ El equipo de desarrollo debe entregar a la UFSD los insumos necesarios para ejec
 | Acta de reunión de cierre | Firmada por UFSD, desarrollo y plataforma — registra las vulnerabilidades subsanadas y el resultado del retest |
 | Opinión favorable de UFSD | Habilitación formal para el pase a Producción cuando el proyecto lo requiere |
 
-Estas evidencias se adjuntan al expediente del proyecto y son requisito para el pase a Producción en los casos donde el Ethical Hacking es obligatorio (ver [sección 9.2](#92-criterios-de-paso-a-produccion-merge-a-rama-master)).
+Estas evidencias se adjuntan al expediente del proyecto y son requisito para el pase a Producción en los casos donde el Ethical Hacking es obligatorio (ver [sección 9.2](#92-criterios-de-paso-a-producción)).
 
 ---
 
@@ -535,8 +535,8 @@ Toda excepción a los criterios de aceptación requiere ADR firmado por Arquitec
 | Responsabilidad | Detalle |
 |---|---|
 | Escribir pruebas junto con el código | No como tarea separada al final |
-| Mantener los umbrales de cobertura en el pom.xml | Ver [sección 11.5](#115-configuracion-jacoco-en-pomxml) |
-| Escribir pruebas de caracterización antes de modificar legacy | Mínimo 3 casos — ver [sección 13](#13-capitulo-plsql-legacy) |
+| Mantener los umbrales de cobertura en el pom.xml | Ver [sección 11.5](#115-configuración-jacoco-en-pomxml) |
+| Escribir pruebas de caracterización antes de modificar legacy | Mínimo 3 casos — ver [sección 13](#13-capítulo-plsql-legacy) |
 | Generar y conservar evidencias de prueba | Reportes en el build, no capturas de pantalla manuales |
 | Corregir pruebas antes de hacer merge | Una prueba fallida no es deuda técnica aceptable |
 

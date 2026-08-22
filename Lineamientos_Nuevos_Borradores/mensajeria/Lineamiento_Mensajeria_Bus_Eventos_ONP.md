@@ -22,10 +22,10 @@
 | v0.1.2 | 2026-07-09 | Arquitectura OTI | Nombra explícitamente el patrón DDD Lenguaje Publicado (*Published Language*) en §5, del cual el envelope CloudEvents y sus reglas de evolución son la implementación institucional |
 | v0.1.3 | 2026-07-09 | Arquitectura OTI | Completa §4.3 con las 2 situaciones faltantes de "cuándo NO usar el bus" (desacoplar sin análisis, observabilidad inmadura) y añade advertencias sobre Event Sourcing (no está en la lista de patrones, no es CQRS), ausentes en todo el ecosistema tras la redistribución del documento congelado |
 | v0.1.4 | 2026-07-09 | Arquitectura OTI | Corrige §8.6: `ExponentialBackOffWithMaxRetries` fue retirada de Spring Framework 6.x — el ejemplo no compilaba contra el stack vigente (Spring Boot 3.x). Se reemplaza por `ExponentialBackOff.setMaxAttempts(int)`, validado con build real de Maven en `template-backend-java-modular` |
+| v0.1.5 | 2026-07-14 | Arquitectura OTI | Corrige 5 citas residuales al documento congelado `LIN-ARQ-000` que quedaron sin migrar en la reconciliación de marco rector: §1.1, §1.3 (Hexagonal → `LIN-DIS-001 §2.3`), tabla de §2, principio P7 y regla de ADR en §9.4 — todas redirigidas a `LIN-ARQ-001 §3.3`/`§4.2` según corresponda |
 | v0.1.6 | 2026-08-09 | Arquitectura OTI | `§7.3` deja de reproducir el DDL de `EVT_OUTBOX` y remite a su dueño `LIN-BD-ORA-001 §3.10` (`GOB-CHK-001` H14.3). Las dos copias eran idénticas, pero es la misma estructura que ya divergió tres veces en el corpus; este lineamiento conserva lo suyo: el proceso de relevo y el contrato del evento |
 | v0.1.7 | 2026-08-17 | Arquitectura OTI | Revisión de fondo (`GOB-CHK-001` H28). **(1) El ejemplo de consumidor de `§8.3` perdía mensajes.** Capturaba el error recuperable, omitía el `acknowledge` y anotaba «Kafka reintentará desde el mismo offset» — con `ack-mode: MANUAL` eso **no ocurre**: el contenedor sigue con el registro siguiente y, al confirmarse uno posterior, el offset avanza por encima del fallido. Además implementaba a mano un `enviarADlq` que compite con el `DefaultErrorHandler` de `§8.6`, único mecanismo soportado. Reescrito para que las excepciones se propaguen. **(2) `§7.2` fijaba `retries: 3`**, que con la idempotencia activa acorta a tres intentos una ventana de 120 s gobernada por `delivery.timeout.ms` y contradice el propósito de `acks: all`. Eliminado. **(3) `§6.1` exigía «notación kebab-case»** cuando ninguno de sus ejemplos lleva guion y `ciclovida` sería `ciclo-vida` bajo esa regla; se describe la convención real. **(4)** El log de evento de `§11.2` omitía `span.id`; `§12.1` deja constancia de la verificación de namespaces pendiente con Plataforma (`LIN-K8S-001 §4.4`, que además citaba mal estos namespaces y se corrigió); y `§2` no listaba `LIN-DIS-001`, `LIN-PAT-001`, `LIN-VER-001`, `GOB-MAT-001` ni **`ADR-CLOUDEVENTS-001`**, que es la decisión que sustenta el envelope de `§5.2`. El documento pasa a **En revisión** |
 | v0.1.8 | 2026-08-18 | Arquitectura OTI | El apartado de excepción titulaba «Proceso de excepción (ADR)» y no definía identificador: una desviación de este lineamiento se registraba como «un ADR», instrumento que `GOB-MAT-001` reserva a las decisiones **institucionales** del Comité. Pasa a **`EXC-BUS-NNN`**, con vigencia acotada y fecha de revisión obligatoria (`GOB-CHK-001` H38) |
-| v0.1.5 | 2026-07-14 | Arquitectura OTI | Corrige 5 citas residuales al documento congelado `LIN-ARQ-000` que quedaron sin migrar en la reconciliación de marco rector: §1.1, §1.3 (Hexagonal → `LIN-DIS-001 §2.3`), tabla de §2, principio P7 y regla de ADR en §9.4 — todas redirigidas a `LIN-ARQ-001 §3.3`/`§4.2` según corresponda |
 
 ---
 
@@ -47,7 +47,7 @@
 14. [Responsabilidades](#14-responsabilidades)
 15. [Checklist de conformidad](#15-checklist-de-conformidad)
 16. [Anti-patrones](#16-anti-patrones)
-17. [Proceso de excepción (ADR)](#17-proceso-de-excepción-adr)
+17. [Proceso de excepción (ADR)](#17-proceso-de-excepción-exc-bus-nnn)
 18. [Glosario](#18-glosario)
 - [Apéndice A — Contrato de eventos (plantilla)](#apéndice-a--contrato-de-eventos-plantilla)
 - [Apéndice B — Catálogo de eventos (estructura)](#apéndice-b--catálogo-de-eventos-estructura)
@@ -439,7 +439,7 @@ public void procesarExpedientePresentado(
 }
 ```
 
-> **El listener no captura excepciones.** Deja que se propaguen: el `DefaultErrorHandler` de [§8.6](#86-configuracion-de-dlq-en-spring-kafka) aplica el backoff exponencial, reintenta el mismo registro y, agotados los intentos, lo publica en la DLQ y confirma el offset. Esa es la única implementación soportada; el consumidor no distingue a mano entre error recuperable y no recuperable ni publica en la DLQ por su cuenta.
+> **El listener no captura excepciones.** Deja que se propaguen: el `DefaultErrorHandler` de [§8.6](#86-configuración-de-dlq-en-spring-kafka) aplica el backoff exponencial, reintenta el mismo registro y, agotados los intentos, lo publica en la DLQ y confirma el offset. Esa es la única implementación soportada; el consumidor no distingue a mano entre error recuperable y no recuperable ni publica en la DLQ por su cuenta.
 >
 > **Por qué se retiró el ejemplo anterior.** Tenía dos defectos que se copiaban al proyecto. El primero es grave: capturaba el error recuperable, no confirmaba el offset y anotaba *«Kafka reintentará desde el mismo offset»*, lo cual **no ocurre**. Con `ack-mode: MANUAL`, omitir el `acknowledge` no provoca reentrega: el contenedor sigue con el registro siguiente, y en cuanto uno posterior se confirma, el offset avanza por encima del fallido. **El mensaje no se reintenta — se pierde**, y solo reaparecería tras un rebalanceo o reinicio. El segundo defecto era normativo: implementaba a mano un `enviarADlq` que compite con el mecanismo de `§8.6` (`GOB-CHK-001` H28).
 

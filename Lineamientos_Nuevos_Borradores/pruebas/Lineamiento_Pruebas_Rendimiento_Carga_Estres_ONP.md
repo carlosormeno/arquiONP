@@ -1,7 +1,7 @@
 # LIN-PERF-001 — Lineamiento de Pruebas de Rendimiento, Carga y Estrés ONP
 
 **Código:** LIN-PERF-001  
-**Versión:** v0.1.5  
+**Versión:** v0.1.6  
 **Estado:** En revisión  
 **Fecha:** 2026-08-17  
 **Propietario documental:** Arquitectura de Software — OTI  
@@ -21,6 +21,7 @@
 | v0.1.3 | 2026-08-17 | Arquitectura OTI | Revisión de fondo (`GOB-CHK-001` H30). **(1) `§8.3` era una tercera lista de Core Web Vitals**, sin umbrales y bajo la fórmula «cuando aplique», frente al gate **mandatorio** de `LIN-ARQ-001 §7.2`. Remite ahora al dueño y conserva lo que sí le es propio: medir el frontend **con el backend bajo carga**, que es distinto del Lighthouse de laboratorio del gate. **(2) `§11` admitía datos personales reales «con autorización»** y regulaba solo el contenido de los scripts, dejando fuera el riesgo real: restaurar un respaldo de producción en un ambiente de pruebas, que traslada el padrón de afiliados —DNI, nombres, montos, historial de aportes— a un entorno con controles más débiles. Se exige **enmascaramiento previo e irreversible**, con tabla de tratamiento por tipo de dato. **(3)** `§2` no listaba `LIN-DIS-001`, `LIN-BUS-001`, `GOB-MAT-001` ni la Ley N.° 29733. El documento pasa a **En revisión** |
 | v0.1.4 | 2026-08-17 | Arquitectura OTI | `§6.4` normaba cómo determinar la criticidad de un sistema, pero la escala Alta/Media/Baja se usaba sin dueño en `LIN-CICD-001` y `LIN-K8S-001`. Se declara a `LIN-ARQ-001 §5.4.1` fuente institucional de las bandas; este lineamiento conserva los criterios de determinación (`GOB-CHK-001` H11.2) |
 | v0.1.5 | 2026-08-18 | Arquitectura OTI | El apartado de excepción titulaba «Proceso ADR para excepciones» y no definía identificador: una desviación de este lineamiento se registraba como «un ADR», instrumento que `GOB-MAT-001` reserva a las decisiones **institucionales** del Comité. Pasa a **`EXC-PERF-NNN`**, con vigencia acotada y fecha de revisión obligatoria (`GOB-CHK-001` H38) |
+| v0.1.6 | 2026-08-21 | Arquitectura OTI | `§11.3` remite ahora a `SEC-R-003` (LIN-SEC-APP-001 §11.5), documento dueño de la política transversal de datos personales en ambientes no productivos, en vez de declarar la brecha como pendiente (`GOB-CHK-001` H40) |
 
 ---
 
@@ -45,7 +46,7 @@
 17. [Responsabilidades](#17-responsabilidades)  
 18. [Checklist de conformidad](#18-checklist-de-conformidad)  
 19. [Anti-patrones](#19-anti-patrones)  
-20. [Proceso ADR para excepciones](#20-proceso-adr-para-excepciones)  
+20. [Proceso ADR para excepciones](#20-proceso-de-excepción-exc-perf-nnn)  
 21. [Glosario](#21-glosario)  
 22. [Anexos](#22-anexos)  
 
@@ -536,7 +537,7 @@ Una prueba de volumen necesita datos realistas, y el atajo habitual es **restaur
 | Montos de pensión y aportes | Se conservan si el escenario lo exige, **desligados** de la identidad real |
 | Datos de salud y bancarios | Sustitución o exclusión |
 
-> **Alcance de esta sección.** Aquí se norma el tratamiento de datos para **pruebas de rendimiento**, que es donde el volumen hace tentador el atajo. Una política transversal de datos de prueba y enmascaramiento para todos los ambientes no productivos sigue **pendiente** en el corpus (`GOB-CHK-001` H11.3) y corresponde a `LIN-SEC-APP-001` como dueño de la protección de datos.
+> **Documento dueño: `SEC-R-003` (LIN-SEC-APP-001 §11.5).** Desde 2026-08-21 el corpus tiene política transversal de datos personales en ambientes no productivos: regla general, tratamiento por tipo de dato con consistencia referencial, responsabilidades y régimen de excepciones. Esta sección **no la redefine** — conserva lo propio de las pruebas de rendimiento: que el volumen hace tentador el atajo y qué documentar en una prueba de volumen (`§11.2`).
 
 #### Contenido de los scripts
 

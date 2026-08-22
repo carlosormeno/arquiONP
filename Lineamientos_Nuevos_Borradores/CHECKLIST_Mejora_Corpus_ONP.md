@@ -191,9 +191,9 @@ La otra prioridad 1 de la ruta de graduación. **El bloque normativo común es e
 
 ## H21 — Anclas internas rotas en todo el corpus (2026-08-09)
 
-- [ ] **H21.1** *(deuda de corpus — no bloquea graduación; el subconjunto bloqueante se cerró en H21.3)* **57 de 444 enlaces internos** siguen sin resolver, tras bajar de 83 con la normalización de BD y BI. 🟠 **83 de 435 enlaces internos (19%) no resuelven a ningún encabezado.** Detectado al revisar `LIN-TEST-001` y verificado en todo el corpus. Se concentran en `LIN-BD-ORA-001` (26), `LIN-OBS-001` (19), `LIN-DEV-JAVA-001` (11), `LIN-TEST-001` (11) y `LIN-API-REST-001` (10). Tres causas identificadas:<br>**(a) Encabezados con formato `## sección N`** — `LIN-BD-ORA-001` y `LIN-BI-001` los titulan así, generando anclas `#sección-1-alcance-y-vigencia`, mientras sus tablas de contenido enlazan a `#1-alcance-y-vigencia`. Ningún enlace del índice de esos dos documentos funciona.<br>**(b) Tildes omitidas en el enlace** — se enlaza `#23-catalogo-centralizado…` cuando el encabezado dice «Catálogo» y el ancla conserva la tilde.<br>**(c) Guion doble por rayas y guiones en el título** — «`4.8 Mask.java — utilidad No PII`» genera `#48-maskjava--utilidad-no-pii` (doble guion al eliminarse la raya), y el enlace escribe uno solo.<br>**Nota de confianza:** la generación de anclas depende del renderizador; la verificación usó el algoritmo de GitHub/GitLab. Los tres patrones se confirmaron contra los encabezados reales, pero conviene validar una muestra en el GitLab de la ONP antes de corregir en masa. **Un primer intento de medición dio 148 rotos por despojar tildes en la normalización — cifra falsa; la correcta es 83.**
+- [x] **H21.1** **Cerrado en H41.1.** 477 enlaces internos, **0 rotos**. Las tres causas eran mecánicas: tildes, guion doble por raya en el título, y retitulados no propagados al índice.
 - [x] **H21.3** 🔴 **Desbloqueado.** Encabezados de `LIN-BD-ORA-001` y `LIN-BI-001` normalizados a `## N. Título`. En BD el cambio hizo funcionar los enlaces del índice **sin tocarlos**, porque ya apuntaban a `#N-…`. **En BI ocurrió lo contrario y los rompí:** sus enlaces sí seguían el formato antiguo `#sección-N-…`, así que hubo que actualizarlos — detectado por la verificación posterior, no previsto al planificar. Corregidas además 15 anclas de BD con tilde omitida o guion simple donde el encabezado genera doble. **Resultado: 55/55 y 11/11 enlaces resuelven**; ambos documentos dejan de estar bloqueados por severidad. Las citas externas por número de sección no se vieron afectadas: el linter sigue en verde.
-- [ ] **H21.2** Extender el linter con una comprobación **C7** de anclas internas, una vez validado el algoritmo contra el renderizador real de la ONP. Es la única clase de enlace que hoy no se valida: C5 cubre enlaces a archivos y omite los `#ancla`.
+- [x] **H21.2** **Cerrado en H41.2.** C7 implementada y validada contra el corpus; documentada la dependencia del renderizador.
 
 ---
 
@@ -266,7 +266,7 @@ Detectado al preparar el siguiente documento a revisar, no por una comprobación
 - [x] **H25.3** **La causa era una brecha del linter, no un descuido.** C6 valida que la ruta del catálogo exista y contenga el código atribuido, pero **no la versión ni el estado**. Por eso el catálogo pudo desviarse a lo largo de veintitantas ediciones sin que nada saltara. Añadida **C8** — versión y estado del catálogo contra el encabezado real de cada documento. Verificada con tres fallos inyectados (desviación de estado, de versión, y el caso real de H25: el documento cambia y el catálogo no); los tres se detectan con el nivel correcto.
 - [x] **H25.4** **Una desviación iba en sentido contrario.** `LIN-BD-ORA-001` tenía la revisión de contenido cerrada desde H20 y la matriz lo daba por `En revisión`, pero **su propio encabezado seguía diciendo `Borrador`**. Ahí el equivocado era el documento, no el catálogo. → v0.1.13, `En revisión`. De paso se ordenó cronológicamente su historial, que volvía a estar desordenado.
 - [x] **H25.5** Documentadas C6 y C8 en `herramientas/README.md`, que solo describía C1–C5 pese a que C6 existía desde H12. Se deja constancia de que **C7 está reservado** para la comprobación de anclas internas (H21.2), pendiente de validar el algoritmo contra el renderizador real de la ONP.
-- [ ] **H25.6** *(candidato, no implementado)* **Comprobación C9 — historiales de versiones ordenados cronológicamente.** El desorden ya apareció tres veces (`LIN-BD-ORA-001` dos veces, `LIN-VER-001` una), y en H20 llegó a producir una **versión duplicada** por no ver cuál era la última fila. Es mecánicamente verificable y barato.
+- [x] **H25.6** **Cerrado en H41.3** como **C10** (C9 quedó para los IDs estables). Encontró 10 historiales desordenados en su primera ejecución.
 
 **Estado:** `GOB-MAT-001` v0.10.0, `LIN-BD-ORA-001` v0.1.13. Linter con 7 comprobaciones, en verde.
 
@@ -558,6 +558,61 @@ Cierra **H12.1**, abierto desde la primera revisión. Ataca la **causa raíz** d
 
 ---
 
+## H40 — Política transversal de datos personales (2026-08-21)
+
+Cierra **H11.3**. El corpus protegía el dato **en producción** —`LIN-SEC-APP-001 §11.3` lo clasifica, `§11.4` audita el acceso, `LIN-OBS-001` prohíbe PII en logs— y dejaba abierto el punto por el que realmente se fuga: **la copia hacia DEV o QA**.
+
+- [x] **H40.1** 🔴 **`SEC-R-003` (LIN-SEC-APP-001 §11.5).** Restaurar un respaldo productivo es el atajo natural para poblar un ambiente inferior, y en la ONP significa trasladar el padrón de afiliados completo —DNI, nombres, domicilios, montos, historial de aportes, datos de salud— a entornos con controles más débiles, más usuarios y sin auditoría. Regla general: **ningún ambiente no productivo contiene datos personales reales**, con enmascaramiento **irreversible y previo** a que el destino pueda leer el respaldo. El orden importa: enmascarar después de restaurar significa que el dato estuvo expuesto.
+- [x] **H40.2** **La consistencia referencial es lo que hace viable la regla.** Enmascarar cada tabla por separado rompe los `JOIN` y produce un ambiente inservible, lo que empuja al equipo a pedir una excepción — y así es como estas políticas mueren. Se exige que el mismo valor de entrada produzca el mismo de salida en todo el conjunto. Los montos y periodos **pueden conservarse**: dejan de ser dato personal al no ser atribuibles, y son necesarios para probar cálculos previsionales.
+- [x] **H40.3** **Plataforma como control de paso**, no solo como ejecutor: ningún respaldo productivo llega a un ambiente inferior sin pasar por el enmascaramiento. Las excepciones exigen aprobación de **Seguridad de la Información** y **fecha de borrado del dato**, no solo de revisión de la excepción. Se declaró además qué no es justificación válida —urgencia, falta de tiempo, que el ambiente sea interno—: la Ley N.° 29733 no distingue por ambiente.
+- [x] **H40.4** **Dos documentos habían normado por su cuenta el fragmento que les tocaba** declarando la brecha como pendiente: `LIN-PERF-001 §11.3` (H30.2) y `LIN-BI-001 §8.3.1` (H32.4). Ambos remiten ahora al dueño y conservan lo propio de su dominio.
+
+---
+
+## H41 — Cierre de la deuda de tooling y anclas (2026-08-21)
+
+Cierra **H21.1**, **H21.2**, **H25.6** y **H11.6**.
+
+- [x] **H41.1** **Las 79 anclas rotas reparadas — 477 enlaces internos, 0 rotos.** La medición previa daba 57 sobre 444; el crecimiento del corpus añadió más. Tres causas mecánicas: tilde omitida en el enlace (`#57-verificacion` contra un encabezado «Verificación»), guion simple donde el título genera **doble** por llevar raya, y retitulados que no se propagaron al índice — incluidos los seis que dejó el propio H38 al renombrar los apartados de excepción. El daño real no era estético: **la tabla de contenido de varios documentos era inservible**, y un documento normativo con índice roto no lo puede usar un contratista.
+- [x] **H41.2** **C7 implementada** (H21.2). El algoritmo se validó contra el corpus completo y se documentó su regla menos obvia: las **tildes se conservan** —son alfanuméricas— y una raya `—` produce guion doble. Queda declarado que, ante discrepancia con el GitLab real de la ONP, manda el renderizador. *(Detectó de inmediato un enlace de ejemplo en su propio README, que hubo que reescribir.)*
+- [x] **H41.3** **C10 implementada** (H25.6, renumerada porque C9 ya se usó para los IDs estables). **Encontró 10 historiales desordenados en su primera ejecución** — incluidos los de dos documentos `Vigente`—, todos ordenados. No es cosmético: en H20 el desorden llevó a crear una **versión duplicada**, porque la última fila de la tabla no era la última versión.
+- [x] **H41.4** **Checklist de graduación de WSO2** (H11.6). `ADR-WSO2-001` remitía a «actualizar `LIN-SEC-APP-001`, `LIN-API-REST-001` y este ADR» — tres documentos, cuando la transición toca **trece puntos** en ocho documentos. Se enumeraron con casilla, incluidos los menos evidentes: que el token deja de ser opaco y pasa a JWT (obliga a revisar toda mención en el corpus), que `ADR-TLS-INTERNO-001` tiene la graduación como disparador declarado, y que las APIs ya en producción **se registran conservando su estado, no se rehacen**.
+
+**Estado:** linter con **diez comprobaciones** en verde. `LIN-SEC-APP-001` v0.1.9, `LIN-PERF-001` v0.1.6, `LIN-BI-001` v0.1.4, `GOB-MAT-001` v0.27.0.
+
+
+---
+
+## H42 — `LIN-DOC-001`: el mapa documental queda completo (2026-08-21)
+
+Cierra **H11.5**, el último documento que `GOB-MAT-001` declaraba `Pendiente`. **Ningún documento del corpus queda sin elaborar.**
+
+- [x] **H42.1** **El documento se escribió por sustracción, no por acumulación.** El riesgo evidente era redactar un tratado que repitiera lo que ya norman otros nueve documentos —Javadoc, OpenAPI, ADR, contratos de evento, catálogos, ciclo de vida—. Se inventarió primero lo que **ya tenía dueño** y `§1.3` lo declara fuera de alcance explícitamente. Lo que queda es lo que nadie normaba.
+- [x] **H42.2** 🔴 **Ni el `README.md` ni el runbook estaban normados en ninguna parte.** El README es lo primero que lee quien hereda un sistema, y el corpus solo exigía que contuviera la Declaración de Conformidad —una sección— sin decir nada del resto. `DOC-R-001` fija ocho secciones mínimas, incluida la que más falta hace cuando el sistema se hereda: **qué dependencias externas tiene y qué ocurre si no están disponibles**.
+- [x] **H42.3** 🔴 **El runbook de operación no existía como artefacto.** `ARQ-R-006` (LIN-ARQ-001 §5.4.3) exige un procedimiento de recuperación para criticidad Alta y Media, pero nada decía dónde vive ni qué más debe saber quien atiende un incidente de madrugada. `DOC-R-003` lo norma con una regla que lo mantiene vivo: **todo incidente que requiera intervención humana obliga a revisar el runbook** — si el procedimiento documentado no funcionó, se corrige. Un runbook que no crece tras los incidentes no se está usando.
+- [x] **H42.4** **La notación de modelado tenía autoridad implícita.** «Archi (ArchiMate 3.x) — estándar aprobado en la ONP» constaba en **una nota al margen de `GOB-PLA-001`**, no en un lineamiento. `DOC-R-002` la eleva a norma, añade Mermaid para diagramas embebidos —que `LIN-BI-001` ya usaba sin respaldo— y fija la regla que evita artefactos muertos: **la fuente de todo diagrama se versiona**; un `.png` suelto nadie puede modificarlo y acaba sustituido por otro que dice algo distinto.
+- [x] **H42.5** **Se aclaró la relación con C4**, que `LIN-ARQ-001 §1.2` usa como referencia conceptual de los tres niveles. C4 es un modelo de niveles de abstracción, no una notación de dibujo: en la ONP esos niveles se materializan con las vistas ArchiMate. No se exige producir diagramas «C4» aparte — la ambigüedad habría llevado a algún proyecto a duplicar el modelado.
+- [x] **H42.6** **Regla de obsolescencia (P4):** documentación desactualizada es **peor** que ausente, porque induce a error con apariencia de autoridad. Un artefacto que ya no se mantiene se marca retirado o se elimina — Git conserva el historial.
+
+**Estado:** `LIN-DOC-001` v0.1.0 **En revisión**; `GOB-PLA-001` v2.8, `LIN-K8S-001` v0.1.19, `GOB-MAT-001` v0.28.0. Linter en verde con las diez comprobaciones.
+
+
+---
+
+## H43 — Versionado del corpus como conjunto (2026-08-21)
+
+Cierra **H8.5**, abierto desde la primera revisión a la espera de que hubiera algo estable que etiquetar.
+
+- [x] **H43.1** **El problema no era técnico sino de exigibilidad.** Un TDR o un contrato no invoca «`LIN-K8S-001` v0.1.19»: invoca *el corpus vigente en una fecha*. Sin marca del conjunto, reconstruir qué reglas regían cuando se firmó un contrato exige revisar 22 historiales por separado. Normado en `GOB-MAT-001`.
+- [x] **H43.2** **Se adoptó el formato `v<MAJOR>.<MINOR>.<PATCH>` que `LIN-VER-001 §15.1` exige al código**, descartando el `corpus-v2026.08` que este checklist proponía originalmente. No cumplía la norma del propio corpus, y si el corpus se etiquetara con un formato propio la primera pregunta razonable de una fábrica sería por qué ella sí debe cumplirlo. Es el mismo tipo de incoherencia que H8 encontró en los nombres de archivo.
+- [x] **H43.3** **`MAJOR` incrementa cuando un documento gradúa a `Vigente`**, no cuando cambia mucho contenido. El criterio es qué se puede exigir contractualmente: una graduación altera el conjunto de reglas invocables en un TDR, y eso es un cambio incompatible para quien contrata.
+- [x] **H43.4** **Etiquetado como `v0.9.0`, no `v1.0.0`.** El corpus está **completo** —ningún documento en `Borrador` ni `Pendiente`— pero **no graduado**: solo `LIN-OBS-001` y `LIN-TEST-001` son `Vigente`, y por la regla de exigibilidad los otros quince no son invocables en un TDR. Un `v1.0.0` se leería como «ya rige» y no rige todavía. El `v1.0.0` queda reservado a la graduación del Comité (H22.4), de modo que la versión signifique algo verificable.
+
+**Estado:** `GOB-MAT-001` v0.29.0. Tag `v0.9.0` creado en local, **sin push** — la publicación al remoto es decisión de Arquitectura.
+
+
+---
+
 ## PRIORIDAD 1 — Estructurales (atacan la causa raíz)
 
 ### H6 — Referencias cruzadas rotas sistémicas (LIN-PAT-001, Glosario, Brecha)
@@ -580,7 +635,7 @@ Cierra **H12.1**, abierto desde la primera revisión. Ataca la **causa raíz** d
 - [x] **H8.2** **21 archivos renombrados con `git mv`** (historial preservado: Git los registra como renombrados, no como borrado+alta) y **39 referencias actualizadas** en `GOB-MAT-001`, `GOB-CHK-001` y el banner de `LIN-ARQ-000`. Verificado: 14 enlaces relativos comprobados, 0 rotos; el linter pasa C1 y C5 en verde.
 - [x] **H8.3** **Corregido el criterio: las copias `_OLD` NO se eliminan.** El planteamiento inicial de este ítem («eliminar la copia muerta; Git conserva el historial») fue **rechazado por Arquitectura**: los archivos `_OLD` se conservan en el repositorio como respaldo de consulta y lo que corresponde es **no considerarlos** — quedan fuera de toda validación y de toda cita, no son fuente autoritativa de ningún tema y ningún lineamiento los referencia. El archivo `versionamiento/..._v0.1.0_OLD.md` llegó a eliminarse por una lectura errónea de esa instrucción y fue **restaurado íntegro** (1.239 líneas, verificado). Regla vigente incorporada a `GOB-MAT-001` y operacionalizada en el linter, que ignora los sufijos `_OLD`/`_BACKUP`/`_obsoleto`/`_DEPRECADO`.
 - [x] **H8.4** Eliminadas de 6 pies de página. **Cinco de los seis estaban desactualizados respecto a su propio encabezado** (FE-ANG declaraba v0.1.0 con header v0.1.2; DEV-JAVA v0.1.2 con header v0.1.9; BD-ORA v0.1.7 con header v0.1.9; OBS v0.1.0 con header v0.1.2; API-REST v0.1.2 con header v0.1.5). Un mismo documento llegaba a declarar tres versiones distintas a la vez: nombre de archivo, encabezado y pie.
-- [ ] **H8.5** Taggear releases del corpus en Git (ej. `corpus-v2026.08`) según la propia práctica que `LIN-VER-001 §15` exige al código. *(Pendiente: requiere commit previo de los cambios en curso.)*
+- [x] **H8.5** **Cerrado en H43.** Corpus etiquetado `v0.9.0` con el formato que `LIN-VER-001 §15.1` exige al código; regla de versionado del conjunto normada en `GOB-MAT-001`, con `MAJOR` ligado a la graduación de documentos.
 - [x] **H8.6** *(detectado y corregido en H2/H3, 2026-08-05)* Los tres documentos de arquitectura — `LIN-ARQ-001` (Nivel 1), `LIN-DIS-001` (Nivel 2) y `LIN-PAT-001` (catálogo) — eran los **únicos del corpus sin sección de historial de versiones**, pese a que todos los demás lineamientos la tienen y a que la propia matriz exige trazabilidad. Historial incorporado a los tres. Las versiones previas quedan agregadas como rango con nota "detalle no registrado" (no es reconstruible desde los documentos). *(La Matriz `GOB-MAT-001` tenía el mismo problema y se corrigió en H5.6.)*
 
 ### H9 — Residuo de build versionado en template
@@ -616,10 +671,10 @@ Cierra **H12.1**, abierto desde la primera revisión. Ataca la **causa raíz** d
 
 - [x] **H11.1** **Cerrado en H24.** `§1.3` dejó de presentar RFC 7807 como «estándar de respuestas de error» —lo citaba como normativa sin adoptarlo— y `§4.1` explica ahora por qué la ONP no usa `application/problem+json`. Añadida la regla de que `codHttp` es réplica informativa y el status line HTTP es la fuente de verdad, con el motivo operativo: proxys, gateway, `http.server.requests` y las alertas de Kibana leen el status line, así que un `200` con `codHttp: 500` deja el error invisible en toda la cadena.
 - [x] **H11.2** **Cerrado en H33.** `LIN-ARQ-001 §5.4` asume la continuidad operativa: bandas de criticidad con RTO/RPO objetivo, política de respaldo por componente, recuperación a nivel de sistema y pruebas de restauración con medición del tiempo real. **Pendiente la ratificación de los valores por el Comité con las áreas usuarias (H33.10)** — los números son propuesta técnica, no decisión de arquitectura.
-- [ ] **H11.3** Política transversal de **datos de prueba y enmascaramiento de PII** para ambientes no productivos (Ley 29733). **Avance en H30.2:** `LIN-PERF-001 §11.3` ya norma el enmascaramiento previo e irreversible al restaurar respaldos productivos, con tabla por tipo de dato — pero solo para su ámbito. Falta la política transversal, cuyo dueño natural es `LIN-SEC-APP-001`.<br>**Avance adicional en H32.4:** `LIN-BI-001 §8.3.1` cubre la capa Bronze del Lakehouse, que es la mayor concentración de datos personales replicados del corpus. Sigue faltando la política transversal.
+- [x] **H11.3** **Cerrado en H40.** `SEC-R-003` (LIN-SEC-APP-001 §11.5) norma los datos personales en ambientes no productivos: regla general sin excepción por conveniencia, tratamiento por tipo de dato con consistencia referencial, Plataforma como control de paso, alternativas preferentes y excepciones que exigen aprobación de Seguridad de la Información más **fecha de borrado del dato**. `LIN-PERF-001` y `LIN-BI-001` remiten al dueño.
 - [x] **H11.4** **Cerrado en H24, y era peor de lo registrado.** No es que faltara definir el mecanismo: `LIN-SEC-APP-001 §7.1` ya lo exigía —«rate limiting básico configurado en la aplicación si no hay gateway»— pero `LIN-API-REST-001 §8.4` afirmaba lo contrario, que *«los servicios no implementan rate limiting internamente»*, atribuyéndolo a un gateway que sigue en PoC. La contradicción dejaba a **toda** API sin control, no solo a las internas. Corregido, con `codDetRespuesta 302` / `429` incorporado al catálogo.
-- [ ] **H11.5** `LIN-DOC-001` (documentación y modelado): sigue Pendiente en la Matriz pero la `Plantilla_Documento_Arquitectura` ya existe — hay dueño natural para arrancarlo.
-- [ ] **H11.6** `ADR-WSO2-001`: convertir la lista de documentos a actualizar cuando WSO2 gradúe en checklist con checkboxes (no depender de memoria).
+- [x] **H11.5** **Cerrado en H42.** `LIN-DOC-001` v0.1.0 creado y en el catálogo. Con él, **ningún documento del corpus queda `Pendiente`**.
+- [x] **H11.6** **Cerrado en H41.4.** `ADR-WSO2-001` lleva checklist con 13 puntos en 8 documentos, frente a los 3 que enumeraba antes.
 
 ---
 
