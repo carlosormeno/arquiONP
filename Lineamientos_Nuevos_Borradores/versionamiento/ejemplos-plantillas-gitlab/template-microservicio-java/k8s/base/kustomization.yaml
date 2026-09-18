@@ -1,0 +1,20 @@
+# EJEMPLO DE REFERENCIA — LIN-VER-001 Anexo F / LIN-K8S-001 Anexo A
+# Base Kustomize del microservicio. Completar con los manifiestos reales del sistema.
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Reemplazar con el nombre real del namespace y microservicio
+namespace: nombre-microservicio
+
+resources:
+  - deployment.yaml
+  - service.yaml
+  - configmap.yaml
+  # - hpa.yaml          # si se requiere autoescalado
+  - networkpolicy.yaml  # obligatoria para todo servicio que reciba tráfico interno (LIN-K8S-001 sección 9.1 y Anexo E)
+
+commonLabels:
+  app.kubernetes.io/name: nombre-microservicio
+  app.kubernetes.io/part-of: nombre-microservicio
+  app.kubernetes.io/managed-by: kustomize

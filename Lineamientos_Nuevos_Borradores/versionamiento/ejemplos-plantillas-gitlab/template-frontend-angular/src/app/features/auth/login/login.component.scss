@@ -1,0 +1,39 @@
+.onp-login {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: var(--onp-bg-page);
+}
+
+.onp-login__card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  max-width: 360px;
+  padding: 32px;
+  border-radius: 8px;
+  background: var(--onp-bg-surface);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+}
+
+.onp-login__logo {
+  height: 48px;
+  width: auto;
+  align-self: center;
+}
+
+.onp-login__title {
+  text-align: center;
+  font-size: var(--onp-font-size-h1);
+  margin: 0 0 8px;
+}
+
+.onp-login__field {
+  width: 100%;
+}
+
+.onp-login__submit {
+  margin-top: 8px;
+}

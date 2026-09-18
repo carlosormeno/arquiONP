@@ -1,0 +1,51 @@
+spring:
+  application:
+    name: onp-template-worker
+  # Por defecto NO se levanta servidor web embebido: este proceso no expone API REST. El perfil
+  # "worker" (k8s/base/deployment.yaml) lo reactiva a "servlet" porque Actuator necesita una pila
+  # web para exponer /actuator/health* por HTTP (LIN-K8S-001 §11.1/§11.2). El perfil "job" hereda
+  # este valor "none" sin necesidad de sobrescribirlo — un Job/CronJob de vida corta no necesita
+  # servidor embebido (ver README, "Perfiles y variantes de workload").
+  main:
+    web-application-type: none
+  jpa:
+    open-in-view: false
+    hibernate:
+      # El esquema lo crea Flyway desde db/migration/ (LIN-BD-ORA-001 §8.4) — nunca Hibernate.
+      ddl-auto: validate
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    consumer:
+      group-id: ${spring.application.name}-grp
+      auto-offset-reset: earliest
+      # Ack manual obligatorio (LIN-BUS-001 §8.1/§8.3) — ver TareaSolicitadaConsumer.
+      enable-auto-commit: false
+      properties:
+        spring.json.trusted.packages: pe.gob.onp.template.worker.messaging.dto
+    listener:
+      ack-mode: manual
+    # Presente aunque solo lo use el perfil "worker": no abre conexión al broker en el arranque
+    # (ver comentario en KafkaConsumerErrorConfig), así que no afecta a los pods "job".
+
+info:
+  app:
+    version: "@project.version@"
+
+onp:
+  worker:
+    job:
+      # Tamaño de página de lectura de ActualizacionMasivaJobRunner — externalizado para poder
+      # ajustarlo por ambiente sin recompilar (ver k8s/overlays/*/kustomization.yaml).
+      tamanio-pagina: 500
+
+management:
+  info:
+    env:
+      enabled: true
+  # Independiente de spring.main.web-application-type: el exportador OTLP usa un cliente HTTP
+  # saliente propio, no el servidor embebido de la aplicación — por eso esta sección es común a
+  # los perfiles "worker" y "job" (LIN-OBS-001).
+  otlp:
+    tracing:
+      export:
+        protocol: http/protobuf

@@ -1,6 +1,6 @@
 # LIN-FE-ANG-001 — Estándar de Diseño Web Frontend ONP
 **Código:** LIN-FE-ANG-001  
-**Versión:** 0.1.5  
+**Versión:** 0.1.6  
 **Estado:** En revisión  
 **Fecha:** 2026-08-17  
 **Área responsable:** OTI — Oficina de Tecnologías de la Información  
@@ -18,6 +18,7 @@
 | 0.1.3 | 2026-08-17 | Arquitectura OTI | Revisión de fondo (`GOB-CHK-001` H29). **(1) `§16.4` desactivaba `readOnlyRootFilesystem`**, control obligatorio de `LIN-K8S-001 §14.1`, cuya nota 14.1 prohíbe expresamente esa salida y prescribe montar los directorios de escritura. Corregido con `emptyDir` en `/tmp` de 16 MB; se añaden además `capabilities: drop: ALL` y se marca el `securityContext` como obligatorio, no «recomendado». **(2) `§9.6` clasificaba `200` como código de éxito** junto a `000`, y dos filas más abajo como error de negocio: un componente que siguiera la primera lectura trataría un HTTP 422 —regla de negocio rechazada— como operación exitosa, navegando al listado con mensaje de confirmación. El éxito con advertencias es `001`. Incorporado también `302`/429. **(3) `§14.1` publicaba un umbral propio de cobertura** («70% de líneas»), métrica que ni siquiera figura entre las tres de `LIN-TEST-001 §5.2` —documento dueño y vigente—: un proyecto podía cumplirlo con 40% de *branches* y creerse conforme. Ahora remite al dueño. **(4)** `§9.4` no contemplaba el 429; el `error_log` de nginx apuntaba a `/var/log/nginx/error.log`, incompatible con el sistema de archivos de solo lectura y con `LIN-K8S-001 §15.1`. El documento pasa a **En revisión** |
 | 0.1.4 | 2026-08-17 | Arquitectura OTI | `§15.2` republicaba los umbrales de Core Web Vitals sin declarar que su dueño es `LIN-ARQ-001 §7.2` — segunda fuente del mismo dato, el patrón que ya divergió tres veces con los timeouts. Los valores coincidían; se marca la tabla como referencia de trabajo y se señala que el marco rector publica siete umbrales, no cuatro (`GOB-CHK-001` H30) |
 | 0.1.5 | 2026-08-18 | Arquitectura OTI | El apartado de excepción titulaba «Proceso de excepción a este estándar» y no definía identificador: una desviación de este lineamiento se registraba como «un ADR», instrumento que `GOB-MAT-001` reserva a las decisiones **institucionales** del Comité. Pasa a **`EXC-FE-NNN`**, con vigencia acotada y fecha de revisión obligatoria (`GOB-CHK-001` H38) |
+| 0.1.6 | 2026-09-18 | Arquitectura OTI | Hallazgos surgidos al construir el primer scaffold Angular real y compilable de `template-frontend-angular` (antes solo infraestructura DevOps sin código). **(1) `§8.4` publicaba la API de theming Material 2** (`mat.define-palette`, `mat.define-light-theme`...), que Angular Material ya no expone sin el prefijo `m2-`: el código no compila contra la versión que instala Angular CLI hoy. Reemplazado por la API M3 vigente (`mat.theme()`), verificada compilando. **(2) `§15.3` enviaba el log de error a `${environment.apiBase}/v1/...`**, campo inexistente en el modelo de `environment` de `§13.1` (que define `apiUrl`, ya con `/api/v1` incluido) — la ruta además habría duplicado el segmento de versión. Corregido a `${environment.apiUrl}/logs/frontend-error`. **(3) ESLint no se mencionaba en ningún punto del documento**, a diferencia del rigor de Checkstyle en el stack Java — se agrega a `§3` y nueva `§14.3 Linting` como gate obligatorio de CI/CD. Queda pendiente, sin cerrar: `§8.1/8.2/8.4` declaran el color y la tipografía institucional como `[PLACEHOLDER]` literal — requiere los valores reales de marca ONP, que este lineamiento no tiene |
 
 ---
 
@@ -75,6 +76,7 @@ Aplica a todo proyecto de desarrollo web frontend que:
 | Router | Angular Router | nativo |
 | Testing unitario | Jest o Karma/Jasmine | LTS vigente |
 | Testing e2e | Playwright | LTS vigente |
+| Linting | ESLint + `angular-eslint` | LTS vigente |
 | Node.js (build) | Node.js | LTS vigente |
 
 ### 3.1 Justificación del stack
@@ -437,25 +439,30 @@ $bp-xl:  1280px;   // desktop wide
 
 ### 8.4 Tema Angular Material
 
+> **API de theming Material 3 (M3), no M2.** Angular Material dejó de recomendar la API M2 (`mat.define-palette`, `mat.define-light-theme`, `mat.define-typography-config`, `mat.all-component-themes`) en favor del mixin `mat.theme()` sobre variables CSS (`--mat-sys-*`). El código de abajo usa la API M3 vigente, verificada compilando contra Angular Material ^22 (Angular CLI actual). Si el proyecto fija una versión de Angular Material que aún dependa de M2, usar los símbolos con prefijo `m2-` (`mat.m2-define-palette`, etc.).
+
 ```scss
 // styles/_mat-theme.scss
 @use '@angular/material' as mat;
 
-$onp-primary-palette: mat.define-palette(mat.$[PLACEHOLDER]-palette);
-$onp-accent-palette:  mat.define-palette(mat.$[PLACEHOLDER]-palette);
-
-$onp-theme: mat.define-light-theme((
-  color: (
-    primary: $onp-primary-palette,
-    accent:  $onp-accent-palette,
-  ),
-  typography: mat.define-typography-config(
-    $font-family: var(--onp-font-family),
-  ),
-  density: 0,
-));
-
-@include mat.all-component-themes($onp-theme);
+html {
+  // `primary`/`tertiary` son PLACEHOLDERS de trabajo (mat.$azure-palette /
+  // mat.$blue-palette) hasta generar la paleta M3 real a partir del color
+  // institucional oficial ONP con la Material Theme Builder — ver §8.1.
+  // La tipografía se repite aquí como string literal (Sass no resuelve
+  // custom properties CSS en tiempo de compilación del mixin): debe
+  // mantenerse sincronizada a mano con --onp-font-family de §8.2.
+  @include mat.theme(
+    (
+      color: (
+        primary: mat.$azure-palette,
+        tertiary: mat.$blue-palette,
+      ),
+      typography: 'Roboto, Arial, Helvetica, sans-serif',
+      density: 0,
+    )
+  );
+}
 ```
 
 ### 8.5 Tailwind CSS — configuración
@@ -967,6 +974,18 @@ Flujos obligatorios a cubrir por cada feature:
 - Alta con datos inválidos → errores visibles por campo.
 - Acceso a ruta protegida sin sesión → redirección a `/login`.
 
+### 14.3 Linting
+
+Paridad de rigor con el stack backend: así como Checkstyle bloquea el build Java ante una violación (`LIN-DEV-JAVA-001`), **ESLint es gate obligatorio de CI/CD** para todo proyecto Angular — un pipeline que lo omite no está conforme a este lineamiento.
+
+- **Configuración base:** `@angular-eslint/schematics`, generada con `ng add @angular-eslint/schematics` sobre las reglas recomendadas de `angular-eslint` (`recommended` + `recommended--extra`) y `@typescript-eslint/recommended`.
+- **Gate de pipeline:** `ng lint` (o `eslint .`) debe correr en CI y **fallar el build ante cualquier error** — no basta con reportarlo como advertencia.
+- **Alcance:** `src/**/*.ts` y `src/**/*.html` (plantillas), excluyendo artefactos generados (`dist/`, `.angular/`).
+
+```bash
+ng lint
+```
+
 ---
 
 ## 15. Observabilidad y performance
@@ -1175,7 +1194,7 @@ export class GlobalErrorHandler implements ErrorHandler {
     console.error(error);
 
     if (environment.production) {
-      this.http.post(`${environment.apiBase}/v1/logs/frontend-error`, {
+      this.http.post(`${environment.apiUrl}/logs/frontend-error`, {
         message: error instanceof Error ? error.message : String(error),
         stack:   error instanceof Error ? error.stack   : null,
         url:     window.location.href,

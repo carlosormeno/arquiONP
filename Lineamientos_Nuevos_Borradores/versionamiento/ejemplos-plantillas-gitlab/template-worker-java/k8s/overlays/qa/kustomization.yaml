@@ -1,0 +1,29 @@
+# EJEMPLO DE REFERENCIA — LIN-VER-001 Anexo F / LIN-K8S-001 Anexo A
+# Overlay para ambiente QA (rama ONP_QA)
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../base
+
+# Imagen promovida sin reconstrucción (LIN-K8S-001 sección 6.4)
+# El campo "name" debe ser la ruta COMPLETA de la imagen (registro+path), no el
+# nombre corto — Kustomize compara por coincidencia exacta contra la imagen del
+# Deployment base; con el nombre corto, newTag/newName se ignoraban en silencio (sin
+# error) y el overlay nunca sustituía el tag real. Bug real encontrado y corregido
+# (GOB-CHK-001, verificado comparando la salida de `kubectl kustomize` antes/después).
+images:
+  - name: registry.gitlab.onp.gob.pe/aplicaciones/nombre-sistema/worker-nombre-sistema
+    newTag: "1.0.0"   # tag semántico aprobado desde ONP_PQA
+
+replicas:
+  - name: worker-nombre-sistema
+    count: 2
+
+# A diferencia de template-backend-java (que deja "dev" fijo en todos los ambientes — una
+# inconsistencia de esa plantilla hermana que no se replica aquí, ver README "Hallazgos"),
+# este overlay SÍ sobrescribe el ambiente de SPRING_PROFILES_ACTIVE porque el worker combina
+# ambiente + variante en la misma variable (ver deployment.yaml/cronjob.yaml en la base).
+patchesStrategicMerge:
+  - patch-profile-qa.yaml

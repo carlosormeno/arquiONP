@@ -1,0 +1,77 @@
+# EJEMPLO DE REFERENCIA — LIN-K8S-001 §4.1 (fila "Job puntual" -> Job)
+# Job puntual: migración, carga controlada o tarea batch de una sola ejecución
+# (ActualizacionMasivaJobRunner, perfil "job"). Es la MISMA imagen y la MISMA clase Java que
+# cronjob.yaml — solo cambia el recurso K8s que la invoca (ver README).
+#
+# NO está en k8s/base/kustomization.yaml "resources:" a propósito: un Job es, por diseño,
+# de una sola ejecución (spec.template es inmutable). Si viviera en la base que se re-aplica en
+# cada `kubectl apply -k` normal, el segundo apply fallaría (o, peor, no volvería a ejecutar
+# nada porque el objeto ya existe). Este manifiesto se invoca ad hoc:
+#   kubectl create -f k8s/base/job.yaml -n <namespace>
+# típicamente como un paso puntual del pipeline (LIN-CICD-001), nunca con `apply` continuo.
+# `metadata.generateName` (en vez de `name`) es a propósito: cada ejecución crea un objeto Job
+# nuevo con sufijo único, para poder correr la misma migración/carga más de una vez sin chocar
+# con el nombre de una ejecución anterior.
+
+apiVersion: batch/v1
+kind: Job
+metadata:
+  generateName: job-nombre-sistema-
+  labels:
+    app.kubernetes.io/name: job-nombre-sistema
+    app.kubernetes.io/part-of: nombre-sistema
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/component: job
+    app.kubernetes.io/managed-by: kustomize
+spec:
+  backoffLimit: 2
+  # Sin retención larga de pods terminados en namespaces con cuota ajustada (Plataforma).
+  ttlSecondsAfterFinished: 86400
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: job-nombre-sistema
+        app.kubernetes.io/part-of: nombre-sistema
+        app.kubernetes.io/version: "1.0.0"
+        app.kubernetes.io/component: job
+        app.kubernetes.io/managed-by: kustomize
+    spec:
+      serviceAccountName: job-nombre-sistema
+      restartPolicy: Never
+      containers:
+        - name: job-nombre-sistema
+          image: registry.gitlab.onp.gob.pe/aplicaciones/nombre-sistema/worker-nombre-sistema:1.0.0
+          imagePullPolicy: IfNotPresent
+          env:
+            # "job" activa ActualizacionMasivaJobRunner. Sin puerto HTTP: no hay Actuator ni
+            # probes en esta variante (LIN-K8S-001 §4.1 no las exige para `Job`).
+            - name: SPRING_PROFILES_ACTIVE
+              value: dev,job
+          envFrom:
+            - configMapRef:
+                name: worker-nombre-sistema-config
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "512Mi"
+            limits:
+              cpu: "1000m"
+              memory: "1Gi"
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir:
+            medium: Memory
+            sizeLimit: 64Mi
+      # Menor que en deployment.yaml: no hay grupo de consumo Kafka del que salir limpiamente,
+      # solo el proceso batch terminando por sí mismo vía System.exit.
+      terminationGracePeriodSeconds: 10

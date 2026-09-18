@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: worker-nombre-sistema-config
+data:
+  APP_DESCRIPTION: "Plantilla worker/job ONP"
+  # Ejemplo de parámetro de negocio externalizado — ver
+  # ActualizacionMasivaJobRunner#tamanioPagina y application.yml (onp.worker.job.tamanio-pagina).
+  # Relaxed binding de Spring Boot para variables de entorno: los puntos se convierten en "_" y
+  # los guiones se ELIMINAN (no se convierten en "_", porque "_" ya está reservado como separador
+  # de nivel) — por eso "tamanio-pagina" se reduce a "TAMANIOPAGINA" sin guion.
+  ONP_WORKER_JOB_TAMANIOPAGINA: "500"

@@ -1,0 +1,90 @@
+spring:
+  application:
+    name: onp-template-microservicio
+  datasource:
+    url: ${ORACLE_URL:jdbc:oracle:thin:@//localhost:1521/XEPDB1}
+    username: ${ORACLE_USER:onp_defuncion}
+    password: ${ORACLE_PASSWORD:}
+  jpa:
+    open-in-view: false
+    hibernate:
+      # El esquema lo crea Flyway desde db/migration/ (LIN-BD-ORA-001 §8.4) — nunca Hibernate.
+      ddl-auto: validate
+
+info:
+  app:
+    version: "@project.version@"
+
+app:
+  description: "Plantilla institucional ONP — Microservicio independiente Hexagonal (Estadio 3)"
+
+# Punto de salida externo (RENIEC / Registro Civil) — ver infrastructure.config.RegistroCivilClientConfig
+# y RegistroCivilHttpAdapter. Timeouts según categoría "Alta demanda / Ruta crítica interactiva"
+# de LIN-DIS-001 §6.1 (connect <=1.5-2s, read/response 2-3s).
+onp:
+  cliente:
+    registro-civil:
+      base-url: ${REGISTRO_CIVIL_BASE_URL:https://registro-civil.reniec.gob.pe}
+      connect-timeout-ms: 1500
+      response-timeout-ms: 3000
+      max-conexiones: 50
+
+# Circuit Breaker + Bulkhead OBLIGATORIOS en Microservicio (LIN-DIS-001 §6.2/§6.3, DIS-R-009).
+# La máquina de estados replica exactamente la tabla normativa de §6.2 (ya alineada con lo que
+# Resilience4j puede expresar sin código a medida — CircuitBreakerConfig no admite un
+# failureRateThreshold propio por estado):
+#   CERRADO -> ventana móvil de 100 peticiones, apertura si >50% fallan o son lentas (>3s)
+#   ABIERTO -> 30 segundos de rechazo local (fail-fast), sin intento de red
+#   SEMI-ABIERTO -> 10 peticiones de prueba tras los 30s, mismo umbral 50% (≥5 de 10 exitosas)
+resilience4j:
+  circuitbreaker:
+    instances:
+      registroCivil:
+        register-health-indicator: true
+        sliding-window-type: COUNT_BASED
+        sliding-window-size: 100
+        minimum-number-of-calls: 20
+        failure-rate-threshold: 50
+        slow-call-duration-threshold: 3s
+        slow-call-rate-threshold: 50
+        wait-duration-in-open-state: 30s
+        permitted-number-of-calls-in-half-open-state: 10
+  bulkhead:
+    instances:
+      registroCivil:
+        max-concurrent-calls: 50
+        max-wait-duration: 0
+
+management:
+  info:
+    env:
+      enabled: true
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: when-authorized
+    prometheus:
+      enabled: true
+  health:
+    livenessState:
+      enabled: true
+    readinessState:
+      enabled: true
+    circuitbreakers:
+      enabled: true
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  otlp:
+    tracing:
+      export:
+        protocol: http/protobuf
+
+springdoc:
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui.html
+  api-docs:
+    enabled: true

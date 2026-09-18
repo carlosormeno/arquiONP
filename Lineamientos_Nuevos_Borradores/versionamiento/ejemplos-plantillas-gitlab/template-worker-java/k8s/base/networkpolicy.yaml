@@ -1,0 +1,77 @@
+# EJEMPLO DE REFERENCIA — LIN-K8S-001 sección 9.1 y Anexo E
+#
+# Alcance: SOLO los pods Worker/Deployment (app.kubernetes.io/component: worker). Job y CronJob
+# NO reciben tráfico entrante — no exponen puerto, no tienen Service, no hay probes HTTP — así
+# que no hay Ingress que autorizar para ellos y esta política no los selecciona. Su egress
+# (Kafka no aplica; sí Oracle y OTEL Collector) queda fuera de esta política y podría agregarse
+# como NetworkPolicy propia solo-egress si Plataforma lo exige; por defecto, en un namespace sin
+# políticas de egress-por-defecto-deny, un pod sin NetworkPolicy propia mantiene egress abierto,
+# igual que cualquier otro pod del namespace.
+#
+# Para el Worker, esta política SÍ es obligatoria por la misma razón que en template-backend-java:
+# aunque este worker no sirve tráfico de negocio, expone /actuator/prometheus en el puerto 8080
+# y por tanto "recibe tráfico dentro del cluster" en el sentido de la sección 9.1 (scrape de
+# Prometheus). No se abre ingress-nginx ni tráfico entre pods del sistema porque este worker no
+# tiene consumidores HTTP internos — a diferencia de template-backend-java, aquí no hay Service.
+#
+# Ajustar los selectores al sistema real antes de desplegar.
+
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: worker-nombre-sistema-netpol
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/component: worker
+  policyTypes:
+    - Ingress
+    - Egress
+
+  ingress:
+    # Scrape de Prometheus hacia /actuator/prometheus — único tráfico entrante de este worker.
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: monitoring
+      ports:
+        - protocol: TCP
+          port: 8080
+
+  egress:
+    # Resolución DNS dentro del cluster
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    # Broker Kafka (LIN-BUS-001 §12.1) — ajustar el namespace/sufijo al que confirme Plataforma
+    # (ver la nota de gobernanza sobre namespaces compartidos en LIN-K8S-001 §4.4).
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kafka-dev
+      ports:
+        - protocol: TCP
+          port: 9092
+    # Colector OTEL (LIN-OBS-001)
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: observability
+      ports:
+        - protocol: TCP
+          port: 4317
+        - protocol: TCP
+          port: 4318
+    # Oracle — reemplazar 0.0.0.0/0 por el CIDR real de la base de datos institucional.
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+      ports:
+        - protocol: TCP
+          port: 1521

@@ -1,0 +1,118 @@
+package pe.gob.onp.template.defuncion.infrastructure.web;
+
+import java.time.Instant;
+import java.util.List;
+
+/**
+ * Contrato de respuesta HTTP institucional (LIN-API-REST-001). Copia local del homónimo
+ * {@code onp-common-web} de `template-backend-java-modular`: al ser un microservicio
+ * independiente sin Shared Kernel compartido en memoria con ningún monolito (ver Javadoc de
+ * {@code domain.model.Dni}), este contrato se declara aquí mismo, en
+ * {@code infrastructure.web} — es infraestructura de borde HTTP, no dominio.
+ */
+public class ApiResponseWrapper<T> {
+
+    private Integer codHttp;
+    private String codDetRespuesta;
+    private String menDetRespuesta;
+    private T data;
+    private List<CampoError> errors;
+    private Meta meta;
+
+    public ApiResponseWrapper(
+            Integer codHttp,
+            String codDetRespuesta,
+            String menDetRespuesta,
+            T data,
+            List<CampoError> errors,
+            String requestId,
+            String version) {
+        this.codHttp = codHttp;
+        this.codDetRespuesta = codDetRespuesta;
+        this.menDetRespuesta = menDetRespuesta;
+        this.data = data;
+        this.errors = errors;
+        this.meta = new Meta(Instant.now().toString(), requestId, version);
+    }
+
+    public static <T> ApiResponseWrapper<T> ok(T data, String requestId, String version) {
+        return new ApiResponseWrapper<>(
+                200, "000", "Operacion completada correctamente.", data, null, requestId, version);
+    }
+
+    public static <T> ApiResponseWrapper<T> error(
+            int codHttp,
+            String codDetRespuesta,
+            String message,
+            List<CampoError> errors,
+            String requestId,
+            String version) {
+        return new ApiResponseWrapper<>(codHttp, codDetRespuesta, message, null, errors, requestId, version);
+    }
+
+    public Integer getCodHttp() {
+        return codHttp;
+    }
+
+    public String getCodDetRespuesta() {
+        return codDetRespuesta;
+    }
+
+    public String getMenDetRespuesta() {
+        return menDetRespuesta;
+    }
+
+    public T getData() {
+        return data;
+    }
+
+    public List<CampoError> getErrors() {
+        return errors;
+    }
+
+    public Meta getMeta() {
+        return meta;
+    }
+
+    public static class Meta {
+        private String timestamp;
+        private String requestId;
+        private String version;
+
+        public Meta(String timestamp, String requestId, String version) {
+            this.timestamp = timestamp;
+            this.requestId = requestId;
+            this.version = version;
+        }
+
+        public String getTimestamp() {
+            return timestamp;
+        }
+
+        public String getRequestId() {
+            return requestId;
+        }
+
+        public String getVersion() {
+            return version;
+        }
+    }
+
+    public static class CampoError {
+        private String campo;
+        private String mensaje;
+
+        public CampoError(String campo, String mensaje) {
+            this.campo = campo;
+            this.mensaje = mensaje;
+        }
+
+        public String getCampo() {
+            return campo;
+        }
+
+        public String getMensaje() {
+            return mensaje;
+        }
+    }
+}

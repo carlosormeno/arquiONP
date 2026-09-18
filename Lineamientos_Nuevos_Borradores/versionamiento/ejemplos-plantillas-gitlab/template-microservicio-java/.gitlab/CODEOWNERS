@@ -1,0 +1,30 @@
+# EJEMPLO DE REFERENCIA — LIN-VER-001 Anexo F
+# Ajustar los grupos con los nombres reales existentes en GitLab.
+# ADVERTENCIA: Los grupos referenciados deben existir en GitLab.
+# Si un grupo no existe, la regla se aplica silenciosamente sin efecto.
+
+# Propietario por defecto — todo lo no cubierto abajo
+* @APLICACIONES/arquitectura-oti
+
+# Código fuente — revisión de desarrollo
+/src/ @APLICACIONES/desarrollo
+
+# Punto de salida externo hacia RENIEC/Registro Civil — revisión de Arquitectura (Circuit
+# Breaker/Bulkhead obligatorios, LIN-DIS-001 §6.2/§6.3, DIS-R-009)
+/src/main/java/**/infrastructure/client/ @APLICACIONES/desarrollo @APLICACIONES/arquitectura-oti
+
+# Pruebas de arquitectura — cambiarlas relaja la pureza hexagonal, requiere aprobación de
+# Arquitectura (LIN-DIS-001 §2.3)
+/src/test/java/**/architecture/ @APLICACIONES/arquitectura-oti
+
+# Scripts de base de datos — revisión de datos/BD
+/db/ @APLICACIONES/desarrollo @APLICACIONES/arquitectura-oti
+
+# Manifiestos Kubernetes — revisión de Plataforma
+/k8s/ @APLICACIONES/plataforma
+
+# Architecture Decision Records
+/docs/adr/ @APLICACIONES/arquitectura-oti
+
+# Dockerfile — revisión conjunta
+Dockerfile @APLICACIONES/desarrollo @APLICACIONES/plataforma

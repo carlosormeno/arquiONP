@@ -1,0 +1,115 @@
+# EJEMPLO DE REFERENCIA — combina LIN-CICD-001 Anexo B (pipeline frontend Angular:
+# install/test/build/quality) y Anexo C (pipeline de imagen: image-build/image-scan/
+# image-push), agregando los dos stages que LIN-FE-ANG-001 exige y que Anexo B
+# todavía no cubre: lint (§14.3, gate obligatorio) y e2e (§14.2, Playwright).
+
+stages:
+  - install
+  - lint
+  - test
+  - e2e
+  - build
+  - quality
+  - image-build
+  - image-scan
+  - image-push
+
+variables:
+  IMAGE_TAG: "$CI_COMMIT_SHORT_SHA"
+
+cache:
+  key:
+    files:
+      - package-lock.json
+  paths:
+    - node_modules/
+
+install:
+  stage: install
+  image: node:22-alpine
+  script:
+    - npm ci
+
+lint:
+  stage: lint
+  image: node:22-alpine
+  script:
+    - npm run lint
+
+unit_test:
+  stage: test
+  image: node:22-alpine
+  script:
+    - npm test -- --watch=false --browsers=ChromeHeadlessCI
+  # El regex de "coverage:" lee el porcentaje del resumen de texto que imprime la consola
+  # (verificado: "Statements   : 87.22% ( 628/720 )") para el badge de cobertura de GitLab.
+  # No se usa "reports.coverage_report" (visualización nativa por línea en el MR) porque
+  # requiere un reporte Cobertura XML, y el builder @angular/build:unit-test (verificado
+  # en este scaffold) ignora silenciosamente los reporters "lcov"/"cobertura" de
+  # coverageReporters — solo genera "html". Mientras eso no cambie, el reporte navegable
+  # es el artefacto coverage/ de abajo, no una integración nativa en el diff del MR.
+  coverage: '/Statements\s+:\s+(\d+\.?\d*)%/'
+  artifacts:
+    when: always
+    paths:
+      - coverage/
+
+e2e:
+  stage: e2e
+  image: mcr.microsoft.com/playwright:v1.63.0-noble
+  script:
+    - npm ci
+    - npx playwright test
+  artifacts:
+    when: always
+    paths:
+      - playwright-report/
+
+build:
+  stage: build
+  image: node:22-alpine
+  script:
+    # $CI_ENVIRONMENT_NAME lo fija el pipeline consumidor según el ambiente de despliegue
+    # (dev/qa/production) — ver LIN-CICD-001 §7.2 y LIN-FE-ANG-001 §13.3.
+    - npm run build -- --configuration="${CI_ENVIRONMENT_NAME:-production}"
+  artifacts:
+    paths:
+      - dist/
+
+lighthouse:
+  stage: quality
+  image: node:22-alpine
+  needs:
+    - build
+  script:
+    - npx @lhci/cli@0.13.x autorun --config=./lighthouserc.js
+  artifacts:
+    when: always
+    paths:
+      - .lighthouseci/
+
+image_build:
+  stage: image-build
+  image: docker:27
+  services:
+    - docker:27-dind
+  rules:
+    - if: '$CI_COMMIT_BRANCH'
+  script:
+    - docker build -t "$CI_REGISTRY_IMAGE:$IMAGE_TAG" .
+
+image_scan:
+  stage: image-scan
+  image: docker:27
+  services:
+    - docker:27-dind
+  script:
+    - trivy image "$CI_REGISTRY_IMAGE:$IMAGE_TAG"
+
+image_push:
+  stage: image-push
+  image: docker:27
+  services:
+    - docker:27-dind
+  script:
+    - docker push "$CI_REGISTRY_IMAGE:$IMAGE_TAG"

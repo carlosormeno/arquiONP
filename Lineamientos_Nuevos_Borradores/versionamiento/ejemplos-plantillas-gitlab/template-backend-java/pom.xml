@@ -79,6 +79,16 @@
     <build>
         <plugins>
             <plugin>
+                <!-- Versión fijada explícitamente (LIN-DEV-JAVA-001 §14.5): spring-boot-starter-parent
+                     hereda una versión de Surefire con una regresión real y verificada — con proyectos
+                     que combinan spring-boot-starter-parent + ArchUnit, esa versión reporta "Tests run: 0"
+                     para las pruebas de arquitectura sin ningún error visible. Este proyecto no usa
+                     ArchUnit hoy, pero se fija igual por higiene de plugin management del estándar. -->
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.5.4</version>
+            </plugin>
+            <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
             </plugin>

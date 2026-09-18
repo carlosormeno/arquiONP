@@ -4,8 +4,7 @@
 **Versión:** 0.1.6  
 **Fecha:** 2026-08-05  
 **Autor:** Oficina de Tecnologías de la Información — ONP  
-**Estado:** En revisión / Catálogo Institucional Transversal — pendiente de graduación a Vigente (`GOB-MAT-001`, Ciclo de vida documental)  
-**Clasificación:** Catálogo normativo de toma de decisiones. Articula y consolida los criterios de selección para las decisiones de Nivel 1 (`LIN-ARQ-001`), Nivel 2 (`LIN-DIS-001`), Nivel 3 (`LIN-DEV-JAVA-001`) y dominios transversales (`LIN-BD-ORA-001`, `LIN-API-REST-001`, `LIN-BI-001`, `LIN-BUS-001`). De uso diario obligatorio para Arquitectos, Tech Leads y Desarrolladores.
+**Estado:** En revisión
 
 > **Fuente única de códigos `PT`:** este catálogo es autoritativo para la asignación de códigos `PT01`–`PT16` y de las fichas `PAT-*`. Ningún documento puede asignar un código `PT` a un patrón distinto del registrado aquí. El índice de trazabilidad `PT → ficha → dueño normativo` se mantiene en `GOB-MAT-001`.
 
@@ -25,28 +24,28 @@
 
 El presente catálogo transforma los lineamientos conceptuales de la Oficina de Tecnologías de la Información (OTI) en un **Checklist Ejecutivo de Decisión Diaria**. 
 
-Cada vez que un Arquitecto de Software, Diseñador/Tech Lead o Desarrollador analiza el *Documento de Especificación de Requisitos Funcionales y No Funcionales* de un proyecto, debe consultar este catálogo para determinar qué componentes, estilos o patrones encender.
+Cada vez que un Arquitecto de Software, Diseñador/Tech Lead o Desarrollador analiza el *Documento de Especificación de Requisitos Funcionales y No Funcionales* de un proyecto, debe consultar este catálogo para determinar qué componentes, estilos o patrones utilizar.
 
 ### 1.1 Regla de Oro del Criterio de Selección
 
 > **Mandato de Gobierno (`PRA10` / Supremacía Normativa):**  
 > 1. Si los requisitos del proyecto cumplen el **`✅ Criterio de Selección`** de una ficha, la adopción del patrón o componente es **obligatoria**.  
 > 2. Si el proyecto cae en el **`❌ Criterio de Exclusión (Antipatrón)`**, queda **terminantemente prohibida** su implementación.  
-> 3. Cualquier excepción o desviación respecto al criterio de selección formal requiere la redacción de un **ADR (*Architecture Decision Record*)** y la firma de aprobación de la Dirección de Arquitectura de la OTI.
+> 3. Cualquier excepción o desviación respecto al criterio de selección formal requiere la redacción de un **ADR (*Architecture Decision Record*)** y la aprobación del Especialista de Arquitectura de la OTI.
 
 ---
 
 ## 2. Índice Rápido de Fichas por Familia Institucional
 
-| Código de Ficha | Nombre del Patrón / Estilo | Nivel / Dominio | Dueño Normativo |
-|---|---|---|---|
-| **`PAT-TOP-01`** | Monolito Modular (*Estadio 2*) | Nivel 1 — Topología Macro | `LIN-ARQ-001` |
-| **`PAT-TOP-02`** | Microservicios Cloud-Native (*Estadio 3*) | Nivel 1 — Topología Macro | `LIN-ARQ-001` |
-| **`PAT-TOP-03`** | Strangler Fig (*PT10*) | Nivel 1 — Transición Legacy | `LIN-ARQ-001` |
-| **`PAT-DIS-01`** | Arquitectura Hexagonal (*Ports & Adapters*) | Nivel 2 — Diseño Táctico | `LIN-DIS-001` |
-| **`PAT-DIS-02`** | Arquitectura en Capas (*Layered Architecture*) | Nivel 2 — Diseño Táctico | `LIN-DIS-001` |
-| **`PAT-DIS-03`** | Bounded Context & Agregados DDD | Nivel 2 — Modelado de Dominio | `LIN-DIS-001` |
-| **`PAT-DIS-04`** | CQRS (*Command Query Responsibility Segregation — PT04*) | Nivel 2 — Persistencia y Consulta | `LIN-DIS-001` / `LIN-BUS-001` |
+| Nro | Código de Ficha | Nombre del Patrón / Estilo | Nivel / Dominio | Dueño Normativo |
+|---|---|---|---|---|
+|1| **`PAT-TOP-01`** | Monolito Modular (*Estadio 2*) | Nivel 1 — Topología Macro | `LIN-ARQ-001` |
+|2| **`PAT-TOP-02`** | Microservicios Cloud-Native (*Estadio 3*) | Nivel 1 — Topología Macro | `LIN-ARQ-001` |
+|3| **`PAT-TOP-03`** | Strangler Fig (*PT10*) | Nivel 1 — Transición Legacy | `LIN-ARQ-001` |
+|4| **`PAT-DIS-01`** | Arquitectura Hexagonal (*Ports & Adapters*) | Nivel 2 — Diseño Táctico | `LIN-DIS-001` |
+|5| **`PAT-DIS-02`** | Arquitectura en Capas (*Layered Architecture*) | Nivel 2 — Diseño Táctico | `LIN-DIS-001` |
+|6| **`PAT-DIS-03`** | Bounded Context & Agregados DDD | Nivel 2 — Modelado de Dominio | `LIN-DIS-001` |
+|**7**| **`PAT-DIS-04`** | CQRS (*Command Query Responsibility Segregation — PT04*) | Nivel 2 — Persistencia y Consulta | `LIN-DIS-001` / `LIN-BUS-001` |
 | **`PAT-INT-01`** | Backend for Frontend (*BFF — PT11*) | Nivel 2 — Interfaz y Presentación | `LIN-DIS-001` |
 | **`PAT-INT-02`** | Gateway-Aggregation (*PT12*) | Nivel 2 — Agregación de Servicios | `LIN-DIS-001` / `LIN-API-REST-001` |
 | **`PAT-INT-03`** | Facade Arquitectónico de Integración (*PT15*) | Nivel 2 — Integración Exterior | `LIN-DIS-001` |
@@ -77,7 +76,7 @@ Cada vez que un Arquitecto de Software, Diseñador/Tech Lead o Desarrollador ana
 | **Código** | `PAT-TOP-01` (Nivel 1 — Topología Macro) |
 | **Nombre** | **Monolito Modular (*Estadio 2*)** |
 | **Capa / Dominio** | Topología de Despliegue e Interconexión de Sistemas (`ARQ-R-001` (LIN-ARQ-001 §2.1)) |
-| **Descripción** | Aplicación desplegable en una sola unidad física en Kubernetes (`Pod`), pero organizada internamente en módulos estancos independientes (*Bounded Contexts*) con aislamiento estricto de código, esquemas de base de datos divididos por dominio y comunicación regulada en memoria. |
+| **Descripción** | Aplicación desplegable en una sola unidad física en Kubernetes (`Pod`), pero organizada internamente en módulos independientes (*Bounded Contexts*) con aislamiento estricto de código, esquemas de base de datos divididos por dominio y comunicación regulada en memoria. |
 | **✅ Criterio de Selección<br>*(¿Cuándo usar en ONP?)*** | **Se DEBE usar si el análisis de requisitos determina:**<br>• El sistema abarca entre 2 y 6 dominios funcionales fuertemente colaborativos (ej. Sistema Previsional Core que gestiona Expedientes, Aportes y Pensionistas en transacciones coordinadas).<br>• El equipo técnico asignado tiene menos de 15 desarrolladores y comparte un pipeline CI/CD unificado.<br>• Es un nuevo desarrollo que reemplaza un sistema legacy (*Estadio 1*) y busca alta modularidad sin asumir la complejidad operacional extrema ni la latencia de red de múltiples microservicios distribuidos. |
 | **❌ Criterio de Exclusión<br>*(¿Cuándo NO usar?)*** | **NO usar cuando:**<br>• Un único submódulo o función concentra más del 85% del tráfico o de la carga computacional y requiere escalar horizontalmente en K8s de forma aislada sin duplicar el resto del sistema (en ese caso $\rightarrow$ *Microservicio PAT-TOP-02*).<br>• Se permite que las clases de un paquete accedan libremente a clases internas o tablas `JPA` de otro paquete sin pasar por las interfaces de contrato `application.api`. |
 | **🛠️ Stack / Herramienta<br>Homologada en ONP** | Java 21 + Spring Boot 3 (`Maven Multi-Module` organizado con `onp-common-domain` para primitivas transversales) sobre contenedor Linux Alpine en `containerd/K8s`. |
@@ -457,7 +456,7 @@ Cada vez que un Arquitecto de Software, Diseñador/Tech Lead o Desarrollador ana
 
 Para finalizar el gobierno de selección, todo proyecto debe verificar las dependencias cruzadas entre fichas:
 
-| Si seleccionas el Patrón / Componente... | Debes verificar o encender obligatoriamente... | Justificación Táctica / Arquitectónica |
+| Si seleccionas el Patrón / Componente... | Debes verificar o utilizar obligatoriamente... | Justificación Táctica / Arquitectónica |
 |---|---|---|
 | **`PAT-TOP-02` (Microservicios K8s)** | `PAT-INT-05` (API Gateway WSO2) + `PAT-RES-01` (Circuit Breaker) | Un microservicio sin API Gateway queda expuesto y sin gobierno de red, y sin Circuit Breaker causará fallas en cascada en el clúster K8s. |
 | **`PAT-TOP-03` (Strangler Fig)** | `PAT-INT-04` (Capa Anticorrupción ACL) | La transición progresiva exige aislar las estructuras legacy de las nuevas entidades en Java 21. |

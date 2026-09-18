@@ -1,0 +1,13 @@
+:host {
+  display: block;
+  height: 100%;
+}
+
+.onp-shell__container {
+  height: calc(100% - 96px); // resta cabecera + breadcrumb aproximados
+}
+
+.onp-shell__content {
+  padding: var(--onp-font-size-lg, 16px);
+  min-height: calc(100% - 40px); // resta el pie de página
+}

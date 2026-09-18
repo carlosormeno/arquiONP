@@ -1,0 +1,21 @@
+# EJEMPLO DE REFERENCIA — LIN-VER-001 Anexo F / LIN-K8S-001 Anexo A
+# Overlay para ambiente QA (rama ONP_QA)
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../base
+
+# Imagen promovida sin reconstrucción (LIN-K8S-001 sección 6.4)
+# "name" es la ruta COMPLETA de imagen de k8s/base/deployment.yaml — ver nota en overlays/dev.
+images:
+  - name: registry.gitlab.onp.gob.pe/aplicaciones/nombre-microservicio/nombre-microservicio
+    newTag: "1.0.0"   # tag semántico aprobado desde ONP_PQA
+
+replicas:
+  - name: nombre-microservicio
+    count: 2
+
+patchesStrategicMerge:
+  - patch-profile-qa.yaml

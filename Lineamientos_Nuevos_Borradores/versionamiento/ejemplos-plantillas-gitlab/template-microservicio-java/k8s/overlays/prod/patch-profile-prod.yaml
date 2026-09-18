@@ -1,0 +1,12 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nombre-microservicio
+spec:
+  template:
+    spec:
+      containers:
+        - name: nombre-microservicio
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: prod

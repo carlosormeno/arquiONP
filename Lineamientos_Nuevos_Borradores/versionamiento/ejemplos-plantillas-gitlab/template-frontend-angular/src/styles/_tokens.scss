@@ -1,0 +1,59 @@
+// styles/_tokens.scss — Design tokens ONP (LIN-FE-ANG-001 §8.1, §8.2, §8.3)
+//
+// AVISO DE GOBIERNO DOCUMENTAL: LIN-FE-ANG-001 §8.1/§8.2/§8.4 declara los
+// colores primario/acento y la familia tipográfica institucional como
+// `[PLACEHOLDER — ...]` — el propio lineamiento no fija el valor oficial.
+// Los valores de --onp-primary, --onp-primary-dark, --onp-primary-light,
+// --onp-accent y --onp-font-family de este archivo son PLACEHOLDERS DE
+// TRABAJO elegidos para que el scaffold compile y sea visualmente coherente;
+// NO son la marca institucional oficial de ONP y deben reemplazarse cuando
+// el área de Comunicaciones/Identidad Institucional confirme los valores
+// reales (ver hallazgo en el reporte de entrega de este scaffold).
+:root {
+  // Colores primarios ONP — PLACEHOLDER, ver aviso arriba
+  --onp-primary: #0056a3;
+  --onp-primary-dark: #003d75;
+  --onp-primary-light: #4d8fd1;
+
+  // Color de acento — PLACEHOLDER, ver aviso arriba
+  --onp-accent: #f5a623;
+
+  // Semánticos (estos no cambian por branding) — valores reales de §8.1
+  --onp-success: #2e7d32;
+  --onp-warning: #f57c00;
+  --onp-error: #c62828;
+  --onp-info: #1565c0;
+
+  // Neutros — valores reales de §8.1
+  --onp-bg-page: #f5f5f5;
+  --onp-bg-surface: #ffffff;
+  --onp-text-primary: #212121;
+  --onp-text-secondary: #757575;
+  --onp-divider: #e0e0e0;
+
+  // Tipografía — PLACEHOLDER de familia (ver aviso arriba); tamaños son
+  // valores reales de §8.2
+  --onp-font-family: 'Roboto', Arial, Helvetica, sans-serif;
+  --onp-font-size-base: 14px;
+  --onp-font-size-sm: 12px;
+  --onp-font-size-lg: 16px;
+  --onp-font-size-xl: 20px;
+  --onp-font-size-h1: 24px;
+  --onp-font-size-h2: 20px;
+  --onp-font-size-h3: 16px;
+  --onp-line-height: 1.5;
+}
+
+// Escala de espaciado (múltiplos de 4px — alineada con Tailwind spacing scale)
+$spacing-1: 4px;
+$spacing-2: 8px;
+$spacing-3: 12px;
+$spacing-4: 16px;
+$spacing-6: 24px;
+$spacing-8: 32px;
+
+// Breakpoints (compatibles con Tailwind CSS defaults)
+$bp-sm: 640px; // móvil horizontal
+$bp-md: 768px; // tablet
+$bp-lg: 1024px; // desktop
+$bp-xl: 1280px; // desktop wide

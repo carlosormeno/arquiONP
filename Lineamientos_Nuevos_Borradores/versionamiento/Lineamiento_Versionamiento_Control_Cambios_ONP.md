@@ -1,7 +1,7 @@
 # LIN-VER-001 — Lineamiento de Versionamiento, Control de Cambios y Revisión de Código ONP
 
 **Código:** LIN-VER-001  
-**Versión:** v0.1.8  
+**Versión:** v0.1.9  
 **Estado:** En revisión  
 **Fecha:** 2026-08-09  
 **Propietario documental:** Arquitectura de Software — OTI  
@@ -24,6 +24,7 @@
 | v0.1.6 | 2026-07-10 | Arquitectura OTI | Migra Marco rector de `LIN-ARQ-000` (congelado) a `LIN-ARQ-001` (vigente) |
 | v0.1.7 | 2026-08-09 | Arquitectura OTI | `§16.1.1` atribuye explícitamente la nomenclatura de scripts a su dueño `LIN-BD-ORA-001 §8.1`/`§8.4` en vez de presentarla como propia (`GOB-CHK-001` H14.5). El tema figuraba en la matriz con **dos dueños simultáneos**, contra su principio rector; ahora está dividido: obligatoriedad de versionar aquí, nomenclatura y estructura en el estándar de BD |
 | v0.1.8 | 2026-08-09 | Arquitectura OTI | Revisión de fondo (`GOB-CHK-001` H23). (1) La [sección 12](#12-revisión-de-código) asume la propiedad del **proceso** de revisión para todo tipo de cambio e incorpora el límite de **400 líneas** que hasta ahora vivía solo en `LIN-DEV-JAVA-001 §16.4`, donde de hecho dejaba sin regla de tamaño a los MR de Angular, SQL y manifiestos. (2) La [sección 13](#13-evidencias-mínimas-por-tipo-de-cambio) decía "cobertura si aplica", degradando a opcional un umbral **obligatorio** de `LIN-TEST-001` (documento vigente); ahora remite a `LIN-TEST-001 §5.1`. (3) La [sección 15.1](#151-regla-general) declaraba obligatorio un formato de tag que excluía las pre-releases admitidas por la propia [sección 14.3](#143-pre-releases). (4) La [sección 15.3](#153-relación-con-imágenes-de-contenedor) admitía "un identificador trazable" como tag de imagen, resquicio por el que cabía `latest`, prohibido por `LIN-K8S-001 §6.3`. (5) Protected branches, Merge Requests y approval rules pasan de recomendados a **obligatorios** en la [sección 21.1](#211-capacidades-a-habilitar-desde-esta-fase): son el mecanismo que hace exigibles P2, P3 y la prohibición de autoaprobación. (6) La [sección 2](#2-normativa-y-documentos-relacionados) incorpora `LIN-DIS-001` y `GOB-MAT-001`. Se ordena cronológicamente este control de cambios y el documento pasa a **En revisión** |
+| v0.1.9 | 2026-09-18 | Arquitectura OTI | **Anexo F sincronizado con lo que existe realmente en disco** (`ejemplos-plantillas-gitlab/`), que había divergido del inventario: `template-backend-java-modular` no figuraba pese a ser el estándar por defecto (`PAT-TOP-01`); `template-worker-java` figuraba como tipo válido sin ejemplo físico ni contenido mínimo definido; no existía ningún ejemplo de Microservicio (Estadio 3). Se agregan `template-backend-java-modular`, `template-worker-java` (construido y verificado) y **`template-microservicio-java`** (nuevo, Hexagonal en un solo módulo Maven, Circuit Breaker con Resilience4j obligatorio — `DIS-R-009`) a F.1/F.2/F.3/F.5. Se corrige además la atribución de propiedad de F.1/F.5, que asignaba a Plataforma el mantenimiento de contenido que corresponde a Arquitectura y Diseño de Software. **Bug real encontrado al construir `template-microservicio-java` y corregido en las 3 plantillas Java preexistentes**: en `k8s/overlays/{dev,qa,prod}/kustomization.yaml`, el campo `images.name` usaba el nombre corto de la imagen en vez de su ruta completa — Kustomize compara por coincidencia exacta contra la imagen del `Deployment` base, así que `newTag`/`newName` se ignoraban en silencio (`kubectl kustomize` seguía retornando YAML válido, pero con la imagen `1.0.0` sin sustituir en ningún ambiente). Verificado comparando la salida real de `kubectl kustomize` antes/después en las 9 overlays afectadas |
 
 ---
 
@@ -1426,7 +1427,7 @@ sec: evitar almacenamiento de token en frontend
 
 ### Anexo F — Plantillas institucionales de proyecto GitLab
 
-> **EJEMPLO DE REFERENCIA** — Este anexo describe el mecanismo y los tipos de plantilla institucional. Plataforma/Infraestructura es responsable de crear y mantener los proyectos plantilla reales en GitLab Ultimate.
+> **EJEMPLO DE REFERENCIA** — Este anexo describe el mecanismo y los tipos de plantilla institucional. Arquitectura y Diseño de Software es responsable de crear y mantener los proyectos plantilla reales en GitLab Ultimate; Plataforma no interviene en su contenido, solo en la infraestructura de GitLab sobre la que corren (grupos, permisos de repositorio).
 
 #### F.1 Mecanismo — GitLab Group-level Project Templates
 
@@ -1445,6 +1446,8 @@ Ubicación sugerida:
 APLICACIONES/
 └── gitlab-templates/
     ├── template-backend-java
+    ├── template-backend-java-modular
+    ├── template-microservicio-java
     ├── template-frontend-angular
     └── template-worker-java
 ```
@@ -1453,9 +1456,11 @@ APLICACIONES/
 
 | Tipo | Proyecto GitLab | Aplica a |
 |---|---|---|
-| Backend Java / Spring Boot | `template-backend-java` | APIs REST, adapters, servicios backend |
+| Backend Java / Spring Boot (Monolito Simple) | `template-backend-java` | APIs REST, adapters, servicios backend de soporte (`PAT-DIS-02`) |
+| Backend Java / Spring Boot (Monolito Modular) | `template-backend-java-modular` | Estándar por defecto para sistemas previsionales nuevos (`PAT-TOP-01`, `ARQ-R-001` (LIN-ARQ-001 §2.1)); reactor multi-módulo con Arquitectura Hexagonal (`LIN-DIS-001 §2.3`) por componente |
+| Backend Java / Spring Boot (Microservicio, Estadio 3) | `template-microservicio-java` | Microservicio independiente extraído y validado por los 6 criterios de `ARQ-R-001` (LIN-ARQ-001 §2.1); Hexagonal en un solo módulo Maven (`LIN-DEV-JAVA-001 §14.1/§14.3`); Circuit Breaker con Resilience4j obligatorio (`DIS-R-009`, LIN-DIS-001 §6.2) |
 | Frontend Angular SPA | `template-frontend-angular` | Aplicaciones web Angular |
-| Worker / Job Java | `template-worker-java` | Workers Kubernetes, jobs batch |
+| Worker / Job Java | `template-worker-java` | Workers Kubernetes (`Deployment`), jobs batch puntuales (`Job`) o recurrentes (`CronJob`) — ver `LIN-K8S-001 §4.1` |
 
 #### F.3 Contenido mínimo de cada plantilla
 
@@ -1478,6 +1483,32 @@ APLICACIONES/
 | `db/reverse/.gitkeep` | Carpeta para scripts de reversa o compensación |
 | `README.md` | Descripción, prerrequisitos, ejecución local, contacto |
 
+`template-backend-java-modular` debe incluir, además de todo lo anterior (mismo `Dockerfile`, `.gitignore`, `.gitlab/`, `k8s/`, `docs/`, `db/`, `README.md`):
+
+| Archivo / Carpeta | Propósito |
+|---|---|
+| `pom.xml` (raíz) | POM padre `packaging=pom`, declara los sub-módulos y centraliza versiones |
+| `comun/onp-common-domain/` | Shared Kernel de dominio (`LIN-DIS-001 §3.4`, `DIS-R-003`) — Value Objects universales, excepciones raíz |
+| `comun/onp-common-web/` | Contrato de respuesta HTTP institucional (`LIN-API-REST-001`) |
+| `componentes/<componente>/onp-<componente>-domain/` | Capa de dominio puro del componente (`LIN-DIS-001 §2.3`) |
+| `componentes/<componente>/onp-<componente>-application/` | Casos de uso — POJO sin framework (`LIN-DIS-001 §2.3`) |
+| `componentes/<componente>/onp-<componente>-infrastructure/` | Adaptadores de salida y wiring a Spring |
+| `componentes/<componente>/onp-<componente>-api/` | Adaptador de entrada REST |
+| `componentes/<componente>/onp-<componente>-messaging/` | Adaptador de entrada Kafka, si el componente consume eventos |
+| `onp-template-boot/` | Ensamblador final — único módulo con `spring-boot-maven-plugin` y pruebas de arquitectura ArchUnit (`LIN-DEV-JAVA-001 §15.5`) |
+| `checkstyle-onp.xml` | Configuración Checkstyle compartida por todo el reactor |
+
+`template-microservicio-java` debe incluir, además del contenido base común (mismo `.gitignore`, `checkstyle-onp.xml`, `.gitlab/`, `docs/adr/.gitkeep`, `db/migration+reverse`, `README.md`):
+
+| Archivo / Carpeta | Propósito |
+|---|---|
+| `pom.xml` (único, `packaging=jar`) | `spring-boot-starter-parent` directo, sin POM padre custom (`LIN-DEV-JAVA-001 §14.3`) — incluye Resilience4j, Apache HttpClient 5, Spring Data JPA |
+| `src/main/java/.../domain/{model,port/in,port/out,exception}/` | Capa de dominio puro, sin dependencia de framework (`LIN-DEV-JAVA-001 §14.1`) |
+| `src/main/java/.../application/usecase/` | Casos de uso — POJO sin estereotipos de Spring |
+| `src/main/java/.../infrastructure/{web,persistence,client,config}/` | Adaptadores y wiring a Spring; `client/` envuelve la dependencia externa con Circuit Breaker + Bulkhead + timeout (`DIS-R-009`, LIN-DIS-001 §6`) |
+| `src/test/java/.../architecture/` | Pruebas ArchUnit que verifican la pureza hexagonal (mismas reglas que `template-backend-java-modular`, adaptadas a un solo módulo) |
+| `k8s/base/{deployment,service,configmap,networkpolicy,kustomization}.yaml` | Sin `Job`/`CronJob` — es un servicio siempre activo, no un batch |
+
 `template-frontend-angular` debe incluir:
 
 | Archivo / Carpeta | Propósito |
@@ -1494,7 +1525,23 @@ APLICACIONES/
 | `k8s/overlays/prod/kustomization.yaml` | Overlay PROD |
 | `docs/adr/.gitkeep` | Carpeta para ADRs |
 | `e2e/.gitkeep` | Carpeta para pruebas E2E |
+| `eslint.config.js` | Configuración ESLint (`angular-eslint` + `@typescript-eslint`), gate obligatorio de CI/CD (`LIN-FE-ANG-001 §14.3`) |
+| `.gitlab-ci.yml` | Pipeline (install/lint/test/e2e/build/quality/image-*), combina `LIN-CICD-001` Anexo B y Anexo C |
 | `README.md` | Estructura mínima |
+
+`template-worker-java` debe incluir, además del contenido base común con `template-backend-java` (mismo `.gitignore`, `checkstyle-onp.xml`, `.gitlab/`, `docs/adr/.gitkeep`, `README.md`):
+
+| Archivo / Carpeta | Propósito |
+|---|---|
+| `pom.xml` | Un solo módulo (no multi-reactor); incluye `spring-kafka`. `spring-boot-starter-web` se mantiene solo para exponer probes/Actuator en la variante Worker — el perfil `job` fuerza `spring.main.web-application-type=none` |
+| `.gitlab-ci.yml` | Pipeline del worker |
+| `k8s/base/deployment.yaml` | Manifiesto de la variante **Worker** (consumidor continuo, `LIN-K8S-001 §4.1`) |
+| `k8s/base/job.yaml` | Manifiesto de ejemplo de **Job puntual** — deliberadamente fuera de `kustomization.yaml` (se invoca ad hoc, no se reconcilia de forma continua) |
+| `k8s/base/cronjob.yaml` | Manifiesto de **Job recurrente** |
+| `k8s/base/networkpolicy.yaml` | Acotada al puerto de métricas — el worker no sirve tráfico HTTP de negocio |
+| `db/migration/`, `db/reverse/` | Scripts reales (no solo `.gitkeep`), nomenclatura `V{MAJOR}.{MINOR}.{PATCH}__desc.sql` / `U...` (`LIN-BD-ORA-001 §8.4`) |
+| `src/main/java/.../messaging/` | Ejemplo de consumidor Kafka con idempotencia y manejo de error — variante Worker |
+| `src/main/java/.../batch/` | Ejemplo patrón *Table Module* (`LIN-DIS-001 §4.1`) — misma clase sirve Job puntual y recurrente; la diferencia entre ambos es el manifiesto K8s que la invoca, no el código Java |
 
 #### F.4 Proceso de onboarding de nuevo sistema
 
@@ -1534,9 +1581,77 @@ versionamiento/
     │   └── db/
     │       ├── migration/
     │       └── reverse/
-    └── template-frontend-angular/
+    ├── template-backend-java-modular/
+    │   ├── pom.xml
+    │   ├── checkstyle-onp.xml
+    │   ├── comun/
+    │   │   ├── onp-common-domain/
+    │   │   └── onp-common-web/
+    │   ├── componentes/
+    │   │   └── afiliacion/
+    │   │       ├── onp-afiliacion-domain/
+    │   │       ├── onp-afiliacion-application/
+    │   │       ├── onp-afiliacion-infrastructure/
+    │   │       ├── onp-afiliacion-api/
+    │   │       └── onp-afiliacion-messaging/
+    │   ├── onp-template-boot/
+    │   │   └── src/test/.../architecture/ArquitecturaHexagonalTest.java
+    │   ├── db/
+    │   │   ├── migration/
+    │   │   └── reverse/
+    │   ├── docs/
+    │   │   └── adr/
+    │   ├── k8s/
+    │   │   ├── base/
+    │   │   └── overlays/{dev,qa,prod}/
+    │   └── .gitlab/
+    │       ├── CODEOWNERS
+    │       └── merge_request_templates/
+    ├── template-microservicio-java/
+    │   ├── pom.xml
+    │   ├── checkstyle-onp.xml
+    │   ├── Dockerfile
+    │   ├── .gitlab-ci.yml
+    │   ├── src/
+    │   │   ├── main/java/pe/gob/onp/template/.../{domain,application,infrastructure}/
+    │   │   └── test/java/pe/gob/onp/template/.../architecture/ArquitecturaHexagonalTest.java
+    │   ├── db/
+    │   │   ├── migration/
+    │   │   └── reverse/
+    │   ├── docs/
+    │   │   └── adr/
+    │   ├── k8s/
+    │   │   ├── base/
+    │   │   └── overlays/{dev,qa,prod}/
+    │   └── .gitlab/
+    │       ├── CODEOWNERS
+    │       └── merge_request_templates/
+    ├── template-frontend-angular/
+    │   ├── Dockerfile
+    │   ├── nginx.conf
+    │   ├── .gitignore
+    │   ├── README.md
+    │   ├── .gitlab/
+    │   │   ├── CODEOWNERS
+    │   │   └── merge_request_templates/
+    │   │       ├── default.md
+    │   │       └── minor.md
+    │   ├── k8s/
+    │   │   ├── base/
+    │   │   └── overlays/
+    │   │       ├── dev/
+    │   │       ├── qa/
+    │   │       └── prod/
+    │   ├── docs/
+    │   │   └── adr/
+    │   ├── e2e/
+    │   ├── eslint.config.js
+    │   └── .gitlab-ci.yml
+    └── template-worker-java/
+        ├── pom.xml
+        ├── checkstyle-onp.xml
         ├── Dockerfile
-        ├── nginx.conf
+        ├── .gitlab-ci.yml
         ├── .gitignore
         ├── README.md
         ├── .gitlab/
@@ -1544,15 +1659,30 @@ versionamiento/
         │   └── merge_request_templates/
         │       ├── default.md
         │       └── minor.md
+        ├── docs/
+        │   └── adr/
+        ├── db/
+        │   ├── migration/
+        │   └── reverse/
         ├── k8s/
         │   ├── base/
+        │   │   ├── deployment.yaml
+        │   │   ├── job.yaml
+        │   │   ├── cronjob.yaml
+        │   │   ├── configmap.yaml
+        │   │   ├── networkpolicy.yaml
+        │   │   └── kustomization.yaml
         │   └── overlays/
         │       ├── dev/
         │       ├── qa/
         │       └── prod/
-        ├── docs/
-        │   └── adr/
-        └── e2e/
+        └── src/
+            ├── main/java/.../worker/
+            │   ├── TemplateWorkerApplication.java
+            │   ├── config/
+            │   ├── messaging/
+            │   └── batch/
+            └── test/java/...
 ```
 
-> Estos archivos son **EJEMPLO DE REFERENCIA** mantenido por Arquitectura OTI. Plataforma/Infraestructura es responsable de mantener los proyectos plantilla reales en GitLab Ultimate actualizados con este contenido.
+> Estos archivos son **EJEMPLO DE REFERENCIA** mantenido por Arquitectura y Diseño de Software OTI, quien también es responsable de mantener los proyectos plantilla reales en GitLab Ultimate actualizados con este contenido. Plataforma no interviene en su contenido.

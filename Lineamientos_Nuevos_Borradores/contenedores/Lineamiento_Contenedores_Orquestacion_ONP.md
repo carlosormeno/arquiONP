@@ -181,6 +181,8 @@ Aplica a:
 
 ### 4.1 Tipos de workload permitidos
 
+> 🔖 **`K8S-R-004`** — *identificador estable de esta regla; cítese este código y no el número de sección (`GOB-MAT-001`)*
+
 | Tipo | Ejemplo | Recurso Kubernetes sugerido |
 |---|---|---|
 | API backend | Servicio Spring Boot REST | `Deployment` + `Service` |
@@ -668,6 +670,145 @@ spec:
 ```
 
 > Este manifiesto declara las cinco etiquetas obligatorias de [§9.3](#93-etiquetas-obligatorias) y el volumen temporal que exige la [nota 14.1](#nota-141--readonlyrootfilesystem-con-escritura-temporal). Ambas cosas faltaban en versiones anteriores: copiado tal cual, el pod fallaba al arrancar porque `readOnlyRootFilesystem: true` impedía a Spring Boot escribir en `/tmp`, y el remedio vivía 350 líneas más abajo (`GOB-CHK-001` H26).
+
+### 9.2.1 Job puntual de referencia (`§4.1`, fila "Job puntual")
+
+Ejemplo funcional completo, verificado con `kustomize build`, en `versionamiento/ejemplos-plantillas-gitlab/template-worker-java/k8s/base/job.yaml`.
+
+```yaml
+apiVersion: batch/v1
+kind: Job
+metadata:
+  generateName: past-job-actualizacion-masiva-
+  labels:
+    app.kubernetes.io/name: past-job-actualizacion-masiva
+    app.kubernetes.io/part-of: past
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/component: job
+    app.kubernetes.io/managed-by: kustomize
+spec:
+  backoffLimit: 2
+  ttlSecondsAfterFinished: 86400
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: past-job-actualizacion-masiva
+        app.kubernetes.io/part-of: past
+        app.kubernetes.io/version: "1.0.0"
+        app.kubernetes.io/component: job
+        app.kubernetes.io/managed-by: kustomize
+    spec:
+      serviceAccountName: past-job-actualizacion-masiva
+      restartPolicy: Never
+      containers:
+        - name: app
+          image: registry.gitlab.onp.gob.pe/aplicaciones/past/worker-actualizacion-masiva:1.0.0
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: prod,job
+          envFrom:
+            - configMapRef:
+                name: past-worker-actualizacion-masiva-config
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "512Mi"
+            limits:
+              cpu: "1000m"
+              memory: "1Gi"
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir:
+            medium: Memory
+            sizeLimit: 64Mi
+      terminationGracePeriodSeconds: 10
+```
+
+> **Por qué no vive en `k8s/base/kustomization.yaml`.** `spec.template` de un `Job` es inmutable: si este manifiesto estuviera en la base que se reconcilia con `kubectl apply -k` en cada despliegue, el segundo `apply` fallaría (o, si el objeto ya existe, no volvería a ejecutar nada). Se invoca ad hoc (`kubectl create -f job.yaml -n <namespace>`), típicamente como paso puntual del pipeline (`LIN-CICD-001`). `metadata.generateName` en vez de `name` es a propósito: cada ejecución crea un objeto `Job` nuevo con sufijo único, para poder correr la misma carga o migración más de una vez sin colisionar con el nombre de una ejecución anterior. Sin `readinessProbe`/`livenessProbe`: `§4.1` no las exige para `Job` — el propio Job (`backoffLimit`) es el mecanismo de reintento.
+
+### 9.2.2 Job recurrente de referencia (`§4.1`, fila "Job recurrente")
+
+Mismo código de aplicación que `§9.2.1` — solo cambia el recurso Kubernetes que lo invoca. Ejemplo funcional completo en `versionamiento/ejemplos-plantillas-gitlab/template-worker-java/k8s/base/cronjob.yaml`.
+
+```yaml
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: past-cronjob-actualizacion-masiva
+  labels:
+    app.kubernetes.io/name: past-cronjob-actualizacion-masiva
+    app.kubernetes.io/part-of: past
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/component: job
+    app.kubernetes.io/managed-by: kustomize
+spec:
+  schedule: "0 3 * * *"  # ejemplo: todos los días 03:00 hora del clúster — reemplazar por la periodicidad real
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 300
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      ttlSecondsAfterFinished: 86400
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: past-cronjob-actualizacion-masiva
+            app.kubernetes.io/part-of: past
+            app.kubernetes.io/version: "1.0.0"
+            app.kubernetes.io/component: job
+            app.kubernetes.io/managed-by: kustomize
+        spec:
+          serviceAccountName: past-job-actualizacion-masiva
+          restartPolicy: Never
+          containers:
+            - name: app
+              image: registry.gitlab.onp.gob.pe/aplicaciones/past/worker-actualizacion-masiva:1.0.0
+              imagePullPolicy: IfNotPresent
+              env:
+                - name: SPRING_PROFILES_ACTIVE
+                  value: prod,job
+              envFrom:
+                - configMapRef:
+                    name: past-worker-actualizacion-masiva-config
+              resources:
+                requests:
+                  cpu: "250m"
+                  memory: "512Mi"
+                limits:
+                  cpu: "1000m"
+                  memory: "1Gi"
+              securityContext:
+                allowPrivilegeEscalation: false
+                runAsNonRoot: true
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop:
+                    - ALL
+              volumeMounts:
+                - name: tmp
+                  mountPath: /tmp
+          volumes:
+            - name: tmp
+              emptyDir:
+                medium: Memory
+                sizeLimit: 64Mi
+          terminationGracePeriodSeconds: 10
+```
+
+> **`concurrencyPolicy: Forbid`** evita que dos corridas se solapen sobre el mismo lote de datos — sin esto, un disparo que tarda más que el intervalo del `schedule` competiría consigo mismo. A diferencia de `§9.2.1`, este objeto **sí** vive en `k8s/base/kustomization.yaml`: el `CronJob` en sí es estable y se reconcilia con `apply` normal; es Kubernetes quien crea (y limpia, según los `*HistoryLimit`) un `Job` nuevo en cada disparo, no el equipo de Desarrollo con `kubectl create` manual.
 
 ### 9.3 Etiquetas obligatorias
 

@@ -8,9 +8,13 @@ resources:
   - ../../base
 
 # Imagen promovida desde CI/CD — no reconstruir (LIN-K8S-001 sección 6.4)
+# El campo "name" debe ser la ruta COMPLETA de la imagen (registro+path), no el
+# nombre corto — Kustomize compara por coincidencia exacta contra la imagen del
+# Deployment base; con el nombre corto, newTag/newName se ignoraban en silencio (sin
+# error) y el overlay nunca sustituía el tag real. Bug real encontrado y corregido
+# (GOB-CHK-001, verificado comparando la salida de `kubectl kustomize` antes/después).
 images:
-  - name: api-nombre-sistema
-    newName: registry.gitlab.onp.gob.pe/aplicaciones/nombre-sistema/api-nombre-sistema
+  - name: registry.gitlab.onp.gob.pe/aplicaciones/nombre-sistema/api-nombre-sistema
     newTag: dev-latest   # CI actualiza este tag en cada despliegue a ONP_DESA
 
 # Réplicas para desarrollo

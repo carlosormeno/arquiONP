@@ -1,0 +1,51 @@
+<mat-nav-list class="onp-sidebar" [class.onp-sidebar--collapsed]="collapsed()" aria-label="Menú principal">
+  <button
+    #btnColapsar
+    mat-icon-button
+    type="button"
+    class="onp-sidebar__toggle"
+    [attr.aria-label]="collapsed() ? 'Expandir menú' : 'Colapsar menú'"
+    (click)="toggleCollapsed()"
+  >
+    <mat-icon aria-hidden="true">{{ collapsed() ? 'chevron_right' : 'chevron_left' }}</mat-icon>
+  </button>
+
+  @for (item of items(); track item.label) {
+    @if (item.children && item.children.length) {
+      <mat-expansion-panel class="onp-sidebar__group">
+        <mat-expansion-panel-header>
+          <mat-panel-title>
+            <mat-icon aria-hidden="true">{{ item.icon }}</mat-icon>
+            @if (!collapsed()) {
+              <span>{{ item.label }}</span>
+            }
+          </mat-panel-title>
+        </mat-expansion-panel-header>
+
+        @for (hijo of item.children; track hijo.label) {
+          <a
+            mat-list-item
+            [routerLink]="hijo.route"
+            routerLinkActive="onp-sidebar__link--active"
+          >
+            <mat-icon matListItemIcon aria-hidden="true">{{ hijo.icon }}</mat-icon>
+            @if (!collapsed()) {
+              <span matListItemTitle>{{ hijo.label }}</span>
+            }
+          </a>
+        }
+      </mat-expansion-panel>
+    } @else {
+      <a
+        mat-list-item
+        [routerLink]="item.route"
+        routerLinkActive="onp-sidebar__link--active"
+      >
+        <mat-icon matListItemIcon aria-hidden="true">{{ item.icon }}</mat-icon>
+        @if (!collapsed()) {
+          <span matListItemTitle>{{ item.label }}</span>
+        }
+      </a>
+    }
+  }
+</mat-nav-list>

@@ -96,10 +96,28 @@
             <artifactId>junit-jupiter</artifactId>
             <scope>test</scope>
         </dependency>
+        <!-- Pruebas de arquitectura (LIN-DIS-001 §2.3, §3.4 / LIN-DEV-JAVA-001 §15.5).
+             Este es el único módulo con todos los componentes del reactor en su
+             classpath de test, por eso las reglas ArchUnit del sistema viven aquí. -->
+        <dependency>
+            <groupId>com.tngtech.archunit</groupId>
+            <artifactId>archunit-junit5</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
         <plugins>
+            <!-- Versión fijada explícitamente (LIN-DEV-JAVA-001 §14.5): este módulo es donde corren
+                 las pruebas ArchUnit del reactor. No hereda spring-boot-starter-parent (POM padre
+                 propio "onp-template"), así que hoy resuelve una versión de Surefire que sí las
+                 ejecuta — pero sin fijarla, esa resolución no está garantizada. Ver hallazgo real en
+                 template-microservicio-java (que sí hereda spring-boot-starter-parent y expone el bug). -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.5.4</version>
+            </plugin>
             <!-- Únicamente este módulo emite el FAT-JAR ejecutable -->
             <plugin>
                 <groupId>org.springframework.boot</groupId>

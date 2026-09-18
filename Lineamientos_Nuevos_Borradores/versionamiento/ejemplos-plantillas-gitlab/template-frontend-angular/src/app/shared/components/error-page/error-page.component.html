@@ -1,0 +1,17 @@
+<main class="flex min-h-screen flex-col items-center justify-center gap-4 bg-onp-primary/5 p-6 text-center" role="main">
+  <mat-icon class="!text-6xl !h-16 !w-16 text-onp-error" aria-hidden="true">error_outline</mat-icon>
+
+  <h1 class="text-2xl font-semibold text-onp-primary">{{ codigo() }} — {{ info().titulo }}</h1>
+
+  <p class="max-w-md text-base text-gray-700" role="alert">{{ info().mensaje }}</p>
+
+  <button
+    #btnRegresar
+    mat-flat-button
+    color="primary"
+    type="button"
+    (click)="regresar()"
+  >
+    Regresar
+  </button>
+</main>

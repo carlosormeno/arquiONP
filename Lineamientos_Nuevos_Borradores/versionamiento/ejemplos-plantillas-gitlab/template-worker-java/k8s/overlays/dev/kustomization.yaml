@@ -1,0 +1,29 @@
+# EJEMPLO DE REFERENCIA — LIN-VER-001 Anexo F / LIN-K8S-001 Anexo A
+# Overlay para ambiente de desarrollo (rama ONP_DESA)
+# Sin patch de SPRING_PROFILES_ACTIVE: la base ya trae "dev,worker" / "dev,job" por defecto,
+# igual que template-backend-java deja "dev" en la base (ver README, "Perfiles y variantes").
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../base
+
+# Imagen promovida desde CI/CD — no reconstruir (LIN-K8S-001 sección 6.4)
+# El campo "name" debe ser la ruta COMPLETA de la imagen (registro+path), no el
+# nombre corto — Kustomize compara por coincidencia exacta contra la imagen del
+# Deployment base; con el nombre corto, newTag/newName se ignoraban en silencio (sin
+# error) y el overlay nunca sustituía el tag real. Bug real encontrado y corregido
+# (GOB-CHK-001, verificado comparando la salida de `kubectl kustomize` antes/después).
+images:
+  - name: registry.gitlab.onp.gob.pe/aplicaciones/nombre-sistema/worker-nombre-sistema
+    newTag: dev-latest   # CI actualiza este tag en cada despliegue a ONP_DESA
+
+# Réplicas para desarrollo — solo aplica al Deployment (Worker); CronJob no tiene "replicas".
+replicas:
+  - name: worker-nombre-sistema
+    count: 1
+
+# Patches específicos de desarrollo
+patchesStrategicMerge:
+  - patch-resources-dev.yaml   # límites de recursos reducidos para DEV

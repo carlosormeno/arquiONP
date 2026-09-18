@@ -1,0 +1,62 @@
+<section class="onp-usuario-form">
+  <h1>{{ esEdicion() ? 'Editar usuario' : 'Nuevo usuario' }}</h1>
+
+  @if (isLoading()) {
+    <mat-progress-bar mode="indeterminate" aria-label="Procesando"></mat-progress-bar>
+  }
+
+  <form #frmRegistroForm="ngForm" [formGroup]="frmRegistro" (ngSubmit)="guardar()" class="onp-usuario-form__grid">
+    <mat-form-field appearance="outline">
+      <mat-label>Nombre *</mat-label>
+      <input #txtNombre matInput formControlName="nombre" required />
+      @if (frmRegistro.get('nombre')?.hasError('required') && frmRegistro.get('nombre')?.touched) {
+        <mat-error role="alert">Campo requerido</mat-error>
+      }
+      @if (frmRegistro.get('nombre')?.hasError('apiError')) {
+        <mat-error role="alert">{{ frmRegistro.get('nombre')?.getError('apiError') }}</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>DNI *</mat-label>
+      <input #txtDni matInput formControlName="dni" maxlength="8" required />
+      @if (frmRegistro.get('dni')?.hasError('required') && frmRegistro.get('dni')?.touched) {
+        <mat-error role="alert">Campo requerido</mat-error>
+      }
+      @if (frmRegistro.get('dni')?.hasError('pattern')) {
+        <mat-error role="alert">El DNI debe tener 8 dígitos</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Correo *</mat-label>
+      <input #txtCorreo matInput type="email" formControlName="correo" required />
+      @if (frmRegistro.get('correo')?.hasError('required') && frmRegistro.get('correo')?.touched) {
+        <mat-error role="alert">Campo requerido</mat-error>
+      }
+      @if (frmRegistro.get('correo')?.hasError('email')) {
+        <mat-error role="alert">Correo no válido</mat-error>
+      }
+      @if (frmRegistro.get('correo')?.hasError('apiError')) {
+        <mat-error role="alert">{{ frmRegistro.get('correo')?.getError('apiError') }}</mat-error>
+      }
+    </mat-form-field>
+
+    @if (esEdicion()) {
+      <mat-form-field appearance="outline">
+        <mat-label>Estado</mat-label>
+        <mat-select #lstEstado formControlName="estado">
+          <mat-option value="ACTIVO">Activo</mat-option>
+          <mat-option value="INACTIVO">Inactivo</mat-option>
+        </mat-select>
+      </mat-form-field>
+    }
+
+    <div class="onp-usuario-form__acciones">
+      <button #btnGuardar mat-flat-button color="primary" type="submit" [disabled]="isLoading()">
+        Guardar
+      </button>
+      <button #btnCancelar mat-stroked-button type="button" (click)="cancelar()">Cancelar</button>
+    </div>
+  </form>
+</section>

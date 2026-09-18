@@ -1,7 +1,7 @@
 # LIN-CICD-001 — Lineamiento de Integración y Entrega Continua ONP
 
 **Código:** LIN-CICD-001  
-**Versión:** v0.1.8  
+**Versión:** v0.1.9  
 **Estado:** En revisión  
 **Fecha:** 2026-08-17  
 **Propietario documental:** Arquitectura de Software — OTI  
@@ -24,6 +24,7 @@
 | v0.1.6 | 2026-08-17 | Arquitectura OTI | Revisión de fondo (`GOB-CHK-001` H27). **(1) `§19.2` se titulaba «criterios de bloqueo *sugeridos*» y omitía siete de los once que `LIN-TEST-001 §9` —documento vigente— declara bloqueantes**: cobertura Angular, caracterización fallida o faltante ante PL/SQL crítico, prueba de contrato, E2E de *happy path*, reporte de cobertura ausente y opinión de UFSD. Otros tres figuraban degradados a «según fase». Reescrito separando lo que proviene del dueño —que no escala por fase y solo admite ADR— de lo propio del pipeline. **(2) `§11` y `§12.3`** presentaban la cobertura como capacidad de Fase 2 sin umbral; ahora remiten a `LIN-TEST-001 §5.1` y se explicita que **la fase determina si el control se automatiza, no si es exigible**. **(3) `§17.2` listaba `PQA` como ambiente de despliegue** entre DEV y QA: es una **rama** del modelo de promoción de `LIN-VER-001 §5`, y `LIN-K8S-001 §4.4` advierte expresamente contra esa confusión. Sustituido por UAT/Preproducción, que requiere ADR. **(4) `§13.3`** trataba los hallazgos altos como «plan de remediación» cuando `LIN-TEST-001 §9.2` los sitúa junto a los críticos para el pase a Producción, sin retest de UFSD. **(5)** El encabezado de `§18` arrastraba la nota editorial interna «(Validarlo con AD)», visible también en la tabla de contenido. El documento pasa a **En revisión** |
 | v0.1.7 | 2026-08-18 | Arquitectura OTI | `§12.5` declaraba que la verificación automática de fronteras de paquetes quedaba «fuera del alcance»; con `LIN-DEV-JAVA-001 §15.5` ya existe y se ejecuta en la fase de pruebas, de modo que el límite admitido se acota a lo que efectivamente no es automatizable. Las pruebas de arquitectura (`AT`) se incorporan a los criterios de bloqueo de `§19.2` (`GOB-CHK-001` H37) |
 | v0.1.8 | 2026-08-18 | Arquitectura OTI | El apartado de excepción titulaba «Proceso ADR para excepciones» y no definía identificador: una desviación de este lineamiento se registraba como «un ADR», instrumento que `GOB-MAT-001` reserva a las decisiones **institucionales** del Comité. Pasa a **`EXC-CICD-NNN`**, con vigencia acotada y fecha de revisión obligatoria (`GOB-CHK-001` H38) |
+| v0.1.9 | 2026-09-18 | Arquitectura OTI | El **Anexo B** (pipeline referencial frontend Angular) quedó desactualizado frente a `LIN-FE-ANG-001`: no incluía los stages `lint` (`§14.3`, agregado al construir el primer scaffold Angular real de `template-frontend-angular`) ni `e2e` (`§14.2`, Playwright — ya exigido, pero nunca reflejado aquí). Ambos agregados al pipeline de referencia, verificados corriendo de verdad contra el scaffold |
 
 ---
 
@@ -1313,7 +1314,9 @@ package:
 ```yaml
 stages:
   - install
+  - lint
   - test
+  - e2e
   - build
   - quality
 
@@ -1322,10 +1325,26 @@ install:
   script:
     - npm ci
 
+lint:
+  stage: lint
+  script:
+    - npm run lint
+
 unit_test:
   stage: test
   script:
     - npm test -- --watch=false
+
+e2e:
+  stage: e2e
+  image: mcr.microsoft.com/playwright:v1.63.0-noble
+  script:
+    - npm ci
+    - npx playwright test
+  artifacts:
+    when: always
+    paths:
+      - playwright-report/
 
 build:
   stage: build
@@ -1345,7 +1364,7 @@ lighthouse:
       - .lighthouseci/
 ```
 
-> Configuración completa de `lighthouserc.js` y umbrales institucionales en `LIN-FE-ANG-001 §15.2`; detalle del job y regla de bloqueo en [sección 9.4](#94-core-web-vitals-lighthouse-ci--gate-de-bloqueo).
+> Configuración completa de `lighthouserc.js` y umbrales institucionales en `LIN-FE-ANG-001 §15.2`; detalle del job y regla de bloqueo en [sección 9.4](#94-core-web-vitals-lighthouse-ci--gate-de-bloqueo). Los stages `lint` (`LIN-FE-ANG-001 §14.3`) y `e2e` (`§14.2`) son gates obligatorios, igual que `quality` — un pipeline que los omite no está conforme a este lineamiento.
 
 ### Anexo C — Pipeline referencial de imagen
 

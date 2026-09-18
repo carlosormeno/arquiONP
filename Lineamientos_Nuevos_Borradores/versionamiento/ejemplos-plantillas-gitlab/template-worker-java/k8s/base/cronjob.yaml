@@ -1,0 +1,75 @@
+# EJEMPLO DE REFERENCIA — LIN-K8S-001 §4.1 (fila "Job recurrente" -> CronJob)
+# Job recurrente: la MISMA tarea de job.yaml (ActualizacionMasivaJobRunner, perfil "job"),
+# programada por `schedule` en vez de invocada una sola vez. Mismo código Java, mismo Dockerfile
+# — únicamente cambia el recurso K8s (ver README, "Worker vs. Job puntual vs. Job recurrente").
+#
+# A diferencia de job.yaml, SÍ vive en k8s/base/kustomization.yaml "resources:": el objeto
+# CronJob en sí es estable y se reconcilia con `kubectl apply` normal — es Kubernetes quien crea
+# (y limpia, según los *HistoryLimit) un Job nuevo en cada disparo del `schedule`, no el equipo
+# de Desarrollo con `kubectl create` manual.
+
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: cronjob-nombre-sistema
+  labels:
+    app.kubernetes.io/name: cronjob-nombre-sistema
+    app.kubernetes.io/part-of: nombre-sistema
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/component: job
+    app.kubernetes.io/managed-by: kustomize
+spec:
+  # Ejemplo: todos los días a las 03:00 hora del clúster. Reemplazar por la periodicidad real.
+  schedule: "0 3 * * *"
+  concurrencyPolicy: Forbid  # evita solapar dos corridas sobre el mismo lote (TB_REGISTRO_PENDIENTE)
+  startingDeadlineSeconds: 300
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      ttlSecondsAfterFinished: 86400
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: cronjob-nombre-sistema
+            app.kubernetes.io/part-of: nombre-sistema
+            app.kubernetes.io/version: "1.0.0"
+            app.kubernetes.io/component: job
+            app.kubernetes.io/managed-by: kustomize
+        spec:
+          serviceAccountName: job-nombre-sistema
+          restartPolicy: Never
+          containers:
+            - name: cronjob-nombre-sistema
+              image: registry.gitlab.onp.gob.pe/aplicaciones/nombre-sistema/worker-nombre-sistema:1.0.0
+              imagePullPolicy: IfNotPresent
+              env:
+                - name: SPRING_PROFILES_ACTIVE
+                  value: dev,job
+              envFrom:
+                - configMapRef:
+                    name: worker-nombre-sistema-config
+              resources:
+                requests:
+                  cpu: "250m"
+                  memory: "512Mi"
+                limits:
+                  cpu: "1000m"
+                  memory: "1Gi"
+              securityContext:
+                allowPrivilegeEscalation: false
+                runAsNonRoot: true
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop:
+                    - ALL
+              volumeMounts:
+                - name: tmp
+                  mountPath: /tmp
+          volumes:
+            - name: tmp
+              emptyDir:
+                medium: Memory
+                sizeLimit: 64Mi
+          terminationGracePeriodSeconds: 10

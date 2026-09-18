@@ -1,0 +1,58 @@
+<main class="onp-login">
+  <form
+    #frmRegistro="ngForm"
+    [formGroup]="frmLogin"
+    (ngSubmit)="onSubmit()"
+    class="onp-login__card"
+    aria-labelledby="onpLoginTitulo"
+  >
+    <img
+      src="assets/images/logo-onp.svg"
+      alt="Logo institucional de la Oficina de Normalización Previsional"
+      class="onp-login__logo"
+    />
+    <h1 id="onpLoginTitulo" class="onp-login__title">Iniciar sesión</h1>
+
+    @if (isLoading()) {
+      <mat-progress-bar mode="indeterminate" aria-label="Verificando credenciales"></mat-progress-bar>
+    }
+
+    <mat-form-field appearance="outline" class="onp-login__field">
+      <mat-label>Usuario *</mat-label>
+      <input #txtUsuario matInput formControlName="usuario" autocomplete="username" required />
+      @if (frmLogin.get('usuario')?.hasError('required') && frmLogin.get('usuario')?.touched) {
+        <mat-error role="alert">Campo requerido</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="onp-login__field">
+      <mat-label>Clave *</mat-label>
+      <input
+        #txtClave
+        matInput
+        formControlName="clave"
+        [type]="ocultarClave() ? 'password' : 'text'"
+        autocomplete="current-password"
+        required
+      />
+      <button
+        #btnMostrarClave
+        mat-icon-button
+        matSuffix
+        type="button"
+        [attr.aria-label]="ocultarClave() ? 'Mostrar clave' : 'Ocultar clave'"
+        [attr.aria-pressed]="!ocultarClave()"
+        (click)="ocultarClave.set(!ocultarClave())"
+      >
+        <mat-icon aria-hidden="true">{{ ocultarClave() ? 'visibility' : 'visibility_off' }}</mat-icon>
+      </button>
+      @if (frmLogin.get('clave')?.hasError('required') && frmLogin.get('clave')?.touched) {
+        <mat-error role="alert">Campo requerido</mat-error>
+      }
+    </mat-form-field>
+
+    <button #btnGuardar mat-flat-button color="primary" type="submit" [disabled]="isLoading()" class="onp-login__submit">
+      Ingresar
+    </button>
+  </form>
+</main>

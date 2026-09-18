@@ -1,0 +1,25 @@
+# EJEMPLO DE REFERENCIA — LIN-VER-001 Anexo F / LIN-K8S-001 Anexo A
+# Overlay para producción (rama master)
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../base
+
+# Imagen certificada en QA — misma imagen, misma versión (LIN-K8S-001 sección 6.4)
+# El campo "name" debe ser la ruta COMPLETA de la imagen (registro+path), no el
+# nombre corto — Kustomize compara por coincidencia exacta contra la imagen del
+# Deployment base; con el nombre corto, newTag/newName se ignoraban en silencio (sin
+# error) y el overlay nunca sustituía el tag real. Bug real encontrado y corregido
+# (GOB-CHK-001, verificado comparando la salida de `kubectl kustomize` antes/después).
+images:
+  - name: registry.gitlab.onp.gob.pe/aplicaciones/nombre-sistema/worker-nombre-sistema
+    newTag: "1.0.0"   # debe coincidir con el tag certificado en QA
+
+replicas:
+  - name: worker-nombre-sistema
+    count: 3
+
+patchesStrategicMerge:
+  - patch-profile-prod.yaml

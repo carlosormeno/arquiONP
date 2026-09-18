@@ -1,0 +1,14 @@
+<onp-header (toggleMenu)="toggleMenu()"></onp-header>
+
+<mat-sidenav-container class="onp-shell__container">
+  <mat-sidenav mode="side" [opened]="menuAbierto()" class="no-print">
+    <onp-sidebar></onp-sidebar>
+  </mat-sidenav>
+
+  <mat-sidenav-content>
+    <main class="onp-shell__content" role="main">
+      <router-outlet></router-outlet>
+    </main>
+    <onp-footer></onp-footer>
+  </mat-sidenav-content>
+</mat-sidenav-container>

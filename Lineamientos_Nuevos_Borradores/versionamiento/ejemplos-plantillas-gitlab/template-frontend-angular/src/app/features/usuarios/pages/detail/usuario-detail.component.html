@@ -1,0 +1,27 @@
+<section class="onp-usuario-detail">
+  @if (isLoading()) {
+    <mat-progress-bar mode="indeterminate" aria-label="Cargando usuario"></mat-progress-bar>
+  }
+
+  @if (usuario(); as u) {
+    <mat-card>
+      <mat-card-header>
+        <mat-card-title>{{ u.nombre }}</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <dl>
+          <dt>DNI</dt>
+          <dd>{{ u.dni }}</dd>
+          <dt>Correo</dt>
+          <dd>{{ u.correo }}</dd>
+          <dt>Estado</dt>
+          <dd>{{ u.estado }}</dd>
+        </dl>
+      </mat-card-content>
+      <mat-card-actions>
+        <button #btnRegresar mat-button type="button" (click)="regresar()">Regresar</button>
+        <a mat-flat-button color="primary" [routerLink]="['/usuarios', u.id, 'edit']">Editar</a>
+      </mat-card-actions>
+    </mat-card>
+  }
+</section>

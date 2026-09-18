@@ -1,0 +1,25 @@
+# EJEMPLO DE REFERENCIA — LIN-VER-001 Anexo F
+# Ajustar los grupos con los nombres reales existentes en GitLab.
+# ADVERTENCIA: Los grupos referenciados deben existir en GitLab.
+# Si un grupo no existe, la regla se aplica silenciosamente sin efecto.
+
+# Propietario por defecto — todo lo no cubierto abajo
+* @APLICACIONES/arquitectura-oti
+
+# Código fuente — revisión de desarrollo
+/src/ @APLICACIONES/desarrollo
+
+# Adapter de entrada Kafka — revisión de Arquitectura (contrato de evento CloudEvents, LIN-BUS-001)
+/src/main/java/**/messaging/ @APLICACIONES/desarrollo @APLICACIONES/arquitectura-oti
+
+# Scripts de base de datos — revisión de datos/BD
+/db/ @APLICACIONES/desarrollo @APLICACIONES/arquitectura-oti
+
+# Manifiestos Kubernetes — revisión de Plataforma (incluye Deployment/Job/CronJob, LIN-K8S-001 §4.1)
+/k8s/ @APLICACIONES/plataforma
+
+# Architecture Decision Records
+/docs/adr/ @APLICACIONES/arquitectura-oti
+
+# Dockerfile — revisión conjunta
+Dockerfile @APLICACIONES/desarrollo @APLICACIONES/plataforma

@@ -1,0 +1,28 @@
+# EJEMPLO DE REFERENCIA — LIN-VER-001 Anexo F / LIN-K8S-001 Anexo A
+# Overlay para ambiente de desarrollo (rama ONP_DESA)
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../base
+
+# Imagen promovida desde CI/CD — no reconstruir (LIN-K8S-001 sección 6.4)
+# IMPORTANTE: "name" debe ser la ruta COMPLETA de imagen tal como aparece en
+# k8s/base/deployment.yaml (no solo el nombre corto) — de lo contrario Kustomize no encuentra
+# coincidencia y el newTag/newName se ignora en silencio (hallazgo de esta plantilla: el mismo
+# defecto existe hoy en k8s/overlays/dev de template-backend-java-modular, donde "name:
+# api-nombre-sistema" tampoco hace match contra la imagen completa del Deployment base y el
+# overlay de dev nunca cambia el tag "1.0.0" a "dev-latest" — candidato a hallazgo de gobierno).
+images:
+  - name: registry.gitlab.onp.gob.pe/aplicaciones/nombre-microservicio/nombre-microservicio
+    newTag: dev-latest   # CI actualiza este tag en cada despliegue a ONP_DESA
+
+# Réplicas para desarrollo
+replicas:
+  - name: nombre-microservicio
+    count: 1
+
+# Patches específicos de desarrollo
+patchesStrategicMerge:
+  - patch-resources-dev.yaml   # límites de recursos reducidos para DEV

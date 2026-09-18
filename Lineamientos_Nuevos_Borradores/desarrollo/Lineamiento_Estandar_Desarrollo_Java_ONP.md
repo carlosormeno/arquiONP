@@ -1,6 +1,6 @@
 # LIN-DEV-JAVA-001 — Estándar de Desarrollo Java ONP
 ## Oficina de Normalización Previsional — OTI
-### Código: LIN-DEV-JAVA-001 | Versión 0.1.13 | Estado: En revisión | Marco rector: LIN-ARQ-001 (Nivel 1)
+### Código: LIN-DEV-JAVA-001 | Versión 0.1.14 | Estado: En revisión | Marco rector: LIN-ARQ-001 (Nivel 1)
 
 ---
 
@@ -22,6 +22,7 @@
 | 0.1.11 | 2026-08-09 | OTI | La sección 16 redefinía reglas de revisión de código que pertenecen a `LIN-VER-001 §12` (autoaprobación, revisor mínimo, tamaño máximo de PR). El efecto era que el límite de **400 líneas** solo existía en el estándar de Java, dejando sin regla de tamaño a los MR de Angular, SQL y manifiestos K8s. La sección ahora remite al documento dueño y conserva únicamente las verificaciones propias del stack Java (`GOB-CHK-001` H23) |
 | 0.1.12 | 2026-08-18 | OTI | Incorpora **`§15.5` Pruebas de arquitectura (ArchUnit)**, que cierran el único control del Monolito Modular que carecía de verificación automática (`GOB-CHK-001` H37). La declaración jurada de `LIN-ARQ-001 §8.3` numeral 4 era hasta ahora la palabra del Tech Lead: `LIN-CICD-001 §12.5` solo comprueba que el texto exista y el grafo de servicios no puede verlo porque las llamadas entre módulos son in-process. Seis reglas mínimas obligatorias: tres de gobierno del Shared Kernel (`LIN-DIS-001 §3.4`), una de aislamiento entre Bounded Contexts —la frontera que Maven **no** impide, porque basta añadir la dependencia al `pom.xml`— y dos de pureza del dominio |
 | 0.1.13 | 2026-08-18 | OTI | El apartado de excepción titulaba «Proceso de excepción a este estándar» y no definía identificador: una desviación de este lineamiento se registraba como «un ADR», instrumento que `GOB-MAT-001` reserva a las decisiones **institucionales** del Comité. Pasa a **`EXC-JAVA-NNN`**, con vigencia acotada y fecha de revisión obligatoria (`GOB-CHK-001` H38) |
+| 0.1.14 | 2026-09-18 | OTI | `§14.5` (Plugins estándar obligatorios en CI) no fijaba versión de `maven-surefire-plugin`. Hallazgo real al construir `template-microservicio-java`: la versión que hereda `spring-boot-starter-parent:3.5.0` (3.5.3) no ejecuta las pruebas de ArchUnit de `§15.5` — `mvn test` reporta `Tests run: 0` para la clase de arquitectura sin ningún error visible, silencio que deja pasar violaciones de la pureza hexagonal sin que nadie lo note. Se fija `<version>3.5.4</version>` explícitamente |
 
 ---
 
@@ -3148,6 +3149,24 @@ Existe un POM padre institucional del proyecto (`packaging: pom`) que declara en
     </executions>
 </plugin>
 
+<!--
+  Versión de maven-surefire-plugin FIJADA explícitamente — no dejar que la herede
+  spring-boot-starter-parent. Verificado construyendo template-microservicio-java: la
+  versión de Surefire que resuelve spring-boot-starter-parent:3.5.0 (3.5.3) no ejecuta
+  las pruebas de ArchUnit — mvn test reporta "Tests run: 0" para la clase de arquitectura
+  SIN ningún error visible; el motor archunit-junit5-engine se carga pero el TestPlan
+  termina vacío. Con 3.5.4 corren correctamente. Esto afecta a cualquier proyecto en un
+  solo módulo (Monolito Simple o Microservicio, §14.3) que combine spring-boot-starter-parent
+  con ArchUnit — los proyectos con POM padre propio (Monolito Modular, §14.3) no lo heredan
+  de spring-boot-starter-parent y no están expuestos, pero fijar la versión aquí de forma
+  universal evita depender de qué POM padre esté activo.
+-->
+<plugin>
+    <groupId>org.apache.maven.plugins</groupId>
+    <artifactId>maven-surefire-plugin</artifactId>
+    <version>3.5.4</version>
+</plugin>
+
 <!-- Cobertura de pruebas -->
 <!--
   El umbral mínimo NO es 80% fijo para todo proyecto: depende del estilo arquitectónico
@@ -3456,12 +3475,12 @@ Cualquier desviación de este estándar — incluyendo omitir la revisión por u
 En alineación con el patrón arquitectónico **PA14 (Feature Toggle)** de **`ARQ-R-002` (LIN-ARQ-001 §2.3)** y las directivas de control de cambios de **LIN-VER-001**, el uso de *Feature Toggles* (o banderas de funcionalidad) es un mecanismo permitido para el despliegue continuo y la entrega progresiva, pero está sujeto a un riguroso control de ciclo de vida para garantizar la **deuda técnica cero**.
 
 #### 16.6.1 Estrategia Tecnológica Oficial en Dos Niveles
-Para mantener un stack mínimo, homogéneo y eficiente en Spring Boot 3, la ONP estandariza la implementación de *Feature Toggles* en dos niveles operativos, en conformidad con **ADR-014 (LIN-ARQ-001 Apéndice A)**:
+Para mantener un stack mínimo, homogéneo y eficiente en Spring Boot 3, la ONP estandariza la implementación de *Feature Toggles* en dos niveles operativos, en conformidad con **ADR-014 (LIN-ARQ-001 Apéndice A, `Propuesta` — instancia institucional de Unleash pendiente de despliegue)**:
 
 | Nivel Operativo | Tecnologías Estándar | Cuándo Utilizar |
 |---|---|---|
-| **Nivel 1: Nativo / Estático** | `Spring Profiles` y `@ConditionalOnProperty` / `@ConditionalOnExpression` configurados en `application.yml` o inyectados vía **K8s ConfigMaps**. | Toggles estructurales, activación de adaptadores externos, migraciones de infraestructura o funcionalidades de conmutación poco frecuente que toleran el reinicio del pod en el despliegue. |
-| **Nivel 2: Dinámico / Runtime** | **Unleash** como estándar institucional on-premise mandatorio. Librerías cliente en Java como **Togglz** se permiten únicamente como proveedor conectado al backend de Unleash (`togglz-unleash-provider`). | Exclusivamente para funcionalidades de alta criticidad o conmutación frecuente en tiempo real en Producción, donde el negocio o la operación requiere apagar/encender flujos sin reiniciar contenedores en Kubernetes. Cualquier plataforma externa alternativa requiere ADR de Arquitectura y Seguridad. |
+| **Nivel 1: Nativo / Estático** | `Spring Profiles` y `@ConditionalOnProperty` / `@ConditionalOnExpression` configurados en `application.yml` o inyectados vía **K8s ConfigMaps**. | Toggles estructurales, activación de adaptadores externos, migraciones de infraestructura o funcionalidades de conmutación poco frecuente que toleran el reinicio del pod en el despliegue. **Estándar por defecto también para toggles dinámicos mientras Unleash no esté desplegado** (`LIN-ARQ-001 §2.3`), usando `Spring Cloud Config` en lugar de ConfigMaps estáticos cuando se requiera recarga sin reinicio. |
+| **Nivel 2: Dinámico / Runtime** | **Unleash** como estándar institucional on-premise, mandatorio **una vez desplegada la instancia** (`ADR-014`, `Propuesta`). Librerías cliente en Java como **Togglz** se permiten únicamente como proveedor conectado al backend de Unleash (`togglz-unleash-provider`). | Exclusivamente para funcionalidades de alta criticidad o conmutación frecuente en tiempo real en Producción, donde el negocio o la operación requiere apagar/encender flujos sin reiniciar contenedores en Kubernetes. |
 
 **Ejemplo de Toggle Nivel 1 (Nativo con `@ConditionalOnProperty`):**
 ```java

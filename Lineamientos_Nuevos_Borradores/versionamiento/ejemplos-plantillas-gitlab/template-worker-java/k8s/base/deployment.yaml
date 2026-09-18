@@ -1,0 +1,98 @@
+# EJEMPLO DE REFERENCIA — LIN-K8S-001 sección 9.2 / §4.1 (fila "Worker" -> Deployment)
+# Worker continuo: consumidor Kafka de vida larga (TareaSolicitadaConsumer, perfil "worker").
+# Reemplazar `nombre-sistema` y la versión de imagen por los valores reales.
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: worker-nombre-sistema
+  labels:
+    app.kubernetes.io/name: worker-nombre-sistema
+    app.kubernetes.io/part-of: nombre-sistema
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/component: worker
+    app.kubernetes.io/managed-by: kustomize
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: worker-nombre-sistema
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: worker-nombre-sistema
+        app.kubernetes.io/part-of: nombre-sistema
+        app.kubernetes.io/version: "1.0.0"
+        app.kubernetes.io/component: worker
+        app.kubernetes.io/managed-by: kustomize
+    spec:
+      serviceAccountName: worker-nombre-sistema
+      containers:
+        - name: worker-nombre-sistema
+          # Tag explícito e inmutable. `latest` está PROHIBIDO en QA y PROD
+          # (LIN-K8S-001 sección 6.3 y anti-patrones de la sección 19).
+          image: registry.gitlab.onp.gob.pe/aplicaciones/nombre-sistema/worker-nombre-sistema:1.0.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            # Único puerto del contenedor: expone SOLO Actuator (health/metrics/prometheus).
+            # Este worker no tiene controladores REST de negocio (ver README).
+            - name: http
+              containerPort: 8080
+          env:
+            # "worker" activa TareaSolicitadaConsumer (ver TemplateWorkerApplication). El
+            # ambiente (dev/qa/prod) va primero porque así se leen application-{env}.yml antes
+            # que application-worker.yml, igual que en template-backend-java.
+            - name: SPRING_PROFILES_ACTIVE
+              value: dev,worker
+          envFrom:
+            - configMapRef:
+                name: worker-nombre-sistema-config
+          # requests y limits son obligatorios (LIN-K8S-001 P6 y sección 10.1).
+          # Ajustar a la carga real medida, no dejar estos valores por defecto.
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "512Mi"
+            limits:
+              cpu: "1000m"
+              memory: "1Gi"
+          # Probes obligatorias (LIN-K8S-001 §11.1) — solo aplican a esta variante Worker/Deployment.
+          # Job y CronJob (job.yaml, cronjob.yaml) NO llevan probes: terminan solos.
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: http
+            initialDelaySeconds: 60
+            periodSeconds: 20
+            timeoutSeconds: 3
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          # Controles obligatorios de LIN-K8S-001 sección 14.1
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          # readOnlyRootFilesystem exige montar /tmp: Spring Boot escribe ahí sus
+          # temporales y sin este volumen el contenedor no arranca (nota 14.1).
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir:
+            medium: Memory
+            sizeLimit: 64Mi
+      # 30s: da tiempo al consumer group de Kafka a hacer un rebalance limpio antes de que el
+      # pod se cierre (a diferencia de Job/CronJob, que no pertenecen a un grupo de consumo y
+      # usan un valor menor — ver job.yaml/cronjob.yaml).
+      terminationGracePeriodSeconds: 30

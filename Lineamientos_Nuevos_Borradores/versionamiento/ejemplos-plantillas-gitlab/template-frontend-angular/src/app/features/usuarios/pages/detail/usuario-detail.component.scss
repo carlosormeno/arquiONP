@@ -1,0 +1,10 @@
+dl {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px 16px;
+}
+
+dt {
+  font-weight: 600;
+  color: var(--onp-text-secondary);
+}

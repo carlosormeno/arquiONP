@@ -313,6 +313,7 @@ La cobertura se mide con JaCoCo (backend Java). Para Angular, la cobertura de st
 | Hexagonal | ≥70% instrucción | Casos de uso: ≥85%; Dominio: ≥85% |
 | Microservicio | ≥70% instrucción | Dominio / casos de uso: ≥85% |
 | EDA (Consumidor Kafka) | ≥65% instrucción | Handler de procesamiento: ≥80% |
+| Worker / Job Batch (`LIN-K8S-001 §4.1`) | ≥65% instrucción | Lógica de procesamiento (*Table Module*, `LIN-DIS-001 §4.1`): ≥80% |
 
 > **Qué NO medir con umbrales duros:** Controllers (mejor cubiertos con integración), adaptadores de infraestructura, clases de configuración y clases generadas.
 

@@ -1,0 +1,25 @@
+# EJEMPLO DE REFERENCIA — LIN-VER-001 Anexo F / LIN-K8S-001 Anexo A y §4.1
+# Base Kustomize para las TRES variantes de workload del worker.
+# Completar con los manifiestos reales del sistema.
+#
+# job.yaml (Job puntual) NO está en "resources": se invoca ad hoc (ver el comentario dentro de
+# ese archivo), no se reconcilia con `kubectl apply -k` continuo como el resto de esta base.
+# Un sistema real probablemente no necesita las tres variantes a la vez — este scaffold las
+# incluye todas solo con fines de referencia; borrar la que no aplique (ver README).
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Reemplazar con el nombre real del namespace y sistema
+namespace: nombre-sistema
+
+resources:
+  - deployment.yaml       # Worker continuo (LIN-K8S-001 §4.1: Worker -> Deployment)
+  - cronjob.yaml           # Job recurrente (LIN-K8S-001 §4.1: Job recurrente -> CronJob)
+  - configmap.yaml
+  # job.yaml se aplica aparte — ver comentario arriba y dentro de job.yaml
+  - networkpolicy.yaml     # obligatoria para el Worker: expone /actuator/prometheus (sección 9.1)
+
+commonLabels:
+  app.kubernetes.io/part-of: nombre-sistema
+  app.kubernetes.io/managed-by: kustomize

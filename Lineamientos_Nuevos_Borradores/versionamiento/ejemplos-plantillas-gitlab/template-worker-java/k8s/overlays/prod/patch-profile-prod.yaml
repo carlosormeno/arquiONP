@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: worker-nombre-sistema
+spec:
+  template:
+    spec:
+      containers:
+        - name: worker-nombre-sistema
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: prod,worker
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: cronjob-nombre-sistema
+spec:
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+            - name: cronjob-nombre-sistema
+              env:
+                - name: SPRING_PROFILES_ACTIVE
+                  value: prod,job

@@ -1,0 +1,20 @@
+.onp-usuario-list__filtros {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.onp-usuario-list__toolbar {
+  margin: 12px 0;
+}
+
+.onp-usuario-list__table {
+  width: 100%;
+}
+
+.onp-usuario-list__vacio {
+  padding: 16px;
+  text-align: center;
+  color: var(--onp-text-secondary);
+}

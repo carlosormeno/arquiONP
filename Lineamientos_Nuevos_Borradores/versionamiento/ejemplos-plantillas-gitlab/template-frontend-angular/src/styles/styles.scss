@@ -1,0 +1,51 @@
+// styles/styles.scss — Entry point de estilos globales (LIN-FE-ANG-001 §4)
+@use './tokens' as tokens;
+@use './mat-theme';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html {
+  height: 100%;
+}
+
+body {
+  // El tema Angular Material define el color-scheme y las variables
+  // --mat-sys-* (ver _mat-theme.scss). ONP fija color-scheme: light por
+  // defecto — no se ha adoptado un tema oscuro institucional.
+  color-scheme: light;
+
+  margin: 0;
+  height: 100%;
+
+  background-color: var(--onp-bg-page);
+  color: var(--onp-text-primary);
+  font-family: var(--onp-font-family);
+  font-size: var(--onp-font-size-base);
+  line-height: var(--onp-line-height);
+}
+
+// Clases de panelClass usadas por NotificationService (LIN-FE-ANG-001 §10.1)
+.snack-success {
+  --mdc-snackbar-container-color: var(--onp-success);
+  --mdc-snackbar-supporting-text-color: #ffffff;
+}
+
+.snack-error {
+  --mdc-snackbar-container-color: var(--onp-error);
+  --mdc-snackbar-supporting-text-color: #ffffff;
+}
+
+.snack-warning {
+  --mdc-snackbar-container-color: var(--onp-warning);
+  --mdc-snackbar-supporting-text-color: #212121;
+}
+
+// Utilidad global para ocultar elementos de shell (menú, cabecera, botones)
+// al imprimir vistas de reporte (LIN-FE-ANG-001 §11.2).
+@media print {
+  .no-print {
+    display: none !important;
+  }
+}

@@ -1,0 +1,36 @@
+// styles/_mat-theme.scss — Tema Angular Material personalizado ONP
+//
+// AVISO DE GOBIERNO DOCUMENTAL — divergencia con LIN-FE-ANG-001 §8.4:
+// El código de referencia de §8.4 (`mat.define-palette`,
+// `mat.define-light-theme`, `mat.define-typography-config`,
+// `mat.all-component-themes`) es la API de theming Material 2 (M2) de
+// Angular Material. Con la versión de Angular Material instalada por este
+// scaffold (^22.1.7, la LTS vigente que exige §3 con "≥18"), esa API ya no
+// es la recomendada: Angular Material publica ahora el sistema de theming
+// Material 3 (M3) mediante el mixin `mat.theme()` sobre variables CSS
+// (`--mat-sys-*`), y los símbolos M2 fueron renombrados con prefijo `m2-`
+// (`mat.m2-define-palette`, etc.) cuando aún existen. Copiar el código de
+// §8.4 tal cual NO compila contra la versión de Material que Angular CLI
+// instala hoy. Este archivo usa la API M3 vigente y debe tratarse como
+// hallazgo para actualizar §8.4 (ver reporte de entrega).
+@use '@angular/material' as mat;
+
+html {
+  // density: 0 es el valor de §8.4; primary/tertiary son PLACEHOLDERS de
+  // trabajo (mat.$azure-palette / mat.$blue-palette) hasta que se genere la
+  // paleta M3 real a partir del color institucional oficial ONP con la
+  // Material Theme Builder (ver aviso en _tokens.scss).
+  // La familia tipográfica se repite aquí como string literal (Sass no
+  // resuelve custom properties CSS en tiempo de compilación del mixin) —
+  // debe mantenerse sincronizada con --onp-font-family en _tokens.scss.
+  @include mat.theme(
+    (
+      color: (
+        primary: mat.$azure-palette,
+        tertiary: mat.$blue-palette,
+      ),
+      typography: 'Roboto, Arial, Helvetica, sans-serif',
+      density: 0,
+    )
+  );
+}

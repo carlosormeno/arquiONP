@@ -1,0 +1,194 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  EJEMPLO DE REFERENCIA — LIN-VER-001 Anexo F (F.2: "Worker / Job Java" → `template-worker-java`)
+  POM único, sin multi-módulo (a diferencia de template-backend-java-modular). Un solo jar
+  ejecutable sirve las tres variantes de workload de LIN-K8S-001 §4.1 (Worker/Deployment,
+  Job puntual/Job, Job recurrente/CronJob); la variante activa la decide el perfil Spring
+  ("worker" o "job") indicado en SPRING_PROFILES_ACTIVE del manifiesto K8s correspondiente
+  — ver README "Perfiles y variantes de workload".
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>3.5.0</version>
+        <relativePath/>
+    </parent>
+
+    <groupId>pe.gob.onp.template</groupId>
+    <artifactId>template-worker-java</artifactId>
+    <version>0.1.0-SNAPSHOT</version>
+    <name>template-worker-java</name>
+    <description>Plantilla institucional ONP para workers y jobs batch Java/Spring Boot</description>
+
+    <properties>
+        <java.version>21</java.version>
+        <logstash.logback.encoder.version>7.4</logstash.logback.encoder.version>
+        <opentelemetry.logback.appender.version>2.14.0-alpha</opentelemetry.logback.appender.version>
+        <!-- LIN-TEST-001 §5.1 (TEST-R-001) norma la fila "Worker / Job Batch": ≥65% instrucción global,
+             ≥80% en la lógica de procesamiento (Table Module, LIN-DIS-001 §4.1) — que es exactamente
+             ActualizacionMasivaJobRunner/RegistroPendienteTableModule en este proyecto. El handler Kafka
+             (TareaSolicitadaConsumer) queda cubierto por el mismo umbral global de esta fila.
+        -->
+        <jacoco.coverage.minimum>0.65</jacoco.coverage.minimum>
+    </properties>
+
+    <dependencies>
+        <!-- Sin spring-boot-starter-web como dependencia "de negocio": este worker no expone API REST.
+             Se incluye igualmente más abajo por una única razón técnica: Spring Boot Actuator no puede
+             exponer sus endpoints por HTTP sin una pila web (MVC o WebFlux) en el classpath. El perfil
+             "worker" (Deployment continuo) la necesita para cumplir las probes obligatorias de
+             LIN-K8S-001 §11.1/§11.2. El perfil "job" (Job/CronJob) fuerza
+             spring.main.web-application-type=none (ver application.yml) para NO levantar el servidor
+             embebido en un proceso de vida corta, aunque la dependencia esté presente en el classpath. -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.kafka</groupId>
+            <artifactId>spring-kafka</artifactId>
+        </dependency>
+        <!-- JPA (idempotencia del consumidor, TB_EVENTO_PROCESADO) + JdbcTemplate (Table Module de
+             batch, TB_REGISTRO_PENDIENTE) — spring-boot-starter-data-jpa trae transitivamente
+             spring-boot-starter-jdbc. -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-jpa</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-database-oracle</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.oracle.database.jdbc</groupId>
+            <artifactId>ojdbc11</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-tracing-bridge-otel</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-exporter-otlp</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.opentelemetry.instrumentation</groupId>
+            <artifactId>opentelemetry-logback-appender-1.0</artifactId>
+            <version>${opentelemetry.logback.appender.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>net.logstash.logback</groupId>
+            <artifactId>logstash-logback-encoder</artifactId>
+            <version>${logstash.logback.encoder.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.kafka</groupId>
+            <artifactId>spring-kafka-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <!-- Versión fijada explícitamente (LIN-DEV-JAVA-001 §14.5): spring-boot-starter-parent
+                     hereda una versión de Surefire con una regresión real y verificada — en proyectos
+                     que combinan spring-boot-starter-parent + ArchUnit, esa versión reporta "Tests run: 0"
+                     para las pruebas de arquitectura sin ningún error visible (ver template-microservicio-java). -->
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.5.4</version>
+            </plugin>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>0.8.12</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>report</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>check</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                        <configuration>
+                            <excludes>
+                                <exclude>**/dto/**</exclude>
+                                <exclude>**/dedup/*Entity.*</exclude>
+                                <exclude>**/config/**</exclude>
+                                <exclude>**/exception/**</exclude>
+                                <exclude>**/*Application.*</exclude>
+                            </excludes>
+                            <rules>
+                                <rule>
+                                    <element>BUNDLE</element>
+                                    <limits>
+                                        <limit>
+                                            <counter>LINE</counter>
+                                            <value>COVEREDRATIO</value>
+                                            <minimum>${jacoco.coverage.minimum}</minimum>
+                                        </limit>
+                                    </limits>
+                                </rule>
+                            </rules>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-checkstyle-plugin</artifactId>
+                <version>3.4.0</version>
+                <configuration>
+                    <configLocation>checkstyle-onp.xml</configLocation>
+                    <includeTestSourceDirectory>true</includeTestSourceDirectory>
+                    <failsOnError>true</failsOnError>
+                    <consoleOutput>true</consoleOutput>
+                </configuration>
+                <executions>
+                    <execution>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>

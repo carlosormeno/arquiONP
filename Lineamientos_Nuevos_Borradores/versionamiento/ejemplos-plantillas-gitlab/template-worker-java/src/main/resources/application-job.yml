@@ -1,0 +1,7 @@
+# Perfil de VARIANTE (no de ambiente) — se combina con dev/qa/prod, ej. SPRING_PROFILES_ACTIVE=prod,job.
+# Deliberadamente sin propiedades adicionales: hereda spring.main.web-application-type=none de
+# application.yml base (no necesita sobrescribirlo, a diferencia de application-worker.yml) y no
+# expone Actuator por HTTP — un Job/CronJob de vida corta no recibe probes de Kubernetes
+# (LIN-K8S-001 §4.1: Job/CronJob no llevan readinessProbe/livenessProbe).
+# Este archivo existe para que el perfil "job" sea igual de descubrible que "worker" y como punto
+# de extensión (ej. tamanio-pagina distinto por ambiente) sin tener que crear el archivo desde cero.

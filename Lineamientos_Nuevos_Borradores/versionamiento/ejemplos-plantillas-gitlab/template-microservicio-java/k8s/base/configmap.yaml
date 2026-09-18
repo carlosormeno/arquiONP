@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nombre-microservicio-config
+data:
+  APP_DESCRIPTION: "Plantilla backend ONP — Microservicio independiente Hexagonal (Estadio 3)"
+  # Punto de salida externo (RENIEC / Registro Civil) — ver onp.cliente.registro-civil.* en
+  # application.yml. Externalizado para poder apuntar a distinto endpoint por ambiente sin
+  # reconstruir la imagen (ver overlays/*).
+  REGISTRO_CIVIL_BASE_URL: "https://registro-civil.reniec.gob.pe"

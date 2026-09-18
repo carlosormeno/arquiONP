@@ -1,0 +1,102 @@
+<section class="onp-usuario-list">
+  <h1>Usuarios</h1>
+
+  <form
+    #frmBusqueda="ngForm"
+    [formGroup]="frmFiltros"
+    (ngSubmit)="buscar()"
+    class="onp-usuario-list__filtros"
+    aria-label="Filtros de búsqueda de usuarios"
+  >
+    <mat-form-field appearance="outline">
+      <mat-label>Nombre</mat-label>
+      <input #txtNombre matInput formControlName="nombre" />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>DNI</mat-label>
+      <input #txtDni matInput formControlName="dni" maxlength="8" />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Estado</mat-label>
+      <mat-select #lstEstado formControlName="estado">
+        <mat-option value="">Todos</mat-option>
+        <mat-option value="ACTIVO">Activo</mat-option>
+        <mat-option value="INACTIVO">Inactivo</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <button #btnBuscar mat-flat-button color="primary" type="submit">Buscar</button>
+    <button #btnLimpiar mat-stroked-button type="button" (click)="limpiar()">Limpiar</button>
+  </form>
+
+  @if (isLoading()) {
+    <mat-progress-bar mode="indeterminate" aria-label="Cargando usuarios"></mat-progress-bar>
+  }
+
+  <div class="onp-usuario-list__toolbar">
+    <a #btnNuevo mat-flat-button color="accent" routerLink="/usuarios/new">
+      <mat-icon aria-hidden="true">add</mat-icon>
+      Nuevo
+    </a>
+  </div>
+
+  <table #tblUsuarios mat-table [dataSource]="usuarios()" matSort (matSortChange)="onSortChange($event)" class="onp-usuario-list__table">
+    <ng-container matColumnDef="nombre">
+      <th mat-header-cell *matHeaderCellDef mat-sort-header>Nombre</th>
+      <td mat-cell *matCellDef="let usuario">{{ usuario.nombre }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="dni">
+      <th mat-header-cell *matHeaderCellDef mat-sort-header>DNI</th>
+      <td mat-cell *matCellDef="let usuario">{{ usuario.dni }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="correo">
+      <th mat-header-cell *matHeaderCellDef mat-sort-header>Correo</th>
+      <td mat-cell *matCellDef="let usuario">{{ usuario.correo }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="estado">
+      <th mat-header-cell *matHeaderCellDef mat-sort-header>Estado</th>
+      <td mat-cell *matCellDef="let usuario">{{ usuario.estado }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="acciones">
+      <th mat-header-cell *matHeaderCellDef>Acciones</th>
+      <td mat-cell *matCellDef="let usuario">
+        <a mat-icon-button [routerLink]="['/usuarios', usuario.id]" [attr.aria-label]="'Ver ' + usuario.nombre">
+          <mat-icon aria-hidden="true">visibility</mat-icon>
+        </a>
+        <a mat-icon-button [routerLink]="['/usuarios', usuario.id, 'edit']" [attr.aria-label]="'Editar ' + usuario.nombre">
+          <mat-icon aria-hidden="true">edit</mat-icon>
+        </a>
+        <button
+          mat-icon-button
+          type="button"
+          [attr.aria-label]="'Eliminar ' + usuario.nombre"
+          (click)="eliminar(usuario)"
+        >
+          <mat-icon aria-hidden="true">delete</mat-icon>
+        </button>
+      </td>
+    </ng-container>
+
+    <tr mat-header-row *matHeaderRowDef="columnas"></tr>
+    <tr mat-row *matRowDef="let row; columns: columnas"></tr>
+  </table>
+
+  @if (!isLoading() && usuarios().length === 0) {
+    <p class="onp-usuario-list__vacio" role="status">No se encontraron usuarios con los filtros indicados.</p>
+  }
+
+  <mat-paginator
+    [length]="totalElementos()"
+    [pageSize]="tamanio()"
+    [pageIndex]="pagina()"
+    [pageSizeOptions]="[10, 25, 50]"
+    (page)="onPageChange($event)"
+    aria-label="Paginación de usuarios"
+  ></mat-paginator>
+</section>

@@ -1,0 +1,50 @@
+<mat-toolbar color="primary" class="no-print onp-header" role="banner">
+  <button
+    #btnToggleMenu
+    mat-icon-button
+    type="button"
+    aria-label="Mostrar u ocultar el menú"
+    (click)="toggleMenu.emit()"
+  >
+    <mat-icon>menu</mat-icon>
+  </button>
+
+  <img
+    src="assets/images/logo-onp.svg"
+    alt="Logo institucional de la Oficina de Normalización Previsional"
+    class="onp-header__logo"
+  />
+
+  <span class="onp-header__system-name">{{ systemName }}</span>
+
+  <span class="onp-header__spacer"></span>
+
+  <time class="onp-header__datetime" [attr.datetime]="fechaHora().toISOString()">
+    {{ fechaHora() | date: 'dd/MM/yyyy HH:mm' }}
+  </time>
+
+  @if (usuario(); as sesion) {
+    <span class="onp-header__user">{{ sesion.nombre }} · {{ sesion.rol }}</span>
+  }
+
+  <button
+    #btnCerrarSesion
+    mat-button
+    type="button"
+    aria-label="Cerrar sesión"
+    (click)="cerrarSesion()"
+  >
+    <mat-icon aria-hidden="true">logout</mat-icon>
+    Cerrar sesión
+  </button>
+</mat-toolbar>
+
+<nav class="no-print onp-header__breadcrumb" aria-label="Ruta de navegación">
+  <ol>
+    @for (item of breadcrumbs(); track item.url) {
+      <li>
+        <a [routerLink]="item.url">{{ item.label }}</a>
+      </li>
+    }
+  </ol>
+</nav>

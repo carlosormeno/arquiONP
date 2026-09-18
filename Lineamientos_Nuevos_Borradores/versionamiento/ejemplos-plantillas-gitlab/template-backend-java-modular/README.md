@@ -22,13 +22,14 @@ Incluye, funcionando de extremo a extremo:
 - `onp-common-domain` (Shared Kernel de dominio) y `onp-common-web` (contrato `ApiResponseWrapper`);
 - consumer Kafka (`onp-afiliacion-messaging`) con envelope CloudEvents v1.0, idempotencia por `id` del evento, política No PII en el payload, reintentos con backoff exponencial y Dead Letter Queue (`LIN-BUS-001 §5, §8`);
 - pruebas en las 5 capas: unitaria pura en `-domain`, unitaria con Mockito en `-application`/`-messaging`, `@DataJpaTest` + Testcontainers Oracle en `-infrastructure`, `@WebMvcTest` en `-api`, y `@SpringBootTest` de ensamblaje completo en `-boot`;
+- **pruebas de arquitectura ArchUnit** (`onp-template-boot`, `LIN-DIS-001 §2.3/§3.4`, `LIN-DEV-JAVA-001 §15.5`) que verifican en CI que `domain/` y `application/` sean POJOs sin Spring/JPA/Jackson (hexagonal puro), que la dependencia fluya siempre hacia adentro y que el Shared Kernel (`onp-common-domain`) no acumule entidades JPA, servicios de negocio ni puertos de persistencia;
 - migración Flyway versionada (`db/migration`) — `ddl-auto=validate`, nunca `update` (`LIN-BD-ORA-001`);
 - filtros institucionales (`RequestId`, SAA, log canónico), `GlobalExceptionHandler` con mapeo de excepciones de dominio a HTTP, observabilidad OTEL/Logback, OpenAPI;
 - gate de cobertura JaCoCo **diferenciado por capa**: 85% en `-domain`/`-application`, 70% en `-infrastructure`/`-api`/`-boot` (`TEST-R-001` (LIN-TEST-001 §5.1));
 - pipeline GitLab, Dockerfile multi-stage consciente del reactor Maven, manifiestos Kustomize por ambiente.
 
 **Tipo:** Backend Java / Spring Boot — Monolito Modular
-**Propietario de la plantilla:** Arquitectura / Plataforma OTI
+**Propietario de la plantilla:** Arquitectura y Diseño de Software OTI
 **Lineamientos base:** `LIN-DEV-JAVA-001`, `LIN-DIS-001`, `LIN-ARQ-001`, `LIN-API-REST-001`, `LIN-SEC-APP-001`, `LIN-OBS-001`, `LIN-BD-ORA-001`, `LIN-TEST-001`, `LIN-VER-001`, `LIN-CICD-001`
 
 ## Prerrequisitos

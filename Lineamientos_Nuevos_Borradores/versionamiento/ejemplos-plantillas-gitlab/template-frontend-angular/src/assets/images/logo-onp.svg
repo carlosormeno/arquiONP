@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="120" height="32" viewBox="0 0 120 32" role="img" aria-label="Logo institucional ONP (placeholder)">
+  <!--
+    PLACEHOLDER — no es el logo oficial de ONP. Reemplazar por el archivo
+    institucional real antes de usar este scaffold en un sistema en
+    producción (ver LIN-FE-ANG-001 §6.2, "Logo ONP").
+  -->
+  <rect width="120" height="32" rx="4" fill="#0056a3" />
+  <text x="60" y="21" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#ffffff" text-anchor="middle">ONP</text>
+</svg>
