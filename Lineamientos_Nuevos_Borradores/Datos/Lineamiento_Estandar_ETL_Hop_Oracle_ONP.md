@@ -25,8 +25,7 @@
 - [8. Calidad de datos, cuarentena, logs y pruebas](#8-calidad-de-datos-cuarentena-logs-y-pruebas)
 - [9. Seguridad y protección de datos personales](#9-seguridad-y-protección-de-datos-personales)
 - [10. Control de versiones (Git)](#10-control-de-versiones-git)
-- [11. Integración con orquestador (a futuro)](#11-integración-con-orquestador-a-futuro)
-- [12. Gobierno y excepciones](#12-gobierno-y-excepciones)
+- [11. Gobierno y excepciones](#11-gobierno-y-excepciones)
 - [Anexo A: Checklist de Definition of Done (DoD) para ETLs Hop](#anexo-a-checklist-de-definition-of-done-dod-para-etls-hop)
 - [Anexo B: Plantillas de referencia](#anexo-b-plantillas-de-referencia)
 
@@ -52,7 +51,6 @@ Este estándar aplica a:
 
 - Bases de datos y esquemas **transaccionales (OLTP)** de sistemas de negocio. Los esquemas de staging/integración/DWH de este documento tienen un ciclo de vida, un modelo de concurrencia y un propósito distintos (recarga masiva e idempotente, modelo desnormalizado orientado a lectura analítica), y por eso no heredan sus convenciones de nomenclatura de esquema/columna ni sus reglas de auditoría.
 - Desarrollos nuevos sobre IBM DataStage/QualityStage o Pentaho Data Integration, que se rigen por sus propios estándares.
-- El stack Lakehouse (Airflow + Spark + Iceberg + Nessie + Trino + MinIO). Hoy Apache Hop **no forma parte de la infraestructura oficial desplegada**: opera como herramienta de diseño independiente. Cuando Hop se incorpore formalmente a esa infraestructura junto con Python, el alcance de este documento deberá revisarse — ver [sección 11](#11-integración-con-orquestador-a-futuro).
 
 ---
 
@@ -310,13 +308,7 @@ Retirar del directorio `plugins/` cualquier plugin de Hop que no esté en uso, p
 
 ---
 
-## 11. Integración con orquestador (a futuro)
-
-Hoy Apache Hop opera de forma **standalone** (Hop GUI para diseño, `hop run` para ejecución programada vía cron o el scheduler disponible). Cuando el equipo despliegue la infraestructura oficial del stack Objetivo y Hop se incorpore a ella junto con Python, la orquestación pasa a Apache Airflow, mediante el plugin de Airflow para Hop o la ejecución nativa de workflows/pipelines de Hop desde un operador de Airflow. Esa migración implica revisar el alcance de este documento — no se asume ni se diseña por adelantado en esta versión.
-
----
-
-## 12. Gobierno y excepciones
+## 11. Gobierno y excepciones
 
 Una desviación de este lineamiento en un proyecto concreto se registra como `EXC-BI-NNN`, con vigencia acotada y fecha de revisión — nunca indefinida. Debe ser aprobada por la Oficina de Arquitectura de la OTI, y si afecta protección de datos personales, además por Seguridad Digital.
 

@@ -51,7 +51,6 @@ Este estándar aplica a:
 
 - Bases de datos y esquemas **transaccionales (OLTP)** de sistemas de negocio. Los esquemas de staging/integración/DWH de este documento tienen un ciclo de vida, un modelo de concurrencia y un propósito distintos (recarga masiva e idempotente, modelo desnormalizado orientado a lectura analítica), y por eso no heredan sus convenciones de nomenclatura de esquema/columna ni sus reglas de auditoría
 - Desarrollos nuevos sobre IBM DataStage/QualityStage, que siguen rigiéndose por un estandar propio de DataStage.
-- El stack Lakehouse (Airflow + Spark + Iceberg + Nessie + Trino + MinIO), que se regirá a futuro por su propio lineamiento.
 
 ---
 
