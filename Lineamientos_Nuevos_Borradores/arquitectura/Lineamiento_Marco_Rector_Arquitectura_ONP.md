@@ -547,7 +547,7 @@ Para todo sistema de criticidad **Alta o Media** (`§5.4.1`), Arquitectura OTI c
 
 | Resultado | Acción |
 |---|---|
-| Sin divergencias | Evidencia de conformidad; se registra en la revisión del documento de arquitectura |
+| Sin divergencias | Evidencia de conformidad; se registra en el Anexo G del documento de arquitectura (`GOB-PLA-001`), donde también se registra cada divergencia como brecha `BR-NNN` |
 | Dependencia observada y no declarada | **Se actualiza el documento de arquitectura**, no el grafo. El grafo describe la realidad; si la realidad no debía ser así, el problema es de diseño y se corrige en el documento |
 | Divergencia que viola un lineamiento (ACL eludido, exposición sin gateway) | Se subsana o se registra como excepción `EXC-` con fecha de revisión. **No se normaliza por el hecho de estar en producción** |
 | Divergencia que altera el inventario de dependencias | Dispara revisión del documento conforme a `GOB-PLA-001 §1.6` |

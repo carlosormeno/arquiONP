@@ -421,7 +421,7 @@ Mostrar el sistema como una unidad y su relación con los actores externos (usua
 
 *Ejemplo:*
 
-![Ejemplo de Vista de Contexto (PAST)](img/plantilla-arquitectura-ti/ejemplo-a1-vista-contexto.png)
+![Ejemplo de Vista de Contexto (PAST)](img/plantilla-arquitectura-ti/v1.3/ejemplo-a1-vista-contexto.png)
 
 **Ilustración A.1 — Vista de Contexto**
 
@@ -473,7 +473,7 @@ Mostrar los principales componentes de aplicación que conforman el sistema, sus
 >
 > Una vez completada esta sección, elimina este bloque de orientación.
 
-![Ejemplo de diagrama de contenedores C4](img/plantilla-arquitectura-ti/ejemplo-a2-vista-aplicacion.png)
+![Ejemplo de diagrama de contenedores C4](img/plantilla-arquitectura-ti/v1.3/ejemplo-a2-vista-aplicacion.png)
 
 **Ilustración A.2 — Vista de Aplicación**
 
@@ -525,7 +525,7 @@ Mostrar la estructura interna de los componentes más relevantes del sistema: su
 >
 > Una vez completada esta sección, elimina este bloque de orientación.
 
-![Ejemplo de diagrama de componentes C4](img/plantilla-arquitectura-ti/ejemplo-a3-vista-componentes.png)
+![Ejemplo de diagrama de componentes C4](img/plantilla-arquitectura-ti/v1.3/ejemplo-a3-vista-componentes.png)
 
 **Ilustración A.3 — Vista de Componentes: [Nombre del Componente]**
 
@@ -577,7 +577,7 @@ Mostrar las integraciones del sistema con servicios internos y externos: qué co
 >
 > Una vez completada esta sección, elimina este bloque de orientación.
 
-![Ejemplo de diagrama de componentes C4](img/plantilla-arquitectura-ti/ejemplo-a3-vista-componentes.png)
+![Ejemplo de diagrama de componentes C4](img/plantilla-arquitectura-ti/v1.3/ejemplo-a3-vista-componentes.png)
 
 **Ilustración A.4 — Vista de Integraciones**
 
@@ -632,7 +632,7 @@ Mostrar cómo los componentes del sistema son desplegados en la infraestructura 
 >
 > Una vez completada esta sección, elimina este bloque de orientación.
 
-![Ejemplo de diagrama de despliegue C4](img/plantilla-arquitectura-ti/ejemplo-a5-vista-infraestructura.png)
+![Ejemplo de diagrama de despliegue C4](img/plantilla-arquitectura-ti/v1.3/ejemplo-a5-vista-infraestructura.png)
 
 **Ilustración A.5 — Vista de Infraestructura**
 

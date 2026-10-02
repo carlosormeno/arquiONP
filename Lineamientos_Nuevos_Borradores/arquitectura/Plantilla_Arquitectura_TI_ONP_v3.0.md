@@ -30,7 +30,7 @@
 | 1 | X.X.X | DD/MM/YYYY |  |
 | 2 | 1.3 | 08/09/2026 | Se incorpora la Vista de Integraciones (Anexo A.4); se corrige la numeración de anexos (C: ADRs, D: Atributos de Calidad, E: Riesgos, Deuda Técnica y Oportunidades de Mejora); se añaden las secciones E.3 Oportunidades de mejora arquitectónica y E.4 Registro de excepciones; se homogeniza el nivel de encabezados del documento. |
 | 3 | 1.4 | 02/10/2026 | Se fusionan las dos versiones en Markdown de la v1.3 (`Plantilla_Arquitectura_TI_ONP_v1.3.md` y `Plantilla_Documento_Arquitectura_ONP (1).md`): se incorporan el logo institucional, la tabla de datos del documento, el índice enlazado y los diagramas de ejemplo de la §3 y del Anexo A, recuperados del `.docx` v1.3; los ejemplos del Anexo A (diagramas y narrativas) pasan a describir un único sistema, *Carga y Consulta de Datos RENIEC*, generados desde un modelo Structurizr DSL que se versiona junto a las imágenes; la Vista de Componentes y la de Integraciones muestran cómo dividirse en varios diagramas (A.3.1/A.3.2 y A.4.1/A.4.2); se fija la notación obligatoria (`DOC-R-002`): el §3 se modela en ArchiMate con Archi y las vistas del Anexo A en C4 con Structurizr DSL, y los tipos de vista del Anexo A pasan a nombrarse con los diagramas C4 correspondientes. |
-| 4 | 3.0 | 02/10/2026 | **Plantilla normativa `GOB-PLA-001`.** Unifica la plantilla operativa v1.4 con las piezas normativas de `GOB-PLA-001` v2.8 (`Plantilla_Documento_Arquitectura_ONP.md`, que se retira; su historial v2.0–v2.8 queda en git), respetando la estructura y la letra de anexos de la v1.4: identidad de la plantilla y tabla de identidad con línea base normativa; **§1.5 Declaraciones arquitectónicas obligatorias**; **§1.6 Vigencia del documento frente al corpus**; **§5.2 Corpus normativo aplicable**; aviso de contraste con la arquitectura observada en el Anexo A; distinción `AD-`/`ADR-` en el Anexo C; atributos de calidad corregidos (token SAA opaco, `codDetRespuesta` en el cuerpo, Recuperabilidad según `ARQ-R-006`) en el Anexo D; Feature Toggles según `ARQ-R-002` en E.2; y **Anexo F — Conformidad y criterios de aprobación**. No se incorpora la regla de la v2.8 que hacía del §3 una lectura derivada del Anexo A: desde la v1.4, el §3 es un modelo ArchiMate con fuente propia (`DOC-R-002`). |
+| 4 | 3.0 | 02/10/2026 | **Plantilla normativa `GOB-PLA-001`.** Unifica la plantilla operativa v1.4 con las piezas normativas de `GOB-PLA-001` v2.8 (`Plantilla_Documento_Arquitectura_ONP.md`, que se retira; su historial v2.0–v2.8 queda en git), respetando la estructura y la letra de anexos de la v1.4: identidad de la plantilla y tabla de identidad con línea base normativa; **§1.5 Declaraciones arquitectónicas obligatorias**; **§1.6 Vigencia del documento frente al corpus**; **§5.2 Corpus normativo aplicable**; aviso de contraste con la arquitectura observada en el Anexo A; distinción `AD-`/`ADR-` en el Anexo C; atributos de calidad corregidos (token SAA opaco, `codDetRespuesta` en el cuerpo, Recuperabilidad según `ARQ-R-006`) en el Anexo D; Feature Toggles según `ARQ-R-002` en E.2; **Anexo F — Conformidad y criterios de aprobación**; y **Anexo G — Verificación de brechas (declarado vs. observado)**, que da dónde registrar el contraste semestral de `LIN-ARQ-001 §5.5` (fichas `BR-NNN`). No se incorpora la regla de la v2.8 que hacía del §3 una lectura derivada del Anexo A: desde la v1.4, el §3 es un modelo ArchiMate con fuente propia (`DOC-R-002`). |
 
 ## CONTENIDO
 
@@ -78,6 +78,9 @@
   - [F.3 Conformidad normativa](#f3-conformidad-normativa)
   - [F.4 Consistencia interna](#f4-consistencia-interna)
   - [F.5 Registro de la revisión](#f5-registro-de-la-revisión)
+- [ANEXO G: VERIFICACIÓN DE BRECHAS (DECLARADO VS. OBSERVADO)](#anexo-g-verificación-de-brechas-declarado-vs-observado)
+  - [G.1 Registro de verificaciones](#g1-registro-de-verificaciones)
+  - [G.2 Brechas detectadas](#g2-brechas-detectadas)
 
 ## 1. ALCANCE DEL DOCUMENTO
 
@@ -184,7 +187,7 @@ Desde la perspectiva arquitectónica, el sistema se delimita mediante el Diagram
 | Equipo de Plataforma / Seguridad | Comprensión de los componentes y su despliegue | Secciones 3, 4; Anexo A – A.2 Vista de Aplicación y A.5 Vista de Infraestructura |
 | Desarrolladores | Comprensión de los componentes internos y decisiones técnicas | Secciones 3, 4; Anexo A – A.3 Vista de Componentes y A.4 Vista de Integraciones; Anexo C – ADRs |
 | Equipo de Soporte | Comprensión del entorno de ejecución | Sección 3; Anexo A – A.5 Vista de Infraestructura |
-| Arquitectura OTI | Validación de la alineación normativa, cobertura de requerimientos y decisiones pendientes de aprobación | Anexo B – Matriz de Trazabilidad; Anexo C – ADRs; Anexo E; Anexo F – Conformidad y criterios de aprobación |
+| Arquitectura OTI | Validación de la alineación normativa, cobertura de requerimientos y decisiones pendientes de aprobación | Anexo B – Matriz de Trazabilidad; Anexo C – ADRs; Anexo E; Anexo F – Conformidad y criterios de aprobación; Anexo G – Verificación de brechas |
 | Equipo de Calidad / Pruebas | Planificación de pruebas y análisis de impacto de cambios funcionales sobre la arquitectura | Anexo B – Matriz de Trazabilidad |
 
 <!-- v3.0: añadido sobre la plantilla operativa v1.4 -->
@@ -1084,6 +1087,7 @@ Verifica las declaraciones de `§1.5`.
 | 13 | `§5.2` indica, para **cada** documento del corpus, si aplica o por qué no | — | ☐ |
 | 13b | **Línea base normativa** registrada en la tabla de identidad (versión de `GOB-MAT-001` y fecha) y **próxima revisión** fijada a 12 meses o menos | `§1.6` | ☐ |
 | 13c | Si la criticidad es **Alta o Media**: las vistas del Anexo A incluyen **todas** las dependencias externas, incluidas las de baja frecuencia (batches, integraciones periódicas), porque serán contrastadas contra el grafo observado | `LIN-ARQ-001 §5.5` | ☐ |
+| 13d | Si el documento describe un sistema **en producción** (as-built) de criticidad **Alta o Media**: el **Anexo G** registra la última verificación semestral contra el grafo observado y toda brecha `BR-NNN` abierta tiene tratamiento y fecha | `LIN-ARQ-001 §5.5` | ☐ |
 | 14 | Toda desviación de un lineamiento está registrada en `E.4` como **`EXC-<CÓDIGO>-NNN`** con riesgo aceptado, control compensatorio y **fecha de revisión** | `GOB-MAT-001` | ☐ |
 | 15 | Ningún `AD-NNN` de este documento pretende dispensar del cumplimiento de un lineamiento institucional | `GOB-MAT-001` | ☐ |
 | 16 | Ningún criterio de aceptación del proyecto se apoya en un documento que **no esté `Vigente`** | `GOB-MAT-001`, regla de exigibilidad | ☐ |
@@ -1112,6 +1116,53 @@ Verifica las declaraciones de `§1.5`.
 | **Resultado** | ☐ Aprobado ☐ Aprobado con observaciones ☐ Devuelto |
 
 > **Regla de aprobación.** Un documento de arquitectura de un sistema de criticidad **Alta** no puede aprobarse con ítems de `F.2` o `F.3` sin marcar. Para criticidad Media y Baja, un ítem pendiente puede admitirse como observación con fecha de subsanación, salvo los ítems **9, 14 y 17**, que bloquean en toda criticidad — el primero porque una decisión CAP no declarada se descubre en producción, y los otros dos porque son verificados por el pipeline.
+
+
+<!-- v3.0: añadido sobre la plantilla operativa v1.4 -->
+## ANEXO G: VERIFICACIÓN DE BRECHAS (DECLARADO VS. OBSERVADO)
+
+Este anexo registra el contraste entre la arquitectura **declarada** en el Anexo A y la arquitectura **observada** en producción, conforme a `LIN-ARQ-001 §5.5`. El Anexo A refleja lo que se diseñó; el grafo de servicios (`LIN-OBS-001 §5.8`), derivado de las trazas, muestra lo que el sistema realmente hace. Una **brecha** es cualquier diferencia entre ambos.
+
+> 📋 **Orientación para el arquitecto**
+>
+> **¿Cuándo aplica?** Solo a documentos que describen un sistema **ya en producción** (as-built) de criticidad **Alta o Media** (`LIN-ARQ-001 §5.4.1`). En un documento de diseño de un sistema aún no construido, o de criticidad Baja, escribe «No aplica» y la razón; no elimines el anexo.
+>
+> **¿Cada cuánto?** Arquitectura OTI realiza el contraste **al menos semestralmente**. Cada contraste se registra en `G.1`, aunque no encuentre divergencias: «sin brechas» también es evidencia de conformidad.
+>
+> **Las cinco verificaciones** (`LIN-ARQ-001 §5.5.1`):
+>
+> | Verificación | Qué se busca |
+> |---|---|
+> | **Dependencias no declaradas** | Llamadas en el grafo que no aparecen en el Anexo A |
+> | **Inventario de recuperación** | Dependencias observadas no consideradas en el RTO/RPO declarado (Anexo D) |
+> | **Elusión del ACL** | Llamadas directas a un legado o entidad externa sin pasar por su Capa Anticorrupción |
+> | **Servicios fuera de catálogo** | Llamadas a APIs REST no registradas en el catálogo institucional |
+> | **Exposición sin gateway** | Tráfico entrante que no proviene del Ingress o del API Manager |
+>
+> **Tratamiento** (`LIN-ARQ-001 §5.5.2`): una dependencia legítima no declarada se resuelve **actualizando el Anexo A**, no el grafo. Una divergencia que viola un lineamiento se **subsana** o se registra como excepción `EXC-` en `E.4`, con fecha de revisión; **no se normaliza por el hecho de estar en producción**. Una divergencia que altera el inventario de dependencias dispara la revisión del documento (`§1.6`).
+>
+> **Límites** (`LIN-ARQ-001 §5.5.3`): el grafo solo muestra lo ejercitado en la ventana observada —una integración trimestral puede no aparecer— y no ve las fronteras internas de un Monolito Modular, que verifica el análisis estático (ArchUnit). Una arista ausente significa «no se usó», no «no existe».
+>
+> A diferencia de los demás bloques de orientación, **este anexo no se elimina** del documento as-built: queda como evidencia de las verificaciones.
+
+### G.1 Registro de verificaciones
+
+| Fecha | Ventana observada | Realizada por | Resultado | Brechas abiertas |
+|---|---|---|---|---|
+| [DD/MM/AAAA] | [DD/MM/AAAA – DD/MM/AAAA] | [Nombre, Arquitectura OTI] | Sin brechas / Con brechas | [BR-NNN, … o «ninguna»] |
+
+### G.2 Brechas detectadas
+
+| ID | Verificación | Declarado (Anexo A) | Observado (grafo) | Tratamiento | Estado | Fecha límite |
+|---|---|---|---|---|---|---|
+| BR-001 | [Una de las cinco de `§5.5.1`] | [Qué dice el Anexo A] | [Qué muestra el grafo] | Actualizar Anexo A / Subsanar en código / `EXC-NNN` | Abierta / Cerrada | [DD/MM/AAAA] |
+
+*Ejemplo (sistema RENIEC del Anexo A):*
+
+| ID | Verificación | Declarado (Anexo A) | Observado (grafo) | Tratamiento | Estado | Fecha límite |
+|---|---|---|---|---|---|---|
+| BR-001 | Elusión del ACL | SICAR-ETL-RENIEC consulta a RENIEC solo a través de la operación dedicada de WS-CONSULTA-RENIEC | Llamada directa SICAR-ETL-RENIEC → RENIEC - Servicio Web | Subsanar en código: la llamada directa omite la auditoría y la resiliencia del WS | Abierta | [DD/MM/AAAA] |
+| BR-002 | Dependencias no declaradas | — | WS-CONSULTA-RENIEC → servicio de parámetros institucional | Actualizar Anexo A (A.2 y A.4.1) y verificar su RTO/RPO en el Anexo D | Cerrada | [DD/MM/AAAA] |
 
 ---
 
