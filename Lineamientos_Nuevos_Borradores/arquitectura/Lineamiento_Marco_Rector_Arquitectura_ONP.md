@@ -477,7 +477,7 @@ La criticidad de un sistema es un atributo **institucional, no del proyecto**: l
 **Reglas de aplicación:**
 
 1. Un sistema **hereda la criticidad más alta de los procesos de negocio que soporta**. Un módulo de consulta dentro del sistema de pensiones es Alta, no Baja.
-2. Un sistema **no puede tener un RTO/RPO mejor que el de sus dependencias**. Si el cálculo de pensión depende de una base de datos con RPO de 1 hora, su RPO real es 1 hora por mucho que declare 15 minutos. Esta verificación es obligatoria al declarar el atributo en `GOB-PLA-001 C.1`.
+2. Un sistema **no puede tener un RTO/RPO mejor que el de sus dependencias**. Si el cálculo de pensión depende de una base de datos con RPO de 1 hora, su RPO real es 1 hora por mucho que declare 15 minutos. Esta verificación es obligatoria al declarar el atributo en `GOB-PLA-001 D.1`.
 3. Un RTO/RPO **más exigente** que el de su límite requiere justificación y validación de Plataforma sobre su viabilidad; uno **menos exigente** requiere excepción `EXC-ARQ-NNN` aprobada por Arquitectura y el área usuaria.
 
 #### 5.4.2 Política de respaldo por componente
@@ -496,7 +496,7 @@ El Nivel 1 exige el **resultado** —que el componente sea recuperable dentro de
 
 #### 5.4.3 Recuperación a nivel de sistema
 
-**Respaldar componentes no es recuperar un servicio.** Todo sistema de criticidad **Alta o Media** debe declarar en su documento de arquitectura (`GOB-PLA-001`, Anexo C) un **procedimiento de recuperación** que incluya:
+**Respaldar componentes no es recuperar un servicio.** Todo sistema de criticidad **Alta o Media** debe declarar en su documento de arquitectura (`GOB-PLA-001`, Anexo D) un **procedimiento de recuperación** que incluya:
 
 1. **Orden de recuperación y dependencias:** qué debe estar operativo antes de qué. Un backend no se recupera antes que su base de datos, ni valida tokens antes de que SAA esté disponible.
 2. **Dependencias fuera del control de la ONP** —SAA, RENIEC, PIDE, SUNAT— con su comportamiento esperado durante la contingencia: si el servicio puede operar degradado sin ellas, o no puede operar.
@@ -519,7 +519,7 @@ La prueba debe **medir el tiempo real de recuperación** y contrastarlo con el R
 
 #### 5.4.5 Qué debe declarar cada sistema
 
-En el atributo **Recuperabilidad** de `GOB-PLA-001 C.1`, todo documento de arquitectura declara: la **criticidad** asignada; el **RTO y RPO** comprometidos y quién los validó por el área usuaria; la **verificación de dependencias** de la regla 2 de `§5.4.1`; y, para criticidad Alta o Media, el **procedimiento de recuperación** de `§5.4.3`.
+En el atributo **Recuperabilidad** de `GOB-PLA-001 D.1`, todo documento de arquitectura declara: la **criticidad** asignada; el **RTO y RPO** comprometidos y quién los validó por el área usuaria; la **verificación de dependencias** de la regla 2 de `§5.4.1`; y, para criticidad Alta o Media, el **procedimiento de recuperación** de `§5.4.3`.
 
 Un documento de arquitectura de un sistema de criticidad Alta **no puede aprobarse** sin estos elementos.
 
@@ -550,7 +550,7 @@ Para todo sistema de criticidad **Alta o Media** (`§5.4.1`), Arquitectura OTI c
 | Sin divergencias | Evidencia de conformidad; se registra en la revisión del documento de arquitectura |
 | Dependencia observada y no declarada | **Se actualiza el documento de arquitectura**, no el grafo. El grafo describe la realidad; si la realidad no debía ser así, el problema es de diseño y se corrige en el documento |
 | Divergencia que viola un lineamiento (ACL eludido, exposición sin gateway) | Se subsana o se registra como excepción `EXC-` con fecha de revisión. **No se normaliza por el hecho de estar en producción** |
-| Divergencia que altera el inventario de dependencias | Dispara revisión del documento conforme a `GOB-PLA-001 §1.5` |
+| Divergencia que altera el inventario de dependencias | Dispara revisión del documento conforme a `GOB-PLA-001 §1.6` |
 
 #### 5.5.3 Límites de la verificación
 
@@ -692,7 +692,7 @@ Prueba técnica recomendada por perfil, a aplicar durante la evaluación de ingr
 
 La siguiente tabla compendia las decisiones históricas y vigentes, propuestas por el Especialista de Arquitectura de la OTI y aprobadas, las cuales sustentan y dan fuerza normativa al presente Marco Rector (`LIN-ARQ-001`) y sus lineamientos derivados.
 
-> **Esta matriz es el registro único de ADRs institucionales.** Una decisión puede constar aquí como entrada resumida o, cuando requiere desarrollo extenso —contexto, alternativas, controles compensatorios, criterios de revisión—, como **documento propio** en `arquitectura/ADR-<TEMA>-NNN.md`. En ese caso la entrada de esta tabla **debe enlazar al documento**, y ambos identificadores designan la misma decisión: no son decisiones distintas. Las decisiones de alcance de un solo proyecto no entran aquí — se registran como `AD-XXX` en el documento de arquitectura de ese sistema (`GOB-PLA-001`, Anexo B).
+> **Esta matriz es el registro único de ADRs institucionales.** Una decisión puede constar aquí como entrada resumida o, cuando requiere desarrollo extenso —contexto, alternativas, controles compensatorios, criterios de revisión—, como **documento propio** en `arquitectura/ADR-<TEMA>-NNN.md`. En ese caso la entrada de esta tabla **debe enlazar al documento**, y ambos identificadores designan la misma decisión: no son decisiones distintas. Las decisiones de alcance de un solo proyecto no entran aquí — se registran como `AD-XXX` en el documento de arquitectura de ese sistema (`GOB-PLA-001`, Anexo C).
 
 | ID del ADR | Título y Decisión Arquitectónica Registrada | Fecha | Estado |
 |---|---|---|---|

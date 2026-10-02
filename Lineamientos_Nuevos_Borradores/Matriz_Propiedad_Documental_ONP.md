@@ -1,7 +1,7 @@
 # Matriz de Propiedad Documental — ONP
 
 **Código:** GOB-MAT-001  
-**Versión:** 0.30.0 (ver "Historial de versiones")  
+**Versión:** 0.31.0 (ver "Historial de versiones")  
 **Fecha:** 2026-08-05  
 **Autor:** OTI — Oficina de Tecnologías de la Información  
 **Estado:** Vigente / Operativo  
@@ -119,7 +119,7 @@ Cada documento lleva su propia versión, pero el corpus **también se versiona c
 
 **Estado actual: `v0.9.0`.** El corpus está completo —ningún documento en `Borrador` ni `Pendiente`— pero **no graduado**: solo `LIN-OBS-001` y `LIN-TEST-001` son `Vigente`, y el Nivel 1 y 2 esperan aprobación del Comité (`GOB-CHK-001` H22.4). El `v1.0.0` queda reservado a esa graduación, de modo que la versión signifique algo verificable y no una fecha.
 
-> La línea base que un documento de arquitectura registra (`GOB-PLA-001 §1.5`) es **la versión de esta matriz**, no la del tag. El tag marca el estado del repositorio; la matriz es lo que un tercero consulta.
+> La línea base que un documento de arquitectura registra (`GOB-PLA-001 §1.6`) es **la versión de esta matriz**, no la del tag. El tag marca el estado del repositorio; la matriz es lo que un tercero consulta.
 
 ---
 
@@ -155,7 +155,7 @@ El ciclo de vida de esta matriz gobierna los **documentos del corpus**. Los **do
 
 **Regla:** un documento de arquitectura declara conformidad con el corpus **en la versión de esta matriz que registra en su tabla de identidad**, no con el corpus perpetuo. Debe registrar esa línea base y una fecha de próxima revisión no mayor a 12 meses.
 
-**Disparador de mayor impacto: la graduación a `Vigente`.** Cuando un documento gradúa, lo que antes era criterio técnico pasa a ser exigible contractualmente por la regla de exigibilidad. Todo documento de arquitectura de un sistema que dependa de él debe revisarse. **Arquitectura OTI comunica cada graduación**; detectar el resto de disparadores corresponde al arquitecto responsable del sistema. El detalle está en `GOB-PLA-001 §1.5`.
+**Disparador de mayor impacto: la graduación a `Vigente`.** Cuando un documento gradúa, lo que antes era criterio técnico pasa a ser exigible contractualmente por la regla de exigibilidad. Todo documento de arquitectura de un sistema que dependa de él debe revisarse. **Arquitectura OTI comunica cada graduación**; detectar el resto de disparadores corresponde al arquitecto responsable del sistema. El detalle está en `GOB-PLA-001 §1.6`.
 
 > Esta regla es también la razón por la que el historial de versiones de esta matriz debe ser legible: es la fuente que un arquitecto consulta para saber qué cambió desde su línea base.
 
@@ -168,7 +168,7 @@ El corpus usa la palabra «ADR» para tres cosas que no son lo mismo, y confundi
 | Instrumento | Identificador | Alcance | Quién lo aprueba | Dónde vive |
 |---|---|---|---|---|
 | **Decisión arquitectónica institucional** | `ADR-NNN` | Obliga a todo el corpus | Comité de Arquitectura | Matriz de `LIN-ARQ-001`, Apéndice A. Si requiere desarrollo extenso, además como `ADR-<TEMA>-NNN.md`, con el mismo identificador de decisión |
-| **Decisión de diseño de un proyecto** | `AD-NNN` | Solo ese sistema | Arquitecto del proyecto | Anexo B del documento de arquitectura (`GOB-PLA-001`) |
+| **Decisión de diseño de un proyecto** | `AD-NNN` | Solo ese sistema | Arquitecto del proyecto | Anexo C del documento de arquitectura (`GOB-PLA-001`) |
 | **Excepción a un lineamiento** | `EXC-<CÓDIGO>-NNN` | Solo ese sistema, con vigencia acotada | Arquitectura OTI; Seguridad Digital si afecta seguridad | Documento de arquitectura del proyecto y registro de excepciones del lineamiento afectado |
 
 **Regla:** un `AD-NNN` **no puede dispensar del cumplimiento de un lineamiento**. Toda desviación de una norma se registra como `EXC-`, con justificación, riesgo aceptado, control compensatorio y **fecha de revisión** — nunca indefinida. El código del lineamiento afectado va en el identificador: `EXC-IAC-001`, `EXC-K8S-004`, `EXC-VER-002`.
@@ -187,7 +187,7 @@ El corpus usa la palabra «ADR» para tres cosas que no son lo mismo, y confundi
 | `LIN-BI-001` | `BI` | `LIN-PERF-001` | `PERF` |
 | `LIN-SEC-APP-001` | `SEC` | `LIN-OBS-001` | `OBS` |
 
-**Numeración correlativa por lineamiento y por sistema**, no global: `EXC-K8S-001` del sistema PAST y `EXC-K8S-001` del sistema Notificaciones son excepciones distintas. La excepción se identifica siempre junto al sistema que la solicita, y se registra en su documento de arquitectura (`GOB-PLA-001`, Anexo E, criterio 14).
+**Numeración correlativa por lineamiento y por sistema**, no global: `EXC-K8S-001` del sistema PAST y `EXC-K8S-001` del sistema Notificaciones son excepciones distintas. La excepción se identifica siempre junto al sistema que la solicita, y se registra en su documento de arquitectura (`GOB-PLA-001`, E.4 Registro de excepciones; verificado por el criterio 14 del Anexo F).
 
 ---
 
@@ -225,7 +225,7 @@ Las referencias informativas o de contexto no tienen esta restricción.
 | `LIN-BUS-001` | Lineamiento de Mensajería y Bus de Eventos | **En revisión** v0.1.8 | `mensajeria/Lineamiento_Mensajeria_Bus_Eventos_ONP.md` |
 | `LIN-VER-001` | Estándar de Versionamiento y Control de Cambios | **En revisión** v0.1.8 | `versionamiento/Lineamiento_Versionamiento_Control_Cambios_ONP.md` |
 | `LIN-PERF-001` | Estándar de Pruebas de Rendimiento, Carga y Estrés | **En revisión** v0.1.6 | `pruebas/Lineamiento_Pruebas_Rendimiento_Carga_Estres_ONP.md` |
-| `LIN-DOC-001` | Lineamiento de Documentación y Modelado | **En revisión** v0.1.0 | `documentacion/Lineamiento_Documentacion_Modelado_ONP.md` |
+| `LIN-DOC-001` | Lineamiento de Documentación y Modelado | **En revisión** v0.2.0 | `documentacion/Lineamiento_Documentacion_Modelado_ONP.md` |
 | `GLOSARIO-ONP` | Glosario transversal operativo | Vigente / Operativo v0.2.2 | `GLOSARIO_ONP.md` |
 
 ### Documentos de gobierno y apoyo
@@ -234,9 +234,9 @@ Documentos que no norman un tema técnico pero forman parte del corpus: son dest
 
 | Código | Documento | Estado | Archivo |
 |---|---|---|---|
-| `GOB-MAT-001` | Matriz de Propiedad Documental (este documento) | Vigente v0.30.0 | `Matriz_Propiedad_Documental_ONP.md` |
+| `GOB-MAT-001` | Matriz de Propiedad Documental (este documento) | Vigente v0.31.0 | `Matriz_Propiedad_Documental_ONP.md` |
 | `GOB-INI-001` | START HERE — punto de entrada para proyectos Java | Vigente / Operativo v0.3.1 | `START_HERE_Proyecto_Java_ONP.md` |
-| `GOB-PLA-001` | Plantilla institucional de Documento de Arquitectura de TI | Vigente v2.8 | `arquitectura/Plantilla_Documento_Arquitectura_ONP.md` |
+| `GOB-PLA-001` | Plantilla institucional de Documento de Arquitectura de TI | **En revisión** v3.0 | `arquitectura/Plantilla_Arquitectura_TI_ONP_v3.0.md` |
 | `GOB-BRE-001` | Tablero de Brechas del Framework de Arquitectura | En revisión v0.1.7 | `arquitectura/Brecha_Framework_Arquitectura_ONP.md` |
 | `GOB-CHK-001` | Checklist de Mejora del Corpus Documental | En ejecución v0.1.0 | `CHECKLIST_Mejora_Corpus_ONP.md` |
 | `GOB-EST-001` | Estado y Continuidad del Corpus — punto de retomada | Vigente / Operativo v1.0.0 | `GOB-EST-001_Estado_y_Continuidad_del_Corpus.md` |
@@ -362,7 +362,7 @@ Los ADR numerados `ADR-001`–`ADR-014` viven en el Apéndice A de `LIN-ARQ-001`
 | Configuración Spring Security | `LIN-SEC-APP-001` | `LIN-DEV-JAVA-001` | En borrador | `LIN-SEC-APP-001` sección 9.1 define configuración mínima obligatoria. **Verificado 2026-08-05:** `LIN-DEV-JAVA-001` referencia `LIN-SEC-APP-001` para el filtro SAA (sección 8.3) y para secretos (sección 12), pero **no** cita la sección 9.1 de configuración de Spring Security — brecha de referencia a cerrar en la próxima revisión de `LIN-DEV-JAVA-001` |
 | Datos personales en ambientes no productivos (enmascaramiento) | `LIN-SEC-APP-001` | `LIN-PERF-001`, `LIN-BI-001`, `LIN-BD-ORA-001`, `LIN-TEST-001` | Conforme | `SEC-R-003` (LIN-SEC-APP-001 §11.5): ningún ambiente no productivo contiene datos personales reales; enmascaramiento **irreversible y previo** a que el destino pueda leer el respaldo, con consistencia referencial. **Creado 2026-08-21** (`GOB-CHK-001` H40): el corpus protegía el dato en producción y dejaba abierto el punto por el que se fuga — la copia hacia DEV o QA |
 | Inventario documental de un proyecto, README y runbook | `LIN-DOC-001` | Todos | Conforme | `LIN-DOC-001 §4` (qué se entrega), `DOC-R-001` (§6, README) y `DOC-R-003` (§8, runbook). **Creado 2026-08-21** (`GOB-CHK-001` H42): ni el README ni el runbook estaban normados en ninguna parte del corpus |
-| Notación y herramientas de modelado | `LIN-DOC-001` | `GOB-PLA-001`, `LIN-ARQ-001` | Conforme | `DOC-R-002` (LIN-DOC-001 §7): ArchiMate/Archi para las vistas de arquitectura, Mermaid para diagramas embebidos. Antes, «Archi es el estándar aprobado» solo constaba en una nota de la plantilla |
+| Notación y herramientas de modelado | `LIN-DOC-001` | `GOB-PLA-001`, `LIN-ARQ-001` | Conforme | `DOC-R-002` (LIN-DOC-001 §7): ArchiMate/Archi para el §3 Diagrama de Arquitectura de TI, C4/Structurizr DSL para las vistas del Anexo A, Mermaid para diagramas embebidos. Antes, «Archi es el estándar aprobado» solo constaba en una nota de la plantilla |
 | Cifrado en tránsito — HTTPS y límite de confianza de red | `LIN-SEC-APP-001` | `LIN-API-REST-001`, `LIN-K8S-001` | Conforme | `SEC-R-001` (LIN-SEC-APP-001 §7.1): HTTPS obligatorio en ambientes compartidos, con dos excepciones —`localhost` y el tramo intra-cluster de `ADR-TLS-INTERNO-001`—. La excepción interna se sostiene sobre la `NetworkPolicy` obligatoria de `K8S-R-002` (LIN-K8S-001 §9.1), que **sustituye** al cifrado como control; sin ella el servicio debe servir HTTPS extremo a extremo |
 | Headers de seguridad HTTP obligatorios | `LIN-SEC-APP-001` | `LIN-API-REST-001`, `LIN-DEV-JAVA-001` | Conforme | `LIN-SEC-APP-001 §7.3` — `X-Content-Type-Options`, `X-Frame-Options`, `HSTS`, `Cache-Control`. **Corregido 2026-08-09:** `LIN-API-REST-001 §7.4` los daba como «valor recomendado» y los asignaba al gateway en PoC (`GOB-CHK-001` H24) |
 | Prohibición de credenciales en código o repositorio | `LIN-SEC-APP-001` | `LIN-DEV-JAVA-001`, `LIN-CICD-001` | En borrador | `LIN-SEC-APP-001` sección 12.2 — prohibición absoluta, incluyendo `environment.ts` Angular |
@@ -617,6 +617,7 @@ Cada vez que se redacte un lineamiento nuevo o se modifique uno existente, esta 
 | 0.28.0 | 2026-08-21 | Arquitectura OTI | **`LIN-DOC-001` creado** (`GOB-CHK-001` H42): era el último documento que el mapa declaraba `Pendiente`. **Ningún documento del corpus queda sin elaborar.** Dos temas nuevos —inventario documental de proyecto y notación de modelado— y sufijo `DOC` incorporado a la tabla de excepciones |
 | 0.29.0 | 2026-08-21 | Arquitectura OTI | Se norma el **versionado del corpus como conjunto** (`GOB-CHK-001` H43): un TDR no invoca la versión de un documento suelto, invoca el corpus vigente en una fecha. Se adopta el formato `v<MAJOR>.<MINOR>.<PATCH>` que `LIN-VER-001 §15.1` exige al código —el corpus se aplica su propia norma— y se fija que **`MAJOR` incrementa cuando un documento gradúa a `Vigente`**, porque cambia lo exigible. Estado actual `v0.9.0`: completo pero no graduado |
 | 0.30.0 | 2026-08-21 | Arquitectura OTI | Se incorpora **`GOB-EST-001`** al catálogo: documento de **estado y continuidad**, punto de retomada del trabajo. No duplica a `GOB-CHK-001` —que es el registro cronológico de los 44 bloques— sino que consolida el estado verificado, las **decisiones cerradas que no deben re-litigarse**, los cinco frentes pendientes con contexto suficiente para retomar en frío, y los riesgos conocidos (`GOB-CHK-001` H44) |
+| 0.31.0 | 2026-10-02 | Arquitectura OTI | **`GOB-PLA-001` pasa a v3.0** (`arquitectura/Plantilla_Arquitectura_TI_ONP_v3.0.md`), estado **En revisión**: se construye sobre la plantilla operativa v1.4 —la que se usa mientras el corpus no esté aprobado por la entidad— y le incorpora las piezas normativas de la v2.8, que se retira. Cambia la numeración: declaraciones obligatorias `§1.5`, vigencia `§1.6`, ADRs de proyecto Anexo C, atributos de calidad Anexo D, riesgos/deuda/excepciones Anexo E, conformidad y aprobación Anexo F; las citas del corpus se reasignan. `LIN-DOC-001` pasa a v0.2.0: `DOC-R-002` fija ArchiMate/Archi para el §3 y C4/Structurizr DSL para el Anexo A |
 
 ---
 

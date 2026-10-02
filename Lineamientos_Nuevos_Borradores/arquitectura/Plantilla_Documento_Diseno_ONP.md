@@ -11,7 +11,7 @@
 >
 > | Documento | Responde | Plantilla |
 > |---|---|---|
-> | **Documento de Arquitectura de TI** | ¿Qué sistemas, qué estilo macro, qué integraciones a alto nivel? | `Plantilla_Arquitectura_TI_ONP_v1.3.md` |
+> | **Documento de Arquitectura de TI** | ¿Qué sistemas, qué estilo macro, qué integraciones a alto nivel? | `Plantilla_Arquitectura_TI_ONP_v1.4.md` |
 > | **Documento de Diseño** (este) | ¿Cómo se construye internamente? Base de datos, interfaces, objetos de software, patrones tácticos por componente | Este archivo |
 > | **`LIN-DIS-001`** (norma) | Qué reglas debe cumplir el diseño de cada componente (no es una plantilla, es el estándar que este documento verifica) | — |
 >
@@ -93,7 +93,7 @@ Excluye:
 ### 3.1 Diagrama de Arquitectura de TI
 
 > 📋 **Orientación**
-> Si el sistema ya tiene un Documento de Arquitectura de TI aprobado, **no dupliques el diagrama** — referéncialo: *"El detalle de la arquitectura se encuentra en el Documento de Arquitectura de TI v[X.Y]"*. Si este Documento de Diseño es el primer artefacto formal del sistema, incluye aquí el mismo diagrama de capas que usa `Plantilla_Arquitectura_TI_ONP_v1.3.md §3`.
+> Si el sistema ya tiene un Documento de Arquitectura de TI aprobado, **no dupliques el diagrama** — referéncialo: *"El detalle de la arquitectura se encuentra en el Documento de Arquitectura de TI v[X.Y]"*. Si este Documento de Diseño es el primer artefacto formal del sistema, incluye aquí el mismo diagrama de capas que usa `Plantilla_Arquitectura_TI_ONP_v1.4.md §3`.
 
 [Insertar Diagrama de Arquitectura de TI, o referenciar el Documento de Arquitectura de TI vigente.]
 
@@ -314,4 +314,4 @@ Excluye:
 
 ---
 
-*Documento de Diseño — ONP · profundiza el Documento de Arquitectura de TI (`Plantilla_Arquitectura_TI_ONP_v1.3.md`) y verifica `LIN-DIS-001`*
+*Documento de Diseño — ONP · profundiza el Documento de Arquitectura de TI (`Plantilla_Arquitectura_TI_ONP_v1.4.md`) y verifica `LIN-DIS-001`*

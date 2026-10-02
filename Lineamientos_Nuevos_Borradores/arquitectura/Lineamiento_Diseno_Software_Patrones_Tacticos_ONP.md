@@ -74,7 +74,7 @@
 
 Mientras que el Marco Rector (`LIN-ARQ-001`) decide **cuáles** son los sistemas, en qué estadios se ubican (Monolito Modular vs. Microservicios) y bajo qué protocolos de red interactúan, el presente estándar de Nivel 2 (`LIN-DIS-001`) prescribe **cómo diseñar la estructura interna de cada uno de esos módulos o microservicios**.
 
-> **Plantilla asociada:** el Documento de Arquitectura de TI del sistema (`Plantilla_Arquitectura_TI_ONP_v1.3.md`) declara el estilo macro. El diseño detallado —donde se verifica la aplicación de este estándar por componente— se elabora con `Plantilla_Documento_Diseno_ONP.md` (Documento de Diseño), cuya `§3.4` cubre paso a paso el estilo interno, los criterios de DDD, el Context Map, CQRS y la resiliencia táctica de cada componente/Bounded Context del sistema.
+> **Plantilla asociada:** el Documento de Arquitectura de TI del sistema (`Plantilla_Arquitectura_TI_ONP_v1.4.md`) declara el estilo macro. El diseño detallado —donde se verifica la aplicación de este estándar por componente— se elabora con `Plantilla_Documento_Diseno_ONP.md` (Documento de Diseño), cuya `§3.4` cubre paso a paso el estilo interno, los criterios de DDD, el Context Map, CQRS y la resiliencia táctica de cada componente/Bounded Context del sistema.
 
 ```
 ┌──────────────────────────────────────────────────────────────────────────┐

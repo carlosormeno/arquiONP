@@ -1190,7 +1190,7 @@ Las aprobaciones manuales deben quedar registradas en GitLab o en el expediente 
 
 ## 25. Proceso de excepción (`EXC-CICD-NNN`)
 
-> **Instrumento correcto: `EXC-CICD-NNN`, no un ADR.** Conforme a `GOB-MAT-001` (Registro de decisiones y excepciones), la desviación de un lineamiento **en un proyecto concreto** se registra como excepción con vigencia acotada y **fecha de revisión**, nunca indefinida. El `ADR-NNN` queda reservado a decisiones **institucionales** del Comité de Arquitectura, que obligan a todo el corpus; llevar allí cada desviación de cada sistema vaciaría de valor ese registro. La excepción se aprueba por Arquitectura OTI y se registra en el documento de arquitectura del sistema (`GOB-PLA-001`, Anexo E, criterio 14).
+> **Instrumento correcto: `EXC-CICD-NNN`, no un ADR.** Conforme a `GOB-MAT-001` (Registro de decisiones y excepciones), la desviación de un lineamiento **en un proyecto concreto** se registra como excepción con vigencia acotada y **fecha de revisión**, nunca indefinida. El `ADR-NNN` queda reservado a decisiones **institucionales** del Comité de Arquitectura, que obligan a todo el corpus; llevar allí cada desviación de cada sistema vaciaría de valor ese registro. La excepción se aprueba por Arquitectura OTI y se registra en el documento de arquitectura del sistema (`GOB-PLA-001`, E.4 Registro de excepciones; verificado por el criterio 14 del Anexo F).
 
 
 Toda excepción relevante a este lineamiento requiere ADR aprobado por Arquitectura. Si afecta seguridad, producción, infraestructura, datos sensibles o continuidad operativa, requiere validación adicional de Seguridad Digital y/o Plataforma.

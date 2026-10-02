@@ -104,7 +104,7 @@ En una retomada, el mayor riesgo es re-litigar lo ya decidido. Estas decisiones 
 | Un hallazgo de **corpus** no bloquea la graduación de un documento; uno de **documento** sí | `GOB-MAT-001` · H22.5 |
 | La continuidad operativa vive en `LIN-ARQ-001 §5.4`, **sin crear `LIN-DRP-001`** | H33 |
 | El corpus se etiqueta con semver (`v0.9.0`), no con calendario | `GOB-MAT-001` · H43.2 |
-| `§3` de `GOB-PLA-001` es **derivado**; el Anexo A es la fuente autoritativa | `GOB-PLA-001` · H34.4 |
+| `§3` de `GOB-PLA-001` se modela en **ArchiMate** y el Anexo A en **C4**, cada uno con su fuente versionada (reemplaza desde 2026-10-02 la regla de H34.4, que hacía del `§3` una lectura derivada) | `DOC-R-002` · `GOB-PLA-001` v3.0 |
 | El grafo de servicios **no es un catálogo**: es la contraparte observada de los cuatro existentes | `LIN-OBS-001 §5.8.5` · H35.7 |
 
 ---
@@ -119,7 +119,7 @@ Cinco frentes. Dos requieren aprobación externa; tres son trabajo que puede ret
 
 - **Qué aprobar:** `LIN-ARQ-001`, `LIN-DIS-001`, `LIN-PAT-001`.
 - **Quién:** Comité de Arquitectura (no Arquitectura OTI en solitario — `GOB-MAT-001`, Aprobación).
-- **Material ya preparado:** los 5 criterios de graduación en `GOB-MAT-001`; el checklist verificable del Anexo E de `GOB-PLA-001`; la trazabilidad completa en `GOB-CHK-001`.
+- **Material ya preparado:** los 5 criterios de graduación en `GOB-MAT-001`; el checklist verificable del Anexo F de `GOB-PLA-001`; la trazabilidad completa en `GOB-CHK-001`.
 - **Efecto:** desbloquea el `v1.0.0` del corpus y hace invocables las reglas en TDR.
 
 ### 4.2 🔴 Ratificar los valores de RTO/RPO *(H33.10)*
@@ -177,10 +177,10 @@ No falta contenido: falta **verificar que el dueño y sus consumidores digan lo 
 
 | Riesgo | Mitigación existente |
 |---|---|
-| **El corpus envejece sin que nadie lo note.** Un documento de arquitectura declara conformidad con reglas que ya cambiaron | `GOB-PLA-001 §1.5`: línea base declarada y disparadores de revisión. **Ocurrió dentro del propio marco rector** (H44.1) — la mitigación existe, la disciplina de aplicarla no está probada |
+| **El corpus envejece sin que nadie lo note.** Un documento de arquitectura declara conformidad con reglas que ya cambiaron | `GOB-PLA-001 §1.6`: línea base declarada y disparadores de revisión. **Ocurrió dentro del propio marco rector** (H44.1) — la mitigación existe, la disciplina de aplicarla no está probada |
 | **Las verificaciones semestrales de `LIN-ARQ-001 §5.5` no tienen responsable operativo** | Están normadas; falta asignar quién las ejecuta y con qué evidencia |
 | **El grafo de servicios y ArchUnit están normados pero no implementados** en ningún sistema real | La norma existe; la primera implementación validará si las reglas son aplicables |
-| **Nadie ha probado el corpus con una fábrica real** | El Anexo E de `GOB-PLA-001` es el primer instrumento pensado para el revisor; su utilidad se comprobará en la primera revisión real |
+| **Nadie ha probado el corpus con una fábrica real** | El Anexo F de `GOB-PLA-001` es el primer instrumento pensado para el revisor; su utilidad se comprobará en la primera revisión real |
 
 ---
 

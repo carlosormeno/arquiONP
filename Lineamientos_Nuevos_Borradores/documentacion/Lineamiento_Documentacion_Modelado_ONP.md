@@ -1,9 +1,9 @@
 # LIN-DOC-001 — Lineamiento de Documentación y Modelado ONP
 
 **Código:** LIN-DOC-001
-**Versión:** v0.1.0
+**Versión:** v0.2.0
 **Estado:** En revisión
-**Fecha:** 2026-08-21
+**Fecha:** 2026-10-02
 **Propietario documental:** Arquitectura de Software — OTI
 **Revisores sugeridos:** Desarrollo, Arquitectura, Plataforma/Infraestructura, QA
 **Marco rector:** LIN-ARQ-001 — Marco Rector de Arquitectura de Software
@@ -15,6 +15,7 @@
 | Versión | Fecha | Autor | Descripción |
 |---|---|---|---|
 | v0.1.0 | 2026-08-21 | Arquitectura OTI | Versión inicial (`GOB-CHK-001` H42). Cubre el último documento que el mapa declaraba `Pendiente`. Norma **qué documentación produce un proyecto, dónde vive, con qué notación y quién la mantiene**, sin redefinir lo que ya tiene dueño: Javadoc (`LIN-DEV-JAVA-001 §9`), OpenAPI (`LIN-API-REST-001 §6`), el documento de arquitectura (`GOB-PLA-001`), los ADR (`LIN-ARQ-001` Apéndice A) y el ciclo de vida del corpus (`GOB-MAT-001`) |
+| v0.2.0 | 2026-10-02 | Arquitectura OTI | `DOC-R-002` separa la notación por diagrama: el **§3 Diagrama de Arquitectura de TI** se modela en **ArchiMate con Archi** y las **vistas del Anexo A** en **C4 con Structurizr DSL** (antes las vistas del Anexo A iban en ArchiMate, C4 era solo una referencia conceptual y el §3 no tenía notación definida). Se reescribe §7.3, se ajusta §7.2 y se añade `vistas-c4.dsl` a la estructura de `docs/modelos/`. Las citas a `GOB-PLA-001` se alinean con su v3.0 (declaraciones obligatorias en `§1.5`, vigencia en `§1.6`, ADRs de proyecto en el Anexo C, conformidad en el Anexo F) |
 
 ---
 
@@ -105,10 +106,10 @@ Lo que un proyecto **debe** entregar depende de su naturaleza y de su criticidad
 | **Manifiestos de despliegue** | Todo sistema desplegado en Kubernetes | Repositorio, `k8s/` | `LIN-K8S-001`, Anexo A |
 | **Ficha de despliegue por ambiente** | Todo sistema en QA o PROD | Repositorio del sistema | `LIN-K8S-001 §16` |
 | **Runbook de operación** | Criticidad **Alta o Media** | Repositorio del sistema, `/docs` | §8 de este lineamiento |
-| **ADR de proyecto (`AD-NNN`)** | Cuando hay decisión con alternativas reales | Anexo B del Documento de Arquitectura | `GOB-PLA-001` |
+| **ADR de proyecto (`AD-NNN`)** | Cuando hay decisión con alternativas reales | Anexo C del Documento de Arquitectura | `GOB-PLA-001` |
 | **Excepciones (`EXC-<SUF>-NNN`)** | Cuando se desvía de un lineamiento | Anexo E del Documento de Arquitectura | `GOB-MAT-001` |
 
-> **Un sistema de criticidad Baja no queda eximido del Documento de Arquitectura**: queda eximido del runbook y puede completar el documento con menos profundidad, pero las **declaraciones obligatorias** de `GOB-PLA-001 §1.4` —Estadio, CAP, DDD, criticidad— se exigen siempre.
+> **Un sistema de criticidad Baja no queda eximido del Documento de Arquitectura**: queda eximido del runbook y puede completar el documento con menos profundidad, pero las **declaraciones obligatorias** de `GOB-PLA-001 §1.5` —Estadio, CAP, DDD, criticidad— se exigen siempre.
 
 ---
 
@@ -126,7 +127,8 @@ La documentación técnica de un sistema vive **en su repositorio**, versionada 
 │   ├── runbook.md                 ← operación (§8), si criticidad Alta o Media
 │   ├── despliegue.md              ← ficha por ambiente (LIN-K8S-001 §16)
 │   └── modelos/                   ← fuentes de los diagramas (§7)
-│       └── arquitectura.archimate
+│       ├── arquitectura.archimate ← §3 del Documento de Arquitectura (ArchiMate / Archi)
+│       └── vistas-c4.dsl          ← Anexo A del Documento de Arquitectura (C4 / Structurizr DSL)
 ├── openapi.yml                    ← si expone APIs
 └── k8s/                           ← manifiestos
 ```
@@ -177,7 +179,8 @@ Detalle que se desactualiza sin que nadie lo note: listas exhaustivas de endpoin
 
 | Tipo de vista | Notación | Herramienta | Dónde se usa |
 |---|---|---|---|
-| **Vistas de arquitectura del sistema** (contexto, aplicación, componentes, infraestructura) | **ArchiMate 3.x** | **Archi** | Anexo A de `GOB-PLA-001` — es la **fuente autoritativa** de la arquitectura |
+| **Diagrama de Arquitectura de TI** (vista general por capas: usuarios, seguridad, aplicaciones, servicios, datos) | **ArchiMate 3.x** | **Archi** | §3 del Documento de Arquitectura de TI |
+| **Vistas de arquitectura del sistema** (contexto, contenedores/aplicación, componentes, integraciones, despliegue/infraestructura) | **C4** | **Structurizr DSL** | Anexo A del Documento de Arquitectura de TI — es la **fuente autoritativa** de la arquitectura |
 | **Diagramas embebidos en documentación** (flujos, secuencias, topologías simples) | **Mermaid** | Cualquier editor; GitLab lo renderiza nativamente | Cuerpo de los documentos `.md` del corpus y de los proyectos |
 | **Modelo de datos** | Diagrama entidad-relación | Herramienta del DBA | `LIN-BD-ORA-001` |
 
@@ -188,14 +191,20 @@ Detalle que se desactualiza sin que nadie lo note: listas exhaustivas de endpoin
 | Criterio | Elección |
 |---|---|
 | El diagrama acompaña a un texto y cambia con él | **Mermaid**, embebido en el `.md`: se versiona en el mismo commit y se revisa en el mismo MR |
-| El diagrama es el modelo de la arquitectura y se contrasta contra la realidad | **ArchiMate en Archi**: tiene semántica, relaciones tipadas y niveles de abstracción |
+| El diagrama es el modelo de la arquitectura y se contrasta contra la realidad | **C4 en Structurizr DSL**: un único modelo en texto del que se derivan todas las vistas del Anexo A, con elementos y relaciones tipados, que se versiona y revisa en el MR como el código |
+| El diagrama es el panorama institucional por capas del sistema | **ArchiMate en Archi**: notación estándar de arquitectura empresarial, con capas y relaciones tipadas |
 | El diagrama es una imagen suelta sin fuente | **No se acepta** — ver anti-patrones |
 
 **La fuente del diagrama se versiona siempre.** Un `.png` sin su fuente es un artefacto muerto: nadie puede modificarlo y se sustituye por otro que dice algo distinto.
 
-### 7.3 Relación con C4
+### 7.3 Por qué dos notaciones
 
-`LIN-ARQ-001 §1.2` usa el **C4 Model** como referencia conceptual para explicar los tres niveles del corpus (contexto → contenedores → componentes). C4 es un **modelo de niveles de abstracción**, no una notación de dibujo: en la ONP esos niveles se materializan con las vistas ArchiMate de `GOB-PLA-001` Anexo A. No se exige producir diagramas «C4» aparte.
+Cada diagrama del Documento de Arquitectura de TI tiene una sola notación, y no se intercambian:
+
+- **§3 — ArchiMate.** Es la vista general por capas, la que leen Gerencia y los equipos transversales. ArchiMate es la notación de arquitectura empresarial y expresa esas capas (negocio, aplicación, tecnología) de forma estándar.
+- **Anexo A — C4.** Son las vistas del sistema a distintos niveles de detalle. `LIN-ARQ-001 §1.2` ya organiza el corpus según los niveles del **C4 Model** (contexto → contenedores → componentes); las vistas se dibujan con esa misma notación para que el nivel normativo y el diagrama coincidan. Structurizr DSL permite derivar todas las vistas de un único modelo en texto, de modo que no se contradicen entre sí.
+
+Un diagrama de contexto en ArchiMate o una vista por capas en C4 incumplen esta regla aunque su contenido sea correcto: lo que se busca es que los documentos de distintos sistemas se puedan comparar.
 
 ---
 
@@ -232,7 +241,7 @@ Obligatorio para sistemas de criticidad **Alta o Media** (`ARQ-R-006` — LIN-AR
 
 | Artefacto | Revisión mínima |
 |---|---|
-| Documento de Arquitectura | Anual, o ante disparador de `GOB-PLA-001 §1.5` |
+| Documento de Arquitectura | Anual, o ante disparador de `GOB-PLA-001 §1.6` |
 | Runbook | Tras cada incidente que requiera intervención, y anual si no hubo |
 | `README.md` | Cuando cambien prerrequisitos, comandos o responsables |
 
@@ -269,14 +278,14 @@ Un artefacto que ya no se mantiene se marca como **retirado**, con fecha y motiv
 | Documentar en prosa lo que el código ya dice | Duplica el mantenimiento y diverge | Documentar el porqué (P3) |
 | «La documentación se hace al final del proyecto» | No se hace, o se hace sin memoria de las decisiones | Entra en el MR del cambio (§9.1) |
 | Runbook escrito una vez y nunca actualizado | Falla justo cuando se necesita | Revisión tras cada incidente (§8.2) |
-| Copiar el Documento de Arquitectura de otro proyecto | Declara decisiones que no se tomaron y criticidad que no corresponde | Declaraciones propias verificadas en `GOB-PLA-001` Anexo E |
+| Copiar el Documento de Arquitectura de otro proyecto | Declara decisiones que no se tomaron y criticidad que no corresponde | Declaraciones propias verificadas en `GOB-PLA-001` Anexo F |
 | Capturas de pantalla en la documentación técnica | Envejecen a la primera versión de la interfaz | Describir el comportamiento, no la pantalla |
 
 ---
 
 ## 12. Proceso de excepción (`EXC-DOC-NNN`)
 
-> **Instrumento correcto: `EXC-DOC-NNN`, no un ADR.** Conforme a `GOB-MAT-001` (Registro de decisiones y excepciones), la desviación de este lineamiento **en un proyecto concreto** se registra como excepción con vigencia acotada y **fecha de revisión**, nunca indefinida. El `ADR-NNN` queda reservado a decisiones **institucionales** del Comité de Arquitectura. La excepción se aprueba por Arquitectura OTI y se registra en el documento de arquitectura del sistema (`GOB-PLA-001`, Anexo E, criterio 14).
+> **Instrumento correcto: `EXC-DOC-NNN`, no un ADR.** Conforme a `GOB-MAT-001` (Registro de decisiones y excepciones), la desviación de este lineamiento **en un proyecto concreto** se registra como excepción con vigencia acotada y **fecha de revisión**, nunca indefinida. El `ADR-NNN` queda reservado a decisiones **institucionales** del Comité de Arquitectura. La excepción se aprueba por Arquitectura OTI y se registra en el documento de arquitectura del sistema (`GOB-PLA-001`, E.4 Registro de excepciones; verificado por el criterio 14 del Anexo F).
 
 **Casos que típicamente requieren excepción:**
 
