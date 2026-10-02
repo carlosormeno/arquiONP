@@ -20,7 +20,9 @@ target/
 Thumbs.db
 *.swp
 *.swo
-.claude/
+**/.claude/*
+# Excepción: las skills de Claude Code apuntan a las de la repo (enlace a ../skills), no a copias locales
+!/Lineamientos_Nuevos_Borradores/.claude/skills
 cert-manager.yaml
 
 #Archivos Propios
